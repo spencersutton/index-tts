@@ -7,6 +7,8 @@ import torch.nn.functional as F
 from einops import rearrange, repeat
 from torch import nn
 
+from indextts.util import patch_call
+
 
 # main class
 class Attend(nn.Module):
@@ -42,6 +44,9 @@ class Attend(nn.Module):
         # aggregate values
         return torch.einsum(f"b h i j, {kv_einsum_eq} -> b h i d", attn, v)
 
+    @patch_call(forward)
+    def __call__(self): ...
+
 
 class RMSNorm(nn.Module):
     def __init__(self, dim) -> None:
@@ -53,11 +58,17 @@ class RMSNorm(nn.Module):
     def forward(self, x):
         return F.normalize(x, dim=-1) * self.scale * self.gamma
 
+    @patch_call(forward)
+    def __call__(self): ...
+
 
 class GEGLU(nn.Module):
     def forward(self, x):
         x, gate = x.chunk(2, dim=-1)
         return F.gelu(gate) * x
+
+    @patch_call(forward)
+    def __call__(self): ...
 
 
 class PerceiverResampler(nn.Module):
@@ -93,6 +104,9 @@ class PerceiverResampler(nn.Module):
 
         return self.norm(latents)
 
+    @patch_call(forward)
+    def __call__(self): ...
+
 
 class Attention(nn.Module):
     def __init__(self, dim, heads=8) -> None:
@@ -121,3 +135,6 @@ class Attention(nn.Module):
 
         out = rearrange(out, "b h n d -> b n (h d)")
         return self.to_out(out)
+
+    @patch_call(forward)
+    def __call__(self): ...

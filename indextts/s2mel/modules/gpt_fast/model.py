@@ -8,6 +8,8 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from indextts.util import patch_call
+
 
 def find_multiple(n: int, k: int) -> int:
     if n % k == 0:
@@ -28,6 +30,9 @@ class AdaptiveLayerNorm(nn.Module):
             return self.norm(input)
         weight, bias = torch.split(self.project_layer(embedding), DIM, dim=-1)
         return weight * self.norm(input) + bias
+
+    @patch_call(forward)
+    def __call__(self): ...
 
 
 BLOCK_SIZE = 16384
@@ -110,6 +115,9 @@ class Transformer(nn.Module):
                 skip_in_x_list.append(x)
         return self.norm(x, c)
 
+    @patch_call(forward)
+    def __call__(self): ...
+
 
 class TransformerBlock(nn.Module):
     def __init__(self) -> None:
@@ -135,8 +143,11 @@ class TransformerBlock(nn.Module):
     ) -> torch.Tensor:
         if skip_in_x is not None:
             x = self.skip_in_linear(torch.cat([x, skip_in_x], dim=-1))
-        h = x + self.attention(self.attention_norm(x, c), freqs_cis, mask, input_pos)
+        h = x + self.attention(self.attention_norm(x, c), freqs_cis, mask)
         return h + self.feed_forward(self.ffn_norm(h, c))
+
+    @patch_call(forward)
+    def __call__(self): ...
 
 
 class Attention(nn.Module):
@@ -149,14 +160,7 @@ class Attention(nn.Module):
         self.wqkv = nn.Linear(DIM, total_head_dim, bias=False)
         self.wo = nn.Linear(HEAD_DIM * N_HEAD, DIM, bias=False)
 
-    def forward(
-        self,
-        x: torch.Tensor,
-        freqs_cis: torch.Tensor,
-        mask: torch.Tensor,
-        context: None = None,
-        context_freqs_cis: None = None,
-    ) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, freqs_cis: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         bsz, seqlen, _ = x.shape
 
         kv_size = N_HEAD * HEAD_DIM
@@ -168,7 +172,7 @@ class Attention(nn.Module):
         v = v.view(bsz, seqlen, N_HEAD, HEAD_DIM)
 
         q = apply_rotary_emb(q, freqs_cis)
-        k = apply_rotary_emb(k, context_freqs_cis if context_freqs_cis is not None else freqs_cis)
+        k = apply_rotary_emb(k, freqs_cis)
 
         q, k, v = [x.transpose(1, 2) for x in (q, k, v)]
 
@@ -178,6 +182,9 @@ class Attention(nn.Module):
 
         y = y.transpose(1, 2).contiguous().view(bsz, seqlen, HEAD_DIM * N_HEAD)
         return self.wo(y)
+
+    @patch_call(forward)
+    def __call__(self): ...
 
 
 class FeedForward(nn.Module):
@@ -190,6 +197,9 @@ class FeedForward(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.w2(F.silu(self.w1(x)) * self.w3(x))
 
+    @patch_call(forward)
+    def __call__(self): ...
+
 
 class RMSNorm(nn.Module):
     def __init__(self) -> None:
@@ -201,6 +211,9 @@ class RMSNorm(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self._norm(x.float()).type_as(x) * self.weight
+
+    @patch_call(forward)
+    def __call__(self): ...
 
 
 def precompute_freqs_cis(seq_len: int, n_elem: int, dtype: torch.dtype = torch.bfloat16) -> torch.Tensor:

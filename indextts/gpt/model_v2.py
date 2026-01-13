@@ -9,6 +9,7 @@ from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
+from indextts.util import patch_call
 
 
 def null_position_embeddings(range, dim):
@@ -140,6 +141,9 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             cross_attentions=transformer_outputs.cross_attentions,
         )
 
+    @patch_call(forward)
+    def __call__(self): ...
+
 
 class LearnedPositionEmbeddings(nn.Module):
     def __init__(self, seq_len, model_dim, init=0.02) -> None:
@@ -154,6 +158,9 @@ class LearnedPositionEmbeddings(nn.Module):
 
     def get_fixed_embedding(self, ind, dev):
         return self.emb(torch.tensor([ind], device=dev)).unsqueeze(0)
+
+    @patch_call(forward)
+    def __call__(self): ...
 
 
 def build_hf_gpt_transformer(layers, model_dim, heads, max_mel_seq_len, max_text_seq_len):
@@ -207,6 +214,9 @@ class MelEncoder(nn.Module):
         for e in self.encoder:
             x = e(x)
         return x.permute(0, 2, 1)
+
+    @patch_call(forward)
+    def __call__(self): ...
 
 
 class UnifiedVoice(nn.Module):
@@ -706,3 +716,6 @@ class UnifiedVoice(nn.Module):
         base_vec = self.get_emovec(speech_conditioning_latent, cond_lengths)
 
         return base_vec + alpha * (emo_vec - base_vec)
+
+    @patch_call(forward)
+    def __call__(self): ...

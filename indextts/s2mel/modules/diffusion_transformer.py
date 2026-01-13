@@ -7,6 +7,7 @@ from torch.nn.utils.parametrizations import weight_norm
 from indextts.s2mel.modules.commons import sequence_mask
 from indextts.s2mel.modules.gpt_fast.model import Transformer
 from indextts.s2mel.modules.wavenet import WN
+from indextts.util import patch_call
 
 BLOCK_SIZE = 16384
 CLASS_DROPOUT_PROB = 0.1
@@ -75,6 +76,9 @@ class TimestepEmbedder(nn.Module):
         t_freq = self.timestep_embedding(t)
         return self.mlp(t_freq)
 
+    @patch_call(forward)
+    def __call__(self): ...
+
 
 class FinalLayer(nn.Module):
     """
@@ -91,6 +95,9 @@ class FinalLayer(nn.Module):
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)
         return self.linear(x)
+
+    @patch_call(forward)
+    def __call__(self): ...
 
 
 class DiT(nn.Module):
@@ -177,3 +184,6 @@ class DiT(nn.Module):
         x = self.final_layer(x, t1).transpose(1, 2)
         # x [2,80,1863]
         return self.conv2(x)
+
+    @patch_call(forward)
+    def __call__(self): ...

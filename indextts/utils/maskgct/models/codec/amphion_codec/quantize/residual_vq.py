@@ -10,6 +10,7 @@ from typing import cast
 import torch
 from torch import nn
 
+from indextts.util import patch_call
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.factorized_vector_quantize import (
     FactorizedVectorQuantize,
 )
@@ -47,3 +48,6 @@ class ResidualVQ(nn.Module):
 
     def vq2emb(self, vq) -> torch.Tensor:
         return self.quantizers[0].vq2emb(vq[0])
+
+    @patch_call(forward)
+    def __call__(self): ...

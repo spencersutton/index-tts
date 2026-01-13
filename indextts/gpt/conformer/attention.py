@@ -21,6 +21,8 @@ import math
 import torch
 from torch import nn
 
+from indextts.util import patch_call
+
 
 class MultiHeadedAttention(nn.Module):
     """Multi-Head Attention layer.
@@ -181,6 +183,9 @@ class MultiHeadedAttention(nn.Module):
         scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.d_k)
         return self.forward_attention(v, scores, mask), new_cache
 
+    @patch_call(forward)
+    def __call__(self): ...
+
 
 class RelPositionMultiHeadedAttention(MultiHeadedAttention):
     """Multi-Head Attention layer with relative position encoding.
@@ -303,3 +308,6 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
         scores = (matrix_ac + matrix_bd) / math.sqrt(self.d_k)  # (batch, head, time1, time2)
 
         return self.forward_attention(v, scores, mask), new_cache
+
+    @patch_call(forward)
+    def __call__(self): ...

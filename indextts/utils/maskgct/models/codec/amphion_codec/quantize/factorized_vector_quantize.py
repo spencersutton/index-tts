@@ -8,6 +8,8 @@ from einops import rearrange
 from torch import nn
 from torch.nn.utils.parametrizations import weight_norm
 
+from indextts.util import patch_call
+
 
 class FactorizedVectorQuantize(nn.Module):
     def __init__(self) -> None:
@@ -62,3 +64,6 @@ class FactorizedVectorQuantize(nn.Module):
     def vq2emb(self, vq):
         emb = self.decode_code(vq)
         return self.out_project(emb)
+
+    @patch_call(forward)
+    def __call__(self): ...

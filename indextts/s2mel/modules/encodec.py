@@ -11,6 +11,8 @@ import warnings
 from torch import nn
 from torch.nn.utils.parametrizations import weight_norm
 
+from indextts.util import patch_call
+
 
 class NormConv1d(nn.Module):
     """Wrapper around Conv1d and normalization applied to this conv
@@ -25,6 +27,9 @@ class NormConv1d(nn.Module):
     def forward(self, x):
         x = self.conv(x)
         return self.norm(x)
+
+    @patch_call(forward)
+    def __call__(self): ...
 
 
 class SConv1d(nn.Module):
@@ -68,3 +73,6 @@ class SConv1d(nn.Module):
         padding_left = padding_total - padding_right
         x = pad1d(x, (padding_left, padding_right + extra_padding), mode=self.pad_mode)
         return self.conv(x)
+
+    @patch_call(forward)
+    def __call__(self): ...

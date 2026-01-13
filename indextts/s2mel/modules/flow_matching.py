@@ -1,10 +1,9 @@
-
-
 import torch
 from torch import nn
 from tqdm import tqdm
 
 from indextts.s2mel.modules.diffusion_transformer import DiT
+from indextts.util import patch_call
 
 SIGMA_MIN = 1e-6
 IN_CHANNELS = 80
@@ -157,3 +156,6 @@ class CFM(nn.Module):
         if torch.distributed.is_initialized():
             torch._inductor.config.reorder_for_compute_comm_overlap = True
         self.estimator = torch.compile(self.estimator, fullgraph=True, dynamic=True)
+
+    @patch_call(forward)
+    def __call__(self): ...

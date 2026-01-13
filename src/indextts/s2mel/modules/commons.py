@@ -38,9 +38,7 @@ class MyModel(nn.Module):
                 codebook_size=args.length_regulator.content_codebook_size,
                 n_codebooks=args.length_regulator.n_codebooks if hasattr(args.length_regulator, "n_codebooks") else 1,
             ),
-            "gpt_layer": torch.nn.Sequential(
-                torch.nn.Linear(1280, 256), torch.nn.Linear(256, 128), torch.nn.Linear(128, 1024)
-            ),
+            "gpt_layer": nn.Sequential(nn.Linear(1280, 256), nn.Linear(256, 128), nn.Linear(128, 1024)),
         })
 
     def forward(self, x, target_lengths, prompt_len, cond, y):

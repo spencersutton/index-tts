@@ -77,7 +77,7 @@ class FinalLayer(nn.Module):
         return self.linear(x)
 
 
-class DiT(torch.nn.Module):
+class DiT(nn.Module):
     def __init__(self, args):
         super().__init__()
         self.time_as_token = args.DiT.time_as_token if hasattr(args.DiT, "time_as_token") else False

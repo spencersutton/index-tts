@@ -248,8 +248,8 @@ class AccelInferenceEngine:
         input_ids: torch.Tensor,
         positions: torch.Tensor,
         context: ForwardContext,
-        tts_mel_embedding: torch.nn.Module | None = None,
-        tts_text_pos_embedding: torch.nn.Module | None = None,
+        tts_mel_embedding: nn.Module | None = None,
+        tts_text_pos_embedding: nn.Module | None = None,
     ) -> torch.Tensor:
         bs = input_ids.size(0)
         use_tts_embedding = hasattr(self, "_tts_mode") and self._tts_mode
@@ -309,8 +309,8 @@ class AccelInferenceEngine:
         stop_tokens: list[int] | None = None,
         attention_mask: torch.Tensor | None = None,
         tts_embeddings: torch.Tensor | None = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
-        tts_mel_embedding: torch.nn.Module | None = None,  # TTS: mel_embedding layer
-        tts_text_pos_embedding: torch.nn.Module | None = None,  # TTS: text_pos_embedding layer
+        tts_mel_embedding: nn.Module | None = None,  # TTS: mel_embedding layer
+        tts_text_pos_embedding: nn.Module | None = None,  # TTS: text_pos_embedding layer
     ) -> torch.Tensor:
         """
         Generate tokens.

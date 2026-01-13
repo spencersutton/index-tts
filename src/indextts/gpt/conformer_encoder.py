@@ -7,7 +7,7 @@ from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
 from indextts.utils.common import make_pad_mask
 
 
-class PositionwiseFeedForward(torch.nn.Module):
+class PositionwiseFeedForward(nn.Module):
     """Positionwise feed forward layer.
 
     FeedForward are appied on each position of the sequence.
@@ -16,16 +16,16 @@ class PositionwiseFeedForward(torch.nn.Module):
     Args:
         idim (int): Input dimenstion.
         hidden_units (int): The number of hidden units.
-        activation (torch.nn.Module): Activation function
+        activation (nn.Module): Activation function
     """
 
-    def __init__(self, idim: int, hidden_units: int, activation: torch.nn.Module = torch.nn.ReLU()):
+    def __init__(self, idim: int, hidden_units: int, activation: nn.Module = nn.ReLU()):
         """Construct a PositionwiseFeedForward object."""
         super().__init__()
-        self.w_1 = torch.nn.Linear(idim, hidden_units)
+        self.w_1 = nn.Linear(idim, hidden_units)
         self.activation = activation
-        self.dropout = torch.nn.Dropout(0.0)
-        self.w_2 = torch.nn.Linear(hidden_units, idim)
+        self.dropout = nn.Dropout(0.0)
+        self.w_2 = nn.Linear(hidden_units, idim)
 
     def forward(self, xs: torch.Tensor) -> torch.Tensor:
         """Forward function.
@@ -132,19 +132,19 @@ class ConformerEncoderLayer(nn.Module):
     """Encoder layer module.
     Args:
         size (int): Input dimension.
-        self_attn (torch.nn.Module): Self-attention module instance.
+        self_attn (nn.Module): Self-attention module instance.
             `MultiHeadedAttention` or `RelPositionMultiHeadedAttention`
             instance can be used as the argument.
-        feed_forward (torch.nn.Module): Feed-forward module instance.
+        feed_forward (nn.Module): Feed-forward module instance.
             `PositionwiseFeedForward` instance can be used as the argument.
-        conv_module (torch.nn.Module): Convolution module instance.
+        conv_module (nn.Module): Convolution module instance.
             `ConvlutionModule` instance can be used as the argument.
     """
 
     def __init__(
         self,
         size: int,
-        self_attn: torch.nn.Module,
+        self_attn: nn.Module,
         feed_forward: nn.Module | None = None,
         conv_module: nn.Module | None = None,
     ):
@@ -229,7 +229,7 @@ class ConformerEncoderLayer(nn.Module):
         return x, mask, new_att_cache, new_cnn_cache
 
 
-class BaseEncoder(torch.nn.Module):
+class BaseEncoder(nn.Module):
     def __init__(
         self,
         input_size: int,
@@ -274,7 +274,7 @@ class BaseEncoder(torch.nn.Module):
         )
 
         self.normalize_before = normalize_before
-        self.after_norm = torch.nn.LayerNorm(output_size, eps=1e-5)
+        self.after_norm = nn.LayerNorm(output_size, eps=1e-5)
 
     def output_size(self) -> int:
         return self._output_size
@@ -335,9 +335,9 @@ class ConformerEncoder(BaseEncoder):
             concat_after,
         )
 
-        activation = torch.nn.SiLU()
+        activation = nn.SiLU()
 
-        self.encoders = torch.nn.ModuleList([
+        self.encoders = nn.ModuleList([
             ConformerEncoderLayer(
                 output_size,
                 RelPositionMultiHeadedAttention(attention_heads, output_size, dropout_rate),

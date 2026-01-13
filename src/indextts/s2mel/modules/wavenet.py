@@ -21,7 +21,7 @@ class LayerNorm(nn.Module):
         return x.transpose(1, -1)
 
 
-class WN(torch.nn.Module):
+class WN(nn.Module):
     def __init__(
         self, hidden_channels, kernel_size, dilation_rate, n_layers, gin_channels=0, p_dropout=0, causal=False
     ):
@@ -35,8 +35,8 @@ class WN(torch.nn.Module):
         self.gin_channels = gin_channels
         self.p_dropout = p_dropout
 
-        self.in_layers = torch.nn.ModuleList()
-        self.res_skip_layers = torch.nn.ModuleList()
+        self.in_layers = nn.ModuleList()
+        self.res_skip_layers = nn.ModuleList()
         self.drop = nn.Dropout(p_dropout)
 
         if gin_channels != 0:

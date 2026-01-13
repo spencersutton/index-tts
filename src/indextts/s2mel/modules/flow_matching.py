@@ -1,12 +1,13 @@
 from abc import ABC
 
 import torch
+from torch import nn
 from tqdm import tqdm
 
 from indextts.s2mel.modules.diffusion_transformer import DiT
 
 
-class BASECFM(torch.nn.Module, ABC):
+class BASECFM(nn.Module, ABC):
     def __init__(self, args):
         super().__init__()
         self.sigma_min = 1e-6
@@ -15,7 +16,7 @@ class BASECFM(torch.nn.Module, ABC):
 
         self.in_channels = args.DiT.in_channels
 
-        self.criterion = torch.nn.MSELoss() if args.reg_loss_type == "l2" else torch.nn.L1Loss()
+        self.criterion = nn.MSELoss() if args.reg_loss_type == "l2" else nn.L1Loss()
 
         if hasattr(args.DiT, "zero_prompt_speech_token"):
             self.zero_prompt_speech_token = args.DiT.zero_prompt_speech_token

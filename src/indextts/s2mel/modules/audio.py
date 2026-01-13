@@ -1,5 +1,6 @@
 import torch
 from librosa.filters import mel as librosa_mel_fn
+from torch import nn
 
 
 def dynamic_range_compression_torch(x, C=1, clip_val=1e-5):
@@ -23,9 +24,7 @@ def mel_spectrogram(y, n_fft, num_mels, sampling_rate, hop_size, win_size, fmin,
         )
         hann_window[str(sampling_rate) + "_" + str(y.device)] = torch.hann_window(win_size).to(y.device)
 
-    y = torch.nn.functional.pad(
-        y.unsqueeze(1), (int((n_fft - hop_size) / 2), int((n_fft - hop_size) / 2)), mode="reflect"
-    )
+    y = nn.functional.pad(y.unsqueeze(1), (int((n_fft - hop_size) / 2), int((n_fft - hop_size) / 2)), mode="reflect")
     y = y.squeeze(1)
 
     spec = torch.view_as_real(

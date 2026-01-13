@@ -46,9 +46,9 @@ class FactorizedVectorQuantize(nn.Module):
         -------
         z_q: torch.Tensor[B x D x T]
             Quantized continuous representation of input
-        commit_loss: Tensor[B]
+        commit_loss: torch.Tensor[B]
             Commitment loss to train encoder to predict vectors closer to codebook entries
-        codebook_loss: Tensor[B]
+        codebook_loss: torch.Tensor[B]
             Codebook loss to update the codebook
         indices: torch.Tensor[B x T]
             Codebook indices (quantized discrete representation of input)

@@ -16,7 +16,7 @@ class Attend(nn.Module):
         super().__init__()
         self.attn_dropout = nn.Dropout(0.0)
 
-    def forward(self, q, k, v, mask=None) -> Tensor:
+    def forward(self, q: Tensor, k: Tensor, v: Tensor, mask: Tensor | None = None) -> Tensor:
         """
         einstein notation
         b - batch
@@ -35,6 +35,7 @@ class Attend(nn.Module):
         # key padding mask
         if mask is not None:
             mask = rearrange(mask, "b j -> b 1 1 j")
+            assert mask is not None
             sim = sim.masked_fill(~mask, -torch.finfo(sim.dtype).max)
 
         # attention
@@ -49,13 +50,13 @@ class Attend(nn.Module):
 
 
 class RMSNorm(nn.Module):
-    def __init__(self, dim) -> None:
+    def __init__(self, dim: int) -> None:
         super().__init__()
 
         self.scale = dim**0.5
         self.gamma = nn.Parameter(torch.ones(dim))
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         return F.normalize(x, dim=-1) * self.scale * self.gamma
 
     @patch_call(forward)
@@ -63,7 +64,7 @@ class RMSNorm(nn.Module):
 
 
 class GEGLU(nn.Module):
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         x, gate = x.chunk(2, dim=-1)
         return F.gelu(gate) * x
 
@@ -72,7 +73,7 @@ class GEGLU(nn.Module):
 
 
 class PerceiverResampler(nn.Module):
-    def __init__(self, dim, num_latents: int = 32, heads: int = 8) -> None:
+    def __init__(self, dim: int, num_latents: int = 32, heads: int = 8) -> None:
         super().__init__()
 
         self.proj_context = nn.Linear(512, dim) if dim != 512 else nn.Identity()
@@ -92,7 +93,7 @@ class PerceiverResampler(nn.Module):
 
         self.norm = RMSNorm(dim)
 
-    def forward(self, x, mask=None):
+    def forward(self, x: Tensor, mask: Tensor | None = None) -> Tensor:
         x: Tensor = self.proj_context(x)
 
         latents = repeat(self.latents, "n d -> b n d", b=x.shape[0])
@@ -109,7 +110,7 @@ class PerceiverResampler(nn.Module):
 
 
 class Attention(nn.Module):
-    def __init__(self, dim, heads: int = 8) -> None:
+    def __init__(self, dim: int, heads: int = 8) -> None:
         super().__init__()
         self.heads = heads
 
@@ -120,7 +121,7 @@ class Attention(nn.Module):
         self.to_kv = nn.Linear(dim, dim_inner * 2, bias=False)
         self.to_out = nn.Linear(dim_inner, dim, bias=False)
 
-    def forward(self, x, context=None, mask=None) -> Tensor:
+    def forward(self, x: Tensor, context: Tensor | None = None, mask: Tensor | None = None) -> Tensor:
         h = self.heads
 
         context = context if context is not None else x

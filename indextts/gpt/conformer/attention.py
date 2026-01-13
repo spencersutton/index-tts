@@ -193,19 +193,19 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
         n_feat (int): The number of features.
     """
 
-    def __init__(self, n_head, n_feat) -> None:
+    def __init__(self, n_head: int, n_feat: int) -> None:
         """Construct an RelPositionMultiHeadedAttention object."""
         super().__init__(n_head, n_feat)
         # linear transformation for positional encoding
         self.linear_pos = nn.Linear(n_feat, n_feat, bias=False)
         # these two learnable bias are used in matrix c and matrix d
         # as described in https://arxiv.org/abs/1901.02860 Section 3.3
-        self.pos_bias_u = nn.Parameter(Tensor(self.h, self.d_k))
-        self.pos_bias_v = nn.Parameter(Tensor(self.h, self.d_k))
+        self.pos_bias_u = nn.Parameter(torch.zeros(self.h, self.d_k))
+        self.pos_bias_v = nn.Parameter(torch.zeros(self.h, self.d_k))
         nn.init.xavier_uniform_(self.pos_bias_u)
         nn.init.xavier_uniform_(self.pos_bias_v)
 
-    def rel_shift(self, x, zero_triu: bool = False) -> Tensor:
+    def rel_shift(self, x: Tensor, zero_triu: bool = False) -> Tensor:
         """Compute relative positinal encoding.
         Args:
             x (Tensor): Input tensor (batch, time, size).

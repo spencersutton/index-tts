@@ -80,10 +80,10 @@ class CAMDenseTDNNLayer(nn.Module):
         self.nonlinear2 = get_nonlinear(128)
         self.cam_layer = CAMLayer(dilation=dilation)
 
-    def bn_function(self, x) -> Tensor:
+    def bn_function(self, x: Tensor) -> Tensor:
         return self.linear1(self.nonlinear1(x))
 
-    def forward(self, x) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x = self.bn_function(x)
         return self.cam_layer(self.nonlinear2(x))
 
@@ -98,7 +98,7 @@ class CAMDenseTDNNBlock(nn.ModuleList):
             layer = CAMDenseTDNNLayer(in_channels=in_channels + i * 32, dilation=dilation)
             self.add_module(f"tdnnd{i + 1}", layer)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         for layer in self:
             x = torch.cat([x, layer(x)], dim=1)
         return x
@@ -108,12 +108,12 @@ class CAMDenseTDNNBlock(nn.ModuleList):
 
 
 class TransitLayer(nn.Module):
-    def __init__(self, in_channels, out_channels, bias: bool = True) -> None:
+    def __init__(self, in_channels: int, out_channels: int, bias: bool = True) -> None:
         super().__init__()
         self.nonlinear = get_nonlinear(in_channels)
         self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
 
-    def forward(self, x) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x = self.nonlinear(x)
         return self.linear(x)
 
@@ -122,14 +122,14 @@ class TransitLayer(nn.Module):
 
 
 class DenseLayer(nn.Module):
-    def __init__(self, in_channels, out_channels, bias: bool = False) -> None:
+    def __init__(self, in_channels: int, out_channels: int, bias: bool = False) -> None:
         super().__init__()
         self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
 
         modules: OrderedDict[str, nn.Module] = OrderedDict({"batchnorm": nn.BatchNorm1d(out_channels, affine=False)})
         self.nonlinear = nn.Sequential(modules)
 
-    def forward(self, x) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         if len(x.shape) == 2:
             x = self.linear(x.unsqueeze(dim=-1)).squeeze(dim=-1)
         else:

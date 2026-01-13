@@ -5,6 +5,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+from typing import Any
 
 import gradio as gr
 
@@ -115,24 +116,24 @@ def format_glossary_markdown():
 
 
 def gen_single(
-    emo_control_method,
-    prompt,
-    text,
-    emo_ref_path,
-    emo_weight,
-    vec1,
-    vec2,
-    vec3,
-    vec4,
-    vec5,
-    vec6,
-    vec7,
-    vec8,
-    emo_text,
-    emo_random,
+    emo_control_method: int | gr.Radio,
+    prompt: Path | None,
+    text: str,
+    emo_ref_path: Path | None,
+    emo_weight: float,
+    vec1: float,
+    vec2: float,
+    vec3: float,
+    vec4: float,
+    vec5: float,
+    vec6: float,
+    vec7: float,
+    vec8: float,
+    emo_text: str | None,
+    emo_random: bool,
     max_text_tokens_per_segment: int = 120,
-    *args,
-    progress=gr.Progress(),
+    *args: Any,
+    progress: gr.Progress = gr.Progress(),
 ):
     output_path = None
     if not output_path:
@@ -150,7 +151,7 @@ def gen_single(
         "repetition_penalty": float(repetition_penalty),
         "max_mel_tokens": int(max_mel_tokens),
     }
-    if type(emo_control_method) is not int:
+    if isinstance(emo_control_method, gr.Radio):
         emo_control_method = emo_control_method.value
     if emo_control_method == 0:  # emotion from speaker
         emo_ref_path = None  # remove external reference audio
@@ -168,6 +169,7 @@ def gen_single(
         emo_text = None
 
     print(f"Emo control mode:{emo_control_method},weight:{emo_weight},vec:{vec}")
+    assert prompt is not None
     output = tts.infer(
         spk_audio_prompt=prompt,
         text=text,
@@ -189,7 +191,7 @@ def update_prompt_audio():
     return gr.update(interactive=True)
 
 
-def create_warning_message(warning_text):
+def create_warning_message(warning_text: str) -> gr.HTML:
     return gr.HTML(
         f'<div style="padding: 0.5em 0.8em; border-radius: 0.5em; background: #ffa87d; color: #000; font-weight: bold">{html.escape(warning_text)}</div>'
     )
@@ -386,7 +388,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
             ],
         )
 
-    def on_example_click(example):
+    def on_example_click(example: list[Any]):
         print(f"Example clicked: ({len(example)} values) = {example!r}")
         return (
             gr.update(value=example[0]),
@@ -427,7 +429,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
         ],
     )
 
-    def on_input_text_change(text, max_text_tokens_per_segment):
+    def on_input_text_change(text: str, max_text_tokens_per_segment: int):
         if text and len(text) > 0:
             text_tokens_list = tts.tokenizer.tokenize(text)
 
@@ -482,7 +484,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
         # 更新Markdown表格
         return gr.update(value=format_glossary_markdown())
 
-    def on_method_change(emo_control_method):
+    def on_method_change(emo_control_method: int):
         if emo_control_method == 1:  # emotion reference audio
             return (
                 gr.update(visible=True),
@@ -528,7 +530,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
         ],
     )
 
-    def on_experimental_change(is_experimental, current_mode_index):
+    def on_experimental_change(is_experimental: bool, current_mode_index: int):
         # 切换情感控制选项
         new_choices = EMO_CHOICES_ALL if is_experimental else EMO_CHOICES_OFFICIAL
         # if their current mode selection doesn't exist in new choices, reset to 0.

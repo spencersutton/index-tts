@@ -33,7 +33,7 @@ class TimestepEmbedder(nn.Module):
 
     freqs: Tensor
 
-    def __init__(self, hidden_size) -> None:
+    def __init__(self, hidden_size: int) -> None:
         super().__init__()
         self.mlp = nn.Sequential(
             nn.Linear(FREQUENCY_EMBEDDING_SIZE, hidden_size), nn.SiLU(), nn.Linear(hidden_size, hidden_size)
@@ -45,7 +45,7 @@ class TimestepEmbedder(nn.Module):
         freqs = torch.exp(-math.log(self.max_period) * torch.arange(start=0, end=half, dtype=torch.float32) / half)
         self.register_buffer("freqs", freqs)
 
-    def timestep_embedding(self, t) -> Tensor:
+    def timestep_embedding(self, t: Tensor) -> Tensor:
         """
         Create sinusoidal timestep embeddings.
         :param t: a 1-D Tensor of N indices, one per batch element.
@@ -62,7 +62,7 @@ class TimestepEmbedder(nn.Module):
             embedding = torch.cat([embedding, torch.zeros_like(embedding[:, :1])], dim=-1)
         return embedding
 
-    def forward(self, t) -> Tensor:
+    def forward(self, t: Tensor) -> Tensor:
         t_freq = self.timestep_embedding(t)
         return self.mlp(t_freq)
 
@@ -75,13 +75,13 @@ class FinalLayer(nn.Module):
     The final layer of DiT.
     """
 
-    def __init__(self, hidden_size, patch_size, out_channels) -> None:
+    def __init__(self, hidden_size: int, patch_size: int, out_channels: int) -> None:
         super().__init__()
         self.norm_final = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
         self.linear = weight_norm(nn.Linear(hidden_size, patch_size * patch_size * out_channels))
         self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(hidden_size, 2 * hidden_size))
 
-    def forward(self, x, c) -> Tensor:
+    def forward(self, x: Tensor, c: Tensor) -> Tensor:
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)
         return self.linear(x)
@@ -118,10 +118,10 @@ class DiT(nn.Module):
 
         self.cond_x_merge_linear = nn.Linear(HIDDEN_DIM + IN_CHANNELS * 2 + STYLE_ENCODER_DIM, HIDDEN_DIM)
 
-    def setup_caches(self, max_batch_size, max_seq_length) -> None:
+    def setup_caches(self, max_batch_size: int, max_seq_length: int) -> None:
         self.transformer.setup_caches(max_batch_size, max_seq_length)
 
-    def forward(self, x, prompt_x, x_lens, t, style, cond) -> Tensor:
+    def forward(self, x: Tensor, prompt_x: Tensor, x_lens: Tensor, t: Tensor, style: Tensor, cond: Tensor) -> Tensor:
         """
         x (Tensor): random noise
         prompt_x (Tensor): reference mel + zero mel

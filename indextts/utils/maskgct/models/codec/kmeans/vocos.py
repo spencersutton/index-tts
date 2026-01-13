@@ -62,7 +62,7 @@ class VocosBackbone(nn.Module):
         self.final_layer_norm = nn.LayerNorm(384, eps=1e-6)
         self.apply(self._init_weights)
 
-    def _init_weights(self, m) -> None:
+    def _init_weights(self, m: nn.Module) -> None:
         if isinstance(m, (nn.Conv1d, nn.Linear)):
             nn.init.trunc_normal_(m.weight, std=0.02)
             assert m.bias is not None

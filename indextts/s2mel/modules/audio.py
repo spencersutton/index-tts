@@ -3,26 +3,22 @@ from librosa.filters import mel as librosa_mel_fn
 from torch import Tensor, nn
 
 
-def dynamic_range_compression_torch(x, C=1, clip_val=1e-5) -> Tensor:
-    return torch.log(torch.clamp(x, min=clip_val) * C)
+def dynamic_range_compression_torch(x: Tensor) -> Tensor:
+    return torch.log(torch.clamp(x, min=1e-5) * 1)
 
 
-def spectral_normalize_torch(magnitudes: Tensor) -> Tensor:
-    return dynamic_range_compression_torch(magnitudes)
-
-
-mel_basis = {}
-hann_window = {}
-
-
-def mel_spectrogram(y, n_fft, num_mels, sampling_rate, hop_size, win_size, fmin, fmax, center: bool = False) -> Tensor:
-    global mel_basis, hann_window  # pylint: disable=global-statement
-    if f"{sampling_rate!s}_{fmax!s}_{y.device!s}" not in mel_basis:
-        mel = librosa_mel_fn(sr=sampling_rate, n_fft=n_fft, n_mels=num_mels, fmin=fmin, fmax=fmax)
-        mel_basis[str(sampling_rate) + "_" + str(fmax) + "_" + str(y.device)] = (
-            torch.from_numpy(mel).float().to(y.device)
-        )
-        hann_window[str(sampling_rate) + "_" + str(y.device)] = torch.hann_window(win_size).to(y.device)
+def mel_spectrogram(
+    y: Tensor,
+    n_fft: int,
+    num_mels: int,
+    sampling_rate: int,
+    hop_size: int,
+    win_size: int,
+    fmin: float,
+    fmax: float | None,
+    center: bool = False,
+) -> Tensor:
+    mel = librosa_mel_fn(sr=sampling_rate, n_fft=n_fft, n_mels=num_mels, fmin=fmin, fmax=fmax)
 
     y = nn.functional.pad(y.unsqueeze(1), (int((n_fft - hop_size) / 2), int((n_fft - hop_size) / 2)), mode="reflect")
     y = y.squeeze(1)
@@ -33,7 +29,7 @@ def mel_spectrogram(y, n_fft, num_mels, sampling_rate, hop_size, win_size, fmin,
             n_fft,
             hop_length=hop_size,
             win_length=win_size,
-            window=hann_window[str(sampling_rate) + "_" + str(y.device)],
+            window=torch.hann_window(win_size).to(y.device),
             center=center,
             pad_mode="reflect",
             normalized=False,
@@ -44,5 +40,5 @@ def mel_spectrogram(y, n_fft, num_mels, sampling_rate, hop_size, win_size, fmin,
 
     spec = torch.sqrt(spec.pow(2).sum(-1) + (1e-9))
 
-    spec = torch.matmul(mel_basis[str(sampling_rate) + "_" + str(fmax) + "_" + str(y.device)], spec)
-    return spectral_normalize_torch(spec)
+    spec = torch.matmul(torch.from_numpy(mel).float().to(y.device), spec)
+    return torch.log(torch.clamp(spec, min=1e-5) * 1)

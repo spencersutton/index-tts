@@ -1,12 +1,10 @@
 
-
-
 import re
 import traceback
 import warnings
 from functools import lru_cache
 from pathlib import Path
-from typing import Final, overload
+from typing import Any, Final, overload
 
 from sentencepiece import SentencePieceProcessor
 
@@ -221,7 +219,7 @@ class TextNormalizer:
 
         return transformed_text, original_name_list
 
-    def restore_names(self, normalized_text, original_name_list):
+    def restore_names(self, normalized_text: str, original_name_list: list[str] | None) -> str:
         """
         恢复人名为原来的文字
         例如：<n_a> -> original_name_list[0]
@@ -386,7 +384,7 @@ class TextNormalizer:
 
         return transformed_text, original_pinyin_list
 
-    def restore_pinyin_tones(self, normalized_text, original_pinyin_list):
+    def restore_pinyin_tones(self, normalized_text: str, original_pinyin_list: list[str] | None) -> str:
         """
         恢复拼音中的音调数字（1-5）为原来的拼音
         例如：<pinyin_a> -> original_pinyin_list[0]
@@ -487,7 +485,7 @@ class TextTokenizer:
     def tokenize(self, text: str) -> list[str]:
         return self.encode(text, out_type=str)
 
-    def encode(self, text: str, **kwargs):
+    def encode(self, text: str, **kwargs: Any) -> list[int]:
         if len(text) == 0:
             return []
         if len(text.strip()) == 1:
@@ -500,7 +498,7 @@ class TextTokenizer:
                 text = pre_tokenizer(text)
         return self.sp_model.Encode(text, out_type=kwargs.pop("out_type", int), **kwargs)
 
-    def batch_encode(self, texts: list[str], **kwargs):
+    def batch_encode(self, texts: list[str], **kwargs: Any) -> list[list[int]]:
         # 预处理
         if self.normalizer:
             texts = [self.normalizer.normalize(text) for text in texts]
@@ -509,7 +507,7 @@ class TextTokenizer:
                 texts = [pre_tokenizer(text) for text in texts]
         return self.sp_model.Encode(texts, out_type=kwargs.pop("out_type", int), **kwargs)
 
-    def decode(self, ids: list[int] | int, do_lower_case: bool = False, **kwargs) -> str:
+    def decode(self, ids: list[int] | int, do_lower_case: bool = False, **kwargs: Any) -> str:
         if isinstance(ids, int):
             ids = [ids]
         decoded = self.sp_model.Decode(ids, out_type=kwargs.pop("out_type", str), **kwargs)

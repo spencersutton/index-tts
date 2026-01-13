@@ -1,9 +1,13 @@
+from collections.abc import Sequence
+from typing import cast
+
 import torch
 from torch import nn
 
 from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
 from indextts.gpt.conformer.embedding import RelPositionalEncoding
 from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
+from indextts.util import patch_call
 from indextts.utils.common import make_pad_mask
 
 
@@ -19,7 +23,7 @@ class PositionwiseFeedForward(nn.Module):
         activation (nn.Module): Activation function
     """
 
-    def __init__(self, idim: int, hidden_units: int, activation: nn.Module = nn.ReLU()) -> None:
+    def __init__(self, idim: int, hidden_units: int, activation: nn.Module = nn.ReLU()):
         """Construct a PositionwiseFeedForward object."""
         super().__init__()
         self.w_1 = nn.Linear(idim, hidden_units)
@@ -37,11 +41,14 @@ class PositionwiseFeedForward(nn.Module):
         """
         return self.w_2(self.dropout(self.activation(self.w_1(xs))))
 
+    @patch_call(forward)
+    def __call__(self): ...
+
 
 class ConvolutionModule(nn.Module):
     """ConvolutionModule in Conformer model."""
 
-    def __init__(self, channels: int, activation: nn.Module = nn.ReLU(), bias: bool = True) -> None:
+    def __init__(self, channels: int, activation: nn.Module = nn.ReLU(), bias: bool = True):
         """Construct an ConvolutionModule object.
         Args:
             channels (int): The number of channels of conv layers.
@@ -127,6 +134,9 @@ class ConvolutionModule(nn.Module):
 
         return x.transpose(1, 2), new_cache
 
+    @patch_call(forward)
+    def __call__(self): ...
+
 
 class ConformerEncoderLayer(nn.Module):
     """Encoder layer module.
@@ -144,10 +154,10 @@ class ConformerEncoderLayer(nn.Module):
     def __init__(
         self,
         size: int,
-        self_attn: nn.Module,
-        feed_forward: nn.Module | None = None,
-        conv_module: nn.Module | None = None,
-    ) -> None:
+        self_attn: RelPositionMultiHeadedAttention,
+        feed_forward: PositionwiseFeedForward,
+        conv_module: ConvolutionModule | None = None,
+    ):
         """Construct an EncoderLayer object."""
         super().__init__()
         self.self_attn = self_attn
@@ -228,8 +238,13 @@ class ConformerEncoderLayer(nn.Module):
 
         return x, mask, new_att_cache, new_cnn_cache
 
+    @patch_call(forward)
+    def __call__(self): ...
 
-class BaseEncoder(nn.Module):
+
+class ConformerEncoder(torch.nn.Module):
+    """Conformer encoder module."""
+
     def __init__(
         self,
         input_size: int,
@@ -237,7 +252,7 @@ class BaseEncoder(nn.Module):
         attention_heads: int = 4,
         linear_units: int = 2048,
         num_blocks: int = 6,
-    ) -> None:
+    ):
         """
         Args:
             input_size (int): input dim
@@ -246,38 +261,27 @@ class BaseEncoder(nn.Module):
             linear_units (int): the hidden units number of position-wise feed
                 forward
             num_blocks (int): the number of decoder blocks
-            dropout_rate (float): dropout rate
-            attention_dropout_rate (float): dropout rate in attention
-            positional_dropout_rate (float): dropout rate after adding
-                positional encoding
-            normalize_before (bool):
-                True: use layer_norm before each sub-block of a layer.
-                False: use layer_norm after each sub-block of a layer.
-            concat_after (bool): whether to concat attention layer's input
-                and output.
-                True: x -> x + linear(concat(x, att(x)))
-                False: x -> x + att(x)
-            static_chunk_size (int): chunk size for static chunk training and
-                decoding
-            use_dynamic_chunk (bool): whether use dynamic chunk size for
-                training or not, You can only use fixed chunk(chunk_size > 0)
-                or dyanmic chunk size(use_dynamic_chunk = True)
-            global_cmvn (Optional[torch.nn.Module]): Optional GlobalCMVN module
-            use_dynamic_left_chunk (bool): whether use dynamic left chunk in
-                dynamic chunk training
         """
         super().__init__()
-        self._output_size = output_size
 
-        self.embed = Conv2dSubsampling2(
-            input_size, output_size, dropout_rate, RelPositionalEncoding(output_size, dropout_rate)
-        )
+        self.embed = Conv2dSubsampling2(input_size, output_size, RelPositionalEncoding(output_size))
 
-        self.normalize_before = normalize_before
         self.after_norm = nn.LayerNorm(output_size, eps=1e-5)
 
-    def output_size(self) -> int:
-        return self._output_size
+        activation = torch.nn.SiLU()
+
+        self.encoders = cast(
+            Sequence[ConformerEncoderLayer],
+            torch.nn.ModuleList([
+                ConformerEncoderLayer(
+                    output_size,
+                    RelPositionMultiHeadedAttention(attention_heads, output_size),
+                    PositionwiseFeedForward(output_size, linear_units, activation=activation),
+                    ConvolutionModule(output_size, activation),
+                )
+                for _ in range(num_blocks)
+            ]),
+        )
 
     def forward(self, xs: torch.Tensor, xs_lens: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Embed positions in tensor.
@@ -312,41 +316,5 @@ class BaseEncoder(nn.Module):
         # for cross attention with decoder later
         return xs, masks
 
-
-class ConformerEncoder(BaseEncoder):
-    """Conformer encoder module."""
-
-    def __init__(
-        self,
-        input_size: int,
-        output_size: int = 256,
-        attention_heads: int = 4,
-        linear_units: int = 2048,
-        num_blocks: int = 6,
-    ) -> None:
-        super().__init__(
-            input_size,
-            output_size,
-            attention_heads,
-            linear_units,
-            num_blocks,
-            dropout_rate,
-            normalize_before,
-            concat_after,
-        )
-
-        activation = nn.SiLU()
-
-        self.encoders = nn.ModuleList([
-            ConformerEncoderLayer(
-                output_size,
-                RelPositionMultiHeadedAttention(attention_heads, output_size, dropout_rate),
-                PositionwiseFeedForward(output_size, linear_units, dropout_rate, activation),
-                PositionwiseFeedForward(output_size, linear_units, dropout_rate, activation) if macaron_style else None,
-                ConvolutionModule(output_size, cnn_module_kernel, activation) if use_cnn_module else None,
-                dropout_rate,
-                normalize_before,
-                concat_after,
-            )
-            for _ in range(num_blocks)
-        ])
+    @patch_call(forward)
+    def __call__(self): ...

@@ -6,6 +6,8 @@ import triton.language as tl
 from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache
 from torch import nn
 
+from indextts.util import patch_call
+
 
 @dataclass
 class ForwardContext:
@@ -126,3 +128,6 @@ class Attention(nn.Module):
                 causal=True,
             )
         return o
+
+    @patch_call(forward)
+    def __call__(self): ...

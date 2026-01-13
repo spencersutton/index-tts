@@ -5,6 +5,7 @@ from torch import nn
 from torch.nn import functional as F
 
 from indextts.s2mel.modules.commons import sequence_mask
+from indextts.util import patch_call
 
 CHANNELS: Final = 512
 
@@ -31,3 +32,6 @@ class InterpolateRegulator(nn.Module):
 
         out = self.model(x).mT.contiguous()  # (B, T, C)
         return out * mask, ylens, None, None, None
+
+    @patch_call(forward)
+    def __call__(self): ...

@@ -4,6 +4,7 @@ from torch.nn import functional as F
 
 from indextts.s2mel.modules import commons
 from indextts.s2mel.modules.encodec import SConv1d
+from indextts.util import patch_call
 
 
 class LayerNorm(nn.Module):
@@ -19,6 +20,9 @@ class LayerNorm(nn.Module):
         x = x.transpose(1, -1)
         x = F.layer_norm(x, (self.channels,), self.gamma, self.beta, self.eps)
         return x.transpose(1, -1)
+
+    @patch_call(forward)
+    def __call__(self): ...
 
 
 class WN(nn.Module):
@@ -82,3 +86,6 @@ class WN(nn.Module):
             else:
                 output = output + res_skip_acts
         return output * x_mask
+
+    @patch_call(forward)
+    def __call__(self): ...

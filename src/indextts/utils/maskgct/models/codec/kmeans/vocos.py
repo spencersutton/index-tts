@@ -10,6 +10,8 @@ from typing import cast
 import torch
 from torch import nn
 
+from indextts.util import patch_call
+
 
 class ConvNeXtBlock(nn.Module):
     """ConvNeXt Block adapted from https://github.com/facebookresearch/ConvNeXt to 1D audio signal.
@@ -43,6 +45,9 @@ class ConvNeXtBlock(nn.Module):
 
         return residual + x
 
+    @patch_call(forward)
+    def __call__(self): ...
+
 
 class VocosBackbone(nn.Module):
     """
@@ -70,3 +75,6 @@ class VocosBackbone(nn.Module):
         for conv_block in self.convnext:
             x = conv_block(x)
         return self.final_layer_norm(x.mT)
+
+    @patch_call(forward)
+    def __call__(self): ...

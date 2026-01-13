@@ -24,9 +24,8 @@ class NormConv1d(nn.Module):
         self.conv: nn.Conv1d = weight_norm(nn.Conv1d(*args, **kwargs))
         self.norm = nn.Identity()
 
-    def forward(self, x) -> torch.Tensor:
-        x = self.conv(x)
-        return self.norm(x)
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.norm(self.conv(x))
 
     @patch_call(forward)
     def __call__(self) -> None: ...
@@ -40,10 +39,11 @@ class SConv1d(nn.Module):
     def __init__(self, in_channels: int, out_channels: int, kernel_size: int) -> None:
         super().__init__()
 
+        self.kernel_size = kernel_size
         self.conv = NormConv1d(in_channels, out_channels, kernel_size)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if x.shape[-1] > 1:
+        if self.kernel_size > 1:
             x = F.pad(x, (2, 2), "reflect")
         return self.conv(x)
 

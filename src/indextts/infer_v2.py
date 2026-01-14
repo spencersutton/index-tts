@@ -35,6 +35,7 @@ os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 CHECKPOINT_DIR = Path("checkpoints")
 SAMPLING_RATE = 22050
 MAX_AUDIO_LENGTH_SECONDS = 15
+TARGET_SAMPLING_RATE = 16000
 
 
 def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
@@ -385,9 +386,9 @@ class IndexTTS2:
                 torch.cuda.empty_cache()
             audio, sr = self._load_and_cut_audio(spk_audio_prompt, verbose)
             audio_22k: Tensor = torchaudio.transforms.Resample(sr, SAMPLING_RATE)(audio)
-            audio_16k: Tensor = torchaudio.transforms.Resample(sr, 16000)(audio)
+            audio_16k: Tensor = torchaudio.transforms.Resample(sr, TARGET_SAMPLING_RATE)(audio)
 
-            inputs = self.extract_features(audio_16k.tolist(), sampling_rate=16000, return_tensors="pt")
+            inputs = self.extract_features(audio_16k.tolist(), sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt")
             input_features = inputs["input_features"]
             attention_mask = inputs["attention_mask"]
             input_features = input_features.to(self.device)
@@ -398,7 +399,7 @@ class IndexTTS2:
             ref_mel = mel_fn(audio_22k.to(spk_cond_emb.device).float())
             ref_target_lengths = torch.tensor([ref_mel.size(2)], dtype=torch.long).to(ref_mel.device)
             feat = torchaudio.compliance.kaldi.fbank(
-                audio_16k.to(ref_mel.device), num_mel_bins=80, dither=0, sample_frequency=16000
+                audio_16k.to(ref_mel.device), num_mel_bins=80, dither=0, sample_frequency=TARGET_SAMPLING_RATE
             )
             feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
             style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
@@ -436,8 +437,10 @@ class IndexTTS2:
             if self.cache_emo_cond is not None:
                 self.cache_emo_cond = None
                 torch.cuda.empty_cache()
-            emo_audio, _ = self._load_and_cut_audio(emo_audio_prompt, verbose, sample_rate=16000)
-            emo_inputs = self.extract_features(emo_audio.tolist(), sampling_rate=16000, return_tensors="pt")
+            emo_audio, _ = self._load_and_cut_audio(emo_audio_prompt, verbose, sample_rate=TARGET_SAMPLING_RATE)
+            emo_inputs = self.extract_features(
+                emo_audio.tolist(), sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt"
+            )
             emo_input_features = emo_inputs["input_features"]
             emo_attention_mask = emo_inputs["attention_mask"]
             emo_input_features = emo_input_features.to(self.device)

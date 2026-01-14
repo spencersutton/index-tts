@@ -2,7 +2,7 @@ import os
 import random
 import time
 import warnings
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from functools import cache
 from pathlib import Path
 from subprocess import CalledProcessError
@@ -235,7 +235,7 @@ class IndexTTS2:
         self.cache_mel: Tensor | None = None
 
         # 进度引用显示（可选）
-        self.gr_progress = None
+        self.gr_progress: Callable[..., None] | None = None
         self.model_version = self.cfg.version if hasattr(self.cfg, "version") else None
 
     @torch.no_grad()

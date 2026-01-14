@@ -44,7 +44,7 @@ class MyModel(nn.Module):
 
 def load_checkpoint2(
     model, optimizer, path, load_only_params=True, ignore_modules=[], is_distributed=False, load_ema=False
-) -> nn.Module:
+) -> MyModel:
     state: dict[str, Any] = torch.load(path, map_location="cpu")
     params = state["net"]
     if load_ema and "ema" in state:

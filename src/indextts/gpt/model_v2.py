@@ -1,5 +1,5 @@
 import functools
-from typing import override
+from typing import Any, override
 
 import torch
 import torch.nn.functional as F
@@ -9,17 +9,27 @@ from transformers import GPT2Config, GPT2Model, GPT2PreTrainedModel, LogitsProce
 from transformers.generation.utils import GenerationMixin
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
+from indextts.accel import AccelInferenceEngine
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
 from indextts.util import patch_call
 
 
-def null_position_embeddings(range, dim) -> Tensor:
+def null_position_embeddings(range: Tensor, dim: int) -> Tensor:
     return torch.zeros((range.shape[0], range.shape[1], dim), device=range.device)
 
 
 class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
-    def __init__(self, config, gpt, text_pos_emb, embeddings, norm, linear, kv_cache: bool = False) -> None:
+    def __init__(
+        self,
+        config: GPT2Config,
+        gpt: GPT2Model,
+        text_pos_emb: "LearnedPositionEmbeddings",
+        embeddings: nn.Embedding,
+        norm: nn.Module,
+        linear: nn.Module,
+        kv_cache: bool = False,
+    ) -> None:
         super().__init__(config)
         # Note: the argument named `text_pos_emb` here actually represents the mel position embedding
         self.transformer = gpt
@@ -31,8 +41,8 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
 
         # Model parallel
         self.model_parallel = False
-        self.device_map = None
-        self.cached_mel_emb = None
+        self.device_map: object = None
+        self.cached_mel_emb: Tensor | None = None
 
     @override
     def prepare_inputs_for_generation(
@@ -42,7 +52,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         attention_mask: Tensor | None = None,
         inputs_embeds: Tensor | None = None,
         cache_position: Tensor | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> dict[str, transformers.Cache | Tensor | bool | None]:
         token_type_ids = kwargs.get("token_type_ids")  # usually None
         position_ids = kwargs.get("position_ids")
@@ -137,6 +147,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         if not return_dict:
             return (lm_logits, *transformer_outputs[1:])
 
+        assert not isinstance(transformer_outputs, tuple)
         return CausalLMOutputWithCrossAttentions(
             loss=None,
             logits=lm_logits,
@@ -151,7 +162,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
 
 
 class LearnedPositionEmbeddings(nn.Module):
-    def __init__(self, seq_len, model_dim, init: float = 0.02) -> None:
+    def __init__(self, seq_len: int, model_dim: int, init: float = 0.02) -> None:
         super().__init__()
         self.emb = nn.Embedding(seq_len, model_dim)
         # Initializing this way is standard for GPT-2
@@ -161,7 +172,7 @@ class LearnedPositionEmbeddings(nn.Module):
         sl = x.shape[1]
         return self.emb(torch.arange(0, sl, device=x.device))
 
-    def get_fixed_embedding(self, ind, dev) -> Tensor:
+    def get_fixed_embedding(self, ind: int, dev: torch.device) -> Tensor:
         return self.emb(torch.tensor([ind], device=dev)).unsqueeze(0)
 
     @patch_call(forward)
@@ -285,8 +296,8 @@ class UnifiedVoice(nn.Module):
         for module in embeddings:
             module.weight.data.normal_(mean=0.0, std=0.02)
 
-        self.use_accel = use_accel
-        self.accel_engine = None  # Will be initialized in post_init_gpt2_config
+        self.use_accel: bool = use_accel
+        self.accel_engine: AccelInferenceEngine | None = None  # Will be initialized in post_init_gpt2_config
 
     def post_init_gpt2_config(self, use_deepspeed: bool = False, kv_cache: bool = False, half: bool = False) -> None:
         seq_length = self.max_mel_tokens + self.max_text_tokens + 2
@@ -402,20 +413,21 @@ class UnifiedVoice(nn.Module):
 
         gpt_out = self.gpt(inputs_embeds=emb, return_dict=True, output_attentions=False)
 
+        assert not isinstance(gpt_out, tuple) and gpt_out.last_hidden_state is not None
         offset = speech_conditioning_inputs.shape[1]
         enc = gpt_out.last_hidden_state[:, offset:]
         enc = self.final_norm(enc)
 
         return enc[:, : first_inputs.shape[1]], enc[:, -second_inputs.shape[1] :]
 
-    def get_conditioning(self, speech_conditioning_input, cond_mel_lengths=None):
+    def get_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths: Tensor):
         speech_conditioning_input, mask = self.conditioning_encoder(
             speech_conditioning_input.transpose(1, 2), cond_mel_lengths
         )  # (b, s, d), (b, 1, s)
         conds_mask = self.cond_mask_pad(mask.squeeze(1))
         return self.perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 32, d)
 
-    def get_emo_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths=None):
+    def get_emo_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths: Tensor):
         speech_conditioning_input, mask = self.emo_conditioning_encoder(
             speech_conditioning_input.transpose(1, 2), cond_mel_lengths
         )  # (b, s, d), (b, 1, s)
@@ -544,18 +556,16 @@ class UnifiedVoice(nn.Module):
 
     def inference_speech(
         self,
-        speech_condition,
-        text_inputs,
-        emo_speech_condition=None,
-        cond_lengths=None,
-        emo_cond_lengths=None,
-        emo_vec=None,
-        use_speed: bool = False,
-        input_tokens=None,
+        speech_condition: Tensor,
+        text_inputs: torch.Tensor,
+        emo_speech_condition: torch.Tensor | None = None,
+        cond_lengths: torch.Tensor | None = None,
+        emo_cond_lengths: torch.Tensor | None = None,
+        emo_vec: torch.Tensor | None = None,
+        input_tokens: torch.Tensor | None = None,
         num_return_sequences: int = 1,
-        max_generate_length=None,
-        typical_mass: float = 0.9,
-        **hf_generate_kwargs,
+        max_generate_length: int | None = None,
+        **hf_generate_kwargs: object,
     ):
         """
         Args:
@@ -637,6 +647,7 @@ class UnifiedVoice(nn.Module):
                 tts_text_pos_embedding=self.inference_model.text_pos_embedding,  # text_pos_embedding layer
             )
         else:
+            assert isinstance(logits_processor, transformers.generation.logits_process.LogitsProcessorList)
             output = self.inference_model.generate(
                 inputs,
                 bos_token_id=self.start_mel_token,
@@ -654,17 +665,17 @@ class UnifiedVoice(nn.Module):
         output.sequences = output.sequences[:, trunc_index:]
         return output, speech_conditioning_latent
 
-    def get_emovec(self, emo_speech_conditioning_latent, emo_cond_lengths) -> Tensor:
+    def get_emovec(self, emo_speech_conditioning_latent: Tensor, emo_cond_lengths: Tensor) -> Tensor:
         emo_vec_syn_ori = self.get_emo_conditioning(emo_speech_conditioning_latent.transpose(1, 2), emo_cond_lengths)
         emo_vec_syn = self.emovec_layer(emo_vec_syn_ori)
         return self.emo_layer(emo_vec_syn)
 
     def merge_emovec(
         self,
-        speech_conditioning_latent,
-        emo_speech_conditioning_latent,
-        cond_lengths,
-        emo_cond_lengths,
+        speech_conditioning_latent: Tensor,
+        emo_speech_conditioning_latent: Tensor,
+        cond_lengths: Tensor,
+        emo_cond_lengths: Tensor,
         alpha: float = 1.0,
     ):
         emo_vec = self.get_emovec(emo_speech_conditioning_latent, emo_cond_lengths)

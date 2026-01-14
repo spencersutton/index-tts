@@ -174,7 +174,7 @@ class IndexTTS2:
         assert isinstance(self.cfg.s2mel_checkpoint, str)
         s2mel_path = model_dir / self.cfg.s2mel_checkpoint
         s2mel = MyModel()
-        s2mel = cast(MyModel, load_checkpoint2(s2mel, s2mel_path))
+        s2mel = load_checkpoint2(s2mel, s2mel_path)
         self.s2mel = s2mel.to(self.device)
         self.s2mel.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
 

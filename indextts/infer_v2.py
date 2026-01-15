@@ -3,7 +3,7 @@ import random
 import time
 import warnings
 from collections.abc import Callable, Sequence
-from functools import cache
+from functools import cache, cached_property
 from pathlib import Path
 from subprocess import CalledProcessError
 from typing import Any, cast
@@ -77,6 +77,17 @@ def get_silence_interval(size: int, interval_silence: int = 200) -> Tensor:
 
 
 class IndexTTS2:
+    
+
+    @cached_property[RepCodec]
+    def semantic_codec(self):
+        model = RepCodec().eval()
+        path = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
+        safetensors.torch.load_model(model, path, strict=False)
+        model = model.to(self.device).eval()
+        print(f">> semantic_codec weights restored from: {path}")
+        return model
+
     def __init__(
         self,
         cfg_path: Path = CHECKPOINT_DIR / "config.yaml",
@@ -165,28 +176,11 @@ class IndexTTS2:
         self.semantic_mean = self.semantic_mean.to(self.device)
         self.semantic_std = self.semantic_std.to(self.device)
 
-        semantic_codec = RepCodec().eval()
-        semantic_code_ckpt = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
-        safetensors.torch.load_model(semantic_codec, semantic_code_ckpt, strict=False)
-        self.semantic_codec = semantic_codec.to(self.device)
-        self.semantic_codec.eval()
-        print(f">> semantic_codec weights restored from: {semantic_code_ckpt}")
-
-        assert isinstance(self.cfg.s2mel_checkpoint, str)
-        s2mel_path = model_dir / self.cfg.s2mel_checkpoint
-        s2mel = MyModel()
-        s2mel = load_checkpoint2(s2mel, s2mel_path)
-        self.s2mel = s2mel.to(self.device)
-        self.s2mel.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
-
         # Enable torch.compile optimization if requested
         if use_torch_compile:
             print(">> Enabling torch.compile optimization")
             self.s2mel.enable_torch_compile()
             print(">> torch.compile optimization enabled successfully")
-
-        self.s2mel.eval()
-        print(">> s2mel weights restored from:", s2mel_path)
 
         # load campplus_model
         campplus_ckpt_path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
@@ -238,6 +232,16 @@ class IndexTTS2:
         # 进度引用显示（可选）
         self.gr_progress: Callable[..., None] | None = None
         self.model_version = self.cfg.version if hasattr(self.cfg, "version") else None
+
+    @cached_property[MyModel]
+    def s2mel(self):
+        assert isinstance(self.cfg.s2mel_checkpoint, str)
+        path = Path(self.cfg.s2mel_checkpoint)
+        model = load_checkpoint2(MyModel(), path).to(self.device)
+        model.cfm.estimator.setup_caches(max_batch_size=1, max_seq_length=8192)
+        model.eval()
+        print(">> s2mel weights restored from:", path)
+        return model
 
     @torch.no_grad()
     def get_emb(self, input_features: Tensor, attention_mask: Tensor) -> Tensor:

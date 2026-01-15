@@ -15,25 +15,6 @@ def null_position_embeddings(range, dim):
     return torch.zeros((range.shape[0], range.shape[1], dim), device=range.device)
 
 
-class ResBlock(nn.Module):
-    """
-    Basic residual convolutional block that uses GroupNorm.
-    """
-
-    def __init__(self, chan) -> None:
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Conv1d(chan, chan, kernel_size=3, padding=1),
-            nn.GroupNorm(chan // 8, chan),
-            nn.ReLU(),
-            nn.Conv1d(chan, chan, kernel_size=3, padding=1),
-            nn.GroupNorm(chan // 8, chan),
-        )
-
-    def forward(self, x):
-        return F.relu(self.net(x) + x)
-
-
 class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     def __init__(self, config, gpt, text_pos_emb, embeddings, norm, linear, kv_cache=False) -> None:
         super().__init__(config)

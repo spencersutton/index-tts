@@ -245,12 +245,10 @@ class IndexTTS2:
 
     @torch.no_grad()
     def get_emb(self, input_features: Tensor, attention_mask: Tensor) -> Tensor:
-        vq_emb = self.semantic_model(  # type: ignore
-            input_features=input_features,  # type: ignore
-            attention_mask=attention_mask,  # type: ignore
-            output_hidden_states=True,  # type: ignore
+        vq_emb = self.semantic_model(
+            input_features=input_features, attention_mask=attention_mask, output_hidden_states=True
         )
-        feat = vq_emb.hidden_states[17]  # (B, T, C) # type: ignore
+        feat = vq_emb.hidden_states[17]  # (B, T, C)
         return (feat - self.semantic_mean) / self.semantic_std
 
     def _set_gr_progress(self, value: float, desc: str) -> None:

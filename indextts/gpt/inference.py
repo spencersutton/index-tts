@@ -6,7 +6,6 @@ from torch import Tensor, nn
 from transformers import GPT2Config, GPT2Model, GPT2PreTrainedModel
 from transformers.generation.utils import GenerationMixin
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
-from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
 
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.util import patch_call
@@ -32,30 +31,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         self.lm_head = nn.Sequential(norm, linear)
         self.kv_cache = kv_cache
 
-        # Model parallel
-        self.model_parallel = False
-        self.device_map: object = None
         self.cached_mel_emb: Tensor | None = None
-
-    def parallelize(self, device_map: object = None) -> None:
-        self.device_map = (
-            get_device_map(len(self.transformer.h), range(max(1, torch.cuda.device_count())))
-            if device_map is None
-            else device_map
-        )
-        assert_device_map(self.device_map, len(self.transformer.h))
-        self.transformer.parallelize(self.device_map)
-        self.lm_head = self.lm_head.to(self.transformer.first_device)
-        self.model_parallel = True
-
-    def deparallelize(self) -> None:
-        self.transformer.deparallelize()
-        self.transformer = self.transformer.to("cpu")
-        self.lm_head = self.lm_head.to("cpu")
-        self.model_parallel = False
-        torch.cuda.empty_cache()
-        if torch.backends.mps.is_available():
-            torch.mps.empty_cache()
 
     @override
     def prepare_inputs_for_generation(
@@ -146,14 +122,6 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             return_dict=return_dict,
         )
         hidden_states = transformer_outputs[0]
-
-        # Set device for model parallelism
-        if self.model_parallel:
-            if torch.backends.mps.is_available():
-                self.to(self.transformer.first_device)
-            else:
-                torch.cuda.set_device(self.transformer.first_device)
-            hidden_states = hidden_states.to(self.lm_head.weight.device)
 
         lm_logits: Tensor = self.lm_head(hidden_states)
 

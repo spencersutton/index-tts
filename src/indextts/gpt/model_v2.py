@@ -262,13 +262,6 @@ class UnifiedVoice(nn.Module):
 
         return enc[:, : first_inputs.shape[1]], enc[:, -second_inputs.shape[1] :]
 
-    def get_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths: Tensor):
-        speech_conditioning_input, mask = self.conditioning_encoder(
-            speech_conditioning_input.transpose(1, 2), cond_mel_lengths
-        )  # (b, s, d), (b, 1, s)
-        conds_mask = self.cond_mask_pad(mask.squeeze(1))
-        return self.perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 32, d)
-
     def get_emo_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths: Tensor):
         speech_conditioning_input, mask = self.emo_conditioning_encoder(
             speech_conditioning_input.transpose(1, 2), cond_mel_lengths
@@ -428,7 +421,10 @@ class UnifiedVoice(nn.Module):
         if emo_cond_lengths is None:
             emo_cond_lengths = torch.tensor([emo_speech_condition.shape[-1]], device=speech_condition.device)
 
-        speech_conditioning_latent = self.get_conditioning(speech_condition.transpose(1, 2), cond_lengths)
+        speech_conditioning_input, mask = self.conditioning_encoder(speech_condition, cond_lengths)
+        conds_mask = self.cond_mask_pad(mask.squeeze(1))
+        speech_conditioning_latent = self.perceiver_encoder(speech_conditioning_input, conds_mask)
+
         if emo_vec is None:
             print("compute emo vec")
             emo_vec = self.get_emo_conditioning(emo_speech_condition.transpose(1, 2), emo_cond_lengths)

@@ -1,5 +1,5 @@
 import functools
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import torch
 import torch.nn.functional as F
@@ -400,7 +400,7 @@ class UnifiedVoice(nn.Module):
         input_tokens: torch.Tensor | None = None,
         num_return_sequences: int = 1,
         max_generate_length: int | None = None,
-        **hf_generate_kwargs: object,
+        **hf_generate_kwargs: Any,
     ):
         """
         Args:
@@ -465,7 +465,6 @@ class UnifiedVoice(nn.Module):
             inputs = torch.cat([input_ids, input_tokens], dim=1)
             attention_mask = F.pad(attention_mask, (0, input_tokens.shape[1]), value=1)
         trunc_index = inputs.shape[1]
-        logits_processor = LogitsProcessorList()
         max_length = (
             (trunc_index + self.max_mel_tokens - 1)
             if max_generate_length is None
@@ -478,13 +477,14 @@ class UnifiedVoice(nn.Module):
                 inputs,  # fake input_ids (all 1s + start_mel_token)
                 max_new_tokens=max_length - trunc_index,
                 attention_mask=attention_mask,
-                temperature=hf_generate_kwargs.get("temperature", 1),
+                temperature=float(hf_generate_kwargs.get("temperature", 1)),
                 stop_tokens=[self.stop_mel_token],
                 tts_embeddings=inputs_embeds,  # [pad][cond][text] embeddings (87 tokens, NO start_mel_token)
                 tts_mel_embedding=self.inference_model.embeddings,  # mel_embedding layer
                 tts_text_pos_embedding=self.inference_model.text_pos_embedding,  # text_pos_embedding layer
             )
         else:
+            logits_processor = LogitsProcessorList()
             assert isinstance(logits_processor, transformers.generation.logits_process.LogitsProcessorList)
             output = self.inference_model.generate(
                 inputs,

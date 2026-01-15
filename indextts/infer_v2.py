@@ -76,6 +76,14 @@ def get_silence_interval(size: int, interval_silence: int = 200) -> Tensor:
     return torch.zeros(size, (SAMPLING_RATE * interval_silence) // 1000)
 
 
+def find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> Tensor:
+    query_vector = query_vector.float()
+    matrix = matrix.float()
+
+    similarities = F.cosine_similarity(query_vector, matrix, dim=1)
+    return torch.argmax(similarities)
+
+
 class IndexTTS2:
     
 
@@ -243,7 +251,7 @@ class IndexTTS2:
         print(">> s2mel weights restored from:", path)
         return model
 
-    @torch.no_grad()
+    @torch.inference_mode()
     def get_emb(self, input_features: Tensor, attention_mask: Tensor) -> Tensor:
         vq_emb = self.semantic_model(
             input_features=input_features, attention_mask=attention_mask, output_hidden_states=True
@@ -508,7 +516,7 @@ class IndexTTS2:
                 print("text_token_syms is same as segment tokens", text_token_syms == sent)
 
             m_start_time = time.perf_counter()
-            with torch.no_grad():
+            with torch.inference_mode():
                 with torch.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype):
                     emovec = self.gpt.merge_emovec(
                         spk_cond_emb,
@@ -650,11 +658,3 @@ class IndexTTS2:
             wav_data = wav.type(torch.int16)
             wav_data = wav_data.numpy().T
             yield (SAMPLING_RATE, wav_data)
-
-
-def find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> Tensor:
-    query_vector = query_vector.float()
-    matrix = matrix.float()
-
-    similarities = F.cosine_similarity(query_vector, matrix, dim=1)
-    return torch.argmax(similarities)

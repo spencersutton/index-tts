@@ -1,5 +1,5 @@
 import functools
-from typing import Any, override
+from typing import TYPE_CHECKING, Any, override
 
 import torch
 import torch.nn.functional as F
@@ -9,7 +9,8 @@ from transformers import GPT2Config, GPT2Model, GPT2PreTrainedModel, LogitsProce
 from transformers.generation.utils import GenerationMixin
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
-from indextts.accel import AccelInferenceEngine
+if TYPE_CHECKING:
+    from indextts.accel import AccelInferenceEngine
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
 from indextts.util import patch_call

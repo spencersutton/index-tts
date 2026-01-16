@@ -1,5 +1,5 @@
 import functools
-from typing import TYPE_CHECKING, Any, assert_type
+from typing import TYPE_CHECKING, Any
 
 import torch
 import torch.nn.functional as F
@@ -14,14 +14,14 @@ from indextts.config import (
     STOP_MEL_TOKEN,
     STOP_TEXT_TOKEN,
 )
+from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.inference import GPT2InferenceModel
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
+from indextts.gpt.perceiver import PerceiverResampler
+from indextts.util import patch_call, unwrap
 
 if TYPE_CHECKING:
     from indextts.accel import AccelInferenceEngine
-from indextts.gpt.conformer_encoder import ConformerEncoder
-from indextts.gpt.perceiver import PerceiverResampler
-from indextts.util import patch_call
 
 
 def null_position_embeddings(range: Tensor, dim: int) -> Tensor:
@@ -255,23 +255,6 @@ class UnifiedVoice(nn.Module):
                 text_input_tokens[b, actual_end:] = STOP_TEXT_TOKEN
         return text_input_tokens
 
-    def get_logits(
-        self, speech_conditioning_inputs: Tensor, first_inputs: Tensor, second_inputs: Tensor | None = None
-    ) -> tuple[Tensor, Tensor]:
-        if second_inputs is not None:
-            emb = torch.cat([speech_conditioning_inputs, first_inputs, second_inputs], dim=1)
-        else:
-            emb = torch.cat([speech_conditioning_inputs, first_inputs], dim=1)
-
-        gpt_out = self.gpt(inputs_embeds=emb, return_dict=True, output_attentions=False)
-
-        assert not isinstance(gpt_out, tuple) and gpt_out.last_hidden_state is not None
-        offset = speech_conditioning_inputs.shape[1]
-        enc = gpt_out.last_hidden_state[:, offset:]
-        enc = self.final_norm(enc)
-
-        return enc[:, : first_inputs.shape[1]], enc[:, -second_inputs.shape[1] :]
-
     def get_emo_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths: Tensor) -> Tensor:
         speech_conditioning_input, mask = self.emo_conditioning_encoder(
             speech_conditioning_input.transpose(1, 2), cond_mel_lengths
@@ -305,37 +288,38 @@ class UnifiedVoice(nn.Module):
         If return_latent is specified, loss & logits are not computed or returned. Only the predicted latents are returned.
         """
 
-        if emo_vec is None:
-            emo_vec_syn_ori = self.get_emo_conditioning(
-                emo_speech_conditioning_latent.transpose(1, 2), emo_cond_mel_lengths
-            )
-            emo_vec_syn = self.emovec_layer(emo_vec_syn_ori)
-            emo_vec = self.emo_layer(emo_vec_syn)
-
         text_inputs = self.set_text_padding(text_inputs, text_lengths)
         text_inputs = F.pad(text_inputs, (0, 1), value=STOP_TEXT_TOKEN)
 
         mel_codes = self.set_mel_padding(mel_codes, mel_codes_lengths)
         mel_codes = F.pad(mel_codes, (0, 1), value=STOP_MEL_TOKEN)
 
-        duration_emb = self.speed_emb(torch.zeros_like(use_speed))
-        duration_emb_half = self.speed_emb(torch.ones_like(use_speed))
         conds = torch.cat(
             (
                 speech_conditioning_latent + emo_vec.unsqueeze(1),
-                duration_emb_half.unsqueeze(1),
-                duration_emb.unsqueeze(1),
+                self.speed_emb(torch.ones_like(use_speed)).unsqueeze(1),
+                self.speed_emb(torch.zeros_like(use_speed)).unsqueeze(1),
             ),
             1,
         )
         text_inputs = F.pad(text_inputs, (1, 0), value=START_TEXT_TOKEN)
-        text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
         mel_codes = F.pad(mel_codes, (1, 0), value=START_MEL_TOKEN)
 
-        mel_emb: Tensor = self.mel_embedding(mel_codes)
+        mel_emb = self.mel_embedding(mel_codes)
         mel_emb += self.mel_pos_embedding.forward(mel_codes)
 
-        _text_logits, mel_logits = self.get_logits(conds, text_emb, mel_emb)
+        text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
+
+        gpt_out = self.gpt(
+            inputs_embeds=torch.cat([conds, text_emb, mel_emb], dim=1), return_dict=True, output_attentions=False
+        )
+
+        offset = conds.shape[1]
+        enc = unwrap(gpt_out.last_hidden_state)[:, offset:]
+        enc = self.final_norm(enc)
+
+        mel_logits = enc[:, -mel_emb.shape[1] :]
+
         # Despite the name, these are not logits. Strip off the two tokens added by this forward pass.
         return mel_logits[:, :-2]
 

@@ -36,7 +36,7 @@ class AccelInferenceEngine:
     def __init__(
         self,
         model: GPT2AccelModel,
-        lm_head: nn.Module,
+        lm_head: nn.Sequential,
         num_layers: int,
         num_heads: int,
         head_dim: int,
@@ -56,7 +56,7 @@ class AccelInferenceEngine:
             use_cuda_graph: Whether to use CUDA Graph for decode optimization
         """
         self.model: GPT2AccelModel = model
-        self.lm_head: nn.Module = lm_head
+        self.lm_head: nn.Sequential = lm_head
         self.block_size = block_size
         self.num_blocks = num_blocks
         self.use_cuda_graph = use_cuda_graph and torch.cuda.is_available()

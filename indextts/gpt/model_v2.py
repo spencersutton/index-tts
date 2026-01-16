@@ -1,5 +1,5 @@
 import functools
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, assert_type
 
 import torch
 import torch.nn.functional as F

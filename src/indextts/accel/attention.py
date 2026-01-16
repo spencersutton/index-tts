@@ -100,7 +100,7 @@ class Attention(nn.Module):
         self.num_kv_heads = num_kv_heads
         self.k_cache = self.v_cache = torch.tensor([])
 
-    def forward(self, q: Tensor, k: Tensor, v: Tensor):
+    def forward(self, q: Tensor, k: Tensor, v: Tensor) -> Tensor:
         context = get_forward_context()
         k_cache, v_cache = self.k_cache, self.v_cache
 

@@ -124,7 +124,7 @@ class AccelInferenceEngine:
 
     def _capture_cuda_graphs(
         self,
-        tts_mel_embedding: LearnedPositionEmbeddings | None = None,
+        tts_mel_embedding: nn.Embedding | None = None,
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,
     ) -> None:
         print("Capturing CUDA graphs for decode optimization...")
@@ -209,7 +209,7 @@ class AccelInferenceEngine:
         input_ids: Tensor,
         positions: Tensor,
         context: ForwardContext,
-        tts_mel_embedding: LearnedPositionEmbeddings | None = None,
+        tts_mel_embedding: nn.Embedding | None = None,
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,
     ) -> Tensor:
         bs = input_ids.size(0)
@@ -274,7 +274,7 @@ class AccelInferenceEngine:
         stop_tokens: list[int] | None = None,
         attention_mask: Tensor | None = None,
         tts_embeddings: Tensor | None = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
-        tts_mel_embedding: LearnedPositionEmbeddings | None = None,  # TTS: mel_embedding layer
+        tts_mel_embedding: nn.Embedding | None = None,  # TTS: mel_embedding layer
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,  # TTS: text_pos_embedding layer
     ) -> Tensor:
         """

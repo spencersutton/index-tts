@@ -53,6 +53,8 @@ def build_hf_gpt_transformer(
 
 
 class UnifiedVoice(nn.Module):
+    inference_model: GPT2InferenceModel
+
     def __init__(
         self,
         layers: int = 8,

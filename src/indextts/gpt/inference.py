@@ -12,6 +12,8 @@ from indextts.util import patch_call
 
 
 class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
+    embeddings: nn.Embedding
+
     def __init__(
         self,
         config: GPT2Config,

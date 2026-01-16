@@ -36,7 +36,7 @@ class SConv1d(nn.Module):
     Conv1d layer with built-in handling of asymmetric padding and normalization.
     """
 
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: int) -> None:
+    def __init__(self, in_channels: int, out_channels: int, kernel_size: int = 1) -> None:
         super().__init__()
 
         self.kernel_size = kernel_size

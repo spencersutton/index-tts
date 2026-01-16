@@ -1,3 +1,5 @@
+from typing import cast
+
 import torch
 import transformers
 from torch import Tensor, nn
@@ -9,6 +11,9 @@ from indextts.accel.attention import Attention
 
 
 class GPT2AccelAttention(nn.Module):
+    c_attn: Conv1D
+    c_proj: Conv1D
+
     def __init__(self, config, layer_idx=None) -> None:
         super().__init__()
         self.config = config
@@ -44,7 +49,7 @@ class GPT2AccelAttention(nn.Module):
         self.resid_dropout = nn.Dropout(config.resid_pdrop)
 
         scale = (self.head_dim**-0.5) if self.scale_attn_weights else 1.0
-        self.accel_attn = Attention(self.num_heads, self.head_dim, scale, self.num_heads)
+        self.accel_attn: Attention = Attention(self.num_heads, self.head_dim, scale, self.num_heads)
 
     def forward(
         self,
@@ -62,7 +67,7 @@ class GPT2AccelAttention(nn.Module):
         if encoder_hidden_states is not None:
             raise NotImplementedError("Cross attention not supported in accel mode")
 
-        qkv = self.c_attn(hidden_states)
+        qkv = cast(Tensor, self.c_attn(hidden_states))
         query, key, value = qkv.split(self.split_size, dim=2)
 
         # [B, T, H*D] -> [B, H, T, D]
@@ -96,20 +101,18 @@ class GPT2AccelAttention(nn.Module):
         attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
 
         attn_output = self.c_proj(attn_output)
-        attn_output = self.resid_dropout(attn_output)
+        attn_output = cast(Tensor, self.resid_dropout(attn_output))
 
-        outputs = (attn_output, None)
         if output_attentions:
-            outputs += (None,)
+            return (attn_output, None, None)
+        return (attn_output, None)
 
-        return outputs
-
-    def _split_heads(self, tensor: Tensor, num_heads, head_dim):
+    def _split_heads(self, tensor: Tensor, num_heads: int, head_dim: int) -> Tensor:
         new_shape = (*tensor.size()[:-1], num_heads, head_dim)
         tensor = tensor.view(new_shape)
         return tensor.permute(0, 2, 1, 3)  # (batch, head, seq_length, head_features)
 
-    def _merge_heads(self, tensor: Tensor, num_heads, head_dim):
+    def _merge_heads(self, tensor: Tensor, num_heads: int, head_dim: int) -> Tensor:
         tensor = tensor.permute(0, 2, 1, 3).contiguous()
         new_shape = (*tensor.size()[:-2], num_heads * head_dim)
         return tensor.view(new_shape)

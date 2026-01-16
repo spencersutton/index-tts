@@ -110,6 +110,8 @@ class PerceiverResampler(nn.Module):
 
 
 class Attention(nn.Module):
+    to_kv: nn.Linear
+
     def __init__(self, dim: int, heads: int = 8) -> None:
         super().__init__()
         self.heads = heads

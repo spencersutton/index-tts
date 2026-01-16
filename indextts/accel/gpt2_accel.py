@@ -143,7 +143,7 @@ class GPT2AccelModel(GPT2Model):
         output_hidden_states: bool | None = None,
         return_dict: bool | None = None,
         **kwargs,
-    ) -> tuple | BaseModelOutputWithPastAndCrossAttentions:
+    ) -> tuple[Tensor, ...] | BaseModelOutputWithPastAndCrossAttentions:
         if inputs_embeds is not None:
             hidden_states = inputs_embeds
 

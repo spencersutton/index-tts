@@ -55,8 +55,8 @@ class AccelInferenceEngine:
             num_blocks: Total number of KV cache blocks
             use_cuda_graph: Whether to use CUDA Graph for decode optimization
         """
-        self.model = model
-        self.lm_head = lm_head
+        self.model: GPT2AccelModel = model
+        self.lm_head: nn.Module = lm_head
         self.block_size = block_size
         self.num_blocks = num_blocks
         self.use_cuda_graph = use_cuda_graph and torch.cuda.is_available()
@@ -160,13 +160,14 @@ class AccelInferenceEngine:
                 assert tts_text_pos_embedding is not None
                 emb = tts_mel_embedding(input_ids[:bs])
                 pos_clamped = torch.clamp(positions[:bs], min=0)
-                pos_emb = tts_text_pos_embedding.emb(pos_clamped)
+                pos_emb: Tensor = tts_text_pos_embedding.emb(pos_clamped)
                 inputs_embeds_buffer[:bs] = emb + pos_emb
                 out = self.model(
                     inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True
                 ).last_hidden_state
             else:
                 out = self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True).last_hidden_state
+            assert out is not None
             outputs[:bs] = out.squeeze(1) if out.dim() == 3 else out
 
             with torch.cuda.graph(graph, self.graph_pool):
@@ -175,13 +176,14 @@ class AccelInferenceEngine:
                     assert tts_text_pos_embedding is not None
                     emb = tts_mel_embedding(input_ids[:bs])
                     pos_clamped = torch.clamp(positions[:bs], min=0)
-                    pos_emb = tts_text_pos_embedding.emb(pos_clamped)
+                    pos_emb: Tensor = tts_text_pos_embedding.emb(pos_clamped)
                     inputs_embeds_buffer[:bs] = emb + pos_emb
                     out = self.model(
                         inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True
                     ).last_hidden_state
                 else:
                     out = self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True).last_hidden_state
+                assert out is not None
                 outputs[:bs] = out.squeeze(1) if out.dim() == 3 else out
 
             if self.graph_pool is None:
@@ -224,6 +226,7 @@ class AccelInferenceEngine:
                 out = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True).last_hidden_state
             else:
                 out = self.model(input_ids=input_ids.unsqueeze(1), return_dict=True).last_hidden_state
+            assert out is not None
             return out.squeeze(1) if out.dim() == 3 else out
 
         graph_bs = next((x for x in self.graph_bs if x >= bs), None)
@@ -238,6 +241,7 @@ class AccelInferenceEngine:
                 out = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True).last_hidden_state
             else:
                 out = self.model(input_ids=input_ids.unsqueeze(1), return_dict=True).last_hidden_state
+            assert out is not None
             return out.squeeze(1) if out.dim() == 3 else out
 
         graph = self.graphs[graph_bs]
@@ -270,7 +274,7 @@ class AccelInferenceEngine:
         stop_tokens: list[int] | None = None,
         attention_mask: Tensor | None = None,
         tts_embeddings: Tensor | None = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
-        tts_mel_embedding: nn.Embedding | None = None,  # TTS: mel_embedding layer
+        tts_mel_embedding: LearnedPositionEmbeddings | None = None,  # TTS: mel_embedding layer
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,  # TTS: text_pos_embedding layer
     ) -> Tensor:
         """
@@ -368,6 +372,7 @@ class AccelInferenceEngine:
                 input_ids=input_ids, attention_mask=attention_mask, return_dict=True
             ).last_hidden_state
 
+        assert hidden_states is not None
         if is_varlen_batch:
             context = get_forward_context()
             assert context.cu_seqlens_q is not None
@@ -378,12 +383,9 @@ class AccelInferenceEngine:
 
         reset_forward_context()
 
-        if self.lm_head is not None:
-            if last_hidden.dtype != next(self.lm_head.parameters()).dtype:
-                last_hidden = last_hidden.to(next(self.lm_head.parameters()).dtype)
-            logits = self.lm_head(last_hidden)  # [batch_size, vocab_size]
-        else:
-            logits = self.model.compute_logits(last_hidden)  # [batch_size, vocab_size]
+        if last_hidden.dtype != next(self.lm_head.parameters()).dtype:
+            last_hidden = last_hidden.to(next(self.lm_head.parameters()).dtype)
+        logits = self.lm_head(last_hidden)  # [batch_size, vocab_size]
 
         temperatures = self._prepare_sample(sequences, temperature)
         if temperature > 0:
@@ -431,10 +433,7 @@ class AccelInferenceEngine:
             )
 
             # Get logits
-            if self.lm_head is not None:
-                logits = self.lm_head(hidden_states)  # [batch_size, vocab_size]
-            else:
-                logits = self.model.compute_logits(hidden_states)  # [batch_size, vocab_size]
+            logits = self.lm_head(hidden_states)  # [batch_size, vocab_size]
 
             reset_forward_context()
 

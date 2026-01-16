@@ -1,5 +1,6 @@
 
 import re
+import sys
 import traceback
 import warnings
 from functools import lru_cache
@@ -119,11 +120,10 @@ class TextNormalizer:
         return bool(re.search(TextNormalizer.PINYIN_TONE_PATTERN, s, re.IGNORECASE))
 
     def load(self) -> None:
-        import platform
 
         if self.zh_normalizer is not None and self.en_normalizer is not None:
             return
-        if platform.system() != "Linux":  # Mac and Windows
+        if sys.platform != "linux":  # Mac and Windows
             from wetext import Normalizer
 
             self.zh_normalizer = Normalizer(remove_erhua=False, lang="zh", operator="tn")

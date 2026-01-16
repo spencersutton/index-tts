@@ -5,6 +5,8 @@ from indextts.util import patch_call
 
 
 class LearnedPositionEmbeddings(nn.Module):
+    emb: nn.Embedding
+
     def __init__(self, seq_len: int, model_dim: int, init: float = 0.02) -> None:
         super().__init__()
         self.emb = nn.Embedding(seq_len, model_dim)

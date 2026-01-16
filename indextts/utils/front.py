@@ -485,7 +485,13 @@ class TextTokenizer:
     def tokenize(self, text: str) -> list[str]:
         return self.encode(text, out_type=str)
 
-    def encode(self, text: str, **kwargs: Any) -> list[int]:
+    @overload
+    def encode(self, text: str, *, out_type: type[str], **kwargs: Any) -> list[str]: ...
+
+    @overload
+    def encode(self, text: str, *, out_type: type[int], **kwargs: Any) -> list[int]: ...
+
+    def encode(self, text: str, **kwargs: Any) -> list[int] | list[str]:
         if len(text) == 0:
             return []
         if len(text.strip()) == 1:

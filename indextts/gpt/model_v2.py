@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any
 
 import torch
 import torch.nn.functional as F
-import transformers
 from torch import Tensor, nn
 from transformers import GPT2Config, GPT2Model, LogitsProcessorList
 
@@ -173,7 +172,6 @@ class UnifiedVoice(nn.Module):
                 accel_gpt = accel_gpt.half().cuda()
             else:
                 accel_gpt = accel_gpt.cuda()
-            assert accel_gpt is not None
             accel_gpt.eval()
 
             lm_head_with_norm = nn.Sequential(self.final_norm, self.mel_head)
@@ -487,7 +485,6 @@ class UnifiedVoice(nn.Module):
             )
         else:
             logits_processor = LogitsProcessorList()
-            assert isinstance(logits_processor, transformers.generation.logits_process.LogitsProcessorList)
             output = self.inference_model.generate(
                 inputs,
                 bos_token_id=self.start_mel_token,

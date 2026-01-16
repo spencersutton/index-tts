@@ -14,7 +14,7 @@ class GPT2AccelAttention(nn.Module):
     c_attn: Conv1D
     c_proj: Conv1D
 
-    def __init__(self, config, layer_idx=None) -> None:
+    def __init__(self, config: transformers.PretrainedConfig, layer_idx: int | None = None) -> None:
         super().__init__()
         self.config = config
         self.layer_idx = layer_idx
@@ -54,15 +54,15 @@ class GPT2AccelAttention(nn.Module):
     def forward(
         self,
         hidden_states: Tensor,
-        layer_past=None,
-        attention_mask=None,
-        head_mask=None,
-        encoder_hidden_states=None,
-        encoder_attention_mask=None,
+        layer_past: tuple[Tensor, Tensor] | None = None,
+        attention_mask: Tensor | None = None,
+        head_mask: Tensor | None = None,
+        encoder_hidden_states: Tensor | None = None,
+        encoder_attention_mask: Tensor | None = None,
         use_cache: bool = False,
         output_attentions: bool = False,
-        past_key_value=None,
-        **kwargs,
+        past_key_value: tuple[Tensor, Tensor] | None = None,
+        **kwargs: dict,
     ) -> tuple[Tensor, None] | tuple[Tensor, None, None]:
         if encoder_hidden_states is not None:
             raise NotImplementedError("Cross attention not supported in accel mode")
@@ -119,13 +119,13 @@ class GPT2AccelAttention(nn.Module):
 
 
 class GPT2AccelBlock(GPT2Block):
-    def __init__(self, config, layer_idx=None) -> None:
+    def __init__(self, config: transformers.PretrainedConfig, layer_idx: int | None = None) -> None:
         super().__init__(config, layer_idx)
         self.attn = GPT2AccelAttention(config, layer_idx)
 
 
 class GPT2AccelModel(GPT2Model):
-    def __init__(self, config) -> None:
+    def __init__(self, config: transformers.PretrainedConfig) -> None:
         super().__init__(config)
         self.h = nn.ModuleList([GPT2AccelBlock(config, layer_idx=i) for i in range(config.num_hidden_layers)])
 
@@ -145,7 +145,7 @@ class GPT2AccelModel(GPT2Model):
         output_attentions: bool | None = None,
         output_hidden_states: bool | None = None,
         return_dict: bool | None = None,
-        **kwargs,
+        **kwargs: object,
     ) -> tuple[Tensor, ...] | BaseModelOutputWithPastAndCrossAttentions:
         if inputs_embeds is not None:
             hidden_states = inputs_embeds

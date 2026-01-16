@@ -17,7 +17,7 @@ KERNEL_SIZE = 5
 STYLE_ENCODER_DIM = 192
 
 
-def modulate(x: Tensor, shift: Tensor, scale: Tensor):
+def modulate(x: Tensor, shift: Tensor, scale: Tensor) -> Tensor:
     return x * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
 
 

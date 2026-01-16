@@ -120,7 +120,6 @@ class TextNormalizer:
         return bool(re.search(TextNormalizer.PINYIN_TONE_PATTERN, s, re.IGNORECASE))
 
     def load(self) -> None:
-
         if self.zh_normalizer is not None and self.en_normalizer is not None:
             return
         if sys.platform != "linux":  # Mac and Windows
@@ -200,7 +199,7 @@ class TextNormalizer:
         pinyin = re.sub(pattern, repl, pinyin, flags=re.IGNORECASE)
         return pinyin.upper()
 
-    def save_names(self, original_text: str):
+    def save_names(self, original_text: str) -> tuple[str, list[str] | None]:
         """
         替换人名为占位符 <n_a>、 <n_b>, ...
         例如：克里斯托弗·诺兰 -> <n_a>
@@ -365,7 +364,7 @@ class TextNormalizer:
         with open(glossary_path, "w", encoding="utf-8") as f:
             yaml.dump(self.term_glossary, f, allow_unicode=True, default_flow_style=False)
 
-    def save_pinyin_tones(self, original_text: str):
+    def save_pinyin_tones(self, original_text: str) -> tuple[str, list[str] | None]:
         """
         替换拼音声调为占位符 <pinyin_a>, <pinyin_b>, ...
         例如：xuan4 -> <pinyin_a>
@@ -421,7 +420,7 @@ class TextTokenizer:
         ]
 
     @property
-    def vocab_size(self):
+    def vocab_size(self) -> int:
         return self.sp_model.GetPieceSize()
 
     @property
@@ -453,7 +452,7 @@ class TextTokenizer:
         return 1
 
     @property
-    def unk_token_id(self):
+    def unk_token_id(self) -> int:
         return self.sp_model.unk_id()
 
     @property

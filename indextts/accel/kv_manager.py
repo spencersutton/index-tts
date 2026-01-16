@@ -4,6 +4,7 @@ from collections import deque
 from copy import copy
 
 import torch
+from torch import nn
 
 
 class KVCacheBlock:
@@ -40,7 +41,7 @@ class Seq:
     def __len__(self) -> int:
         return self.num_tokens
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: int) -> int:
         return self.token_ids[key]
 
     @property
@@ -176,7 +177,7 @@ class KVCacheManager:
     def remove_seq(self, sequence: Seq) -> None:
         self.deallocate(sequence)
 
-    def wire_kv_cache_to_model(self, model) -> None:
+    def wire_kv_cache_to_model(self, model: nn.Module) -> None:
         layer_id = 0
         for module in model.modules():
             if hasattr(module, "k_cache") and hasattr(module, "v_cache"):

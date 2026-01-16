@@ -89,7 +89,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         output_attentions: bool | None = None,
         output_hidden_states: bool | None = None,
         return_dict: bool | None = None,
-    ):
+    ) -> CausalLMOutputWithCrossAttentions | tuple[Tensor, ...]:
         assert self.cached_mel_emb is not None
         assert inputs_embeds is None  # Not supported by this inference model.
         assert labels is None  # Training not supported by this inference model.

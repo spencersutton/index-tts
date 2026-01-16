@@ -52,7 +52,45 @@ def build_hf_gpt_transformer(
 
 
 class UnifiedVoice(nn.Module):
+    if TYPE_CHECKING:
+        accel_engine: AccelInferenceEngine | None
+    ds_engine: Any
+
+    emo_layer: nn.Linear
+    emovec_layer: nn.Linear
+    final_norm: nn.LayerNorm
+    gpt: GPT2Model
     inference_model: GPT2InferenceModel
+    mel_head: nn.Linear
+    speed_emb: nn.Embedding
+
+    mel_embedding: nn.Embedding
+    text_embedding: nn.Embedding
+
+    mel_pos_embedding: LearnedPositionEmbeddings
+    text_pos_embedding: LearnedPositionEmbeddings
+
+    cond_num: int
+    heads: int
+    layers: int
+    max_conditioning_inputs: int
+    max_mel_tokens: int
+    max_text_tokens: int
+    mel_length_compression: int
+    model_dim: int
+    number_mel_codes: int
+    number_text_tokens: int
+    start_mel_token: int
+    start_text_token: int
+    stop_mel_token: int
+    stop_text_token: int
+
+    cond_mask_pad: nn.ConstantPad1d
+    conditioning_encoder: ConformerEncoder
+    emo_cond_mask_pad: nn.ConstantPad1d
+    emo_conditioning_encoder: ConformerEncoder
+    emo_perceiver_encoder: PerceiverResampler
+    perceiver_encoder: PerceiverResampler
 
     def __init__(
         self,
@@ -99,7 +137,6 @@ class UnifiedVoice(nn.Module):
         self.heads = heads
         self.max_mel_tokens = max_mel_tokens
         self.max_text_tokens = max_text_tokens
-        self.model_dim = model_dim
         self.max_conditioning_inputs = max_conditioning_inputs
         self.mel_length_compression = mel_length_compression
         self.cond_num = condition_num_latent
@@ -134,21 +171,21 @@ class UnifiedVoice(nn.Module):
         self.speed_emb.weight.data.normal_(mean=0.0, std=0.0)
 
         # Initialize the embeddings per the GPT-2 scheme
-        embeddings = [self.text_embedding]
+        embeddings: list[nn.Embedding] = [self.text_embedding]
         embeddings.append(self.mel_embedding)
         for module in embeddings:
             module.weight.data.normal_(mean=0.0, std=0.02)
 
         self.use_accel: bool = use_accel
-        self.accel_engine: AccelInferenceEngine | None = None  # Will be initialized in post_init_gpt2_config
+        self.accel_engine = None  # Will be initialized in post_init_gpt2_config
 
-    def post_init_gpt2_config(self, use_deepspeed: bool = False, kv_cache: bool = False, half: bool = False) -> None:
+    def post_init_gpt2_config(self, use_deepspeed: bool, kv_cache: bool, half: bool, model_dim: int) -> None:
         seq_length = self.max_mel_tokens + self.max_text_tokens + 2
         gpt_config = GPT2Config(
             vocab_size=self.number_mel_codes,
             n_positions=seq_length,
             n_ctx=seq_length,
-            n_embd=self.model_dim,
+            n_embd=model_dim,
             n_layer=self.layers,
             n_head=self.heads,
         )
@@ -180,7 +217,7 @@ class UnifiedVoice(nn.Module):
                 lm_head=lm_head_with_norm,
                 num_layers=self.layers,
                 num_heads=self.heads,
-                head_dim=self.model_dim // self.heads,
+                head_dim=model_dim // self.heads,
                 block_size=256,
                 num_blocks=16,  # Reduce to save memory (16*256 = 4096 tokens capacity)
                 use_cuda_graph=True,
@@ -217,7 +254,7 @@ class UnifiedVoice(nn.Module):
     def build_aligned_inputs_and_targets(self, input: Tensor, start_token: int, stop_token: int) -> Tensor:
         return F.pad(input, (1, 0), value=start_token)
 
-    def set_mel_padding(self, mel_input_tokens: Tensor, mel_lengths: Tensor):
+    def set_mel_padding(self, mel_input_tokens: Tensor, mel_lengths: Tensor) -> Tensor:
         """
         Given mel tokens that are derived from a padded audio clip and the actual lengths of each batch element in
         that audio clip, reformats the tokens with STOP_MEL_TOKEN in place of the zero padding. This is required
@@ -231,7 +268,7 @@ class UnifiedVoice(nn.Module):
                 mel_input_tokens[b, actual_end:] = self.stop_mel_token
         return mel_input_tokens
 
-    def set_text_padding(self, text_input_tokens: Tensor, text_lengths: Tensor):
+    def set_text_padding(self, text_input_tokens: Tensor, text_lengths: Tensor) -> Tensor:
         """
         Given mel tokens that are derived from a padded audio clip and the actual lengths of each batch element in
         that audio clip, reformats the tokens with STOP_MEL_TOKEN in place of the zero padding. This is required
@@ -262,7 +299,7 @@ class UnifiedVoice(nn.Module):
 
         return enc[:, : first_inputs.shape[1]], enc[:, -second_inputs.shape[1] :]
 
-    def get_emo_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths: Tensor):
+    def get_emo_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths: Tensor) -> Tensor:
         speech_conditioning_input, mask = self.emo_conditioning_encoder(
             speech_conditioning_input.transpose(1, 2), cond_mel_lengths
         )  # (b, s, d), (b, 1, s)
@@ -399,7 +436,7 @@ class UnifiedVoice(nn.Module):
         num_return_sequences: int = 1,
         max_generate_length: int | None = None,
         **hf_generate_kwargs: Any,
-    ):
+    ) -> tuple[Tensor, Tensor]:
         """
         Args:
             speech_condition: (b, d, frames) or (d, frames)
@@ -498,25 +535,26 @@ class UnifiedVoice(nn.Module):
             )
         if isinstance(output, Tensor):
             return output[:, trunc_index:], speech_conditioning_latent
+        assert False, "Unexpected output type from GPT2InferenceModel.generate()"
         # GenerateOutput
         output.sequences = output.sequences[:, trunc_index:]
         return output, speech_conditioning_latent
 
-    def get_emovec(self, emo_speech_conditioning_latent: Tensor, emo_cond_lengths: Tensor) -> Tensor:
+    def get_emo_vec(self, emo_speech_conditioning_latent: Tensor, emo_cond_lengths: Tensor) -> Tensor:
         emo_vec_syn_ori = self.get_emo_conditioning(emo_speech_conditioning_latent.transpose(1, 2), emo_cond_lengths)
         emo_vec_syn = self.emovec_layer(emo_vec_syn_ori)
         return self.emo_layer(emo_vec_syn)
 
-    def merge_emovec(
+    def merge_emo_vec(
         self,
         speech_conditioning_latent: Tensor,
         emo_speech_conditioning_latent: Tensor,
         cond_lengths: Tensor,
         emo_cond_lengths: Tensor,
         alpha: float = 1.0,
-    ):
-        emo_vec = self.get_emovec(emo_speech_conditioning_latent, emo_cond_lengths)
-        base_vec = self.get_emovec(speech_conditioning_latent, cond_lengths)
+    ) -> Tensor:
+        emo_vec = self.get_emo_vec(emo_speech_conditioning_latent, emo_cond_lengths)
+        base_vec = self.get_emo_vec(speech_conditioning_latent, cond_lengths)
 
         return base_vec + alpha * (emo_vec - base_vec)
 

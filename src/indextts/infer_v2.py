@@ -85,10 +85,8 @@ def find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> Tensor:
 
 
 class IndexTTS2:
-    
-
     @cached_property[RepCodec]
-    def semantic_codec(self):
+    def semantic_codec(self) -> RepCodec:
         model = RepCodec().eval()
         path = hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
         safetensors.torch.load_model(model, path, strict=False)
@@ -163,7 +161,9 @@ class IndexTTS2:
                 use_deepspeed = False
                 print(f">> Failed to load DeepSpeed. Falling back to normal inference. Error: {e}")
 
-        self.gpt.post_init_gpt2_config(use_deepspeed=use_deepspeed, kv_cache=True, half=self.use_fp16)
+        self.gpt.post_init_gpt2_config(
+            use_deepspeed=use_deepspeed, kv_cache=True, half=self.use_fp16, model_dim=self.cfg.gpt.model_dim
+        )
 
         if self.use_cuda_kernel:
             # preload the CUDA kernel for BigVGAN
@@ -214,7 +214,7 @@ class IndexTTS2:
 
         # 加载术语词汇表（如果存在）
         self.glossary_path = os.path.join(self.model_dir, "glossary.yaml")
-        if os.path.exists(self.glossary_path):
+        if Path(self.glossary_path).exists():
             self.normalizer.load_glossary_from_yaml(self.glossary_path)
             print(">> Glossary loaded from:", self.glossary_path)
 
@@ -242,7 +242,7 @@ class IndexTTS2:
         self.model_version = self.cfg.version if hasattr(self.cfg, "version") else None
 
     @cached_property[MyModel]
-    def s2mel(self):
+    def s2mel(self) -> MyModel:
         assert isinstance(self.cfg.s2mel_checkpoint, str)
         path = Path(self.cfg.s2mel_checkpoint)
         model = load_checkpoint2(MyModel(), path).to(self.device)
@@ -297,7 +297,7 @@ class IndexTTS2:
         stream_return: bool = False,
         more_segment_before: int = 0,
         **generation_kwargs: Any,
-    ):
+    ) -> Tensor | None:
         gen = self.infer_generator(
             spk_audio_prompt,
             text,
@@ -339,7 +339,7 @@ class IndexTTS2:
         stream_return: bool = False,
         quick_streaming_tokens: int = 0,
         **generation_kwargs: Any,
-    ):
+    ) -> Tensor | None:
         print(">> starting inference...")
         self._set_gr_progress(0, "starting inference...")
         if verbose:
@@ -516,9 +516,9 @@ class IndexTTS2:
                 print("text_token_syms is same as segment tokens", text_token_syms == sent)
 
             m_start_time = time.perf_counter()
-            with torch.inference_mode():
+            with torch.no_grad():
                 with torch.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype):
-                    emovec = self.gpt.merge_emovec(
+                    emovec = self.gpt.merge_emo_vec(
                         spk_cond_emb,
                         emo_cond_emb,
                         torch.tensor([spk_cond_emb.shape[-1]], device=text_tokens.device),

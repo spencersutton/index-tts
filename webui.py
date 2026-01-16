@@ -6,8 +6,6 @@ import sys
 import threading
 import time
 
-import pandas as pd
-
 current_dir = pathlib.Path(pathlib.Path(__file__).resolve()).parent
 sys.path.append(current_dir)
 sys.path.append(os.path.join(current_dir, "indextts"))
@@ -148,7 +146,7 @@ def gen_single(
     # set gradio progress
     tts.gr_progress = progress
     do_sample, top_p, top_k, temperature, length_penalty, num_beams, repetition_penalty, max_mel_tokens = args
-    kwargs = {
+    kwargs: dict[str, Any] = {
         "do_sample": bool(do_sample),
         "top_p": float(top_p),
         "top_k": int(top_k) if int(top_k) > 0 else None,
@@ -448,8 +446,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                 tokens_count = len(s)
                 data.append([i, segment_str, tokens_count])
             return {segments_preview: gr.update(value=data, visible=True, type="array")}
-        df = pd.DataFrame([], columns=[i18n("序号"), i18n("分句内容"), i18n("Token数")])
-        return {segments_preview: gr.update(value=df)}
+        return {segments_preview: gr.update(value=[], visible=True, type="array")}
 
     # 术语词汇表事件处理函数
     def on_add_glossary_term(term, reading_zh, reading_en):

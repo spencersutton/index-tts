@@ -2,6 +2,8 @@ from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from typing import Any
 
+SAMPLING_RATE = 22050
+
 
 class ConfigMapping(Mapping[str, Any]):
     """MixIn to allow dot access (via dataclass) and bracket access/** unpacking."""
@@ -23,7 +25,6 @@ class ConfigMapping(Mapping[str, Any]):
 @dataclass
 class MelConfig(ConfigMapping):
     sample_rate: int
-    n_fft: int
     hop_length: int
     win_length: int
     n_mels: int
@@ -66,17 +67,11 @@ class GptConfig(ConfigMapping):
 
 @dataclass
 class SemanticCodecConfig(ConfigMapping):
-    codebook_size: int
     hidden_size: int
-    codebook_dim: int
-    vocos_dim: int
-    vocos_intermediate_dim: int
-    vocos_num_layers: int
 
 
 @dataclass
 class SpectParams(ConfigMapping):
-    n_fft: int
     win_length: int
     hop_length: int
     n_mels: int

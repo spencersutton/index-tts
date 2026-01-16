@@ -2,35 +2,23 @@ import torch
 from librosa.filters import mel as librosa_mel_fn
 from torch import Tensor, nn
 
-
-def dynamic_range_compression_torch(x: Tensor) -> Tensor:
-    return torch.log(torch.clamp(x, min=1e-5) * 1)
+from indextts.config import SAMPLING_RATE
 
 
-def mel_spectrogram(
-    y: Tensor,
-    n_fft: int,
-    num_mels: int,
-    sampling_rate: int,
-    hop_size: int,
-    win_size: int,
-    fmin: float,
-    fmax: float | None,
-    center: bool = False,
-) -> Tensor:
-    mel = librosa_mel_fn(sr=sampling_rate, n_fft=n_fft, n_mels=num_mels, fmin=fmin, fmax=fmax)
+def mel_spectrogram(y: Tensor) -> Tensor:
+    mel = librosa_mel_fn(sr=SAMPLING_RATE, n_fft=1024, n_mels=80)
 
-    y = nn.functional.pad(y.unsqueeze(1), (int((n_fft - hop_size) / 2), int((n_fft - hop_size) / 2)), mode="reflect")
+    y = nn.functional.pad(y.unsqueeze(1), (384, 384), mode="reflect")
     y = y.squeeze(1)
 
     spec = torch.view_as_real(
         torch.stft(
             y,
-            n_fft,
-            hop_length=hop_size,
-            win_length=win_size,
-            window=torch.hann_window(win_size).to(y.device),
-            center=center,
+            1024,
+            hop_length=256,
+            win_length=1024,
+            window=torch.hann_window(1024).to(y.device),
+            center=False,
             pad_mode="reflect",
             normalized=False,
             onesided=True,

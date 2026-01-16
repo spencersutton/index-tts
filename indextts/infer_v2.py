@@ -19,7 +19,7 @@ from omegaconf import OmegaConf
 from torch import Tensor
 from transformers import SeamlessM4TFeatureExtractor
 
-from indextts.config import STOP_MEL_TOKEN, IndexTTSConfig
+from indextts.config import SAMPLING_RATE, STOP_MEL_TOKEN, IndexTTSConfig
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.qwen import QwenEmotion
 from indextts.s2mel.modules.audio import mel_spectrogram
@@ -33,7 +33,6 @@ from indextts.utils.maskgct_utils import build_semantic_model
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
 CHECKPOINT_DIR = Path("checkpoints")
-SAMPLING_RATE = 22050
 MAX_AUDIO_LENGTH_SECONDS = 15
 TARGET_SAMPLING_RATE = 16000
 
@@ -53,20 +52,6 @@ def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
         vector = [vec * scale_factor for vec in vector]
 
     return list(vector)
-
-
-def mel_fn(x: Tensor) -> Tensor:
-    return mel_spectrogram(
-        x,
-        n_fft=1024,
-        win_size=1024,
-        hop_size=256,
-        num_mels=80,
-        sampling_rate=SAMPLING_RATE,
-        fmin=0,
-        fmax=None,
-        center=False,
-    )
 
 
 @cache
@@ -406,7 +391,7 @@ class IndexTTS2:
             spk_cond_emb = self.get_emb(input_features, attention_mask)
 
             s_ref = self.semantic_codec.quantize(spk_cond_emb)
-            ref_mel = mel_fn(audio_22k.to(spk_cond_emb.device).float())
+            ref_mel = mel_spectrogram(audio_22k.to(spk_cond_emb.device).float())
             ref_target_lengths = torch.tensor([ref_mel.size(2)], dtype=torch.long).to(ref_mel.device)
             feat = torchaudio.compliance.kaldi.fbank(
                 audio_16k.to(ref_mel.device), num_mel_bins=80, dither=0, sample_frequency=TARGET_SAMPLING_RATE

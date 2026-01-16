@@ -6,7 +6,14 @@ import torch.nn.functional as F
 from torch import Tensor, nn
 from transformers import GPT2Config, GPT2Model, LogitsProcessorList
 
-from indextts.config import NUMBER_MEL_CODES, NUMBER_TEXT_TOKENS, START_MEL_TOKEN, STOP_MEL_TOKEN
+from indextts.config import (
+    NUMBER_MEL_CODES,
+    NUMBER_TEXT_TOKENS,
+    START_MEL_TOKEN,
+    START_TEXT_TOKEN,
+    STOP_MEL_TOKEN,
+    STOP_TEXT_TOKEN,
+)
 from indextts.gpt.inference import GPT2InferenceModel
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 
@@ -23,7 +30,7 @@ def null_position_embeddings(range: Tensor, dim: int) -> Tensor:
 
 def build_hf_gpt_transformer(
     layers: int, model_dim: int, heads: int, max_mel_seq_len: int, max_text_seq_len: int
-) -> tuple[GPT2Model, LearnedPositionEmbeddings, LearnedPositionEmbeddings, None, None]:
+) -> tuple[GPT2Model, LearnedPositionEmbeddings, LearnedPositionEmbeddings]:
     """
     GPT-2 implemented by the HuggingFace library.
     """
@@ -47,8 +54,6 @@ def build_hf_gpt_transformer(
         gpt,
         LearnedPositionEmbeddings(max_mel_seq_len, model_dim),
         LearnedPositionEmbeddings(max_text_seq_len, model_dim),
-        None,
-        None,
     )
 
 
@@ -130,13 +135,7 @@ class UnifiedVoice(nn.Module):
         self.emovec_layer = nn.Linear(1024, model_dim)
 
         self.mel_embedding = nn.Embedding(NUMBER_MEL_CODES, model_dim)
-        (
-            self.gpt,
-            self.mel_pos_embedding,
-            self.text_pos_embedding,
-            self.mel_layer_pos_embedding,
-            self.text_layer_pos_embedding,
-        ) = build_hf_gpt_transformer(
+        (self.gpt, self.mel_pos_embedding, self.text_pos_embedding) = build_hf_gpt_transformer(
             layers, model_dim, heads, self.max_mel_tokens + 2 + self.max_conditioning_inputs, self.max_text_tokens + 2
         )
 
@@ -253,7 +252,7 @@ class UnifiedVoice(nn.Module):
             # it would be best if the model predicts a token past the actual last token.
             actual_end = text_lengths[b]
             if actual_end < text_input_tokens.shape[-1]:
-                text_input_tokens[b, actual_end:] = self.stop_text_token
+                text_input_tokens[b, actual_end:] = STOP_TEXT_TOKEN
         return text_input_tokens
 
     def get_logits(
@@ -314,7 +313,7 @@ class UnifiedVoice(nn.Module):
             emo_vec = self.emo_layer(emo_vec_syn)
 
         text_inputs = self.set_text_padding(text_inputs, text_lengths)
-        text_inputs = F.pad(text_inputs, (0, 1), value=self.stop_text_token)
+        text_inputs = F.pad(text_inputs, (0, 1), value=STOP_TEXT_TOKEN)
 
         mel_codes = self.set_mel_padding(mel_codes, mel_codes_lengths)
         mel_codes = F.pad(mel_codes, (0, 1), value=STOP_MEL_TOKEN)
@@ -329,7 +328,7 @@ class UnifiedVoice(nn.Module):
             ),
             1,
         )
-        text_inputs = F.pad(text_inputs, (1, 0), value=self.start_text_token)
+        text_inputs = F.pad(text_inputs, (1, 0), value=START_TEXT_TOKEN)
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
         mel_codes = F.pad(mel_codes, (1, 0), value=START_MEL_TOKEN)
 
@@ -337,9 +336,8 @@ class UnifiedVoice(nn.Module):
         mel_emb += self.mel_pos_embedding.forward(mel_codes)
 
         _text_logits, mel_logits = self.get_logits(conds, text_emb, mel_emb)
-        return mel_logits[
-            :, :-2
-        ]  # Despite the name, these are not logits. Strip off the two tokens added by this forward pass.
+        # Despite the name, these are not logits. Strip off the two tokens added by this forward pass.
+        return mel_logits[:, :-2]
 
     def prepare_gpt_inputs(self, conditional_latents: Tensor, text_inputs: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         """
@@ -361,10 +359,10 @@ class UnifiedVoice(nn.Module):
         attention_masks = []
         target_len = conditional_latents.shape[1] + L + 2
         for i in range(b):
-            valid_mask = (text_inputs[i] != self.stop_text_token) & (text_inputs[i] != self.start_text_token)
+            valid_mask = (text_inputs[i] != STOP_TEXT_TOKEN) & (text_inputs[i] != START_TEXT_TOKEN)
             text_input = text_inputs[i][valid_mask]
-            text_input = F.pad(text_input, (1, 0), value=self.start_text_token)
-            text_input = F.pad(text_input, (0, 1), value=self.stop_text_token)
+            text_input = F.pad(text_input, (1, 0), value=START_TEXT_TOKEN)
+            text_input = F.pad(text_input, (0, 1), value=STOP_TEXT_TOKEN)
             text_input_pos = torch.arange(0, text_input.size(-1), device=device)
             text_emb = self.text_embedding(text_input) + self.text_pos_embedding.emb(text_input_pos)
             # concatenate [conditional latents][text embeddings]

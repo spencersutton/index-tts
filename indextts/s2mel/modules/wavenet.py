@@ -35,7 +35,7 @@ class WN(nn.Module):
         self.in_layers = nn.ModuleList()
         self.res_skip_layers = nn.ModuleList()
         self.drop = nn.Dropout(P_DROPOUT)
-        self.cond_layer = SConv1d(HIDDEN_DIM, 2 * HIDDEN_DIM * NUM_LAYERS, 1)
+        self.cond_layer = SConv1d(HIDDEN_DIM, 2 * HIDDEN_DIM * NUM_LAYERS)
 
         for i in range(NUM_LAYERS):
             in_layer = SConv1d(HIDDEN_DIM, 2 * HIDDEN_DIM, KERNEL_SIZE)
@@ -47,7 +47,7 @@ class WN(nn.Module):
             else:
                 res_skip_channels = HIDDEN_DIM
 
-            res_skip_layer = SConv1d(HIDDEN_DIM, res_skip_channels, 1)
+            res_skip_layer = SConv1d(HIDDEN_DIM, res_skip_channels)
             self.res_skip_layers.append(res_skip_layer)
 
     def forward(self, x: Tensor, x_mask: Tensor, g: Tensor) -> Tensor:

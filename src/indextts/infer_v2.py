@@ -2,7 +2,7 @@ import os
 import random
 import time
 import warnings
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Generator, Sequence
 from functools import cache, cached_property
 from pathlib import Path
 from subprocess import CalledProcessError
@@ -297,7 +297,7 @@ class IndexTTS2:
         stream_return: bool = False,
         more_segment_before: int = 0,
         **generation_kwargs: Any,
-    ) -> Tensor | None:
+    ) -> Path | Generator[Tensor] | None:
         gen = self.infer_generator(
             spk_audio_prompt,
             text,
@@ -339,7 +339,7 @@ class IndexTTS2:
         stream_return: bool = False,
         quick_streaming_tokens: int = 0,
         **generation_kwargs: Any,
-    ) -> Tensor | None:
+    ) -> Generator[Tensor]:
         print(">> starting inference...")
         self._set_gr_progress(0, "starting inference...")
         if verbose:

@@ -18,10 +18,10 @@ class NormConv1d(nn.Module):
     to provide a uniform interface across normalization approaches.
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, in_channels: int, out_channels: int, kernel_size: int) -> None:
         super().__init__()
 
-        self.conv: nn.Conv1d = weight_norm(nn.Conv1d(*args, **kwargs))
+        self.conv: nn.Conv1d = weight_norm(nn.Conv1d(in_channels, out_channels, kernel_size))
         self.norm = nn.Identity()
 
     def forward(self, x: Tensor) -> Tensor:

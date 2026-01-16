@@ -84,6 +84,23 @@ def find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> Tensor:
     return torch.argmax(similarities)
 
 
+def _load_and_cut_audio(
+    audio_path: Path, verbose: bool = False, sample_rate: float | None = None
+) -> tuple[Tensor, int]:
+    if not sample_rate:
+        audio, sample_rate = librosa.load(audio_path)
+    else:
+        audio, _ = librosa.load(audio_path, sr=sample_rate)
+    audio = torch.tensor(audio).unsqueeze(0)
+    max_audio_samples = int(MAX_AUDIO_LENGTH_SECONDS * sample_rate)
+
+    if audio.shape[1] > max_audio_samples:
+        if verbose:
+            print(f"Audio too long ({audio.shape[1]} samples), truncating to {max_audio_samples} samples")
+        audio = audio[:, :max_audio_samples]
+    return audio, int(sample_rate)
+
+
 class IndexTTS2:
     @cached_property[RepCodec]
     def semantic_codec(self) -> RepCodec:
@@ -263,22 +280,6 @@ class IndexTTS2:
         if self.gr_progress is not None:
             self.gr_progress(value, desc=desc)
 
-    def _load_and_cut_audio(
-        self, audio_path: Path, verbose: bool = False, sample_rate: float | None = None
-    ) -> tuple[Tensor, int]:
-        if not sample_rate:
-            audio, sample_rate = librosa.load(audio_path)
-        else:
-            audio, _ = librosa.load(audio_path, sr=sample_rate)
-        audio = torch.tensor(audio).unsqueeze(0)
-        max_audio_samples = int(MAX_AUDIO_LENGTH_SECONDS * sample_rate)
-
-        if audio.shape[1] > max_audio_samples:
-            if verbose:
-                print(f"Audio too long ({audio.shape[1]} samples), truncating to {max_audio_samples} samples")
-            audio = audio[:, :max_audio_samples]
-        return audio, int(sample_rate)
-
     # 原始推理模式
     def infer(
         self,
@@ -394,7 +395,7 @@ class IndexTTS2:
                 self.cache_s2mel_prompt = None
                 self.cache_mel = None
                 torch.cuda.empty_cache()
-            audio, sr = self._load_and_cut_audio(spk_audio_prompt, verbose)
+            audio, sr = _load_and_cut_audio(spk_audio_prompt, verbose)
             audio_22k: Tensor = torchaudio.transforms.Resample(sr, SAMPLING_RATE)(audio)
             audio_16k: Tensor = torchaudio.transforms.Resample(sr, TARGET_SAMPLING_RATE)(audio)
 
@@ -447,7 +448,7 @@ class IndexTTS2:
             if self.cache_emo_cond is not None:
                 self.cache_emo_cond = None
                 torch.cuda.empty_cache()
-            emo_audio, _ = self._load_and_cut_audio(emo_audio_prompt, verbose, sample_rate=TARGET_SAMPLING_RATE)
+            emo_audio, _ = _load_and_cut_audio(emo_audio_prompt, verbose, sample_rate=TARGET_SAMPLING_RATE)
             emo_inputs = self.extract_features(
                 emo_audio.tolist(), sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt"
             )

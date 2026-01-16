@@ -1,4 +1,5 @@
 import torch
+import transformers
 from torch import Tensor, nn
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 from transformers.models.gpt2.modeling_gpt2 import Conv1D, GPT2Block, GPT2Model
@@ -20,7 +21,7 @@ class GPT2AccelAttention(nn.Module):
             ),
             persistent=False,
         )
-        self.register_buffer("masked_bias", torch.tensor(-1e4), persistent=False)
+        self.register_buffer("masked_bias", Tensor(-1e4), persistent=False)
 
         self.embed_dim = config.hidden_size
         self.num_heads = config.num_attention_heads
@@ -126,20 +127,22 @@ class GPT2AccelModel(GPT2Model):
 
     def forward(
         self,
-        input_ids=None,
-        past_key_values=None,
-        attention_mask=None,
-        token_type_ids=None,
-        position_ids=None,
-        head_mask=None,
-        inputs_embeds=None,
-        encoder_hidden_states=None,
-        encoder_attention_mask=None,
-        use_cache=None,
-        output_attentions=None,
-        output_hidden_states=None,
-        return_dict=None,
-    ):
+        input_ids: Tensor | None = None,
+        past_key_values: tuple[tuple[Tensor]] | transformers.Cache | None = None,
+        cache_position: Tensor | None = None,
+        attention_mask: Tensor | None = None,
+        token_type_ids: Tensor | None = None,
+        position_ids: Tensor | None = None,
+        head_mask: Tensor | None = None,
+        inputs_embeds: Tensor | None = None,
+        encoder_hidden_states: Tensor | None = None,
+        encoder_attention_mask: Tensor | None = None,
+        use_cache: bool | None = None,
+        output_attentions: bool | None = None,
+        output_hidden_states: bool | None = None,
+        return_dict: bool | None = None,
+        **kwargs,
+    ) -> tuple | BaseModelOutputWithPastAndCrossAttentions:
         if inputs_embeds is not None:
             hidden_states = inputs_embeds
 

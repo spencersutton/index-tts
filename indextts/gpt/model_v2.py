@@ -381,7 +381,7 @@ class UnifiedVoice(nn.Module):
 
     def inference_speech(
         self,
-        speech_condition: Tensor,
+        speech_conditioning_latent: Tensor,
         text_inputs: Tensor,
         emo_speech_condition: Tensor,
         *,
@@ -390,7 +390,7 @@ class UnifiedVoice(nn.Module):
         num_return_sequences: int = 1,
         max_generate_length: int | None = None,
         **hf_generate_kwargs: Any,
-    ) -> tuple[Tensor, Tensor]:
+    ) -> Tensor:
         """
         Args:
             speech_condition: (b, d, frames) or (d, frames)
@@ -399,19 +399,6 @@ class UnifiedVoice(nn.Module):
             max_generate_length: limit the number of generated tokens
             hf_generate_kwargs: kwargs for `GPT2InferenceModel.generate(**hf_generate_kwargs)`
         """
-
-        if speech_condition.ndim == 2:
-            speech_condition = speech_condition.unsqueeze(0)
-        if emo_speech_condition is None:
-            emo_speech_condition = speech_condition
-
-        speech_conditioning_input, mask = self.conditioning_encoder(
-            speech_condition, torch.tensor([speech_condition.shape[-1]], device=text_inputs.device)
-        )
-        speech_conditioning_latent = self.perceiver_encoder(
-            speech_conditioning_input, self.cond_mask_pad(mask.squeeze(1))
-        )
-
         tmp = torch.zeros(text_inputs.size(0)).to(text_inputs.device)
         duration_emb = self.speed_emb(torch.zeros_like(tmp).long())
         duration_emb_half = self.speed_emb(torch.ones_like(tmp).long())
@@ -456,7 +443,19 @@ class UnifiedVoice(nn.Module):
                 num_return_sequences=num_return_sequences,
                 **hf_generate_kwargs,
             )
-        return output[:, trunc_index:], speech_conditioning_latent
+        return output[:, trunc_index:]
+
+    def process_speech_condition(self, condition: Tensor) -> Tensor:
+        """
+        Args:
+            speech_condition: (b, d, frames) or (d, frames)
+        """
+
+        if condition.ndim == 2:
+            condition = condition.unsqueeze(0)
+
+        input, mask = self.conditioning_encoder(condition, torch.tensor([condition.shape[-1]], device=condition.device))
+        return self.perceiver_encoder(input, self.cond_mask_pad(mask.squeeze(1)))
 
     def get_emo_vec(self, emo_speech_conditioning_latent: Tensor) -> Tensor:
         emo_vec_syn_ori = self.get_emo_conditioning(

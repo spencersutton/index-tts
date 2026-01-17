@@ -525,8 +525,9 @@ class IndexTTS2:
                     if weight_vector is not None and emovec_mat is not None:
                         emovec = emovec_mat + (1 - torch.sum(weight_vector)) * emovec
 
-                    codes, speech_conditioning_latent = self.gpt.inference_speech(
-                        spk_cond_emb,
+                    speech_conditioning_latent = self.gpt.process_speech_condition(spk_cond_emb)
+                    codes = self.gpt.inference_speech(
+                        speech_conditioning_latent,
                         text_tokens,
                         emo_cond_emb,
                         emo_vec=emovec,
@@ -541,7 +542,6 @@ class IndexTTS2:
                         max_generate_length=max_mel_tokens,
                         **generation_kwargs,
                     )
-                    assert isinstance(codes, Tensor)
 
                 if not has_warned and (codes[:, -1] != STOP_MEL_TOKEN).any():
                     warnings.warn(

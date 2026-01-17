@@ -300,28 +300,24 @@ class UnifiedVoice(nn.Module):
                 self.speed_emb(torch.ones_like(use_speed)).unsqueeze(1),
                 self.speed_emb(torch.zeros_like(use_speed)).unsqueeze(1),
             ),
-            1,
+            dim=1,
         )
         text_inputs = F.pad(text_inputs, (1, 0), value=START_TEXT_TOKEN)
         mel_codes = F.pad(mel_codes, (1, 0), value=START_MEL_TOKEN)
 
-        mel_emb = self.mel_embedding(mel_codes)
-        mel_emb += self.mel_pos_embedding.forward(mel_codes)
-
+        mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes)
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
 
-        gpt_out = self.gpt(
+        output = self.gpt(
             inputs_embeds=torch.cat([conds, text_emb, mel_emb], dim=1), return_dict=True, output_attentions=False
         )
 
         offset = conds.shape[1]
-        enc = unwrap(gpt_out.last_hidden_state)[:, offset:]
+        enc = unwrap(output.last_hidden_state)[:, offset:]
         enc = self.final_norm(enc)
 
-        mel_logits = enc[:, -mel_emb.shape[1] :]
-
         # Despite the name, these are not logits. Strip off the two tokens added by this forward pass.
-        return mel_logits[:, :-2]
+        return enc[:, -mel_emb.shape[1] : -2]
 
     def prepare_gpt_inputs(self, conditional_latents: Tensor, text_inputs: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         """

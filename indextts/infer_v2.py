@@ -552,8 +552,6 @@ class IndexTTS2:
                     )
                     has_warned = True
 
-                code_lens = torch.tensor([codes.shape[-1]], device=codes.device, dtype=codes.dtype)
-
                 code_lens = []
                 max_code_len = 0
                 for code in codes:
@@ -563,16 +561,9 @@ class IndexTTS2:
                         len_ = (code == STOP_MEL_TOKEN).nonzero(as_tuple=False)[0]
                         code_len = len_[0].item() if len_.numel() > 0 else len(code)
                     code_lens.append(code_len)
-                    max_code_len = max(int(max_code_len), int(code_len))
-                codes = codes[:, :max_code_len]
-                code_lens = torch.tensor(code_lens, dtype=torch.long)
-                code_lens = code_lens.to(self.device)
-                if verbose:
-                    print(codes, type(codes))
-                    print(f"fix codes shape: {codes.shape}, codes type: {codes.dtype}")
-                    print(f"code len: {code_lens}")
+                    max_code_len = max(max_code_len, code_len)
 
-                use_speed = torch.zeros(spk_cond_emb.size(0)).to(spk_cond_emb.device).long()
+                codes = codes[:, :max_code_len]
                 with (
                     torch.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype),
                     gpt_forward_time,
@@ -586,7 +577,7 @@ class IndexTTS2:
                         emo_cond_emb,
                         emo_cond_mel_lengths=torch.tensor([emo_cond_emb.shape[-1]], device=text_tokens.device),
                         emo_vec=emovec,
-                        use_speed=use_speed,
+                        use_speed=torch.zeros(spk_cond_emb.size(0)).to(spk_cond_emb.device).long(),
                     )
 
                 dtype = None
@@ -596,7 +587,7 @@ class IndexTTS2:
                         s_infer = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
                         s_infer = s_infer.transpose(1, 2)
                         s_infer += latent
-                        target_lengths = (code_lens * 1.72).long()
+                        target_lengths = (torch.tensor(code_lens, dtype=torch.long).to(self.device) * 1.72).long()
 
                         cond = self.s2mel.length_regulator(s_infer, ylens=target_lengths)[0]
                         cat_condition = torch.cat([prompt_condition, cond], dim=1)
@@ -608,7 +599,6 @@ class IndexTTS2:
                         wav = self.bigvgan(vc_target.float()).squeeze().unsqueeze(0)
                     wav = wav.squeeze(1)
 
-                wav = torch.clamp(32767 * wav, -32767.0, 32767.0)
                 if verbose:
                     print(f"wav shape: {wav.shape}", "min:", wav.min(), "max:", wav.max())
                 wavs.append(wav.cpu())  # to cpu before saving
@@ -640,7 +630,7 @@ class IndexTTS2:
                 print(">> remove old wav file:", output_path)
             if output_path.parent != Path():
                 output_path.parent.mkdir(exist_ok=True, parents=True)
-            torchaudio.save(output_path, wav.type(torch.int16), SAMPLING_RATE)
+            torchaudio.save(output_path, wav, SAMPLING_RATE)
             print(">> wav file saved to:", output_path)
             if stream_return:
                 return None

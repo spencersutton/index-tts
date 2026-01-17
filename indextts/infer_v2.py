@@ -564,13 +564,11 @@ class IndexTTS2:
                     latent = self.gpt(
                         speech_conditioning_latent,
                         text_tokens,
-                        torch.tensor([text_tokens.shape[-1]], device=self.device),
                         codes,
-                        torch.tensor([codes.shape[-1]], device=self.device),
                         emo_cond_emb,
-                        emo_cond_mel_lengths=torch.tensor([emo_cond_emb.shape[-1]], device=self.device),
                         emo_vec=emovec,
-                        use_speed=torch.zeros(spk_cond_emb.size(0)).to(self.device).long(),
+                        use_speed=spk_cond_emb.size(0),
+                        device=self.device,
                     )
 
                 with s2mel_time:

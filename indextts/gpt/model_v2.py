@@ -268,13 +268,11 @@ class UnifiedVoice(nn.Module):
         self,
         speech_conditioning_latent: Tensor,
         text_inputs: Tensor,
-        text_lengths: Tensor,
         mel_codes: Tensor,
-        mel_codes_lengths: Tensor,
         emo_speech_conditioning_latent: Tensor,
-        emo_cond_mel_lengths: Tensor,
         emo_vec: Tensor,
-        use_speed: Tensor,
+        use_speed: int,
+        device: torch.types.Device,
     ) -> Tensor:
         """
         Forward pass that uses both text and voice in either text conditioning mode or voice conditioning mode
@@ -289,17 +287,19 @@ class UnifiedVoice(nn.Module):
         If return_latent is specified, loss & logits are not computed or returned. Only the predicted latents are returned.
         """
 
+        text_lengths = torch.tensor([text_inputs.shape[-1]], device=device)
         text_inputs = self.set_text_padding(text_inputs, text_lengths)
         text_inputs = F.pad(text_inputs, (0, 1), value=STOP_TEXT_TOKEN)
 
+        mel_codes_lengths = torch.tensor([mel_codes.shape[-1]], device=device)
         mel_codes = self.set_mel_padding(mel_codes, mel_codes_lengths)
         mel_codes = F.pad(mel_codes, (0, 1), value=STOP_MEL_TOKEN)
 
         conds = torch.cat(
             (
                 speech_conditioning_latent + emo_vec.unsqueeze(1),
-                self.speed_emb(torch.ones_like(use_speed)).unsqueeze(1),
-                self.speed_emb(torch.zeros_like(use_speed)).unsqueeze(1),
+                self.speed_emb(torch.ones(speech_conditioning_latent.size(0), device=device).long()).unsqueeze(1),
+                self.speed_emb(torch.zeros(speech_conditioning_latent.size(0), device=device).long()).unsqueeze(1),
             ),
             dim=1,
         )

@@ -87,6 +87,8 @@ def _load_and_cut_audio(
 
 
 class IndexTTS2:
+    gpt: UnifiedVoice
+
     @cached_property[RepCodec]
     def semantic_codec(self) -> RepCodec:
         model = RepCodec().eval()

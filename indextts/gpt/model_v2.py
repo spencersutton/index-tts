@@ -363,9 +363,9 @@ class UnifiedVoice(nn.Module):
             batched_mel_emb.append(mel_emb)
             attention_masks.append(attention_mask)
         # [b, s, dim]
-        batched_mel_emb = torch.stack(batched_mel_emb, dim=0)
+        batched_mel_emb = torch.stack(batched_mel_emb)
         # [b, s+1]
-        attention_mask = torch.stack(attention_masks, dim=0)
+        attention_mask = torch.stack(attention_masks)
         # [b, s+1]
         fake_inputs = torch.ones(
             (
@@ -382,9 +382,10 @@ class UnifiedVoice(nn.Module):
         self,
         speech_condition: Tensor,
         text_inputs: Tensor,
-        emo_speech_condition: Tensor | None = None,
-        emo_vec: Tensor | None = None,
-        input_tokens: Tensor | None = None,
+        emo_speech_condition: Tensor,
+        *,
+        emo_vec: Tensor,
+        input_tokens: None = None,
         num_return_sequences: int = 1,
         max_generate_length: int | None = None,
         **hf_generate_kwargs: Any,
@@ -394,7 +395,6 @@ class UnifiedVoice(nn.Module):
             speech_condition: (b, d, frames) or (d, frames)
             text_inputs: (b, L)
             cond_mel_lengths: lengths of the conditioning mel spectrograms in shape (b,) or (1,)
-            input_tokens: additional tokens for generation in shape (b, s) or (s,)
             max_generate_length: limit the number of generated tokens
             hf_generate_kwargs: kwargs for `GPT2InferenceModel.generate(**hf_generate_kwargs)`
         """
@@ -433,26 +433,8 @@ class UnifiedVoice(nn.Module):
             ),
             1,
         )
-        input_ids, inputs_embeds, attention_mask = self.prepare_gpt_inputs(conds_latent, text_inputs)
+        inputs, inputs_embeds, attention_mask = self.prepare_gpt_inputs(conds_latent, text_inputs)
         self.inference_model.cached_mel_emb = inputs_embeds
-        if input_tokens is None:
-            inputs = input_ids
-        else:
-            if input_tokens.ndim == 1:
-                input_tokens = input_tokens.unsqueeze(0)
-            assert num_return_sequences % input_tokens.shape[0] == 0, (
-                "The num_return_sequences must be divisible by the batch number of input_tokens"
-            )
-            assert num_return_sequences % text_inputs.shape[0] == 0, (
-                "The num_return_sequences must be divisible by the batch number of text_inputs"
-            )
-            b = num_return_sequences // input_ids.shape[0]
-            if b > 1:
-                input_ids = input_ids.repeat(b, 1)
-                attention_mask = attention_mask.repeat(b, 1)
-            input_tokens = input_tokens.repeat(num_return_sequences // input_tokens.shape[0], 1)
-            inputs = torch.cat([input_ids, input_tokens], dim=1)
-            attention_mask = F.pad(attention_mask, (0, input_tokens.shape[1]), value=1)
         trunc_index = inputs.shape[1]
         max_length = (
             (trunc_index + self.max_mel_tokens - 1)

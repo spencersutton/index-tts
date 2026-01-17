@@ -553,7 +553,6 @@ class IndexTTS2:
                     has_warned = True
 
                 code_lens = []
-                max_code_len = 0
                 for code in codes:
                     if STOP_MEL_TOKEN not in code:
                         code_len = len(code)
@@ -561,9 +560,9 @@ class IndexTTS2:
                         len_ = (code == STOP_MEL_TOKEN).nonzero(as_tuple=False)[0]
                         code_len = len_[0].item() if len_.numel() > 0 else len(code)
                     code_lens.append(code_len)
-                    max_code_len = max(max_code_len, code_len)
 
-                codes = codes[:, :max_code_len]
+                codes = codes[:, : max(code_lens)]
+
                 with (
                     torch.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype),
                     gpt_forward_time,

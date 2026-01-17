@@ -11,6 +11,11 @@ CHANNELS: Final = 512
 
 
 class InterpolateRegulator(nn.Module):
+    model: nn.Sequential
+    content_in_proj: nn.Linear
+    embedding: nn.Embedding
+    mask_token: nn.Parameter
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -24,7 +29,7 @@ class InterpolateRegulator(nn.Module):
         self.content_in_proj = nn.Linear(1024, CHANNELS)
 
     def forward(self, x: Tensor, ylens: Tensor) -> Tensor:
-        x: Tensor = self.content_in_proj(x)  # (B, T, C)
+        x = self.content_in_proj(x)  # (B, T, C)
         mask = sequence_mask(ylens).unsqueeze(-1)  # (B, T, 1)
 
         x = x.mT.contiguous()  # (B, C, T)

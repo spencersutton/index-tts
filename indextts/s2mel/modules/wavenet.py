@@ -29,6 +29,11 @@ class LayerNorm(nn.Module):
 
 
 class WN(nn.Module):
+    in_layers: nn.ModuleList
+    res_skip_layers: nn.ModuleList
+    drop: nn.Dropout
+    cond_layer: SConv1d
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -52,16 +57,15 @@ class WN(nn.Module):
 
     def forward(self, x: Tensor, x_mask: Tensor, g: Tensor) -> Tensor:
         output = torch.zeros_like(x)
-        n_channels_tensor = torch.tensor([HIDDEN_DIM])
 
         g = self.cond_layer(g)
 
         for i in range(NUM_LAYERS):
-            x_in = self.in_layers[i](x)
             cond_offset = i * 2 * HIDDEN_DIM
             g_l = g[:, cond_offset : cond_offset + 2 * HIDDEN_DIM, :]
 
-            acts = commons.fused_add_tanh_sigmoid_multiply(x_in, g_l, n_channels_tensor)
+            x_in = self.in_layers[i](x)
+            acts = commons.fused_add_tanh_sigmoid_multiply(x_in, g_l)
             acts = self.drop(acts)
 
             res_skip_acts = self.res_skip_layers[i](acts)

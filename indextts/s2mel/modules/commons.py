@@ -3,13 +3,14 @@ from typing import Any
 import torch
 from torch import Tensor, nn
 
+from indextts.s2mel.modules.constants import HIDDEN_DIM
+
 
 @torch.compile
-def fused_add_tanh_sigmoid_multiply(input_a: Tensor, input_b: Tensor, n_channels: Tensor) -> Tensor:
-    n_channels_int = int(n_channels[0])
+def fused_add_tanh_sigmoid_multiply(input_a: Tensor, input_b: Tensor) -> Tensor:
     in_act = input_a + input_b
     # use torch.split to avoid dynamic slicing
-    t_act_part, s_act_part = torch.split(in_act, n_channels_int, dim=1)
+    t_act_part, s_act_part = torch.split(in_act, HIDDEN_DIM, dim=1)
     t_act = torch.tanh(t_act_part)
     s_act = torch.sigmoid(s_act_part)
     return t_act * s_act

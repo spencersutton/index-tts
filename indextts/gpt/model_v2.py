@@ -84,10 +84,10 @@ class UnifiedVoice(nn.Module):
         self.emo_conditioning_encoder = ConformerEncoder(linear_units=1024, attention_heads=4, num_blocks=4)
         self.emo_perceiver_encoder = PerceiverResampler(1024, heads=4, num_latents=1)
 
-        self.text_embedding = nn.Embedding(NUMBER_TEXT_TOKENS + 1, DIM)
         self.emo_layer = nn.Linear(DIM, DIM)
         self.emovec_layer = nn.Linear(1024, DIM)
 
+        self.text_embedding = nn.Embedding(NUMBER_TEXT_TOKENS + 1, DIM)
         self.mel_embedding = nn.Embedding(NUMBER_MEL_CODES, DIM)
 
         max_mel_seq_len = self.max_mel_tokens + 3
@@ -119,8 +119,7 @@ class UnifiedVoice(nn.Module):
         self.speed_emb.weight.data.normal_(std=0.0)
 
         # Initialize the embeddings per the GPT-2 scheme
-        embeddings: list[nn.Embedding] = [self.text_embedding]
-        embeddings.append(self.mel_embedding)
+        embeddings: list[nn.Embedding] = [self.text_embedding, self.mel_embedding]
         for module in embeddings:
             module.weight.data.normal_(std=0.02)
 
@@ -353,9 +352,9 @@ class UnifiedVoice(nn.Module):
             hf_generate_kwargs: kwargs for `GPT2InferenceModel.generate(**hf_generate_kwargs)`
         """
         conds_latent = self.combine_latents(speech_conditioning_latent, emo_vec, text_inputs)
-        inputs, inputs_embeds, attention_mask = self.prepare_gpt_inputs(conds_latent, text_inputs)
+        inputs_ids, inputs_embeds, attention_mask = self.prepare_gpt_inputs(conds_latent, text_inputs)
         self.inference_model.cached_mel_emb = inputs_embeds
-        trunc_index = inputs.shape[1]
+        trunc_index = inputs_ids.shape[1]
         max_length = (
             (trunc_index + self.max_mel_tokens - 1)
             if max_generate_length is None
@@ -365,7 +364,7 @@ class UnifiedVoice(nn.Module):
         # Use accel engine if available (single sequence only)
         if self.accel_engine is not None and num_return_sequences == 1:
             output = self.accel_engine.generate(
-                inputs,  # fake input_ids (all 1s + start_mel_token)
+                inputs_ids,  # fake input_ids (all 1s + start_mel_token)
                 max_new_tokens=max_length - trunc_index,
                 attention_mask=attention_mask,
                 temperature=float(hf_generate_kwargs.get("temperature", 1)),
@@ -376,7 +375,7 @@ class UnifiedVoice(nn.Module):
             )
         else:
             output = self.inference_model.generate(
-                inputs,
+                inputs_ids,
                 bos_token_id=START_MEL_TOKEN,
                 pad_token_id=STOP_MEL_TOKEN,
                 eos_token_id=STOP_MEL_TOKEN,

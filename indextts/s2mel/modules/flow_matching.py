@@ -65,26 +65,23 @@ class CFM(nn.Module):
         x[..., :prompt_len] = 0
         for step in tqdm(range(1, len(t_span))):
             dt = t_span[step] - t_span[step - 1]
-            if INFERENCE_CFG_RATE > 0:
-                # Stack original and CFG (null) inputs for batched processing
-                stacked_prompt_x = torch.cat([prompt_x, torch.zeros_like(prompt_x)])
-                stacked_style = torch.cat([style, torch.zeros_like(style)])
-                stacked_mu = torch.cat([mu, torch.zeros_like(mu)])
-                stacked_x = torch.cat([x, x])
-                stacked_t = torch.stack([t, t])
+            # Stack original and CFG (null) inputs for batched processing
+            stacked_prompt_x = torch.cat([prompt_x, torch.zeros_like(prompt_x)])
+            stacked_style = torch.cat([style, torch.zeros_like(style)])
+            stacked_mu = torch.cat([mu, torch.zeros_like(mu)])
+            stacked_x = torch.cat([x, x])
+            stacked_t = torch.stack([t, t])
 
-                # Perform a single forward pass for both original and CFG inputs
-                stacked_dphi_dt: Tensor = self.estimator(
-                    stacked_x, stacked_prompt_x, x_lens, stacked_t, stacked_style, stacked_mu
-                )
+            # Perform a single forward pass for both original and CFG inputs
+            stacked_dphi_dt: Tensor = self.estimator(
+                stacked_x, stacked_prompt_x, x_lens, stacked_t, stacked_style, stacked_mu
+            )
 
-                # Split the output back into the original and CFG components
-                dphi_dt, cfg_dphi_dt = stacked_dphi_dt.chunk(2)
+            # Split the output back into the original and CFG components
+            dphi_dt, cfg_dphi_dt = stacked_dphi_dt.chunk(2)
 
-                # Apply CFG formula
-                dphi_dt = (1.0 + INFERENCE_CFG_RATE) * dphi_dt - INFERENCE_CFG_RATE * cfg_dphi_dt
-            else:
-                dphi_dt = self.estimator(x, prompt_x, x_lens, t.unsqueeze(0), style, mu)
+            # Apply CFG formula
+            dphi_dt = (1.0 + INFERENCE_CFG_RATE) * dphi_dt - INFERENCE_CFG_RATE * cfg_dphi_dt
 
             x += dt * dphi_dt
             t += dt

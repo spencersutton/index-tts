@@ -136,7 +136,7 @@ class DiT(nn.Module):
             shape: (batch_size, mel_timesteps(795+1069), 512)
 
         """
-        _, _, T = x.size()
+        T = x.size(2)
 
         t1 = self.t_embedder(t)  # (N, D) # t1 [2, 512]
         cond = self.cond_projection(cond)  # cond [2,1863,512]->[2,1863,512]

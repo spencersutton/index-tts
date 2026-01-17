@@ -168,7 +168,6 @@ class IndexTTSConfig(ConfigMapping):
     s2mel_checkpoint: str
     emo_matrix: str
     spk_matrix: str
-    emo_num: list[int]
     qwen_emo_path: str
     vocoder: VocoderConfig
     version: float

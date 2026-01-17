@@ -34,6 +34,7 @@ os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 CHECKPOINT_DIR = Path("checkpoints")
 MAX_AUDIO_LENGTH_SECONDS = 15
 TARGET_SAMPLING_RATE = 16000
+EMO_NUM = [3, 17, 2, 8, 4, 5, 10, 24]
 
 
 def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
@@ -231,12 +232,10 @@ class IndexTTS2:
             self.s2mel.enable_torch_compile()
             print(">> torch.compile optimization enabled successfully")
 
-        self.emo_num = list(self.cfg.emo_num)
-
         self.emo_matrix, self.spk_matrix = (
             torch.split(
                 cast(Tensor, torch.load(hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=x))).to(self.device),
-                self.emo_num,
+                EMO_NUM,
             )
             for x in (self.cfg.emo_matrix, self.cfg.spk_matrix)
         )
@@ -429,7 +428,7 @@ class IndexTTS2:
         if emo_vector is not None:
             weight_vector = torch.tensor(emo_vector, device=self.device)
             if use_random:
-                random_index = [random.randint(0, x - 1) for x in self.emo_num]
+                random_index = [random.randint(0, x - 1) for x in EMO_NUM]
             else:
                 assert style is not None
                 random_index = [find_most_similar_cosine(style, tmp) for tmp in self.spk_matrix]

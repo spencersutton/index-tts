@@ -7,7 +7,7 @@ from torch.nn.utils.parametrizations import weight_norm
 from indextts.s2mel.modules.commons import sequence_mask
 from indextts.s2mel.modules.constants import BLOCK_SIZE, HIDDEN_DIM, IN_CHANNELS
 from indextts.s2mel.modules.gpt_fast.model import Transformer
-from indextts.s2mel.modules.wavenet import WN
+from indextts.s2mel.modules.wavenet import WaveNet
 from indextts.util import patch_call
 
 CONTENT_DIM = 512
@@ -109,7 +109,7 @@ class DiT(nn.Module):
         self.t_embedder2 = TimestepEmbedder(HIDDEN_DIM)
         self.conv1 = nn.Linear(HIDDEN_DIM, HIDDEN_DIM)
         self.conv2 = nn.Conv1d(HIDDEN_DIM, IN_CHANNELS, 1)
-        self.wavenet = WN()
+        self.wavenet = WaveNet()
         self.final_layer = FinalLayer(HIDDEN_DIM, 1, HIDDEN_DIM)
         # residual connection from tranformer output to final output
         self.res_projection = nn.Linear(HIDDEN_DIM, HIDDEN_DIM)
@@ -136,7 +136,7 @@ class DiT(nn.Module):
             shape: (batch_size, mel_timesteps(795+1069), 512)
 
         """
-        _, _, T = x.size()
+        T = x.size(2)
 
         t1 = self.t_embedder(t)  # (N, D) # t1 [2, 512]
         cond = self.cond_projection(cond)  # cond [2,1863,512]->[2,1863,512]

@@ -1,8 +1,7 @@
 import torch
 from torch import Tensor, nn
-from torch.nn import functional as F
 
-from indextts.s2mel.modules import commons
+from indextts.s2mel.modules.commons import fused_add_tanh_sigmoid_multiply
 from indextts.s2mel.modules.constants import HIDDEN_DIM, NUM_LAYERS, P_DROPOUT
 from indextts.s2mel.modules.encodec import SConv1d
 from indextts.util import patch_call
@@ -10,25 +9,12 @@ from indextts.util import patch_call
 KERNEL_SIZE = 5
 
 
-class LayerNorm(nn.Module):
-    def __init__(self, channels: int, eps: float = 1e-5) -> None:
-        super().__init__()
-        self.channels = channels
-        self.eps = eps
+class WaveNet(nn.Module):
+    in_layers: nn.ModuleList
+    res_skip_layers: nn.ModuleList
+    drop: nn.Dropout
+    cond_layer: SConv1d
 
-        self.gamma = nn.Parameter(torch.ones(channels))
-        self.beta = nn.Parameter(torch.zeros(channels))
-
-    def forward(self, x: Tensor) -> Tensor:
-        x = x.transpose(1, -1)
-        x = F.layer_norm(x, (self.channels,), self.gamma, self.beta, self.eps)
-        return x.transpose(1, -1)
-
-    @patch_call(forward)
-    def __call__(self) -> None: ...
-
-
-class WN(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
@@ -52,16 +38,15 @@ class WN(nn.Module):
 
     def forward(self, x: Tensor, x_mask: Tensor, g: Tensor) -> Tensor:
         output = torch.zeros_like(x)
-        n_channels_tensor = torch.tensor([HIDDEN_DIM])
 
         g = self.cond_layer(g)
 
         for i in range(NUM_LAYERS):
-            x_in = self.in_layers[i](x)
             cond_offset = i * 2 * HIDDEN_DIM
             g_l = g[:, cond_offset : cond_offset + 2 * HIDDEN_DIM, :]
 
-            acts = commons.fused_add_tanh_sigmoid_multiply(x_in, g_l, n_channels_tensor)
+            x_in = self.in_layers[i](x)
+            acts = fused_add_tanh_sigmoid_multiply(x_in, g_l)
             acts = self.drop(acts)
 
             res_skip_acts = self.res_skip_layers[i](acts)

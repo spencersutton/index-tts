@@ -55,45 +55,36 @@ class CFM(nn.Module):
         x_lens = torch.tensor([mu.size(1)]).long().to(mu.device)
         t = t_span[0]
 
-        # I am storing this because I can later plot it by putting a debugger here and saving it to a file
-        # Or in future might add like a return_all_steps flag
-        sol = []
-        # apply prompt
         prompt_len = prompt.size(-1)
         prompt_x = torch.zeros_like(x)
         prompt_x[..., :prompt_len] = prompt[..., :prompt_len]
         x[..., :prompt_len] = 0
+
+        # Stack original and CFG (null) inputs for batched processing
+        stacked_prompt_x = torch.cat([prompt_x, torch.zeros_like(prompt_x)])
+        stacked_style = torch.cat([style, torch.zeros_like(style)])
+        stacked_mu = torch.cat([mu, torch.zeros_like(mu)])
+
         for step in tqdm(range(1, len(t_span))):
+            # Perform a single forward pass for both original and CFG inputs
+            stacked_dphi_dt = self.estimator(
+                torch.cat([x, x]), stacked_prompt_x, x_lens, torch.stack([t, t]), stacked_style, stacked_mu
+            )
+
+            # Split the output back into the original and CFG components
+            dphi_dt, cfg_dphi_dt = stacked_dphi_dt.chunk(2)
+
+            # Apply CFG formula
+            dphi_dt = (1.0 + INFERENCE_CFG_RATE) * dphi_dt - INFERENCE_CFG_RATE * cfg_dphi_dt
+
             dt = t_span[step] - t_span[step - 1]
-            if INFERENCE_CFG_RATE > 0:
-                # Stack original and CFG (null) inputs for batched processing
-                stacked_prompt_x = torch.cat([prompt_x, torch.zeros_like(prompt_x)])
-                stacked_style = torch.cat([style, torch.zeros_like(style)])
-                stacked_mu = torch.cat([mu, torch.zeros_like(mu)])
-                stacked_x = torch.cat([x, x])
-                stacked_t = torch.stack([t, t])
-
-                # Perform a single forward pass for both original and CFG inputs
-                stacked_dphi_dt: Tensor = self.estimator(
-                    stacked_x, stacked_prompt_x, x_lens, stacked_t, stacked_style, stacked_mu
-                )
-
-                # Split the output back into the original and CFG components
-                dphi_dt, cfg_dphi_dt = stacked_dphi_dt.chunk(2)
-
-                # Apply CFG formula
-                dphi_dt = (1.0 + INFERENCE_CFG_RATE) * dphi_dt - INFERENCE_CFG_RATE * cfg_dphi_dt
-            else:
-                dphi_dt = self.estimator(x, prompt_x, x_lens, t.unsqueeze(0), style, mu)
-
             x += dt * dphi_dt
             t += dt
-            sol.append(x)
             if step < len(t_span) - 1:
                 dt = t_span[step + 1] - t
             x[:, :, :prompt_len] = 0
 
-        return sol[-1]
+        return x
 
     def enable_torch_compile(self) -> None:
         """Enable torch.compile optimization for the estimator model.

@@ -1,4 +1,3 @@
-import functools
 from typing import TYPE_CHECKING, Any
 
 import torch
@@ -26,35 +25,6 @@ if TYPE_CHECKING:
 
 def null_position_embeddings(range: Tensor, dim: int) -> Tensor:
     return torch.zeros((range.shape[0], range.shape[1], dim), device=range.device)
-
-
-def build_hf_gpt_transformer(
-    layers: int, model_dim: int, heads: int, max_mel_seq_len: int, max_text_seq_len: int
-) -> tuple[GPT2Model, LearnedPositionEmbeddings, LearnedPositionEmbeddings]:
-    """
-    GPT-2 implemented by the HuggingFace library.
-    """
-    from transformers import GPT2Config
-
-    gpt_config = GPT2Config(
-        vocab_size=256,  # Unused.
-        n_positions=max_mel_seq_len + max_text_seq_len,
-        n_ctx=max_mel_seq_len + max_text_seq_len,
-        n_embd=model_dim,
-        n_layer=layers,
-        n_head=heads,
-    )
-    gpt = GPT2Model(gpt_config)
-    # Override the built in positional embeddings
-    del gpt.wpe
-    gpt.wpe = functools.partial(null_position_embeddings, dim=model_dim)
-    # Built-in token embeddings are unused.
-    del gpt.wte
-    return (
-        gpt,
-        LearnedPositionEmbeddings(max_mel_seq_len, model_dim),
-        LearnedPositionEmbeddings(max_text_seq_len, model_dim),
-    )
 
 
 class UnifiedVoice(nn.Module):
@@ -130,22 +100,40 @@ class UnifiedVoice(nn.Module):
         self.emovec_layer = nn.Linear(1024, model_dim)
 
         self.mel_embedding = nn.Embedding(NUMBER_MEL_CODES, model_dim)
-        (self.gpt, self.mel_pos_embedding, self.text_pos_embedding) = build_hf_gpt_transformer(
-            layers, model_dim, heads, self.max_mel_tokens + 2 + self.max_conditioning_inputs, self.max_text_tokens + 2
+
+        max_mel_seq_len = self.max_mel_tokens + 2 + self.max_conditioning_inputs
+        max_text_seq_len = self.max_text_tokens + 2
+
+        self.gpt = GPT2Model(
+            GPT2Config(
+                vocab_size=256,  # Unused.
+                n_positions=max_mel_seq_len + max_text_seq_len,
+                n_ctx=max_mel_seq_len + max_text_seq_len,
+                n_embd=model_dim,
+                n_layer=layers,
+                n_head=heads,
+            )
         )
+        # Override the built in positional embeddings
+        del self.gpt.wpe
+        self.gpt.wpe = lambda x: torch.zeros((x.shape[0], x.shape[1], model_dim), device=x.device)
+        # Built-in token embeddings are unused.
+        del self.gpt.wte
+        self.mel_pos_embedding = LearnedPositionEmbeddings(max_mel_seq_len, model_dim)
+        self.text_pos_embedding = LearnedPositionEmbeddings(max_text_seq_len, model_dim)
 
         self.final_norm = nn.LayerNorm(model_dim)
         self.text_head = nn.Linear(model_dim, NUMBER_TEXT_TOKENS + 1)
         self.mel_head = nn.Linear(model_dim, NUMBER_MEL_CODES)
 
         self.speed_emb = nn.Embedding(2, model_dim)
-        self.speed_emb.weight.data.normal_(mean=0.0, std=0.0)
+        self.speed_emb.weight.data.normal_(std=0.0)
 
         # Initialize the embeddings per the GPT-2 scheme
         embeddings: list[nn.Embedding] = [self.text_embedding]
         embeddings.append(self.mel_embedding)
         for module in embeddings:
-            module.weight.data.normal_(mean=0.0, std=0.02)
+            module.weight.data.normal_(std=0.02)
 
         self.use_accel: bool = use_accel
         self.accel_engine = None  # Will be initialized in post_init_gpt2_config

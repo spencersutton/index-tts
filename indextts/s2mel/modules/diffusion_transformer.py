@@ -5,15 +5,11 @@ from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
 from indextts.s2mel.modules.commons import sequence_mask
-from indextts.s2mel.modules.constants import BLOCK_SIZE, HIDDEN_DIM, IN_CHANNELS
+from indextts.s2mel.modules.constants import BLOCK_SIZE, DIM, IN_CHANNELS
 from indextts.s2mel.modules.gpt_fast.model import Transformer
 from indextts.s2mel.modules.wavenet import WaveNet
 from indextts.util import patch_call
 
-CONTENT_DIM = 512
-DILATION_RATE = 1
-FREQUENCY_EMBEDDING_SIZE = 256
-KERNEL_SIZE = 5
 STYLE_ENCODER_DIM = 192
 
 
@@ -33,16 +29,12 @@ class TimestepEmbedder(nn.Module):
 
     freqs: Tensor
 
-    def __init__(self, hidden_size: int) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.mlp = nn.Sequential(
-            nn.Linear(FREQUENCY_EMBEDDING_SIZE, hidden_size), nn.SiLU(), nn.Linear(hidden_size, hidden_size)
-        )
-        self.max_period = 10000
-        self.scale = 1000
+        self.mlp = nn.Sequential(nn.Linear(DIM // 2, DIM), nn.SiLU(), nn.Linear(DIM, DIM))
 
-        half = FREQUENCY_EMBEDDING_SIZE // 2
-        freqs = torch.exp(-math.log(self.max_period) * torch.arange(start=0, end=half, dtype=torch.float32) / half)
+        half = DIM // 4
+        freqs = torch.exp(-math.log(10000) * torch.arange(start=0, end=half, dtype=torch.float32) / half)
         self.register_buffer("freqs", freqs)
 
     def timestep_embedding(self, t: Tensor) -> Tensor:
@@ -50,17 +42,12 @@ class TimestepEmbedder(nn.Module):
         Create sinusoidal timestep embeddings.
         :param t: a 1-D Tensor of N indices, one per batch element.
                           These may be fractional.
-        :param dim: the dimension of the output.
-        :param max_period: controls the minimum frequency of the embeddings.
         :return: an (N, D) Tensor of positional embeddings.
         """
         # https://github.com/openai/glide-text2im/blob/main/glide_text2im/nn.py
 
-        args = self.scale * t[:, None].float() * self.freqs[None]
-        embedding = torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
-        if FREQUENCY_EMBEDDING_SIZE % 2:
-            embedding = torch.cat([embedding, torch.zeros_like(embedding[:, :1])], dim=-1)
-        return embedding
+        args = 1000 * t[:, None].float() * self.freqs[None]
+        return torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
 
     def forward(self, t: Tensor) -> Tensor:
         t_freq = self.timestep_embedding(t)
@@ -75,11 +62,11 @@ class FinalLayer(nn.Module):
     The final layer of DiT.
     """
 
-    def __init__(self, hidden_size: int, patch_size: int, out_channels: int) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.norm_final = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
-        self.linear = weight_norm(nn.Linear(hidden_size, patch_size * patch_size * out_channels))
-        self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(hidden_size, 2 * hidden_size))
+        self.norm_final = nn.LayerNorm(DIM, elementwise_affine=False, eps=1e-6)
+        self.linear = weight_norm(nn.Linear(DIM, DIM))
+        self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(DIM, 2 * DIM))
 
     def forward(self, x: Tensor, c: Tensor) -> Tensor:
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
@@ -92,34 +79,43 @@ class FinalLayer(nn.Module):
 
 class DiT(nn.Module):
     input_pos: Tensor
+    transformer: Transformer
+    x_embedder: nn.Linear
+    cond_projection: nn.Linear
+    t_embedder: TimestepEmbedder
+    t_embedder2: TimestepEmbedder
+    conv1: nn.Linear
+    conv2: nn.Conv1d
+    wavenet: WaveNet
+    final_layer: FinalLayer
+    res_projection: nn.Linear
+    skip_linear: nn.Linear
+    cond_x_merge_linear: nn.Linear
 
     def __init__(self) -> None:
         super().__init__()
         self.transformer = Transformer()
 
-        self.x_embedder = weight_norm(nn.Linear(IN_CHANNELS, HIDDEN_DIM))
+        self.x_embedder = weight_norm(nn.Linear(IN_CHANNELS, DIM))
 
-        self.cond_projection = nn.Linear(CONTENT_DIM, HIDDEN_DIM)  # continuous content
+        self.cond_projection = nn.Linear(DIM, DIM)  # continuous content
 
-        self.t_embedder = TimestepEmbedder(HIDDEN_DIM)
+        self.t_embedder = TimestepEmbedder()
 
         input_pos = torch.arange(BLOCK_SIZE)
         self.register_buffer("input_pos", input_pos)
 
-        self.t_embedder2 = TimestepEmbedder(HIDDEN_DIM)
-        self.conv1 = nn.Linear(HIDDEN_DIM, HIDDEN_DIM)
-        self.conv2 = nn.Conv1d(HIDDEN_DIM, IN_CHANNELS, 1)
+        self.t_embedder2 = TimestepEmbedder()
+        self.conv1 = nn.Linear(DIM, DIM)
+        self.conv2 = nn.Conv1d(DIM, IN_CHANNELS, kernel_size=1)
         self.wavenet = WaveNet()
-        self.final_layer = FinalLayer(HIDDEN_DIM, 1, HIDDEN_DIM)
+        self.final_layer = FinalLayer()
         # residual connection from tranformer output to final output
-        self.res_projection = nn.Linear(HIDDEN_DIM, HIDDEN_DIM)
+        self.res_projection = nn.Linear(DIM, DIM)
 
-        self.skip_linear = nn.Linear(HIDDEN_DIM + IN_CHANNELS, HIDDEN_DIM)
+        self.skip_linear = nn.Linear(DIM + IN_CHANNELS, DIM)
 
-        self.cond_x_merge_linear = nn.Linear(HIDDEN_DIM + IN_CHANNELS * 2 + STYLE_ENCODER_DIM, HIDDEN_DIM)
-
-    def setup_caches(self, max_batch_size: int, max_seq_length: int) -> None:
-        self.transformer.setup_caches()
+        self.cond_x_merge_linear = nn.Linear(DIM + IN_CHANNELS * 2 + STYLE_ENCODER_DIM, DIM)
 
     def forward(self, x: Tensor, prompt_x: Tensor, x_lens: Tensor, t: Tensor, style: Tensor, cond: Tensor) -> Tensor:
         """

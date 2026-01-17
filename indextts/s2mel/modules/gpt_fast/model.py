@@ -11,15 +11,15 @@ import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
-from indextts.s2mel.modules.constants import BLOCK_SIZE, HIDDEN_DIM
+from indextts.s2mel.modules.constants import BLOCK_SIZE, DIM
 from indextts.util import patch_call
 
-DIM = HIDDEN_DIM
+DIM = DIM
 N_HEAD = 8
 N_LAYER = 13
 NORM_EPS = 1e-5
 ROPE_BASE = 10000
-HEAD_DIM = HIDDEN_DIM // N_HEAD
+HEAD_DIM = DIM // N_HEAD
 INTERMEDIATE_SIZE = DIM * 3
 
 

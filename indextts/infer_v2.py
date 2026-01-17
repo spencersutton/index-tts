@@ -552,15 +552,9 @@ class IndexTTS2:
                     )
                     has_warned = True
 
-                code_lens: list[int] = []
-                for code in codes:
-                    if STOP_MEL_TOKEN not in code:
-                        code_len = len(code)
-                    else:
-                        len_ = (code == STOP_MEL_TOKEN).nonzero(as_tuple=False)[0]
-                        code_len = len_[0].item() if len_.numel() > 0 else len(code)
-                    code_lens.append(code_len)
-
+                code_lens: list[int] = [
+                    x.tolist().index(STOP_MEL_TOKEN) if STOP_MEL_TOKEN in x else len(x) for x in codes
+                ]
                 codes = codes[:, : max(code_lens)]
 
                 with (
@@ -586,8 +580,7 @@ class IndexTTS2:
 
                     cond = self.s2mel.length_regulator(s_infer, ylens=target_lengths)
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
-                    assert ref_mel is not None and style is not None
-                    vc_target = self.s2mel.cfm.inference(cat_condition, ref_mel, style)
+                    vc_target = self.s2mel.cfm.inference(cat_condition, unwrap(ref_mel), unwrap(style))
                     vc_target = vc_target[:, :, ref_mel.size(-1) :]
 
                 with bigvgan_time:

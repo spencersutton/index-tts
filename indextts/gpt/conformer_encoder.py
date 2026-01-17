@@ -247,7 +247,7 @@ class ConformerEncoder(nn.Module):
             ]),
         )
 
-    def forward(self, xs: Tensor, xs_lens: Tensor) -> tuple[Tensor, Tensor]:
+    def forward(self, xs: Tensor) -> tuple[Tensor, Tensor]:
         """Embed positions in tensor.
 
         Args:
@@ -267,6 +267,7 @@ class ConformerEncoder(nn.Module):
             masks: Tensor batch padding mask after subsample
                 (B, 1, T' ~= T/subsample_rate)
         """
+        xs_lens = torch.tensor([xs.shape[-1]], device=xs.device)
         T = xs.size(1)
         masks = ~make_pad_mask(xs_lens, T).unsqueeze(1)  # (B, 1, T)
         xs, pos_emb, masks = self.embed(xs, masks)

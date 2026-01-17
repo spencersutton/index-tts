@@ -61,7 +61,6 @@ class GptConfig(ConfigMapping):
     max_mel_tokens: int
     max_text_tokens: int
     heads: int
-    mel_length_compression: int
     layers: int
 
 

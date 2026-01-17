@@ -82,8 +82,6 @@ class UnifiedVoice(nn.Module):
     max_conditioning_inputs: int
     max_mel_tokens: int
     max_text_tokens: int
-    mel_length_compression: int
-    model_dim: int
 
     cond_mask_pad: nn.ConstantPad1d
     conditioning_encoder: ConformerEncoder
@@ -100,7 +98,6 @@ class UnifiedVoice(nn.Module):
         max_text_tokens: int = 120,
         max_mel_tokens: int = 250,
         max_conditioning_inputs: int = 1,
-        mel_length_compression: int = 1024,
         condition_num_latent: int = 32,
         use_accel: bool = False,
     ) -> None:
@@ -112,7 +109,6 @@ class UnifiedVoice(nn.Module):
             max_text_tokens: Maximum number of text tokens that will be encountered by model.
             max_mel_tokens: Maximum number of MEL tokens that will be encountered by model.
             max_conditioning_inputs: Maximum number of conditioning inputs provided to the model. If (1), conditioning input can be of format (b,80,s), otherwise (b,n,80,s).
-            mel_length_compression: The factor between <number_input_samples> and <mel_tokens>. Used to compute MEL code padding given wav input length.
         """
         super().__init__()
         self.layers = layers
@@ -120,7 +116,6 @@ class UnifiedVoice(nn.Module):
         self.max_mel_tokens = max_mel_tokens
         self.max_text_tokens = max_text_tokens
         self.max_conditioning_inputs = max_conditioning_inputs
-        self.mel_length_compression = mel_length_compression
         self.cond_num = condition_num_latent
         self.cond_mask_pad = nn.ConstantPad1d((self.cond_num, 0), True)
         self.emo_cond_mask_pad = nn.ConstantPad1d((1, 0), True)
@@ -255,15 +250,6 @@ class UnifiedVoice(nn.Module):
                 text_input_tokens[b, actual_end:] = STOP_TEXT_TOKEN
         return text_input_tokens
 
-    def get_emo_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths: int) -> Tensor:
-        speech_conditioning_input, mask = self.emo_conditioning_encoder(
-            speech_conditioning_input.transpose(1, 2),
-            torch.tensor([cond_mel_lengths], device=speech_conditioning_input.device),
-        )  # (b, s, d), (b, 1, s)
-        conds_mask = self.emo_cond_mask_pad(mask.squeeze(1))
-        conds = self.emo_perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 1, d)
-        return conds.squeeze(1)
-
     def forward(
         self,
         speech_conditioning_latent: Tensor,
@@ -295,11 +281,12 @@ class UnifiedVoice(nn.Module):
         mel_codes = self.set_mel_padding(mel_codes, mel_codes_lengths)
         mel_codes = F.pad(mel_codes, (0, 1), value=STOP_MEL_TOKEN)
 
+        tmp = text_inputs.new_zeros(text_inputs.size(0))
         conds = torch.cat(
             (
                 speech_conditioning_latent + emo_vec.unsqueeze(1),
-                self.speed_emb(torch.ones(speech_conditioning_latent.size(0), device=device).long()).unsqueeze(1),
-                self.speed_emb(torch.zeros(speech_conditioning_latent.size(0), device=device).long()).unsqueeze(1),
+                self.speed_emb(torch.ones_like(tmp)).unsqueeze(1),
+                self.speed_emb(torch.zeros_like(tmp)).unsqueeze(1),
             ),
             dim=1,
         )
@@ -399,14 +386,12 @@ class UnifiedVoice(nn.Module):
             max_generate_length: limit the number of generated tokens
             hf_generate_kwargs: kwargs for `GPT2InferenceModel.generate(**hf_generate_kwargs)`
         """
-        tmp = torch.zeros(text_inputs.size(0)).to(text_inputs.device)
-        duration_emb = self.speed_emb(torch.zeros_like(tmp).long())
-        duration_emb_half = self.speed_emb(torch.ones_like(tmp).long())
+        tmp = text_inputs.new_zeros(text_inputs.size(0))
         conds_latent = torch.cat(
             (
                 speech_conditioning_latent + emo_vec.unsqueeze(1),
-                duration_emb_half.unsqueeze(1),
-                duration_emb.unsqueeze(1),
+                self.speed_emb(torch.ones_like(tmp)).unsqueeze(1),
+                self.speed_emb(torch.zeros_like(tmp)).unsqueeze(1),
             ),
             1,
         )
@@ -446,23 +431,19 @@ class UnifiedVoice(nn.Module):
         return output[:, trunc_index:]
 
     def process_speech_condition(self, condition: Tensor) -> Tensor:
-        """
-        Args:
-            speech_condition: (b, d, frames) or (d, frames)
-        """
-
         if condition.ndim == 2:
             condition = condition.unsqueeze(0)
 
-        input, mask = self.conditioning_encoder(condition, torch.tensor([condition.shape[-1]], device=condition.device))
-        return self.perceiver_encoder(input, self.cond_mask_pad(mask.squeeze(1)))
+        input, mask = self.conditioning_encoder(condition)
+        mask = self.cond_mask_pad(mask.squeeze(1))
+        return self.perceiver_encoder(input, mask)
 
-    def get_emo_vec(self, emo_speech_conditioning_latent: Tensor) -> Tensor:
-        emo_vec_syn_ori = self.get_emo_conditioning(
-            emo_speech_conditioning_latent.transpose(1, 2), emo_speech_conditioning_latent.shape[-1]
-        )
-        emo_vec_syn = self.emovec_layer(emo_vec_syn_ori)
-        return self.emo_layer(emo_vec_syn)
+    def get_emo_vec(self, latent: Tensor) -> Tensor:
+        input, mask = self.emo_conditioning_encoder(latent)
+        conds_mask = self.emo_cond_mask_pad(mask.squeeze(1))
+        conds = self.emo_perceiver_encoder(input, conds_mask)
+        emotion_vector = self.emovec_layer(conds.squeeze(1))
+        return self.emo_layer(emotion_vector)
 
     @patch_call(forward)
     def __call__(self) -> None: ...

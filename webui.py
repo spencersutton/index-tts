@@ -141,16 +141,7 @@ def gen_single(
     # set gradio progress
     tts.gr_progress = progress
     do_sample, top_p, top_k, temperature, length_penalty, num_beams, repetition_penalty, max_mel_tokens = args
-    kwargs: dict[str, Any] = {
-        "do_sample": bool(do_sample),
-        "top_p": float(top_p),
-        "top_k": int(top_k) if int(top_k) > 0 else None,
-        "temperature": float(temperature),
-        "length_penalty": float(length_penalty),
-        "num_beams": num_beams,
-        "repetition_penalty": float(repetition_penalty),
-        "max_mel_tokens": int(max_mel_tokens),
-    }
+
     if isinstance(emo_control_method, gr.Radio):
         emo_control_method = emo_control_method.value
     if emo_control_method == 0:  # emotion from speaker
@@ -182,7 +173,14 @@ def gen_single(
         use_random=emo_random,
         verbose=cmd_args.verbose,
         max_text_tokens_per_segment=int(max_text_tokens_per_segment),
-        **kwargs,
+        do_sample=bool(do_sample),
+        top_p=float(top_p),
+        top_k=int(top_k) if int(top_k) > 0 else None,
+        temperature=float(temperature),
+        length_penalty=float(length_penalty),
+        num_beams=num_beams,
+        repetition_penalty=float(repetition_penalty),
+        max_mel_tokens=int(max_mel_tokens),
     )
     return gr.update(value=output, visible=True)
 

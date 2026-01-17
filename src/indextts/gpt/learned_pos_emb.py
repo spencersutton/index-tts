@@ -3,15 +3,13 @@ from torch import Tensor, nn
 
 from indextts.util import patch_call
 
-DIM = 1280
-
 
 class LearnedPositionEmbeddings(nn.Module):
     emb: nn.Embedding
 
-    def __init__(self, seq_len: int) -> None:
+    def __init__(self, seq_len: int, dim: int = 1280) -> None:
         super().__init__()
-        self.emb = nn.Embedding(seq_len, DIM)
+        self.emb = nn.Embedding(seq_len, dim)
         # Initializing this way is standard for GPT-2
         self.emb.weight.data.normal_(mean=0.0, std=0.02)
 

@@ -3,22 +3,24 @@
 
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
+from collections.abc import Sequence
+from functools import cached_property
+from typing import cast
 
 import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
-from indextts.s2mel.modules.constants import BLOCK_SIZE, HIDDEN_DIM
-from indextts.util import patch_call, unwrap
+from indextts.s2mel.modules.constants import BLOCK_SIZE, DIM
+from indextts.util import patch_call
 
-NUM_HEADS = 8
-DEPTH = 13
-HEAD_DIM = HIDDEN_DIM // NUM_HEADS
-ROPE_BASE = 10000
+DIM = DIM
+N_HEAD = 8
+N_LAYER = 13
 NORM_EPS = 1e-5
-N_LAYER = DEPTH
-N_HEAD = NUM_HEADS
-DIM = HIDDEN_DIM
+ROPE_BASE = 10000
+HEAD_DIM = DIM // N_HEAD
+INTERMEDIATE_SIZE = DIM * 3
 
 
 def find_multiple(n: int, k: int) -> int:
@@ -43,9 +45,6 @@ class AdaptiveLayerNorm(nn.Module):
 
     @patch_call(forward)
     def __call__(self) -> None: ...
-
-
-INTERMEDIATE_SIZE = find_multiple(int((8 * HIDDEN_DIM) / 3), 256)
 
 
 class KVCache(nn.Module):
@@ -73,43 +72,36 @@ class KVCache(nn.Module):
 
 
 class Transformer(nn.Module):
+    layers: Sequence["TransformerBlock"]
+    norm: "AdaptiveLayerNorm"
+
     def __init__(self) -> None:
         super().__init__()
 
-        self.layers = nn.ModuleList(TransformerBlock() for _ in range(N_LAYER))
+        self.layers = cast(Sequence[TransformerBlock], nn.ModuleList(TransformerBlock() for _ in range(N_LAYER)))
         self.norm = AdaptiveLayerNorm()
 
-        self.freqs_cis: Tensor | None = None
-        self.mask_cache: Tensor | None = None
-        self.max_batch_size = -1
-        self.max_seq_length = -1
-
-    def setup_caches(self, max_batch_size: int, max_seq_length: int) -> None:
-        if self.max_seq_length >= max_seq_length and self.max_batch_size >= max_batch_size:
-            return
-        max_seq_length = find_multiple(max_seq_length, 8)
-        self.max_seq_length = max_seq_length
-        self.max_batch_size = max_batch_size
+    @cached_property[Tensor]
+    def freqs_cis(self) -> Tensor:
         dtype = self.norm.project_layer.weight.dtype
         device = self.norm.project_layer.weight.device
 
-        self.freqs_cis = precompute_freqs_cis(BLOCK_SIZE, HEAD_DIM, dtype).to(device)
-        self.causal_mask = torch.tril(torch.ones(self.max_seq_length, self.max_seq_length, dtype=torch.bool)).to(device)
-        self.use_kv_cache = False
-        self.layers_emit_skip = [i for i in range(N_LAYER) if i < N_LAYER // 2]
-        self.layers_receive_skip = [i for i in range(N_LAYER) if i > N_LAYER // 2]
+        freq_seq = torch.arange(0, HEAD_DIM, 2, device=device)
+        inv_freq = (ROPE_BASE ** (freq_seq / HEAD_DIM)).reciprocal()
+        t = torch.arange(BLOCK_SIZE, device=device, dtype=dtype)
+        angles = torch.outer(t, inv_freq)
+        freqs_cis = torch.polar(torch.ones_like(angles), angles)
+        return torch.stack([freqs_cis.real, freqs_cis.imag], dim=-1)
 
     def forward(self, x: Tensor, c: Tensor, input_pos: Tensor, mask: Tensor) -> Tensor:
-        freqs_cis = unwrap(self.freqs_cis)[input_pos]
-        skip_in_x_list = []
+        freqs_cis = self.freqs_cis[input_pos]
+        mid = N_LAYER // 2
+        skip_stack: list[Tensor] = []
         for i, layer in enumerate(self.layers):
-            if i in self.layers_receive_skip:
-                skip_in_x = skip_in_x_list.pop(-1)
-            else:
-                skip_in_x = None
+            skip_in_x = skip_stack.pop() if i > mid else None
             x = layer(x, c, input_pos, freqs_cis, mask, skip_in_x)
-            if i in self.layers_emit_skip:
-                skip_in_x_list.append(x)
+            if i < mid:
+                skip_stack.append(x)
         return self.norm(x, c)
 
     @patch_call(forward)
@@ -117,6 +109,12 @@ class Transformer(nn.Module):
 
 
 class TransformerBlock(nn.Module):
+    attention: "Attention"
+    feed_forward: "FeedForward"
+    ffn_norm: "AdaptiveLayerNorm"
+    attention_norm: "AdaptiveLayerNorm"
+    skip_in_linear: nn.Linear
+
     def __init__(self) -> None:
         super().__init__()
         self.attention = Attention()
@@ -139,21 +137,21 @@ class TransformerBlock(nn.Module):
 
 
 class Attention(nn.Module):
+    wqkv: nn.Linear
+    wo: nn.Linear
+
     def __init__(self) -> None:
         super().__init__()
-        assert DIM % N_HEAD == 0
 
-        total_head_dim = (N_HEAD + 2 * N_HEAD) * HEAD_DIM
         # key, query, value projections for all heads, but in a batch
-        self.wqkv = nn.Linear(DIM, total_head_dim, bias=False)
-        self.wo = nn.Linear(HEAD_DIM * N_HEAD, DIM, bias=False)
+        self.wqkv = nn.Linear(DIM, INTERMEDIATE_SIZE, bias=False)
+        self.wo = nn.Linear(DIM, DIM, bias=False)
 
     def forward(self, x: Tensor, freqs_cis: Tensor, mask: Tensor) -> Tensor:
         bsz, seqlen, _ = x.shape
 
-        kv_size = N_HEAD * HEAD_DIM
-        query_key_value: Tensor = self.wqkv(x)
-        q, k, v = query_key_value.split((kv_size, kv_size, kv_size), dim=-1)
+        query_key_value = self.wqkv(x)
+        q, k, v = query_key_value.split((DIM, DIM, DIM), dim=-1)
 
         q = q.view(bsz, seqlen, N_HEAD, HEAD_DIM)
         k = k.view(bsz, seqlen, N_HEAD, HEAD_DIM)
@@ -168,7 +166,7 @@ class Attention(nn.Module):
         v = v.repeat_interleave(1, dim=1)
         y = F.scaled_dot_product_attention(q, k, v, attn_mask=mask, dropout_p=0.0)
 
-        y = y.transpose(1, 2).contiguous().view(bsz, seqlen, HEAD_DIM * N_HEAD)
+        y = y.transpose(1, 2).contiguous().view(bsz, seqlen, DIM)
         return self.wo(y)
 
     @patch_call(forward)
@@ -202,15 +200,6 @@ class RMSNorm(nn.Module):
 
     @patch_call(forward)
     def __call__(self) -> None: ...
-
-
-def precompute_freqs_cis(seq_len: int, n_elem: int, dtype: torch.dtype = torch.bfloat16) -> Tensor:
-    freqs = torch.as_tensor(1.0 / (ROPE_BASE ** (torch.arange(0, n_elem, 2)[: (n_elem // 2)].float() / n_elem)))
-    t = torch.arange(seq_len)
-    freqs = torch.outer(t, freqs)
-    freqs_cis = torch.polar(torch.ones_like(freqs), freqs)
-    cache = torch.stack([freqs_cis.real, freqs_cis.imag], dim=-1)
-    return cache.to(dtype=dtype)
 
 
 def apply_rotary_emb(x: Tensor, freqs_cis: Tensor) -> Tensor:

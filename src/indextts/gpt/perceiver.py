@@ -1,6 +1,5 @@
 # Adapted from https://github.com/lucidrains/naturalspeech2-pytorch/blob/659bec7f7543e7747e809e950cc2f84242fbeec7/naturalspeech2_pytorch/naturalspeech2_pytorch.py#L532
-
-from typing import cast
+from collections.abc import Iterable
 
 import torch
 import torch.nn.functional as F
@@ -72,33 +71,37 @@ class GEGLU(nn.Module):
 
 
 class PerceiverResampler(nn.Module):
-    def __init__(self, dim: int, num_latents: int = 32, heads: int = 8) -> None:
+    proj_context: nn.Linear
+    latents: nn.Parameter
+    layers: Iterable[tuple["Attention", nn.Sequential]]
+    norm: RMSNorm
+
+    def __init__(self, dim: int, num_latents: int = 32, heads: int = 8, depth: int = 2, dim_context: int = 512) -> None:
         super().__init__()
 
-        self.proj_context = nn.Linear(512, dim) if dim != 512 else nn.Identity()
+        self.proj_context = nn.Linear(dim_context, dim)
 
         self.latents = nn.Parameter(torch.randn(num_latents, dim))
         nn.init.normal_(self.latents, std=0.02)
 
-        self.layers = nn.ModuleList([])
+        self.layers = nn.ModuleList()
         dim_inner = int(dim * 4 / 3)
-        for _ in range(2):
+        for _ in range(depth):
             self.layers.append(
-                nn.ModuleList([
+                nn.ModuleList((
                     Attention(dim=dim, heads=heads),
                     nn.Sequential(nn.Linear(dim, dim_inner * 2), GEGLU(), nn.Linear(dim_inner, dim)),
-                ])
+                ))
             )
 
         self.norm = RMSNorm(dim)
 
     def forward(self, x: Tensor, mask: Tensor | None = None) -> Tensor:
-        x: Tensor = self.proj_context(x)
+        x = self.proj_context(x)
 
         latents = repeat(self.latents, "n d -> b n d", b=x.shape[0])
 
-        layers = cast(list[tuple[Attention, nn.Sequential]], self.layers)
-        for attn, ff in layers:
+        for attn, ff in self.layers:
             latents = attn(latents, x, mask=mask) + latents
             latents = ff(latents) + latents
 
@@ -110,6 +113,9 @@ class PerceiverResampler(nn.Module):
 
 class Attention(nn.Module):
     to_kv: nn.Linear
+    heads: int
+    to_out: nn.Linear
+    to_q: nn.Linear
 
     def __init__(self, dim: int, heads: int = 8) -> None:
         super().__init__()

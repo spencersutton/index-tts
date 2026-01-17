@@ -29,7 +29,7 @@ class InterpolateRegulator(nn.Module):
         mask = sequence_mask(ylens).unsqueeze(-1)  # (B, T, 1)
 
         x = x.mT.contiguous()  # (B, C, T)
-        x = F.interpolate(x, size=ylens.max())
+        x = F.interpolate(x, size=int(ylens.max()))
 
         out = self.model(x).mT.contiguous()  # (B, T, C)
         return out * mask

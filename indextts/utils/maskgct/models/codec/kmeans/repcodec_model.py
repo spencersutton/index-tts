@@ -20,6 +20,8 @@ def init_weights(m: nn.Module) -> None:
 
 
 class RepCodec(nn.Module):
+    quantizer: ResidualVQ
+
     def __init__(self) -> None:
         super().__init__()
 

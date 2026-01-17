@@ -24,6 +24,10 @@ def sequence_mask(length: Tensor | int, max_length: int | None = None) -> Tensor
 
 
 class MyModel(nn.Module):
+    from indextts.s2mel.modules.flow_matching import CFM
+
+    cfm: CFM
+
     def __init__(self) -> None:
         super().__init__()
         from indextts.s2mel.modules.flow_matching import CFM

@@ -255,9 +255,10 @@ class UnifiedVoice(nn.Module):
                 text_input_tokens[b, actual_end:] = STOP_TEXT_TOKEN
         return text_input_tokens
 
-    def get_emo_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths: Tensor) -> Tensor:
+    def get_emo_conditioning(self, speech_conditioning_input: Tensor, cond_mel_lengths: int) -> Tensor:
         speech_conditioning_input, mask = self.emo_conditioning_encoder(
-            speech_conditioning_input.transpose(1, 2), cond_mel_lengths
+            speech_conditioning_input.transpose(1, 2),
+            torch.tensor([cond_mel_lengths], device=speech_conditioning_input.device),
         )  # (b, s, d), (b, 1, s)
         conds_mask = self.emo_cond_mask_pad(mask.squeeze(1))
         conds = self.emo_perceiver_encoder(speech_conditioning_input, conds_mask)  # (b, 1, d)

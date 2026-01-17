@@ -15,12 +15,14 @@ from indextts.config import (
 )
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.inference import GPT2InferenceModel
-from indextts.gpt.learned_pos_emb import DIM, LearnedPositionEmbeddings
+from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.gpt.perceiver import PerceiverResampler
 from indextts.util import patch_call, unwrap
 
 if TYPE_CHECKING:
     from indextts.accel import AccelInferenceEngine
+
+DIM = 1280
 
 
 class UnifiedVoice(nn.Module):

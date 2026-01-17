@@ -75,7 +75,7 @@ def main() -> None:
     from indextts.infer_v2 import IndexTTS2
 
     tts = IndexTTS2(cfg_path=config_path, model_dir=model_dir, use_fp16=args.fp16, device=args.device)
-    tts.infer(spk_audio_prompt=voice_file, text=args.text.strip(), output_path=output_path)
+    tts.infer(output_path=output_path, spk_audio_prompt=voice_file, text=args.text.strip())
 
 
 if __name__ == "__main__":

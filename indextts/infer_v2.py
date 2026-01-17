@@ -278,20 +278,20 @@ class IndexTTS2:
     # 原始推理模式
     def infer(
         self,
+        output_path: Path,
         spk_audio_prompt: Path,
         text: str,
-        output_path: Path,
-        emo_audio_prompt: Path | None = None,
         emo_alpha: float = 1.0,
-        emo_vector: Sequence[float] | None = None,
-        use_emo_text: bool = False,
+        emo_audio_prompt: Path | None = None,
         emo_text: str | None = None,
-        use_random: bool = False,
+        emo_vector: Sequence[float] | None = None,
         interval_silence: int = 200,
-        verbose: bool = False,
         max_text_tokens_per_segment: int = 120,
-        stream_return: bool = False,
         more_segment_before: int = 0,
+        stream_return: bool = False,
+        use_emo_text: bool = False,
+        use_random: bool = False,
+        verbose: bool = False,
         **generation_kwargs: Any,
     ) -> Path | Generator[Tensor] | None:
         gen = self.infer_generator(
@@ -481,15 +481,16 @@ class IndexTTS2:
             print("segments count:", segments_count)
             print("max_text_tokens_per_segment:", max_text_tokens_per_segment)
             print(*segments, sep="\n")
-        do_sample = generation_kwargs.pop("do_sample", True)
-        top_p = generation_kwargs.pop("top_p", 0.8)
-        top_k = generation_kwargs.pop("top_k", 30)
-        temperature = generation_kwargs.pop("temperature", 0.8)
+
         autoregressive_batch_size = 1
+        do_sample = generation_kwargs.pop("do_sample", True)
         length_penalty = generation_kwargs.pop("length_penalty", 0.0)
+        max_mel_tokens = generation_kwargs.pop("max_mel_tokens", 1500)
         num_beams = generation_kwargs.pop("num_beams", 3)
         repetition_penalty = generation_kwargs.pop("repetition_penalty", 10.0)
-        max_mel_tokens = generation_kwargs.pop("max_mel_tokens", 1500)
+        temperature = generation_kwargs.pop("temperature", 0.8)
+        top_k = generation_kwargs.pop("top_k", 30)
+        top_p = generation_kwargs.pop("top_p", 0.8)
 
         wavs: list[Tensor] = []
         gpt_gen_time: float = 0

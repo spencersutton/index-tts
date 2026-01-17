@@ -231,15 +231,15 @@ class IndexTTS2:
             self.s2mel.enable_torch_compile()
             print(">> torch.compile optimization enabled successfully")
 
-        emo_matrix = torch.load(hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=self.cfg.emo_matrix))
-        self.emo_matrix = emo_matrix.to(self.device)
         self.emo_num = list(self.cfg.emo_num)
 
-        spk_matrix = torch.load(hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=self.cfg.spk_matrix))
-        self.spk_matrix = spk_matrix.to(self.device)
-
-        self.emo_matrix = torch.split(self.emo_matrix, self.emo_num)
-        self.spk_matrix = torch.split(self.spk_matrix, self.emo_num)
+        self.emo_matrix, self.spk_matrix = (
+            torch.split(
+                cast(Tensor, torch.load(hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=x))).to(self.device),
+                self.emo_num,
+            )
+            for x in (self.cfg.emo_matrix, self.cfg.spk_matrix)
+        )
 
         # 缓存参考音频：
         self.cache_spk_cond: Tensor | None = None

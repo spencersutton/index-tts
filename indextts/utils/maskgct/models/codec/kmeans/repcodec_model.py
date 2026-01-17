@@ -2,9 +2,9 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-
 from torch import Tensor, nn
 
+from indextts.util import unwrap
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize import ResidualVQ
 from indextts.utils.maskgct.models.codec.kmeans.vocos import VocosBackbone
 
@@ -12,8 +12,7 @@ from indextts.utils.maskgct.models.codec.kmeans.vocos import VocosBackbone
 def init_weights(m: nn.Module) -> None:
     if isinstance(m, nn.Conv1d):
         nn.init.trunc_normal_(m.weight, std=0.02)
-        assert m.bias is not None
-        nn.init.constant_(m.bias, 0)
+        nn.init.constant_(unwrap(m.bias), 0)
     if isinstance(m, nn.Linear):
         nn.init.trunc_normal_(m.weight, std=0.02)
         nn.init.constant_(m.bias, 0)

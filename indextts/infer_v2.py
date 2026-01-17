@@ -25,6 +25,7 @@ from indextts.qwen import QwenEmotion
 from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.commons import MyModel, load_checkpoint2
+from indextts.util import unwrap
 from indextts.utils.checkpoint import load_checkpoint
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
@@ -430,8 +431,7 @@ class IndexTTS2:
             if use_random:
                 random_index = [random.randint(0, x - 1) for x in EMO_NUM]
             else:
-                assert style is not None
-                random_index = [find_most_similar_cosine(style, tmp) for tmp in self.spk_matrix]
+                random_index = [find_most_similar_cosine(unwrap(style), tmp) for tmp in self.spk_matrix]
 
             emo_matrix = [tmp[index].unsqueeze(0) for index, tmp in zip(random_index, self.emo_matrix)]
             emo_matrix = torch.cat(emo_matrix, 0)

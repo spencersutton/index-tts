@@ -9,7 +9,7 @@ from torch import Tensor, nn
 from torch.nn import functional as F
 
 from indextts.s2mel.modules.constants import BLOCK_SIZE, HIDDEN_DIM
-from indextts.util import patch_call
+from indextts.util import patch_call, unwrap
 
 NUM_HEADS = 8
 DEPTH = 13
@@ -100,8 +100,7 @@ class Transformer(nn.Module):
         self.layers_receive_skip = [i for i in range(N_LAYER) if i > N_LAYER // 2]
 
     def forward(self, x: Tensor, c: Tensor, input_pos: Tensor, mask: Tensor) -> Tensor:
-        assert self.freqs_cis is not None, "Caches must be initialized first"
-        freqs_cis = self.freqs_cis[input_pos]
+        freqs_cis = unwrap(self.freqs_cis)[input_pos]
         skip_in_x_list = []
         for i, layer in enumerate(self.layers):
             if i in self.layers_receive_skip:

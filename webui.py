@@ -10,6 +10,7 @@ from typing import Any
 import gradio as gr
 
 from indextts.infer_v2 import IndexTTS2, normalize_emo_vec
+from indextts.util import unwrap
 from tools.i18n.i18n import I18nAuto
 
 parser = argparse.ArgumentParser(description="IndexTTS WebUI", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -160,7 +161,6 @@ def gen_single(
         emo_text = None
 
     print(f"Emo control mode:{emo_control_method},weight:{emo_weight},vec:{vec}")
-    assert prompt is not None
     output = tts.infer(
         do_sample=bool(do_sample),
         emo_alpha=emo_weight,
@@ -173,7 +173,7 @@ def gen_single(
         num_beams=num_beams,
         output_path=output_path,
         repetition_penalty=float(repetition_penalty),
-        spk_audio_prompt=prompt,
+        spk_audio_prompt=unwrap(prompt),
         temperature=float(temperature),
         text=text,
         top_k=int(top_k) if int(top_k) > 0 else None,

@@ -17,7 +17,7 @@ from bigvganinference import bigvgan
 from huggingface_hub import hf_hub_download
 from omegaconf import OmegaConf
 from torch import Tensor
-from transformers import SeamlessM4TFeatureExtractor
+from transformers import SeamlessM4TFeatureExtractor, Wav2Vec2BertModel
 
 from indextts.config import SAMPLING_RATE, STOP_MEL_TOKEN, IndexTTSConfig
 from indextts.gpt.model_v2 import UnifiedVoice
@@ -28,7 +28,6 @@ from indextts.s2mel.modules.commons import MyModel, load_checkpoint2
 from indextts.utils.checkpoint import load_checkpoint
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
-from indextts.utils.maskgct_utils import build_semantic_model
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
@@ -89,6 +88,34 @@ def _load_and_cut_audio(
 class IndexTTS2:
     gpt: UnifiedVoice
 
+    @cached_property[TextTokenizer]
+    def tokenizer(self) -> TextTokenizer:
+        path = Path(hf_hub_download(**self.cfg.dataset.bpe_model))
+        normalizer = TextNormalizer()
+        normalizer.load()
+        tokenizer = TextTokenizer(path, normalizer)
+        print(">> bpe model loaded from:", path)
+        return tokenizer
+
+    @cached_property[CAMPPlus]
+    def campplus_model(self) -> CAMPPlus:
+        path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
+        model = CAMPPlus()
+        model.load_state_dict(torch.load(path, map_location="cpu"))
+        model = model.to(self.device)
+        print(">> campplus_model weights restored from:", path)
+        return model.eval()
+
+    @cached_property[bigvgan.BigVGAN]
+    def bigvgan(self) -> bigvgan.BigVGAN:
+        path = self.cfg.vocoder.name
+        model = bigvgan.BigVGAN.from_pretrained(path, use_cuda_kernel=self.use_cuda_kernel)
+        model = model.to(self.device)
+        model.remove_weight_norm()
+        model.eval()
+        print(">> bigvgan weights restored from:", path)
+        return model
+
     @cached_property[RepCodec]
     def semantic_codec(self) -> RepCodec:
         model = RepCodec().eval()
@@ -97,6 +124,23 @@ class IndexTTS2:
         model = model.to(self.device).eval()
         print(f">> semantic_codec weights restored from: {path}")
         return model
+
+    @cached_property[Wav2Vec2BertModel]
+    def semantic_model(self) -> Wav2Vec2BertModel:
+        model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0")
+        return model.eval().to(self.device)
+
+    @cached_property[Tensor]
+    def semantic_mean(self) -> Tensor:
+        path = hf_hub_download(**self.cfg.w2v_stat)
+        data = cast(dict[str, Tensor], torch.load(path))
+        return data["mean"].to(self.device)
+
+    @cached_property[Tensor]
+    def semantic_std(self) -> Tensor:
+        path = hf_hub_download(**self.cfg.w2v_stat)
+        data = cast(dict[str, Tensor], torch.load(path))
+        return torch.sqrt(data["var"]).to(self.device)
 
     def __init__(
         self,
@@ -181,45 +225,11 @@ class IndexTTS2:
 
         self.extract_features = SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
 
-        self.semantic_model, self.semantic_mean, self.semantic_std = build_semantic_model(self.cfg.w2v_stat)
-        self.semantic_model = self.semantic_model.to(self.device)
-        self.semantic_model.eval()
-        self.semantic_mean = self.semantic_mean.to(self.device)
-        self.semantic_std = self.semantic_std.to(self.device)
-
         # Enable torch.compile optimization if requested
         if use_torch_compile:
             print(">> Enabling torch.compile optimization")
             self.s2mel.enable_torch_compile()
             print(">> torch.compile optimization enabled successfully")
-
-        # load campplus_model
-        campplus_ckpt_path = hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
-        campplus_model = CAMPPlus()
-        campplus_model.load_state_dict(torch.load(campplus_ckpt_path, map_location="cpu"))
-        self.campplus_model = campplus_model.to(self.device)
-        self.campplus_model.eval()
-        print(">> campplus_model weights restored from:", campplus_ckpt_path)
-
-        bigvgan_name = self.cfg.vocoder.name
-        self.bigvgan = bigvgan.BigVGAN.from_pretrained(bigvgan_name, use_cuda_kernel=self.use_cuda_kernel)
-        self.bigvgan = self.bigvgan.to(self.device)
-        self.bigvgan.remove_weight_norm()
-        self.bigvgan.eval()
-        print(">> bigvgan weights restored from:", bigvgan_name)
-
-        self.bpe_path = Path(hf_hub_download(**self.cfg.dataset.bpe_model))
-        self.normalizer = TextNormalizer(enable_glossary=True)
-        self.normalizer.load()
-        print(">> TextNormalizer loaded")
-        self.tokenizer = TextTokenizer(self.bpe_path, self.normalizer)
-        print(">> bpe model loaded from:", self.bpe_path)
-
-        # 加载术语词汇表（如果存在）
-        self.glossary_path = os.path.join(self.model_dir, "glossary.yaml")
-        if Path(self.glossary_path).exists():
-            self.normalizer.load_glossary_from_yaml(self.glossary_path)
-            print(">> Glossary loaded from:", self.glossary_path)
 
         emo_matrix = torch.load(hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=self.cfg.emo_matrix))
         self.emo_matrix = emo_matrix.to(self.device)

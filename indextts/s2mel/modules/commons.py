@@ -25,8 +25,11 @@ def sequence_mask(length: Tensor | int, max_length: int | None = None) -> Tensor
 
 class MyModel(nn.Module):
     from indextts.s2mel.modules.flow_matching import CFM
+    from indextts.s2mel.modules.length_regulator import InterpolateRegulator
 
     cfm: CFM
+    length_regulator: InterpolateRegulator
+    gpt_layer: nn.Sequential
 
     def __init__(self) -> None:
         super().__init__()

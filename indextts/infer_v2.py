@@ -411,7 +411,7 @@ class IndexTTS2:
             feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
             style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
 
-            prompt_condition = self.s2mel.length_regulator(s_ref, ylens=ref_target_lengths)[0]
+            prompt_condition = self.s2mel.length_regulator(s_ref, ylens=ref_target_lengths)
 
             self.cache_spk_cond = spk_cond_emb
             self.cache_s2mel_style = style
@@ -552,7 +552,7 @@ class IndexTTS2:
                     )
                     has_warned = True
 
-                code_lens = []
+                code_lens: list[int] = []
                 for code in codes:
                     if STOP_MEL_TOKEN not in code:
                         code_len = len(code)
@@ -570,33 +570,29 @@ class IndexTTS2:
                     latent = self.gpt(
                         speech_conditioning_latent,
                         text_tokens,
-                        torch.tensor([text_tokens.shape[-1]], device=text_tokens.device),
+                        torch.tensor([text_tokens.shape[-1]], device=self.device),
                         codes,
-                        torch.tensor([codes.shape[-1]], device=text_tokens.device),
+                        torch.tensor([codes.shape[-1]], device=self.device),
                         emo_cond_emb,
-                        emo_cond_mel_lengths=torch.tensor([emo_cond_emb.shape[-1]], device=text_tokens.device),
+                        emo_cond_mel_lengths=torch.tensor([emo_cond_emb.shape[-1]], device=self.device),
                         emo_vec=emovec,
-                        use_speed=torch.zeros(spk_cond_emb.size(0)).to(spk_cond_emb.device).long(),
+                        use_speed=torch.zeros(spk_cond_emb.size(0)).to(self.device).long(),
                     )
 
-                dtype = None
-                with torch.autocast(text_tokens.device.type, enabled=dtype is not None, dtype=dtype):
-                    with s2mel_time:
-                        latent = self.s2mel.gpt_layer(latent)
-                        s_infer = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
-                        s_infer = s_infer.transpose(1, 2)
-                        s_infer += latent
-                        target_lengths = (torch.tensor(code_lens, dtype=torch.long).to(self.device) * 1.72).long()
+                with s2mel_time:
+                    s_infer = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
+                    s_infer = s_infer.mT + self.s2mel.gpt_layer(latent)
+                    target_lengths = (torch.tensor(code_lens, device=self.device) * 1.72).long()
 
-                        cond = self.s2mel.length_regulator(s_infer, ylens=target_lengths)[0]
-                        cat_condition = torch.cat([prompt_condition, cond], dim=1)
-                        assert ref_mel is not None and style is not None
-                        vc_target = self.s2mel.cfm.inference(cat_condition, ref_mel, style)
-                        vc_target = vc_target[:, :, ref_mel.size(-1) :]
+                    cond = self.s2mel.length_regulator(s_infer, ylens=target_lengths)
+                    cat_condition = torch.cat([prompt_condition, cond], dim=1)
+                    assert ref_mel is not None and style is not None
+                    vc_target = self.s2mel.cfm.inference(cat_condition, ref_mel, style)
+                    vc_target = vc_target[:, :, ref_mel.size(-1) :]
 
-                    with bigvgan_time:
-                        wav = self.bigvgan(vc_target.float()).squeeze().unsqueeze(0)
-                    wav = wav.squeeze(1)
+                with bigvgan_time:
+                    wav = self.bigvgan(vc_target.float()).squeeze().unsqueeze(0)
+                wav = wav.squeeze(1)
 
                 if verbose:
                     print(f"wav shape: {wav.shape}", "min:", wav.min(), "max:", wav.max())

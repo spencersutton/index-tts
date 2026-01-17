@@ -4,6 +4,7 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 from collections.abc import Sequence
+from functools import cached_property
 from typing import cast
 
 import torch
@@ -11,7 +12,7 @@ from torch import Tensor, nn
 from torch.nn import functional as F
 
 from indextts.s2mel.modules.constants import BLOCK_SIZE, HIDDEN_DIM
-from indextts.util import patch_call, unwrap
+from indextts.util import patch_call
 
 DIM = HIDDEN_DIM
 N_HEAD = 8
@@ -73,10 +74,6 @@ class KVCache(nn.Module):
 class Transformer(nn.Module):
     layers: Sequence["TransformerBlock"]
     norm: "AdaptiveLayerNorm"
-    freqs_cis: Tensor | None
-    mask_cache: Tensor | None
-    max_batch_size: int
-    max_seq_length: int
 
     def __init__(self) -> None:
         super().__init__()
@@ -84,23 +81,20 @@ class Transformer(nn.Module):
         self.layers = cast(Sequence[TransformerBlock], nn.ModuleList(TransformerBlock() for _ in range(N_LAYER)))
         self.norm = AdaptiveLayerNorm()
 
-        self.freqs_cis: Tensor | None = None
-        self.mask_cache: Tensor | None = None
-        self.max_batch_size = -1
-        self.max_seq_length = -1
-
-    def setup_caches(self) -> None:
-        if self.max_seq_length >= 8192 and self.max_batch_size >= 1:
-            return
-        self.max_seq_length = 8192
-        self.max_batch_size = 1
+    @cached_property[Tensor]
+    def freqs_cis(self) -> Tensor:
         dtype = self.norm.project_layer.weight.dtype
         device = self.norm.project_layer.weight.device
 
-        self.freqs_cis = precompute_freqs_cis(BLOCK_SIZE, HEAD_DIM, dtype).to(device)
+        freq_seq = torch.arange(0, HEAD_DIM, 2, device=device)
+        inv_freq = (ROPE_BASE ** (freq_seq / HEAD_DIM)).reciprocal()
+        t = torch.arange(BLOCK_SIZE, device=device, dtype=dtype)
+        angles = torch.outer(t, inv_freq)
+        freqs_cis = torch.polar(torch.ones_like(angles), angles)
+        return torch.stack([freqs_cis.real, freqs_cis.imag], dim=-1)
 
     def forward(self, x: Tensor, c: Tensor, input_pos: Tensor, mask: Tensor) -> Tensor:
-        freqs_cis = unwrap(self.freqs_cis)[input_pos]
+        freqs_cis = self.freqs_cis[input_pos]
         mid = N_LAYER // 2
         skip_stack: list[Tensor] = []
         for i, layer in enumerate(self.layers):
@@ -206,15 +200,6 @@ class RMSNorm(nn.Module):
 
     @patch_call(forward)
     def __call__(self) -> None: ...
-
-
-def precompute_freqs_cis(seq_len: int, n_elem: int, dtype: torch.dtype = torch.bfloat16) -> Tensor:
-    freqs = torch.as_tensor(1.0 / (ROPE_BASE ** (torch.arange(0, n_elem, 2)[: (n_elem // 2)].float() / n_elem)))
-    t = torch.arange(seq_len)
-    freqs = torch.outer(t, freqs)
-    freqs_cis = torch.polar(torch.ones_like(freqs), freqs)
-    cache = torch.stack([freqs_cis.real, freqs_cis.imag], dim=-1)
-    return cache.to(dtype=dtype)
 
 
 def apply_rotary_emb(x: Tensor, freqs_cis: Tensor) -> Tensor:

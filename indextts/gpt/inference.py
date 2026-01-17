@@ -22,7 +22,6 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         embeddings: nn.Embedding,
         norm: nn.Module,
         linear: nn.Module,
-        kv_cache: bool = False,
     ) -> None:
         super().__init__(config)
         # Note: the argument named `text_pos_emb` here actually represents the mel position embedding
@@ -31,7 +30,6 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         self.embeddings = embeddings
         self.final_norm = norm
         self.lm_head = nn.Sequential(norm, linear)
-        self.kv_cache = kv_cache
 
         self.cached_mel_emb: Tensor | None = None
 
@@ -47,8 +45,6 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     ) -> dict[str, transformers.Cache | Tensor | bool | None]:
         token_type_ids = kwargs.get("token_type_ids")  # usually None
         position_ids = kwargs.get("position_ids")
-        if not self.kv_cache:
-            past_key_values = None
         # only last token for inputs_ids if past is defined in kwargs
         if past_key_values:
             input_ids = input_ids[:, -1].unsqueeze(-1)

@@ -209,9 +209,7 @@ class IndexTTS2:
                 use_deepspeed = False
                 print(f">> Failed to load DeepSpeed. Falling back to normal inference. Error: {e}")
 
-        self.gpt.post_init_gpt2_config(
-            use_deepspeed=use_deepspeed, kv_cache=True, half=self.use_fp16, model_dim=self.cfg.gpt.model_dim
-        )
+        self.gpt.post_init_gpt2_config(use_deepspeed=use_deepspeed, half=self.use_fp16)
 
         if self.use_cuda_kernel:
             # preload the CUDA kernel for BigVGAN

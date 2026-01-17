@@ -4,6 +4,14 @@ from typing import Any
 
 SAMPLING_RATE = 22050
 
+START_MEL_TOKEN = 2**13
+STOP_MEL_TOKEN = START_MEL_TOKEN + 1
+NUMBER_MEL_CODES = STOP_MEL_TOKEN + 1
+
+NUMBER_TEXT_TOKENS = 12000
+START_TEXT_TOKEN = 0
+STOP_TEXT_TOKEN = START_TEXT_TOKEN + 1
+
 
 class ConfigMapping(Mapping[str, Any]):
     """MixIn to allow dot access (via dataclass) and bracket access/** unpacking."""
@@ -46,18 +54,8 @@ class DatasetConfig(ConfigMapping):
     mel: MelConfig
 
 
-START_MEL_TOKEN = 2**13
-STOP_MEL_TOKEN = START_MEL_TOKEN + 1
-NUMBER_MEL_CODES = STOP_MEL_TOKEN + 1
-
-NUMBER_TEXT_TOKENS = 12000
-START_TEXT_TOKEN = 0
-STOP_TEXT_TOKEN = START_TEXT_TOKEN + 1
-
-
 @dataclass
 class GptConfig(ConfigMapping):
-    model_dim: int
     max_mel_tokens: int
     max_text_tokens: int
     heads: int

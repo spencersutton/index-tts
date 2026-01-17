@@ -15,16 +15,12 @@ from indextts.config import (
 )
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.inference import GPT2InferenceModel
-from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
+from indextts.gpt.learned_pos_emb import DIM, LearnedPositionEmbeddings
 from indextts.gpt.perceiver import PerceiverResampler
 from indextts.util import patch_call, unwrap
 
 if TYPE_CHECKING:
     from indextts.accel import AccelInferenceEngine
-
-
-def null_position_embeddings(range: Tensor, dim: int) -> Tensor:
-    return torch.zeros((range.shape[0], range.shape[1], dim), device=range.device)
 
 
 class UnifiedVoice(nn.Module):
@@ -49,7 +45,6 @@ class UnifiedVoice(nn.Module):
     cond_num: int
     heads: int
     layers: int
-    max_conditioning_inputs: int
     max_mel_tokens: int
     max_text_tokens: int
 
@@ -63,45 +58,39 @@ class UnifiedVoice(nn.Module):
     def __init__(
         self,
         layers: int = 8,
-        model_dim: int = 512,
         heads: int = 8,
         max_text_tokens: int = 120,
         max_mel_tokens: int = 250,
-        max_conditioning_inputs: int = 1,
         condition_num_latent: int = 32,
         use_accel: bool = False,
     ) -> None:
         """
         Args:
             layers: Number of layers in transformer stack.
-            model_dim: Operating dimensions of the transformer
-            heads: Number of transformer heads. Must be divisible by model_dim. Recommend model_dim//64
+            heads: Number of transformer heads. Must be divisible by DIM. Recommend DIM//64
             max_text_tokens: Maximum number of text tokens that will be encountered by model.
             max_mel_tokens: Maximum number of MEL tokens that will be encountered by model.
-            max_conditioning_inputs: Maximum number of conditioning inputs provided to the model. If (1), conditioning input can be of format (b,80,s), otherwise (b,n,80,s).
         """
         super().__init__()
         self.layers = layers
         self.heads = heads
         self.max_mel_tokens = max_mel_tokens
         self.max_text_tokens = max_text_tokens
-        self.max_conditioning_inputs = max_conditioning_inputs
-        self.cond_num = condition_num_latent
-        self.cond_mask_pad = nn.ConstantPad1d((self.cond_num, 0), True)
+        self.cond_mask_pad = nn.ConstantPad1d((condition_num_latent, 0), True)
         self.emo_cond_mask_pad = nn.ConstantPad1d((1, 0), True)
         self.conditioning_encoder = ConformerEncoder(linear_units=2048, attention_heads=8, num_blocks=6)
-        self.perceiver_encoder = PerceiverResampler(model_dim, heads=8, num_latents=self.cond_num)
+        self.perceiver_encoder = PerceiverResampler(DIM, heads=8, num_latents=condition_num_latent)
 
         self.emo_conditioning_encoder = ConformerEncoder(linear_units=1024, attention_heads=4, num_blocks=4)
         self.emo_perceiver_encoder = PerceiverResampler(1024, heads=4, num_latents=1)
 
-        self.text_embedding = nn.Embedding(NUMBER_TEXT_TOKENS + 1, model_dim)
-        self.emo_layer = nn.Linear(model_dim, model_dim)
-        self.emovec_layer = nn.Linear(1024, model_dim)
+        self.text_embedding = nn.Embedding(NUMBER_TEXT_TOKENS + 1, DIM)
+        self.emo_layer = nn.Linear(DIM, DIM)
+        self.emovec_layer = nn.Linear(1024, DIM)
 
-        self.mel_embedding = nn.Embedding(NUMBER_MEL_CODES, model_dim)
+        self.mel_embedding = nn.Embedding(NUMBER_MEL_CODES, DIM)
 
-        max_mel_seq_len = self.max_mel_tokens + 2 + self.max_conditioning_inputs
+        max_mel_seq_len = self.max_mel_tokens + 3
         max_text_seq_len = self.max_text_tokens + 2
 
         self.gpt = GPT2Model(
@@ -109,24 +98,24 @@ class UnifiedVoice(nn.Module):
                 vocab_size=256,  # Unused.
                 n_positions=max_mel_seq_len + max_text_seq_len,
                 n_ctx=max_mel_seq_len + max_text_seq_len,
-                n_embd=model_dim,
+                n_embd=DIM,
                 n_layer=layers,
                 n_head=heads,
             )
         )
         # Override the built in positional embeddings
         del self.gpt.wpe
-        self.gpt.wpe = lambda x: torch.zeros((x.shape[0], x.shape[1], model_dim), device=x.device)
+        self.gpt.wpe = lambda x: torch.zeros((x.shape[0], x.shape[1], DIM), device=x.device)
         # Built-in token embeddings are unused.
         del self.gpt.wte
-        self.mel_pos_embedding = LearnedPositionEmbeddings(max_mel_seq_len, model_dim)
-        self.text_pos_embedding = LearnedPositionEmbeddings(max_text_seq_len, model_dim)
+        self.mel_pos_embedding = LearnedPositionEmbeddings(max_mel_seq_len)
+        self.text_pos_embedding = LearnedPositionEmbeddings(max_text_seq_len)
 
-        self.final_norm = nn.LayerNorm(model_dim)
-        self.text_head = nn.Linear(model_dim, NUMBER_TEXT_TOKENS + 1)
-        self.mel_head = nn.Linear(model_dim, NUMBER_MEL_CODES)
+        self.final_norm = nn.LayerNorm(DIM)
+        self.text_head = nn.Linear(DIM, NUMBER_TEXT_TOKENS + 1)
+        self.mel_head = nn.Linear(DIM, NUMBER_MEL_CODES)
 
-        self.speed_emb = nn.Embedding(2, model_dim)
+        self.speed_emb = nn.Embedding(2, DIM)
         self.speed_emb.weight.data.normal_(std=0.0)
 
         # Initialize the embeddings per the GPT-2 scheme
@@ -135,16 +124,16 @@ class UnifiedVoice(nn.Module):
         for module in embeddings:
             module.weight.data.normal_(std=0.02)
 
-        self.use_accel: bool = use_accel
+        self.use_accel = use_accel
         self.accel_engine = None  # Will be initialized in post_init_gpt2_config
 
-    def post_init_gpt2_config(self, use_deepspeed: bool, kv_cache: bool, half: bool, model_dim: int) -> None:
+    def post_init_gpt2_config(self, use_deepspeed: bool, half: bool) -> None:
         seq_length = self.max_mel_tokens + self.max_text_tokens + 2
         gpt_config = GPT2Config(
             vocab_size=NUMBER_MEL_CODES,
             n_positions=seq_length,
             n_ctx=seq_length,
-            n_embd=model_dim,
+            n_embd=DIM,
             n_layer=self.layers,
             n_head=self.heads,
         )
@@ -176,20 +165,14 @@ class UnifiedVoice(nn.Module):
                 lm_head=lm_head_with_norm,
                 num_layers=self.layers,
                 num_heads=self.heads,
-                head_dim=model_dim // self.heads,
+                head_dim=DIM // self.heads,
                 block_size=256,
                 num_blocks=16,  # Reduce to save memory (16*256 = 4096 tokens capacity)
                 use_cuda_graph=True,
             )
             print("acceleration engine initialized")
         self.inference_model = GPT2InferenceModel(
-            gpt_config,
-            self.gpt,
-            self.mel_pos_embedding,
-            self.mel_embedding,
-            self.final_norm,
-            self.mel_head,
-            kv_cache=kv_cache,
+            gpt_config, self.gpt, self.mel_pos_embedding, self.mel_embedding, self.final_norm, self.mel_head
         )
         if use_deepspeed and half and torch.cuda.is_available():
             import deepspeed  # type: ignore

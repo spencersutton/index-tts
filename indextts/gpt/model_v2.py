@@ -457,23 +457,12 @@ class UnifiedVoice(nn.Module):
             )
         return output[:, trunc_index:], speech_conditioning_latent
 
-    def get_emo_vec(self, emo_speech_conditioning_latent: Tensor, emo_cond_lengths: Tensor) -> Tensor:
-        emo_vec_syn_ori = self.get_emo_conditioning(emo_speech_conditioning_latent.transpose(1, 2), emo_cond_lengths)
+    def get_emo_vec(self, emo_speech_conditioning_latent: Tensor) -> Tensor:
+        emo_vec_syn_ori = self.get_emo_conditioning(
+            emo_speech_conditioning_latent.transpose(1, 2), emo_speech_conditioning_latent.shape[-1]
+        )
         emo_vec_syn = self.emovec_layer(emo_vec_syn_ori)
         return self.emo_layer(emo_vec_syn)
-
-    def merge_emo_vec(
-        self,
-        speech_conditioning_latent: Tensor,
-        emo_speech_conditioning_latent: Tensor,
-        cond_lengths: Tensor,
-        emo_cond_lengths: Tensor,
-        alpha: float = 1.0,
-    ) -> Tensor:
-        emo_vec = self.get_emo_vec(emo_speech_conditioning_latent, emo_cond_lengths)
-        base_vec = self.get_emo_vec(speech_conditioning_latent, cond_lengths)
-
-        return base_vec + alpha * (emo_vec - base_vec)
 
     @patch_call(forward)
     def __call__(self) -> None: ...

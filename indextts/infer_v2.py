@@ -505,13 +505,10 @@ class IndexTTS2:
             m_start_time = time.perf_counter()
             with torch.no_grad():
                 with torch.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype):
-                    emovec = self.gpt.merge_emo_vec(
-                        spk_cond_emb,
-                        emo_cond_emb,
-                        torch.tensor([spk_cond_emb.shape[-1]], device=text_tokens.device),
-                        torch.tensor([emo_cond_emb.shape[-1]], device=text_tokens.device),
-                        alpha=emo_alpha,
-                    )
+                    emo_vec = self.gpt.get_emo_vec(emo_cond_emb)
+                    base_vec = self.gpt.get_emo_vec(spk_cond_emb)
+
+                    emovec = base_vec + emo_alpha * (emo_vec - base_vec)
 
                     if weight_vector is not None and emovec_mat is not None:
                         emovec = emovec_mat + (1 - torch.sum(weight_vector)) * emovec

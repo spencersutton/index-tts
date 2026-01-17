@@ -193,33 +193,19 @@ class UnifiedVoice(nn.Module):
 
         self.gpt.wte = self.mel_embedding
 
-    def set_mel_padding(self, mel_input_tokens: Tensor, mel_lengths: Tensor) -> Tensor:
+    def set_padding(self, input_tokens: Tensor, lengths: Tensor, token: int) -> Tensor:
         """
-        Given mel tokens that are derived from a padded audio clip and the actual lengths of each batch element in
-        that audio clip, reformats the tokens with STOP_MEL_TOKEN in place of the zero padding. This is required
+        Given tokens that are derived from a padded audio clip and the actual lengths of each batch element in
+        that audio clip, reformats the tokens with `token` in place of the zero padding. This is required
         preformatting to create a working TTS model.
         """
-        for b in range(len(mel_lengths)):
+        for b in range(len(lengths)):
             # Due to the convolutional nature of how these tokens are generated,
             # it would be best if the model predicts a token past the actual last token.
-            actual_end = mel_lengths[b]
-            if actual_end < mel_input_tokens.shape[-1]:
-                mel_input_tokens[b, actual_end:] = STOP_MEL_TOKEN
-        return mel_input_tokens
-
-    def set_text_padding(self, text_input_tokens: Tensor, text_lengths: Tensor) -> Tensor:
-        """
-        Given mel tokens that are derived from a padded audio clip and the actual lengths of each batch element in
-        that audio clip, reformats the tokens with STOP_MEL_TOKEN in place of the zero padding. This is required
-        preformatting to create a working TTS model.
-        """
-        for b in range(len(text_lengths)):
-            # Due to the convolutional nature of how these tokens are generated,
-            # it would be best if the model predicts a token past the actual last token.
-            actual_end = text_lengths[b]
-            if actual_end < text_input_tokens.shape[-1]:
-                text_input_tokens[b, actual_end:] = STOP_TEXT_TOKEN
-        return text_input_tokens
+            actual_end = lengths[b]
+            if actual_end < input_tokens.shape[-1]:
+                input_tokens[b, actual_end:] = token
+        return input_tokens
 
     def forward(
         self,
@@ -245,11 +231,11 @@ class UnifiedVoice(nn.Module):
         """
 
         text_lengths = torch.tensor([text_inputs.shape[-1]], device=device)
-        text_inputs = self.set_text_padding(text_inputs, text_lengths)
+        text_inputs = self.set_padding(text_inputs, text_lengths, STOP_TEXT_TOKEN)
         text_inputs = F.pad(text_inputs, (0, 1), value=STOP_TEXT_TOKEN)
 
         mel_codes_lengths = torch.tensor([mel_codes.shape[-1]], device=device)
-        mel_codes = self.set_mel_padding(mel_codes, mel_codes_lengths)
+        mel_codes = self.set_padding(mel_codes, mel_codes_lengths, STOP_MEL_TOKEN)
         mel_codes = F.pad(mel_codes, (0, 1), value=STOP_MEL_TOKEN)
 
         text_inputs = F.pad(text_inputs, (1, 0), value=START_TEXT_TOKEN)

@@ -281,21 +281,13 @@ class UnifiedVoice(nn.Module):
         mel_codes = self.set_mel_padding(mel_codes, mel_codes_lengths)
         mel_codes = F.pad(mel_codes, (0, 1), value=STOP_MEL_TOKEN)
 
-        tmp = text_inputs.new_zeros(text_inputs.size(0))
-        conds = torch.cat(
-            (
-                speech_conditioning_latent + emo_vec.unsqueeze(1),
-                self.speed_emb(torch.ones_like(tmp)).unsqueeze(1),
-                self.speed_emb(torch.zeros_like(tmp)).unsqueeze(1),
-            ),
-            dim=1,
-        )
         text_inputs = F.pad(text_inputs, (1, 0), value=START_TEXT_TOKEN)
         mel_codes = F.pad(mel_codes, (1, 0), value=START_MEL_TOKEN)
 
         mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes)
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
 
+        conds = self.combine_latents(speech_conditioning_latent, emo_vec, text_inputs)
         output = self.gpt(
             inputs_embeds=torch.cat([conds, text_emb, mel_emb], dim=1), return_dict=True, output_attentions=False
         )
@@ -366,6 +358,17 @@ class UnifiedVoice(nn.Module):
         fake_inputs[:, -1] = START_MEL_TOKEN
         return fake_inputs, batched_mel_emb, attention_mask
 
+    def combine_latents(self, speech_conditioning_latent: Tensor, emo_vec: Tensor, text_inputs: Tensor) -> Tensor:
+        template = text_inputs.new_zeros(text_inputs.size(0))
+        return torch.cat(
+            (
+                speech_conditioning_latent + emo_vec.unsqueeze(1),
+                self.speed_emb(torch.ones_like(template)).unsqueeze(1),
+                self.speed_emb(torch.zeros_like(template)).unsqueeze(1),
+            ),
+            dim=1,
+        )
+
     def inference_speech(
         self,
         speech_conditioning_latent: Tensor,
@@ -386,15 +389,7 @@ class UnifiedVoice(nn.Module):
             max_generate_length: limit the number of generated tokens
             hf_generate_kwargs: kwargs for `GPT2InferenceModel.generate(**hf_generate_kwargs)`
         """
-        tmp = text_inputs.new_zeros(text_inputs.size(0))
-        conds_latent = torch.cat(
-            (
-                speech_conditioning_latent + emo_vec.unsqueeze(1),
-                self.speed_emb(torch.ones_like(tmp)).unsqueeze(1),
-                self.speed_emb(torch.zeros_like(tmp)).unsqueeze(1),
-            ),
-            1,
-        )
+        conds_latent = self.combine_latents(speech_conditioning_latent, emo_vec, text_inputs)
         inputs, inputs_embeds, attention_mask = self.prepare_gpt_inputs(conds_latent, text_inputs)
         self.inference_model.cached_mel_emb = inputs_embeds
         trunc_index = inputs.shape[1]

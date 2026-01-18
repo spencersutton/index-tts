@@ -7,11 +7,13 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from typing import Any, cast
 
+import huggingface_hub as hf
 import librosa
 import safetensors.torch
 import torch
 import torch.nn.functional as F
 import torchaudio
+import transformers
 from bigvganinference import bigvgan
 from omegaconf import OmegaConf
 from torch import Tensor

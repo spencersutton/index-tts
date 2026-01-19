@@ -5,6 +5,7 @@ import torch
 from torch import Tensor, nn
 
 from indextts.accel.attention import ForwardContext, get_forward_context, reset_forward_context, set_forward_context
+from indextts.accel.gpt2_accel import GPT2AccelModel
 from indextts.accel.kv_manager import KVCacheManager, Seq
 from indextts.gpt.model_v2 import LearnedPositionEmbeddings
 from indextts.util import patch_call
@@ -34,7 +35,7 @@ class Sampler(nn.Module):
 class AccelInferenceEngine:
     def __init__(
         self,
-        model: nn.Module,
+        model: GPT2AccelModel,
         lm_head: nn.Module,
         num_layers: int,
         num_heads: int,

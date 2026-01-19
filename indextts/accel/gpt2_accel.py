@@ -1,8 +1,9 @@
 import torch
 import transformers
 from torch import Tensor, nn
+from transformers import Conv1D
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
-from transformers.models.gpt2.modeling_gpt2 import Conv1D, GPT2Block, GPT2Model
+from transformers.models.gpt2.modeling_gpt2 import GPT2Block, GPT2Model
 
 from indextts.accel.attention import Attention
 

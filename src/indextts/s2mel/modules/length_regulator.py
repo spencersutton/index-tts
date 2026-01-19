@@ -23,7 +23,7 @@ class InterpolateRegulator(nn.Module):
         self.mask_token = nn.Parameter(torch.zeros(1, CHANNELS))
         self.content_in_proj = nn.Linear(1024, CHANNELS)
 
-    def forward(self, x: Tensor, ylens: Tensor) -> tuple[Tensor, Tensor, None, None, None]:
+    def forward(self, x: Tensor, ylens: Tensor) -> Tensor:
         x: Tensor = self.content_in_proj(x)  # (B, T, C)
         mask = sequence_mask(ylens).unsqueeze(-1)  # (B, T, 1)
 
@@ -31,7 +31,7 @@ class InterpolateRegulator(nn.Module):
         x = F.interpolate(x, size=ylens.max(), mode="nearest")
 
         out = self.model(x).mT.contiguous()  # (B, T, C)
-        return out * mask, ylens, None, None, None
+        return out * mask
 
     @patch_call(forward)
     def __call__(self) -> None: ...

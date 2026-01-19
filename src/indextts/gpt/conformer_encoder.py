@@ -24,7 +24,7 @@ class PositionwiseFeedForward(nn.Module):
         activation (nn.Module): Activation function
     """
 
-    def __init__(self, idim: int, hidden_units: int, activation: nn.Module = nn.ReLU()) -> None:
+    def __init__(self, idim: int, hidden_units: int, activation: nn.SiLU) -> None:
         """Construct a PositionwiseFeedForward object."""
         super().__init__()
         self.w_1 = nn.Linear(idim, hidden_units)
@@ -49,7 +49,7 @@ class PositionwiseFeedForward(nn.Module):
 class ConvolutionModule(nn.Module):
     """ConvolutionModule in Conformer model."""
 
-    def __init__(self, activation: nn.Module = nn.ReLU(), bias: bool = True) -> None:
+    def __init__(self, activation: nn.SiLU) -> None:
         """Construct an ConvolutionModule object.
         Args:
             channels (int): The number of channels of conv layers.
@@ -58,12 +58,12 @@ class ConvolutionModule(nn.Module):
         """
         super().__init__()
 
-        self.pointwise_conv1 = nn.Conv1d(OUTPUT_DIM, 2 * OUTPUT_DIM, kernel_size=1, padding=0, bias=bias)
-        self.depthwise_conv = nn.Conv1d(OUTPUT_DIM, OUTPUT_DIM, kernel_size=15, padding=7, groups=OUTPUT_DIM, bias=bias)
+        self.pointwise_conv1 = nn.Conv1d(OUTPUT_DIM, 2 * OUTPUT_DIM, kernel_size=1)
+        self.depthwise_conv = nn.Conv1d(OUTPUT_DIM, OUTPUT_DIM, kernel_size=15, padding=7, groups=OUTPUT_DIM)
 
         self.norm = nn.LayerNorm(OUTPUT_DIM)
 
-        self.pointwise_conv2 = nn.Conv1d(OUTPUT_DIM, OUTPUT_DIM, kernel_size=1, padding=0, bias=bias)
+        self.pointwise_conv2 = nn.Conv1d(OUTPUT_DIM, OUTPUT_DIM, kernel_size=1)
         self.activation = activation
 
     def forward(
@@ -247,7 +247,7 @@ class ConformerEncoder(nn.Module):
             ]),
         )
 
-    def forward(self, xs: Tensor, xs_lens: Tensor) -> tuple[Tensor, Tensor]:
+    def forward(self, xs: Tensor) -> tuple[Tensor, Tensor]:
         """Embed positions in tensor.
 
         Args:
@@ -267,6 +267,7 @@ class ConformerEncoder(nn.Module):
             masks: Tensor batch padding mask after subsample
                 (B, 1, T' ~= T/subsample_rate)
         """
+        xs_lens = torch.tensor([xs.shape[-1]], device=xs.device)
         T = xs.size(1)
         masks = ~make_pad_mask(xs_lens, T).unsqueeze(1)  # (B, 1, T)
         xs, pos_emb, masks = self.embed(xs, masks)

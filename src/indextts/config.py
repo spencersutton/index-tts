@@ -2,6 +2,16 @@ from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from typing import Any
 
+SAMPLING_RATE = 22050
+
+START_MEL_TOKEN = 2**13
+STOP_MEL_TOKEN = START_MEL_TOKEN + 1
+NUMBER_MEL_CODES = STOP_MEL_TOKEN + 1
+
+NUMBER_TEXT_TOKENS = 12000
+START_TEXT_TOKEN = 0
+STOP_TEXT_TOKEN = START_TEXT_TOKEN + 1
+
 
 class ConfigMapping(Mapping[str, Any]):
     """MixIn to allow dot access (via dataclass) and bracket access/** unpacking."""
@@ -23,7 +33,6 @@ class ConfigMapping(Mapping[str, Any]):
 @dataclass
 class MelConfig(ConfigMapping):
     sample_rate: int
-    n_fft: int
     hop_length: int
     win_length: int
     n_mels: int
@@ -47,33 +56,19 @@ class DatasetConfig(ConfigMapping):
 
 @dataclass
 class GptConfig(ConfigMapping):
-    model_dim: int
     max_mel_tokens: int
     max_text_tokens: int
     heads: int
-    mel_length_compression: int
     layers: int
-    number_text_tokens: int
-    number_mel_codes: int
-    start_mel_token: int
-    stop_mel_token: int
-    start_text_token: int
-    stop_text_token: int
 
 
 @dataclass
 class SemanticCodecConfig(ConfigMapping):
-    codebook_size: int
     hidden_size: int
-    codebook_dim: int
-    vocos_dim: int
-    vocos_intermediate_dim: int
-    vocos_num_layers: int
 
 
 @dataclass
 class SpectParams(ConfigMapping):
-    n_fft: int
     win_length: int
     hop_length: int
     n_mels: int
@@ -170,7 +165,6 @@ class IndexTTSConfig(ConfigMapping):
     s2mel_checkpoint: str
     emo_matrix: str
     spk_matrix: str
-    emo_num: list[int]
     qwen_emo_path: str
     vocoder: VocoderConfig
     version: float

@@ -10,7 +10,7 @@ from typing import cast
 import torch
 from torch import Tensor, nn
 
-from indextts.util import patch_call
+from indextts.util import patch_call, unwrap
 
 
 class ConvNeXtBlock(nn.Module):
@@ -65,8 +65,7 @@ class VocosBackbone(nn.Module):
     def _init_weights(self, m: nn.Module) -> None:
         if isinstance(m, (nn.Conv1d, nn.Linear)):
             nn.init.trunc_normal_(m.weight, std=0.02)
-            assert m.bias is not None
-            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(unwrap(m.bias), 0)
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.embed(x)

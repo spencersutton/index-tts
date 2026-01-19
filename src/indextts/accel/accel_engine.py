@@ -8,7 +8,7 @@ from indextts.accel.attention import ForwardContext, get_forward_context, reset_
 from indextts.accel.gpt2_accel import GPT2AccelModel
 from indextts.accel.kv_manager import KVCacheManager, Seq
 from indextts.gpt.model_v2 import LearnedPositionEmbeddings
-from indextts.util import patch_call
+from indextts.util import patch_call, unwrap
 
 
 class Sampler(nn.Module):
@@ -36,7 +36,7 @@ class AccelInferenceEngine:
     def __init__(
         self,
         model: GPT2AccelModel,
-        lm_head: nn.Module,
+        lm_head: nn.Sequential,
         num_layers: int,
         num_heads: int,
         head_dim: int,
@@ -56,7 +56,7 @@ class AccelInferenceEngine:
             use_cuda_graph: Whether to use CUDA Graph for decode optimization
         """
         self.model: GPT2AccelModel = model
-        self.lm_head: nn.Module = lm_head
+        self.lm_head: nn.Sequential = lm_head
         self.block_size = block_size
         self.num_blocks = num_blocks
         self.use_cuda_graph = use_cuda_graph and torch.cuda.is_available()
@@ -156,34 +156,30 @@ class AccelInferenceEngine:
 
             # warmup
             if use_tts:
-                assert tts_mel_embedding is not None
-                assert tts_text_pos_embedding is not None
-                emb = tts_mel_embedding(input_ids[:bs])
+                emb = unwrap(tts_mel_embedding)(input_ids[:bs])
                 pos_clamped = torch.clamp(positions[:bs], min=0)
-                pos_emb: Tensor = tts_text_pos_embedding.emb(pos_clamped)
+                pos_emb = unwrap(tts_text_pos_embedding).emb(pos_clamped)
                 inputs_embeds_buffer[:bs] = emb + pos_emb
-                out = self.model(
-                    inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True
-                ).last_hidden_state
+                out = unwrap(
+                    self.model(inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True).last_hidden_state
+                )
             else:
-                out = self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True).last_hidden_state
-            assert out is not None
+                out = unwrap(self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True).last_hidden_state)
             outputs[:bs] = out.squeeze(1) if out.dim() == 3 else out
 
             with torch.cuda.graph(graph, self.graph_pool):
                 if use_tts:
-                    assert tts_mel_embedding is not None
-                    assert tts_text_pos_embedding is not None
-                    emb = tts_mel_embedding(input_ids[:bs])
+                    emb = unwrap(tts_mel_embedding)(input_ids[:bs])
                     pos_clamped = torch.clamp(positions[:bs], min=0)
-                    pos_emb: Tensor = tts_text_pos_embedding.emb(pos_clamped)
+                    pos_emb = unwrap(tts_text_pos_embedding).emb(pos_clamped)
                     inputs_embeds_buffer[:bs] = emb + pos_emb
-                    out = self.model(
-                        inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True
-                    ).last_hidden_state
+                    out = unwrap(
+                        self.model(
+                            inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True
+                        ).last_hidden_state
+                    )
                 else:
-                    out = self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True).last_hidden_state
-                assert out is not None
+                    out = unwrap(self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True).last_hidden_state)
                 outputs[:bs] = out.squeeze(1) if out.dim() == 3 else out
 
             if self.graph_pool is None:
@@ -217,31 +213,25 @@ class AccelInferenceEngine:
 
         if not self.use_cuda_graph or not self.graphs:
             if use_tts_embedding:
-                assert tts_mel_embedding is not None
-                assert tts_text_pos_embedding is not None
-                inputs_embeds = tts_mel_embedding(input_ids)
+                inputs_embeds = unwrap(tts_mel_embedding)(input_ids)
                 pos_clamped = torch.clamp(positions, min=0)
-                pos_emb = tts_text_pos_embedding.emb(pos_clamped)
+                pos_emb = unwrap(tts_text_pos_embedding).emb(pos_clamped)
                 inputs_embeds += pos_emb
-                out = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True).last_hidden_state
+                out = unwrap(self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True).last_hidden_state)
             else:
-                out = self.model(input_ids=input_ids.unsqueeze(1), return_dict=True).last_hidden_state
-            assert out is not None
+                out = unwrap(self.model(input_ids=input_ids.unsqueeze(1), return_dict=True).last_hidden_state)
             return out.squeeze(1) if out.dim() == 3 else out
 
         graph_bs = next((x for x in self.graph_bs if x >= bs), None)
         if graph_bs is None:
             if use_tts_embedding:
-                assert tts_mel_embedding is not None
-                assert tts_text_pos_embedding is not None
-                inputs_embeds = tts_mel_embedding(input_ids)
+                inputs_embeds = unwrap(tts_mel_embedding)(input_ids)
                 pos_clamped = torch.clamp(positions, min=0)
-                pos_emb = tts_text_pos_embedding.emb(pos_clamped)
+                pos_emb = unwrap(tts_text_pos_embedding).emb(pos_clamped)
                 inputs_embeds += pos_emb
-                out = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True).last_hidden_state
+                out = unwrap(self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True).last_hidden_state)
             else:
-                out = self.model(input_ids=input_ids.unsqueeze(1), return_dict=True).last_hidden_state
-            assert out is not None
+                out = unwrap(self.model(input_ids=input_ids.unsqueeze(1), return_dict=True).last_hidden_state)
             return out.squeeze(1) if out.dim() == 3 else out
 
         graph = self.graphs[graph_bs]
@@ -250,7 +240,6 @@ class AccelInferenceEngine:
         if graph_vars is None:
             raise RuntimeError("Graph variables not initialized")
 
-        assert graph_vars is not None
         graph_vars["input_ids"][:bs] = input_ids
         graph_vars["positions"][:bs] = positions
         graph_vars["slot_mapping"].fill_(-1)
@@ -258,7 +247,7 @@ class AccelInferenceEngine:
         graph_vars["context_lens"].zero_()
         graph_vars["context_lens"][:bs] = torch.as_tensor(context.context_lens)
         graph_vars["block_tables"][:bs, :].fill_(-1)
-        assert context.block_tables is not None
+        context.block_tables = unwrap(context.block_tables)
         graph_vars["block_tables"][:bs, : context.block_tables.size(1)] = context.block_tables
         graph.replay()
 
@@ -372,14 +361,12 @@ class AccelInferenceEngine:
                 input_ids=input_ids, attention_mask=attention_mask, return_dict=True
             ).last_hidden_state
 
-        assert hidden_states is not None
         if is_varlen_batch:
             context = get_forward_context()
-            assert context.cu_seqlens_q is not None
-            cu_seqlens = context.cu_seqlens_q.cpu().tolist()
-            last_hidden = torch.stack([hidden_states[0, cu_seqlens[i + 1] - 1] for i in range(batch_size)])
+            cu_seqlens = unwrap(context.cu_seqlens_q).cpu().tolist()
+            last_hidden = torch.stack([unwrap(hidden_states)[0, cu_seqlens[i + 1] - 1] for i in range(batch_size)])
         else:
-            last_hidden = hidden_states[:, -1, :]  # [batch_size, hidden_size]
+            last_hidden = unwrap(hidden_states)[:, -1, :]  # [batch_size, hidden_size]
 
         reset_forward_context()
 
@@ -464,8 +451,7 @@ class AccelInferenceEngine:
         pad_token = stop_tokens[0] if stop_tokens else 0
 
         if is_varlen_batch:
-            assert attention_mask is not None
-            max_prompt_len = attention_mask.size(1)
+            max_prompt_len = unwrap(attention_mask).size(1)
             output_ids = []
 
             for i in range(batch_size):

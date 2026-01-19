@@ -35,7 +35,6 @@ class Attend(nn.Module):
         # key padding mask
         if mask is not None:
             mask = rearrange(mask, "b j -> b 1 1 j")
-            assert mask is not None
             sim = sim.masked_fill(~mask, -torch.finfo(sim.dtype).max)
 
         # attention

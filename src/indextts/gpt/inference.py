@@ -8,7 +8,7 @@ from transformers.generation.utils import GenerationMixin
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
-from indextts.util import patch_call
+from indextts.util import patch_call, unwrap
 
 
 class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
@@ -22,7 +22,6 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         embeddings: nn.Embedding,
         norm: nn.Module,
         linear: nn.Module,
-        kv_cache: bool = False,
     ) -> None:
         super().__init__(config)
         # Note: the argument named `text_pos_emb` here actually represents the mel position embedding
@@ -31,7 +30,6 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         self.embeddings = embeddings
         self.final_norm = norm
         self.lm_head = nn.Sequential(norm, linear)
-        self.kv_cache = kv_cache
 
         self.cached_mel_emb: Tensor | None = None
 
@@ -47,8 +45,6 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     ) -> dict[str, transformers.Cache | Tensor | bool | None]:
         token_type_ids = kwargs.get("token_type_ids")  # usually None
         position_ids = kwargs.get("position_ids")
-        if not self.kv_cache:
-            past_key_values = None
         # only last token for inputs_ids if past is defined in kwargs
         if past_key_values:
             input_ids = input_ids[:, -1].unsqueeze(-1)
@@ -90,24 +86,24 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         output_hidden_states: bool | None = None,
         return_dict: bool | None = None,
     ) -> CausalLMOutputWithCrossAttentions | tuple[Tensor, ...]:
-        assert self.cached_mel_emb is not None
         assert inputs_embeds is None  # Not supported by this inference model.
         assert labels is None  # Training not supported by this inference model.
-        assert input_ids is not None and attention_mask is not None
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
         # Create embedding
         mel_len = self.cached_mel_emb.shape[1]
         if input_ids.shape[1] != 1:
-            text_inputs = input_ids[:, mel_len:]
+            text_inputs = unwrap(input_ids)[:, mel_len:]
             text_emb = self.embeddings(text_inputs)
             text_emb += self.text_pos_embedding(text_emb)
-            if self.cached_mel_emb.shape[0] != text_emb.shape[0]:
-                mel_emb = self.cached_mel_emb.repeat_interleave(text_emb.shape[0] // self.cached_mel_emb.shape[0], 0)
+            if unwrap(self.cached_mel_emb).shape[0] != text_emb.shape[0]:
+                mel_emb = unwrap(self.cached_mel_emb).repeat_interleave(
+                    text_emb.shape[0] // unwrap(self.cached_mel_emb).shape[0], 0
+                )
             else:  # this outcome only occurs once per loop in most cases
-                mel_emb = self.cached_mel_emb
+                mel_emb = unwrap(self.cached_mel_emb)
             emb = torch.cat([mel_emb, text_emb], dim=1)
         else:
-            emb = self.embeddings(input_ids)
+            emb = self.embeddings(unwrap(input_ids))
             emb += self.text_pos_embedding.get_fixed_embedding(attention_mask.shape[1] - mel_len, attention_mask.device)
         transformer_outputs = self.transformer(
             inputs_embeds=emb,

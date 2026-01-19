@@ -100,9 +100,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             emb = torch.cat([mel_emb, text_emb], dim=1)
         else:
             emb = self.embeddings(input_ids)
-            emb += self.text_pos_embedding.get_fixed_embedding(
-                attention_mask.shape[1] - mel_len, attention_mask.device
-            )
+            emb += self.text_pos_embedding.get_fixed_embedding(attention_mask.shape[1] - mel_len, attention_mask.device)
         transformer_outputs = self.transformer(
             inputs_embeds=emb,
             past_key_values=past_key_values,

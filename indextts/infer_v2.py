@@ -1,10 +1,10 @@
 import json
 import os
-import pathlib
 import random
 import re
 import time
 import warnings
+from pathlib import Path
 from subprocess import CalledProcessError
 
 import librosa
@@ -32,8 +32,8 @@ os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 class IndexTTS2:
     def __init__(
         self,
-        cfg_path: str = "checkpoints/config.yaml",
-        model_dir: str = "checkpoints",
+        cfg_path: Path = Path("checkpoints/config.yaml"),
+        model_dir: Path = Path("checkpoints"),
         use_fp16: bool = False,
         device=None,
         use_cuda_kernel=None,
@@ -75,16 +75,16 @@ class IndexTTS2:
             print(">> Be patient, it may take a while to run in CPU mode.")
 
         self.cfg = OmegaConf.load(cfg_path)
-        self.model_dir = model_dir
+        self.model_dir = Path(model_dir)
         self.dtype = torch.float16 if self.use_fp16 else None
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
         self.use_accel = use_accel
         self.use_torch_compile = use_torch_compile
 
-        self.qwen_emo = QwenEmotion(os.path.join(self.model_dir, self.cfg.qwen_emo_path))
+        self.qwen_emo = QwenEmotion(self.model_dir / self.cfg.qwen_emo_path)
 
         self.gpt = UnifiedVoice(**self.cfg.gpt, use_accel=self.use_accel)
-        self.gpt_path = os.path.join(self.model_dir, self.cfg.gpt_checkpoint)
+        self.gpt_path = self.model_dir / self.cfg.gpt_checkpoint
         load_checkpoint(self.gpt, self.gpt_path)
         self.gpt = self.gpt.to(self.device)
         if self.use_fp16:
@@ -115,7 +115,7 @@ class IndexTTS2:
 
         self.extract_features = SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
         self.semantic_model, self.semantic_mean, self.semantic_std = build_semantic_model(
-            os.path.join(self.model_dir, self.cfg.w2v_stat)
+            self.model_dir / self.cfg.w2v_stat
         )
         self.semantic_model = self.semantic_model.to(self.device)
         self.semantic_model.eval()
@@ -129,7 +129,7 @@ class IndexTTS2:
         self.semantic_codec.eval()
         print(f">> semantic_codec weights restored from: {semantic_code_ckpt}")
 
-        s2mel_path = os.path.join(self.model_dir, self.cfg.s2mel_checkpoint)
+        s2mel_path = self.model_dir / self.cfg.s2mel_checkpoint
         s2mel = MyModel(self.cfg.s2mel)
         s2mel, _, _, _ = load_checkpoint2(
             s2mel, None, s2mel_path, load_only_params=True, ignore_modules=[], is_distributed=False
@@ -161,7 +161,7 @@ class IndexTTS2:
         self.bigvgan.eval()
         print(">> bigvgan weights restored from:", bigvgan_name)
 
-        self.bpe_path = os.path.join(self.model_dir, self.cfg.dataset["bpe_model"])
+        self.bpe_path = self.model_dir / self.cfg.dataset["bpe_model"]
         self.normalizer = TextNormalizer(enable_glossary=True)
         self.normalizer.load()
         print(">> TextNormalizer loaded")
@@ -174,11 +174,11 @@ class IndexTTS2:
             self.normalizer.load_glossary_from_yaml(self.glossary_path)
             print(">> Glossary loaded from:", self.glossary_path)
 
-        emo_matrix = torch.load(os.path.join(self.model_dir, self.cfg.emo_matrix))
+        emo_matrix = torch.load(self.model_dir / self.cfg.emo_matrix)
         self.emo_matrix = emo_matrix.to(self.device)
         self.emo_num = list(self.cfg.emo_num)
 
-        spk_matrix = torch.load(os.path.join(self.model_dir, self.cfg.spk_matrix))
+        spk_matrix = torch.load(self.model_dir / self.cfg.spk_matrix)
         self.spk_matrix = spk_matrix.to(self.device)
 
         self.emo_matrix = torch.split(self.emo_matrix, self.emo_num)
@@ -728,11 +728,11 @@ class IndexTTS2:
         wav = wav.cpu()  # to cpu
         if output_path:
             # 直接保存音频到指定路径中
-            if pathlib.Path(output_path).is_file():
-                pathlib.Path(output_path).unlink()
+            if Path(output_path).is_file():
+                Path(output_path).unlink()
                 print(">> remove old wav file:", output_path)
-            if os.path.dirname(output_path) != "":
-                pathlib.Path(os.path.dirname(output_path)).mkdir(exist_ok=True, parents=True)
+            if Path(output_path).parent != Path():
+                Path(output_path).parent.mkdir(exist_ok=True, parents=True).mkdir(exist_ok=True, parents=True)
             torchaudio.save(output_path, wav.type(torch.int16), sampling_rate)
             print(">> wav file saved to:", output_path)
             if stream_return:

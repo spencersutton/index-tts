@@ -680,13 +680,13 @@ class IndexTTS2:
                     diffusion_steps = 25
                     inference_cfg_rate = 0.7
                     latent = self.s2mel.models["gpt_layer"](latent)
-                    S_infer = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
-                    S_infer = S_infer.transpose(1, 2)
-                    S_infer = S_infer + latent
+                    s_infer = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
+                    s_infer = s_infer.transpose(1, 2)
+                    s_infer = s_infer + latent
                     target_lengths = (code_lens * 1.72).long()
 
                     cond = self.s2mel.models["length_regulator"](
-                        S_infer, ylens=target_lengths, n_quantizers=3, f0=None
+                        s_infer, ylens=target_lengths, n_quantizers=3, f0=None
                     )[0]
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
                     vc_target = self.s2mel.models["cfm"].inference(

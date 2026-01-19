@@ -199,7 +199,7 @@ class IndexTTS2:
         # 缓存参考音频：
         self.cache_spk_cond = None
         self.cache_s2mel_style = None
-        self.cache_s2mel_prompt = None
+        self.cache_s2mel_prompt: torch.Tensor | None = None
         self.cache_spk_audio_prompt = None
         self.cache_emo_cond = None
         self.cache_emo_audio_prompt = None
@@ -413,7 +413,11 @@ class IndexTTS2:
             emo_alpha = 1.0
 
         # 如果参考音频改变了，才需要重新生成, 提升速度
-        if self.cache_spk_cond is None or self.cache_spk_audio_prompt != spk_audio_prompt:
+        if (
+            self.cache_spk_cond is None
+            or self.cache_s2mel_prompt is None
+            or self.cache_spk_audio_prompt != spk_audio_prompt
+        ):
             if self.cache_spk_cond is not None:
                 self.cache_spk_cond = None
                 self.cache_s2mel_style = None

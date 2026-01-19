@@ -360,6 +360,7 @@ class IndexTTS2:
         except IndexError:
             return None
 
+    @torch.inference_mode()
     def infer_generator(
         self,
         spk_audio_prompt: Path,
@@ -554,7 +555,7 @@ class IndexTTS2:
                 text_token_syms = self.tokenizer.convert_ids_to_tokens(text_tokens[0].tolist())
                 print("text_token_syms is same as segment tokens", text_token_syms == sent)
 
-            with torch.no_grad():
+            with torch.inference_mode():
                 with (
                     torch.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype),
                     gpt_gen_time,

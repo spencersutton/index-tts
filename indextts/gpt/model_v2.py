@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from torch import Tensor, nn
 from transformers import GPT2Config, GPT2Model, LogitsProcessorList
 
+from indextts.config import NUMBER_MEL_CODES, NUMBER_TEXT_TOKENS, START_MEL_TOKEN, STOP_MEL_TOKEN
 from indextts.gpt.inference import GPT2InferenceModel
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 
@@ -78,12 +79,6 @@ class UnifiedVoice(nn.Module):
     max_text_tokens: int
     mel_length_compression: int
     model_dim: int
-    number_mel_codes: int
-    number_text_tokens: int
-    start_mel_token: int
-    start_text_token: int
-    stop_mel_token: int
-    stop_text_token: int
 
     cond_mask_pad: nn.ConstantPad1d
     conditioning_encoder: ConformerEncoder
@@ -101,12 +96,6 @@ class UnifiedVoice(nn.Module):
         max_mel_tokens: int = 250,
         max_conditioning_inputs: int = 1,
         mel_length_compression: int = 1024,
-        number_text_tokens: int = 256,
-        start_text_token: int = 0,
-        stop_text_token: int = 1,
-        number_mel_codes: int = 8194,
-        start_mel_token: int = 8192,
-        stop_mel_token: int = 8193,
         condition_num_latent: int = 32,
         use_accel: bool = False,
     ) -> None:
@@ -119,20 +108,8 @@ class UnifiedVoice(nn.Module):
             max_mel_tokens: Maximum number of MEL tokens that will be encountered by model.
             max_conditioning_inputs: Maximum number of conditioning inputs provided to the model. If (1), conditioning input can be of format (b,80,s), otherwise (b,n,80,s).
             mel_length_compression: The factor between <number_input_samples> and <mel_tokens>. Used to compute MEL code padding given wav input length.
-            number_text_tokens:
-            start_text_token:
-            stop_text_token:
-            number_mel_codes:
-            start_mel_token:
-            stop_mel_token:
         """
         super().__init__()
-        self.number_text_tokens = number_text_tokens
-        self.start_text_token = start_text_token
-        self.stop_text_token = stop_text_token
-        self.number_mel_codes = number_mel_codes
-        self.start_mel_token = start_mel_token
-        self.stop_mel_token = stop_mel_token
         self.layers = layers
         self.heads = heads
         self.max_mel_tokens = max_mel_tokens
@@ -148,11 +125,11 @@ class UnifiedVoice(nn.Module):
         self.emo_conditioning_encoder = ConformerEncoder(linear_units=1024, attention_heads=4, num_blocks=4)
         self.emo_perceiver_encoder = PerceiverResampler(1024, heads=4, num_latents=1)
 
-        self.text_embedding = nn.Embedding(self.number_text_tokens + 1, model_dim)
+        self.text_embedding = nn.Embedding(NUMBER_TEXT_TOKENS + 1, model_dim)
         self.emo_layer = nn.Linear(model_dim, model_dim)
         self.emovec_layer = nn.Linear(1024, model_dim)
 
-        self.mel_embedding = nn.Embedding(self.number_mel_codes, model_dim)
+        self.mel_embedding = nn.Embedding(NUMBER_MEL_CODES, model_dim)
         (
             self.gpt,
             self.mel_pos_embedding,
@@ -164,8 +141,8 @@ class UnifiedVoice(nn.Module):
         )
 
         self.final_norm = nn.LayerNorm(model_dim)
-        self.text_head = nn.Linear(model_dim, self.number_text_tokens + 1)
-        self.mel_head = nn.Linear(model_dim, self.number_mel_codes)
+        self.text_head = nn.Linear(model_dim, NUMBER_TEXT_TOKENS + 1)
+        self.mel_head = nn.Linear(model_dim, NUMBER_MEL_CODES)
 
         self.speed_emb = nn.Embedding(2, model_dim)
         self.speed_emb.weight.data.normal_(mean=0.0, std=0.0)
@@ -182,7 +159,7 @@ class UnifiedVoice(nn.Module):
     def post_init_gpt2_config(self, use_deepspeed: bool, kv_cache: bool, half: bool, model_dim: int) -> None:
         seq_length = self.max_mel_tokens + self.max_text_tokens + 2
         gpt_config = GPT2Config(
-            vocab_size=self.number_mel_codes,
+            vocab_size=NUMBER_MEL_CODES,
             n_positions=seq_length,
             n_ctx=seq_length,
             n_embd=model_dim,
@@ -251,9 +228,6 @@ class UnifiedVoice(nn.Module):
 
         self.gpt.wte = self.mel_embedding
 
-    def build_aligned_inputs_and_targets(self, input: Tensor, start_token: int, stop_token: int) -> Tensor:
-        return F.pad(input, (1, 0), value=start_token)
-
     def set_mel_padding(self, mel_input_tokens: Tensor, mel_lengths: Tensor) -> Tensor:
         """
         Given mel tokens that are derived from a padded audio clip and the actual lengths of each batch element in
@@ -265,7 +239,7 @@ class UnifiedVoice(nn.Module):
             # it would be best if the model predicts a token past the actual last token.
             actual_end = mel_lengths[b]
             if actual_end < mel_input_tokens.shape[-1]:
-                mel_input_tokens[b, actual_end:] = self.stop_mel_token
+                mel_input_tokens[b, actual_end:] = STOP_MEL_TOKEN
         return mel_input_tokens
 
     def set_text_padding(self, text_input_tokens: Tensor, text_lengths: Tensor) -> Tensor:
@@ -343,7 +317,7 @@ class UnifiedVoice(nn.Module):
         text_inputs = F.pad(text_inputs, (0, 1), value=self.stop_text_token)
 
         mel_codes = self.set_mel_padding(mel_codes, mel_codes_lengths)
-        mel_codes = F.pad(mel_codes, (0, 1), value=self.stop_mel_token)
+        mel_codes = F.pad(mel_codes, (0, 1), value=STOP_MEL_TOKEN)
 
         duration_emb = self.speed_emb(torch.zeros_like(use_speed))
         duration_emb_half = self.speed_emb(torch.ones_like(use_speed))
@@ -355,9 +329,9 @@ class UnifiedVoice(nn.Module):
             ),
             1,
         )
-        text_inputs = self.build_aligned_inputs_and_targets(text_inputs, self.start_text_token, self.stop_text_token)
+        text_inputs = F.pad(text_inputs, (1, 0), value=self.start_text_token)
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
-        mel_codes = self.build_aligned_inputs_and_targets(mel_codes, self.start_mel_token, self.stop_mel_token)
+        mel_codes = F.pad(mel_codes, (1, 0), value=START_MEL_TOKEN)
 
         mel_emb: Tensor = self.mel_embedding(mel_codes)
         mel_emb += self.mel_pos_embedding.forward(mel_codes)
@@ -423,7 +397,7 @@ class UnifiedVoice(nn.Module):
             dtype=torch.long,
             device=device,
         )
-        fake_inputs[:, -1] = self.start_mel_token
+        fake_inputs[:, -1] = START_MEL_TOKEN
         return fake_inputs, batched_mel_emb, attention_mask
 
     def inference_speech(
@@ -515,7 +489,7 @@ class UnifiedVoice(nn.Module):
                 max_new_tokens=max_length - trunc_index,
                 attention_mask=attention_mask,
                 temperature=float(hf_generate_kwargs.get("temperature", 1)),
-                stop_tokens=[self.stop_mel_token],
+                stop_tokens=[STOP_MEL_TOKEN],
                 tts_embeddings=inputs_embeds,  # [pad][cond][text] embeddings (87 tokens, NO start_mel_token)
                 tts_mel_embedding=self.inference_model.embeddings,  # mel_embedding layer
                 tts_text_pos_embedding=self.inference_model.text_pos_embedding,  # text_pos_embedding layer
@@ -524,9 +498,9 @@ class UnifiedVoice(nn.Module):
             logits_processor = LogitsProcessorList()
             output = self.inference_model.generate(
                 inputs,
-                bos_token_id=self.start_mel_token,
-                pad_token_id=self.stop_mel_token,
-                eos_token_id=self.stop_mel_token,
+                bos_token_id=START_MEL_TOKEN,
+                pad_token_id=STOP_MEL_TOKEN,
+                eos_token_id=STOP_MEL_TOKEN,
                 attention_mask=attention_mask,
                 max_length=max_length,
                 logits_processor=logits_processor,

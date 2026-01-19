@@ -45,6 +45,15 @@ class DatasetConfig(ConfigMapping):
     mel: MelConfig
 
 
+START_MEL_TOKEN = 2**13
+STOP_MEL_TOKEN = START_MEL_TOKEN + 1
+NUMBER_MEL_CODES = STOP_MEL_TOKEN + 1
+
+NUMBER_TEXT_TOKENS = 12000
+START_TEXT_TOKEN = 0
+STOP_TEXT_TOKEN = START_TEXT_TOKEN + 1
+
+
 @dataclass
 class GptConfig(ConfigMapping):
     model_dim: int
@@ -53,12 +62,6 @@ class GptConfig(ConfigMapping):
     heads: int
     mel_length_compression: int
     layers: int
-    number_text_tokens: int
-    number_mel_codes: int
-    start_mel_token: int
-    stop_mel_token: int
-    start_text_token: int
-    stop_text_token: int
 
 
 @dataclass

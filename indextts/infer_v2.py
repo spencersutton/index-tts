@@ -19,7 +19,7 @@ from omegaconf import OmegaConf
 from torch import Tensor
 from transformers import SeamlessM4TFeatureExtractor
 
-from indextts.config import IndexTTSConfig
+from indextts.config import STOP_MEL_TOKEN, IndexTTSConfig
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.qwen import QwenEmotion
 from indextts.s2mel.modules.audio import mel_spectrogram
@@ -157,7 +157,6 @@ class IndexTTS2:
 
         self.cfg = cast(IndexTTSConfig, OmegaConf.load(cfg_path))
         self.dtype = torch.float16 if self.use_fp16 else None
-        self.stop_mel_token = self.cfg.gpt.stop_mel_token
 
         self.qwen_emo = QwenEmotion(self.cfg.qwen_emo_path)
 
@@ -549,7 +548,7 @@ class IndexTTS2:
                     assert isinstance(codes, Tensor)
 
                 gpt_gen_time += time.perf_counter() - m_start_time
-                if not has_warned and (codes[:, -1] != self.stop_mel_token).any():
+                if not has_warned and (codes[:, -1] != STOP_MEL_TOKEN).any():
                     warnings.warn(
                         f"WARN: generation stopped due to exceeding `max_mel_tokens` ({max_mel_tokens}). "
                         f"Input text tokens: {text_tokens.shape[1]}. "
@@ -563,10 +562,10 @@ class IndexTTS2:
                 code_lens = []
                 max_code_len = 0
                 for code in codes:
-                    if self.stop_mel_token not in code:
+                    if STOP_MEL_TOKEN not in code:
                         code_len = len(code)
                     else:
-                        len_ = (code == self.stop_mel_token).nonzero(as_tuple=False)[0]
+                        len_ = (code == STOP_MEL_TOKEN).nonzero(as_tuple=False)[0]
                         code_len = len_[0].item() if len_.numel() > 0 else len(code)
                     code_lens.append(code_len)
                     max_code_len = max(int(max_code_len), int(code_len))

@@ -16,22 +16,6 @@ from torch.nn import functional as F
 from torch.nn.utils import spectral_norm
 from torch.nn.utils.parametrizations import weight_norm
 
-
-class ConvLayerNorm(nn.LayerNorm):
-    """
-    Convolution-friendly LayerNorm that moves channels to last dimensions
-    before running the normalization and moves them back to original position right after.
-    """
-
-    def __init__(self, normalized_shape: int | list[int] | torch.Size, **kwargs) -> None:
-        super().__init__(normalized_shape, **kwargs)
-
-    def forward(self, x) -> None:
-        x = einops.rearrange(x, "b ... t -> b t ...")
-        x = super().forward(x)
-        x = einops.rearrange(x, "b t ... -> b ... t")
-
-
 CONV_NORMALIZATIONS = frozenset([
     "none",
     "weight_norm",
@@ -58,9 +42,6 @@ def get_norm_module(module: nn.Module, causal: bool = False, norm: str = "none",
     module is causal, or return an error if the normalization doesn't support causal evaluation.
     """
     assert norm in CONV_NORMALIZATIONS
-    if norm == "layer_norm":
-        assert isinstance(module, nn.modules.conv._ConvNd)
-        return ConvLayerNorm(module.out_channels, **norm_kwargs)
     if norm == "time_group_norm":
         if causal:
             raise ValueError("GroupNorm doesn't support causal evaluation.")

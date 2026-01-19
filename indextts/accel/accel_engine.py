@@ -70,58 +70,6 @@ class AccelInferenceEngine:
         self.graph_pool = None
         self.graph_captured = False
 
-    def _prepare_prefill(self, requests: list[Seq]):
-        input_ids = []
-        positions = []
-        cu_seqlens_q = [0]
-        cu_seqlens_k = [0]
-        max_seqlen_q = 0
-        max_seqlen_k = 0
-        slot_mapping = []
-
-        for req in requests:
-            seqlen = len(req)
-            input_ids.extend(req[req.num_cached_tokens :])
-            positions.extend(list(range(req.num_cached_tokens, seqlen)))
-            seqlen_q = seqlen - req.num_cached_tokens
-            seqlen_k = seqlen
-            cu_seqlens_q.append(cu_seqlens_q[-1] + seqlen_q)
-            cu_seqlens_k.append(cu_seqlens_k[-1] + seqlen_k)
-            max_seqlen_q = max(seqlen_q, max_seqlen_q)
-            max_seqlen_k = max(seqlen_k, max_seqlen_k)
-
-            if req.block_table:
-                num_cached = req.num_cached_tokens
-                num_total = len(req)
-
-                for token_idx in range(num_cached, num_total):
-                    block_idx = token_idx // self.block_size
-                    block_offset = token_idx % self.block_size
-                    block_id = req.block_table[block_idx]
-                    slot_idx = block_id * self.block_size + block_offset
-                    slot_mapping.append(slot_idx)
-
-        input_ids = torch.tensor(input_ids, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
-        positions = torch.tensor(positions, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
-        cu_seqlens_q = torch.tensor(cu_seqlens_q, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
-        cu_seqlens_k = torch.tensor(cu_seqlens_k, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
-        slot_mapping = torch.tensor(slot_mapping, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
-
-        block_tables = None
-        if cu_seqlens_k[-1] > cu_seqlens_q[-1]:
-            max_len = max(len(req.block_table) for req in requests)
-            block_tables_list = []
-            for req in requests:
-                table = req.block_table + [-1] * (max_len - len(req.block_table))
-                block_tables_list.append(table)
-            block_tables = torch.tensor(block_tables_list, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
-
-        set_forward_context(
-            True, cu_seqlens_q, cu_seqlens_k, max_seqlen_q, max_seqlen_k, slot_mapping, None, block_tables
-        )
-
-        return input_ids, positions
-
     def _prepare_decode(self, requests: list[Seq]):
         if not requests:
             raise RuntimeError("FATAL: No requests provided to _prepare_decode!")
@@ -374,8 +322,6 @@ class AccelInferenceEngine:
             sequences.append(req)
 
         self.current_sequences = sequences
-
-        _prefill_ids, _prefill_pos = self._prepare_prefill(sequences)
 
         if tts_embeddings is not None and tts_mel_embedding is not None and tts_text_pos_embedding is not None:
             start_token_id = input_ids[0, -1] if input_ids.size(1) > 0 else 8192

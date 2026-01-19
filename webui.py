@@ -92,7 +92,7 @@ with (examples_dir / "cases.jsonl").open(encoding="utf-8") as f:
         ])
 
 
-def get_example_cases(include_experimental: bool = False):
+def get_example_cases(include_experimental: bool = False) -> list[list[Any]]:
     if include_experimental:
         return example_cases  # show every example
 
@@ -135,7 +135,7 @@ def gen_single(
     max_text_tokens_per_segment: int = 120,
     *args: Any,
     progress: gr.Progress = gr.Progress(),
-):
+) -> dict[str, Any]:
     output_path = None
     if not output_path:
         output_path = Path("outputs") / f"spk_{int(time.time())}.wav"
@@ -185,7 +185,7 @@ def gen_single(
     return gr.update(value=output, visible=True)
 
 
-def update_prompt_audio():
+def update_prompt_audio() -> dict[str, Any]:
     return gr.update(interactive=True)
 
 
@@ -195,7 +195,7 @@ def create_warning_message(warning_text: str) -> gr.HTML:
     )
 
 
-def create_experimental_warning_message():
+def create_experimental_warning_message() -> gr.HTML:
     return create_warning_message(i18n("提示：此功能为实验版，结果尚不稳定，我们正在持续优化中。"))
 
 
@@ -203,9 +203,9 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
     mutex = threading.Lock()
     gr.HTML("""
     <h2><center>IndexTTS2: A Breakthrough in Emotionally Expressive and Duration-Controlled Auto-Regressive Zero-Shot Text-to-Speech</h2>
-<p align="center">
-<a href='https://arxiv.org/abs/2506.21619'><img src='https://img.shields.io/badge/ArXiv-2506.21619-red'></a>
-</p>
+    <p align="center">
+    <a href='https://arxiv.org/abs/2506.21619'><img src='https://img.shields.io/badge/ArXiv-2506.21619-red'></a>
+    </p>
     """)
 
     with gr.Tab(i18n("音频生成")):
@@ -386,7 +386,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
             ],
         )
 
-    def on_example_click(example: list[Any]):
+    def on_example_click(example: list[Any]) -> tuple[dict[str, Any], ...]:
         print(f"Example clicked: ({len(example)} values) = {example!r}")
         return (
             gr.update(value=example[0]),
@@ -427,7 +427,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
         ],
     )
 
-    def on_input_text_change(text: str, max_text_tokens_per_segment: int):
+    def on_input_text_change(text: str, max_text_tokens_per_segment: int) -> dict[str | gr.Dataframe, Any]:
         if text and len(text) > 0:
             text_tokens_list = tts.tokenizer.tokenize(text)
 
@@ -482,7 +482,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
         # 更新Markdown表格
         return gr.update(value=format_glossary_markdown())
 
-    def on_method_change(emo_control_method: int):
+    def on_method_change(emo_control_method: int) -> tuple[dict[str, Any], ...]:
         if emo_control_method == 1:  # emotion reference audio
             return (
                 gr.update(visible=True),
@@ -528,7 +528,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
         ],
     )
 
-    def on_experimental_change(is_experimental: bool, current_mode_index: int):
+    def on_experimental_change(is_experimental: bool, current_mode_index: int) -> tuple[dict[str, Any], ...]:
         # 切换情感控制选项
         new_choices = EMO_CHOICES_ALL if is_experimental else EMO_CHOICES_OFFICIAL
         # if their current mode selection doesn't exist in new choices, reset to 0.

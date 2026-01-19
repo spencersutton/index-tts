@@ -71,10 +71,12 @@ def main() -> None:
             args.fp16 = False  # Disable FP16 on CPU
             print("WARNING: Running on CPU may be slow.")
 
-    # TODO: Add CLI support for IndexTTS2.
+    print("Importing IndexTTS2...")
     from indextts.infer_v2 import IndexTTS2
 
+    print("Initializing IndexTTS2...")
     tts = IndexTTS2(cfg_path=config_path, model_dir=model_dir, use_fp16=args.fp16, device=args.device)
+    print("Start inference...")
     tts.infer(output_path=output_path, spk_audio_prompt=voice_file, text=args.text.strip())
 
 

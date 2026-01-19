@@ -1,5 +1,5 @@
 import torch
-import torch.nn as nn
+from torch import nn
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 from transformers.models.gpt2.modeling_gpt2 import Conv1D, GPT2Block, GPT2Model
 

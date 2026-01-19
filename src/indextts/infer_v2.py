@@ -215,7 +215,8 @@ class IndexTTS2:
             input_features=input_features, attention_mask=attention_mask, output_hidden_states=True
         )
         feat = vq_emb.hidden_states[17]  # (B, T, C)
-        return (feat - self.semantic_mean) / self.semantic_std
+        feat = (feat - self.semantic_mean) / self.semantic_std
+        return feat
 
     def interval_silence(self, wavs, sampling_rate=22050, interval_silence=200):
         """
@@ -328,27 +329,25 @@ class IndexTTS2:
                 **generation_kwargs,
             )
         try:
-            return next(
-                iter(
-                    self.infer_generator(
-                        spk_audio_prompt,
-                        text,
-                        output_path,
-                        emo_audio_prompt,
-                        emo_alpha,
-                        emo_vector,
-                        use_emo_text,
-                        emo_text,
-                        use_random,
-                        interval_silence,
-                        verbose,
-                        max_text_tokens_per_segment,
-                        stream_return,
-                        more_segment_before,
-                        **generation_kwargs,
-                    )
+            return list(
+                self.infer_generator(
+                    spk_audio_prompt,
+                    text,
+                    output_path,
+                    emo_audio_prompt,
+                    emo_alpha,
+                    emo_vector,
+                    use_emo_text,
+                    emo_text,
+                    use_random,
+                    interval_silence,
+                    verbose,
+                    max_text_tokens_per_segment,
+                    stream_return,
+                    more_segment_before,
+                    **generation_kwargs,
                 )
-            )
+            )[0]
         except IndexError:
             return None
 
@@ -683,8 +682,8 @@ class IndexTTS2:
             if pathlib.Path(output_path).is_file():
                 pathlib.Path(output_path).unlink()
                 print(">> remove old wav file:", output_path)
-            if pathlib.Path(output_path).parent != "":
-                pathlib.Path(pathlib.Path(output_path).parent).mkdir(exist_ok=True, parents=True)
+            if os.path.dirname(output_path) != "":
+                pathlib.Path(os.path.dirname(output_path)).mkdir(exist_ok=True, parents=True)
             torchaudio.save(output_path, wav.type(torch.int16), sampling_rate)
             print(">> wav file saved to:", output_path)
             if stream_return:
@@ -704,7 +703,8 @@ def find_most_similar_cosine(query_vector, matrix):
     matrix = matrix.float()
 
     similarities = F.cosine_similarity(query_vector, matrix, dim=1)
-    return torch.argmax(similarities)
+    most_similar_index = torch.argmax(similarities)
+    return most_similar_index
 
 
 class QwenEmotion:

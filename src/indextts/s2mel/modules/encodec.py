@@ -6,40 +6,10 @@
 
 """Convolutional layers wrappers and utilities."""
 
-import math
 import warnings
 
-import torch
 from torch import nn
-from torch.nn import functional as F
 from torch.nn.utils.parametrizations import weight_norm
-
-
-def get_extra_padding_for_conv1d(x: torch.Tensor, kernel_size: int, stride: int, padding_total: int = 0) -> int:
-    """See `pad_for_conv1d`."""
-    length = x.shape[-1]
-    n_frames = (length - kernel_size + padding_total) / stride + 1
-    ideal_length = (math.ceil(n_frames) - 1) * stride + (kernel_size - padding_total)
-    return ideal_length - length
-
-
-def pad1d(x: torch.Tensor, paddings: tuple[int, int], mode: str = "zero", value: float = 0.0):
-    """Tiny wrapper around F.pad, just to allow for reflect padding on small input.
-    If this is the case, we insert extra 0 padding to the right before the reflection happen.
-    """
-    length = x.shape[-1]
-    padding_left, padding_right = paddings
-    assert padding_left >= 0 and padding_right >= 0, (padding_left, padding_right)
-    if mode == "reflect":
-        max_pad = max(padding_left, padding_right)
-        extra_pad = 0
-        if length <= max_pad:
-            extra_pad = max_pad - length + 1
-            x = F.pad(x, (0, extra_pad))
-        padded = F.pad(x, paddings, mode, value)
-        end = padded.shape[-1] - extra_pad
-        return padded[..., :end]
-    return F.pad(x, paddings, mode, value)
 
 
 class NormConv1d(nn.Module):

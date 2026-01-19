@@ -89,7 +89,7 @@ class AccelInferenceEngine:
 
             pos = len(req) - 1
             if hasattr(self, "_tts_mode") and self._tts_mode:
-                pos -= (self._tts_prompt_len - 1)
+                pos -= self._tts_prompt_len - 1
             positions.append(pos)
 
             context_lens.append(len(req))

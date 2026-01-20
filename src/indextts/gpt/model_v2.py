@@ -10,7 +10,6 @@ from transformers.utils.model_parallel_utils import assert_device_map, get_devic
 
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.perceiver import PerceiverResampler
-from indextts.utils.arch_util import AttentionBlock
 from indextts.utils.typical_sampling import TypicalLogitsWarper
 
 
@@ -198,27 +197,6 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             tuple(past_state.index_select(0, beam_idx.to(past_state.device)) for past_state in layer_past)
             for layer_past in past
         )
-
-
-class ConditioningEncoder(nn.Module):
-    def __init__(self, spec_dim, embedding_dim, attn_blocks=6, num_attn_heads=4, do_checkpointing=False, mean=False):
-        super().__init__()
-        attn = []
-        self.init = nn.Conv1d(spec_dim, embedding_dim, kernel_size=1)
-        for a in range(attn_blocks):
-            attn.append(AttentionBlock(embedding_dim, num_attn_heads))
-        self.attn = nn.Sequential(*attn)
-        self.dim = embedding_dim
-        self.do_checkpointing = do_checkpointing
-        self.mean = mean
-
-    def forward(self, x):
-        h = self.init(x)
-        h = self.attn(h)
-        if self.mean:
-            return h.mean(dim=2)
-        else:
-            return h
 
 
 class LearnedPositionEmbeddings(nn.Module):

@@ -35,7 +35,7 @@ class InterpolateRegulator(nn.Module):
         out_channels: int | None = None,
         groups: int = 1,
         n_codebooks: int = 1,  # number of codebooks
-    ):
+    ) -> None:
         super().__init__()
         self.sampling_ratios = sampling_ratios
         out_channels = out_channels or channels

@@ -25,7 +25,7 @@ class ResidualVQ(nn.Module):
         codebook_size: int = 1024,
         codebook_dim: int = 256,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__()
 
         self.input_dim = input_dim

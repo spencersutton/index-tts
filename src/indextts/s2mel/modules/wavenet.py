@@ -7,7 +7,7 @@ from indextts.s2mel.modules.encodec import SConv1d
 
 
 class LayerNorm(nn.Module):
-    def __init__(self, channels, eps=1e-5):
+    def __init__(self, channels, eps=1e-5) -> None:
         super().__init__()
         self.channels = channels
         self.eps = eps
@@ -24,7 +24,7 @@ class LayerNorm(nn.Module):
 class WN(nn.Module):
     def __init__(
         self, hidden_channels, kernel_size, dilation_rate, n_layers, gin_channels=0, p_dropout=0, causal=False
-    ):
+    ) -> None:
         super().__init__()
         conv1d_type = SConv1d
         assert kernel_size % 2 == 1

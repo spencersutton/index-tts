@@ -10,7 +10,7 @@ from torch import einsum, nn
 
 # main class
 class Attend(nn.Module):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.attn_dropout = nn.Dropout(0.0)
 
@@ -44,7 +44,7 @@ class Attend(nn.Module):
 
 
 class RMSNorm(nn.Module):
-    def __init__(self, dim):
+    def __init__(self, dim) -> None:
         super().__init__()
 
         self.scale = dim**0.5
@@ -61,7 +61,7 @@ class GEGLU(nn.Module):
 
 
 class PerceiverResampler(nn.Module):
-    def __init__(self, dim, num_latents=32, heads=8):
+    def __init__(self, dim, num_latents=32, heads=8) -> None:
         super().__init__()
 
         self.proj_context = nn.Linear(512, dim) if dim != 512 else nn.Identity()
@@ -95,7 +95,7 @@ class PerceiverResampler(nn.Module):
 
 
 class Attention(nn.Module):
-    def __init__(self, dim, heads=8):
+    def __init__(self, dim, heads=8) -> None:
         super().__init__()
         self.heads = heads
 

@@ -2,7 +2,7 @@ import pathlib
 import sys
 
 
-def main():
+def main() -> None:
     import argparse
 
     parser = argparse.ArgumentParser(description="IndexTTS Command Line")

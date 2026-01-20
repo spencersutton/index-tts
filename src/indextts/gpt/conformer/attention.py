@@ -30,7 +30,7 @@ class MultiHeadedAttention(nn.Module):
         n_feat (int): The number of features.
     """
 
-    def __init__(self, n_head: int, n_feat: int):
+    def __init__(self, n_head: int, n_feat: int) -> None:
         """Construct an MultiHeadedAttention object."""
         super().__init__()
         assert n_feat % n_head == 0
@@ -190,7 +190,7 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
         n_feat (int): The number of features.
     """
 
-    def __init__(self, n_head, n_feat):
+    def __init__(self, n_head, n_feat) -> None:
         """Construct an RelPositionMultiHeadedAttention object."""
         super().__init__(n_head, n_feat)
         # linear transformation for positional encoding

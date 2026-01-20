@@ -21,7 +21,7 @@ from torch import nn
 
 
 class BaseSubsampling(nn.Module):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.right_context = 0
         self.subsampling_rate = 1
@@ -38,7 +38,7 @@ class Conv2dSubsampling2(BaseSubsampling):
         odim (int): Output dimension.
     """
 
-    def __init__(self, idim: int, odim: int, pos_enc_class: nn.Module):
+    def __init__(self, idim: int, odim: int, pos_enc_class: nn.Module) -> None:
         """Construct an Conv2dSubsampling4 object."""
         super().__init__()
         self.conv = nn.Sequential(nn.Conv2d(1, odim, 3, 2), nn.ReLU())

@@ -100,7 +100,7 @@ def get_example_cases(include_experimental: bool = False) -> list[list[Any]]:
     return [x for x in example_cases if x[1] != EMO_CHOICES_ALL[3]]
 
 
-def format_glossary_markdown():
+def format_glossary_markdown() -> str:
     """将词汇表转换为Markdown表格格式"""
     if not tts.normalizer.term_glossary:
         return i18n("暂无术语")
@@ -231,25 +231,21 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
         with gr.Row():
             experimental_checkbox = gr.Checkbox(label=i18n("显示实验功能"), value=False)
             glossary_checkbox = gr.Checkbox(label=i18n("开启术语词汇读音"), value=tts.normalizer.enable_glossary)
-        with gr.Accordion(i18n("功能设置")):
-            # 情感控制选项部分
-            with gr.Row():
-                emo_control_method = gr.Radio(
-                    choices=EMO_CHOICES_OFFICIAL,
-                    type="index",
-                    value=EMO_CHOICES_OFFICIAL[0],
-                    label=i18n("情感控制方式"),
-                )
-                # we MUST have an extra, INVISIBLE list of *all* emotion control
-                # methods so that gr.Dataset() can fetch ALL control mode labels!
-                # otherwise, the gr.Dataset()'s experimental labels would be empty!
-                emo_control_method_all = gr.Radio(
-                    choices=EMO_CHOICES_ALL,
-                    type="index",
-                    value=EMO_CHOICES_ALL[0],
-                    label=i18n("情感控制方式"),
-                    visible=False,
-                )  # do not render
+        # 情感控制选项部分
+        with gr.Accordion(i18n("功能设置")), gr.Row():
+            emo_control_method = gr.Radio(
+                choices=EMO_CHOICES_OFFICIAL, type="index", value=EMO_CHOICES_OFFICIAL[0], label=i18n("情感控制方式")
+            )
+            # we MUST have an extra, INVISIBLE list of *all* emotion control
+            # methods so that gr.Dataset() can fetch ALL control mode labels!
+            # otherwise, the gr.Dataset()'s experimental labels would be empty!
+            emo_control_method_all = gr.Radio(
+                choices=EMO_CHOICES_ALL,
+                type="index",
+                value=EMO_CHOICES_ALL[0],
+                label=i18n("情感控制方式"),
+                visible=False,
+            )  # do not render
         # 情感参考音频部分
         with gr.Group(visible=False) as emotion_reference_group, gr.Row():
             emo_upload = gr.Audio(label=i18n("上传情感参考音频"), type="filepath")
@@ -443,7 +439,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
         return {segments_preview: gr.update(value=[], visible=True, type="array")}
 
     # 术语词汇表事件处理函数
-    def on_add_glossary_term(term, reading_zh, reading_en):
+    def on_add_glossary_term(term: str, reading_zh: str, reading_en: str) -> dict[str, Any]:
         """添加术语到词汇表并自动保存"""
         term = term.rstrip()
         reading_zh = reading_zh.rstrip()
@@ -546,7 +542,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
         outputs=[emo_control_method, example_table],
     )
 
-    def on_glossary_checkbox_change(is_enabled):
+    def on_glossary_checkbox_change(is_enabled: bool) -> dict[str, Any]:
         """控制术语词汇表的可见性"""
         tts.normalizer.enable_glossary = is_enabled
         return gr.update(visible=is_enabled)
@@ -563,7 +559,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
 
     prompt_audio.upload(update_prompt_audio, inputs=[], outputs=[gen_button])
 
-    def on_demo_load():
+    def on_demo_load() -> dict[str, Any]:
         """页面加载时重新加载glossary数据"""
         try:
             tts.normalizer.load_glossary_from_yaml(tts.glossary_path)

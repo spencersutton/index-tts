@@ -112,14 +112,17 @@ class IndexTTS2:
     def qwen_emo(self) -> QwenEmotion:
         return QwenEmotion(self.cfg.qwen_emo_path)
 
+    @cached_property[TextNormalizer]
+    def normalizer(self) -> TextNormalizer:
+        normalizer = TextNormalizer()
+        normalizer.load()
+        return normalizer
+
     @cached_property[TextTokenizer]
     def tokenizer(self) -> TextTokenizer:
         with Timer() as t:
             path = Path(hf.hf_hub_download(**self.cfg.dataset.bpe_model))
-
-            normalizer = TextNormalizer()
-            normalizer.load()
-            tokenizer = TextTokenizer(path, normalizer)
+            tokenizer = TextTokenizer(path, self.normalizer)
 
         print(f">> bpe model restored in {t:.2f} seconds from: {path}")
         return tokenizer
@@ -293,6 +296,12 @@ class IndexTTS2:
 
         self.emo_matrix = self.get_matrix(self.cfg.emo_matrix)
         self.spk_matrix = self.get_matrix(self.cfg.spk_matrix)
+
+        # 加载术语词汇表（如果存在）
+        self.glossary_path = model_dir / "glossary.yaml"
+        if self.glossary_path.exists():
+            self.normalizer.load_glossary_from_yaml(self.glossary_path)
+            print(">> Glossary loaded from:", self.glossary_path)
 
         # 缓存参考音频：
         self.cache_spk_cond: Tensor | None = None

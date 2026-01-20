@@ -1,5 +1,7 @@
 
+
 import os
+import pathlib
 import re
 import traceback
 import warnings
@@ -107,8 +109,7 @@ class TextNormalizer:
         if has_chinese or not has_alpha or is_email:
             return True
 
-        has_pinyin = bool(re.search(TextNormalizer.PINYIN_TONE_PATTERN, s, re.IGNORECASE))
-        return has_pinyin
+        return bool(re.search(TextNormalizer.PINYIN_TONE_PATTERN, s, re.IGNORECASE))
 
     def load(self):
         import platform
@@ -125,11 +126,10 @@ class TextNormalizer:
             from tn.english.normalizer import Normalizer as NormalizerEn
 
             # use new cache dir for build tagger rules with disable remove_interjections and remove_erhua
-            cache_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tagger_cache")
-            if not os.path.exists(cache_dir):
-                os.makedirs(cache_dir)
-                with open(os.path.join(cache_dir, ".gitignore"), "w") as f:
-                    f.write("*\n")
+            cache_dir = os.path.join(pathlib.Path(pathlib.Path(__file__).resolve()).parent, "tagger_cache")
+            if not pathlib.Path(cache_dir).exists():
+                pathlib.Path(cache_dir).mkdir(parents=True)
+                pathlib.Path(os.path.join(cache_dir, ".gitignore")).write_text("*\n")
             self.zh_normalizer = NormalizerZh(
                 cache_dir=cache_dir, remove_interjections=False, remove_erhua=False, overwrite_cache=False
             )
@@ -401,7 +401,7 @@ class TextTokenizer:
 
         if self.vocab_file is None:
             raise ValueError("vocab_file is None")
-        if not os.path.exists(self.vocab_file):
+        if not pathlib.Path(self.vocab_file).exists():
             raise ValueError(f"vocab_file {self.vocab_file} does not exist")
         if self.normalizer:
             self.normalizer.load()
@@ -459,8 +459,7 @@ class TextTokenizer:
         }
 
     def get_vocab(self):
-        vocab = {self.convert_ids_to_tokens(i): i for i in range(self.vocab_size)}
-        return vocab
+        return {self.convert_ids_to_tokens(i): i for i in range(self.vocab_size)}
 
     @overload
     def convert_ids_to_tokens(self, ids: int) -> str: ...

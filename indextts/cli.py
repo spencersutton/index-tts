@@ -1,4 +1,4 @@
-import os
+import pathlib
 import sys
 
 
@@ -31,23 +31,23 @@ def main():
         print("ERROR: Text is empty.")
         parser.print_help()
         sys.exit(1)
-    if not os.path.exists(args.voice):
+    if not pathlib.Path(args.voice).exists():
         print(f"Audio prompt file {args.voice} does not exist.")
         parser.print_help()
         sys.exit(1)
-    if not os.path.exists(args.config):
+    if not pathlib.Path(args.config).exists():
         print(f"Config file {args.config} does not exist.")
         parser.print_help()
         sys.exit(1)
 
     output_path = args.output_path
-    if os.path.exists(output_path):
+    if pathlib.Path(output_path).exists():
         if not args.force:
             print(f"ERROR: Output file {output_path} already exists. Use --force to overwrite.")
             parser.print_help()
             sys.exit(1)
         else:
-            os.remove(output_path)
+            pathlib.Path(output_path).unlink()
 
     try:
         import torch

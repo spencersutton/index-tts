@@ -1,17 +1,19 @@
 import html
 import json
 import os
+import pathlib
 import sys
 import threading
 import time
 
 import pandas as pd
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
+current_dir = pathlib.Path(pathlib.Path(__file__).resolve()).parent
 sys.path.append(current_dir)
 sys.path.append(os.path.join(current_dir, "indextts"))
 
 import argparse
+import pathlib
 
 parser = argparse.ArgumentParser(description="IndexTTS WebUI", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--verbose", action="store_true", default=False, help="Enable verbose mode")
@@ -26,15 +28,17 @@ parser.add_argument(
 parser.add_argument("--gui_seg_tokens", type=int, default=120, help="GUI: Max tokens per generation segment")
 cmd_args = parser.parse_args()
 
-if not os.path.exists(cmd_args.model_dir):
+if not pathlib.Path(cmd_args.model_dir).exists():
     print(f"Model directory {cmd_args.model_dir} does not exist. Please download the model first.")
     sys.exit(1)
 
 for file in ["bpe.model", "gpt.pth", "config.yaml", "s2mel.pth", "wav2vec2bert_stats.pt"]:
     file_path = os.path.join(cmd_args.model_dir, file)
-    if not os.path.exists(file_path):
+    if not pathlib.Path(file_path).exists():
         print(f"Required file {file_path} does not exist. Please download it.")
         sys.exit(1)
+
+import pathlib
 
 import gradio as gr
 
@@ -60,12 +64,12 @@ EMO_CHOICES_ALL = [
 ]
 EMO_CHOICES_OFFICIAL = EMO_CHOICES_ALL[:-1]  # skip experimental features
 
-os.makedirs("outputs/tasks", exist_ok=True)
-os.makedirs("prompts", exist_ok=True)
+pathlib.Path("outputs/tasks").mkdir(exist_ok=True, parents=True)
+pathlib.Path("prompts").mkdir(exist_ok=True, parents=True)
 
 MAX_LENGTH_TO_USE_SPEED = 70
 example_cases = []
-with open("examples/cases.jsonl", encoding="utf-8") as f:
+with pathlib.Path("examples/cases.jsonl").open(encoding="utf-8") as f:
     for line in f:
         line = line.strip()
         if not line:
@@ -190,8 +194,7 @@ def gen_single(
 
 
 def update_prompt_audio():
-    update_button = gr.update(interactive=True)
-    return update_button
+    return gr.update(interactive=True)
 
 
 def create_warning_message(warning_text):
@@ -215,7 +218,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
 
     with gr.Tab(i18n("音频生成")):
         with gr.Row():
-            os.makedirs("prompts", exist_ok=True)
+            pathlib.Path("prompts").mkdir(exist_ok=True, parents=True)
             prompt_audio = gr.Audio(
                 label=i18n("音色参考音频"), key="prompt_audio", sources=["upload", "microphone"], type="filepath"
             )
@@ -445,9 +448,8 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                 tokens_count = len(s)
                 data.append([i, segment_str, tokens_count])
             return {segments_preview: gr.update(value=data, visible=True, type="array")}
-        else:
-            df = pd.DataFrame([], columns=[i18n("序号"), i18n("分句内容"), i18n("Token数")])
-            return {segments_preview: gr.update(value=df)}
+        df = pd.DataFrame([], columns=[i18n("序号"), i18n("分句内容"), i18n("Token数")])
+        return {segments_preview: gr.update(value=df)}
 
     # 术语词汇表事件处理函数
     def on_add_glossary_term(term, reading_zh, reading_en):
@@ -498,7 +500,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                 gr.update(visible=False),
                 gr.update(visible=True),
             )
-        elif emo_control_method == 2:  # emotion vectors
+        if emo_control_method == 2:  # emotion vectors
             return (
                 gr.update(visible=False),
                 gr.update(visible=True),
@@ -506,7 +508,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                 gr.update(visible=False),
                 gr.update(visible=True),
             )
-        elif emo_control_method == 3:  # emotion text description
+        if emo_control_method == 3:  # emotion text description
             return (
                 gr.update(visible=False),
                 gr.update(visible=True),
@@ -514,14 +516,14 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                 gr.update(visible=True),
                 gr.update(visible=True),
             )
-        else:  # 0: same as speaker voice
-            return (
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False),
-                gr.update(visible=False),
-            )
+        # 0: same as speaker voice
+        return (
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=False),
+        )
 
     emo_control_method.change(
         on_method_change,

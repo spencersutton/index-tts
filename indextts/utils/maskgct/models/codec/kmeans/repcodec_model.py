@@ -129,7 +129,7 @@ class RepCodec(nn.Module):
 
         x = self.encoder(x.transpose(1, 2)).transpose(1, 2)
 
-        (quantized_out, all_indices, all_commit_losses, all_codebook_losses, _) = self.quantizer(x)
+        (quantized_out, all_indices, _all_commit_losses, _all_codebook_losses, _) = self.quantizer(x)
 
         if all_indices.shape[0] == 1:
             return all_indices.squeeze(0), quantized_out.transpose(1, 2)

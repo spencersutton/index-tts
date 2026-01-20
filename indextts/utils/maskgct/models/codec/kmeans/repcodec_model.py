@@ -95,7 +95,6 @@ class RepCodec(nn.Module):
         self.reset_parameters()
 
     def forward(self, x):
-
         # downsample
         if self.downsample_scale is not None and self.downsample_scale > 1:
             x = x.transpose(1, 2)
@@ -124,7 +123,6 @@ class RepCodec(nn.Module):
         return x_rec, codebook_loss, all_indices
 
     def quantize(self, x):
-
         if self.downsample_scale is not None and self.downsample_scale > 1:
             x = x.transpose(1, 2)
             x = self.down(x)
@@ -141,14 +139,3 @@ class RepCodec(nn.Module):
 
     def reset_parameters(self):
         self.apply(init_weights)
-
-
-if __name__ == "__main__":
-    repcodec = RepCodec(vocos_dim=1024, downsample_scale=2)
-    print(repcodec)
-    print(sum(p.numel() for p in repcodec.parameters()) / 1e6)
-    x = torch.randn(5, 10, 1024)
-    x_rec, codebook_loss, all_indices = repcodec(x)
-    print(x_rec.shape, codebook_loss, all_indices.shape)
-    vq_id, emb = repcodec.quantize(x)
-    print(vq_id.shape, emb.shape)

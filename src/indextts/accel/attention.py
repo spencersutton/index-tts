@@ -38,14 +38,7 @@ def set_forward_context(
 ):
     global _FORWARD_CONTEXT
     _FORWARD_CONTEXT = ForwardContext(
-        is_prefill,
-        cu_seqlens_q,
-        cu_seqlens_k,
-        max_seqlen_q,
-        max_seqlen_k,
-        slot_mapping,
-        context_lens,
-        block_tables,
+        is_prefill, cu_seqlens_q, cu_seqlens_k, max_seqlen_q, max_seqlen_k, slot_mapping, context_lens, block_tables
     )
 
 
@@ -56,14 +49,7 @@ def reset_forward_context():
 
 @triton.jit
 def store_kvcache_kernel(
-    key_ptr,
-    key_stride,
-    value_ptr,
-    value_stride,
-    k_cache_ptr,
-    v_cache_ptr,
-    slot_mapping_ptr,
-    D: tl.constexpr,
+    key_ptr, key_stride, value_ptr, value_stride, k_cache_ptr, v_cache_ptr, slot_mapping_ptr, D: tl.constexpr
 ):
     BLOCK_SIZE: tl.constexpr = 2048
     idx = tl.program_id(0)
@@ -87,11 +73,7 @@ def store_kvcache_kernel(
 
 
 def store_kvcache(
-    key: torch.Tensor,
-    value: torch.Tensor,
-    k_cache: torch.Tensor,
-    v_cache: torch.Tensor,
-    slot_mapping: torch.Tensor,
+    key: torch.Tensor, value: torch.Tensor, k_cache: torch.Tensor, v_cache: torch.Tensor, slot_mapping: torch.Tensor
 ):
     N, num_heads, head_dim = key.shape
     D = num_heads * head_dim
@@ -99,19 +81,11 @@ def store_kvcache(
     assert key.stride(1) == head_dim and value.stride(1) == head_dim
     assert k_cache.stride(1) == D and v_cache.stride(1) == D
     assert slot_mapping.numel() == N
-    store_kvcache_kernel[(N,)](
-        key, key.stride(0), value, value.stride(0), k_cache, v_cache, slot_mapping, D
-    )
+    store_kvcache_kernel[(N,)](key, key.stride(0), value, value.stride(0), k_cache, v_cache, slot_mapping, D)
 
 
 class Attention(nn.Module):
-    def __init__(
-        self,
-        num_heads: int,
-        head_dim: int,
-        scale: float,
-        num_kv_heads: int,
-    ):
+    def __init__(self, num_heads: int, head_dim: int, scale: float, num_kv_heads: int):
         super().__init__()
         self.num_heads = num_heads
         self.head_dim = head_dim

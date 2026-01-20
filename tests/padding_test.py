@@ -13,18 +13,20 @@ if __name__ == "__main__":
     ```
     """
     import transformers
+
     transformers.set_seed(42)
     import sys
+
     sys.path.append("..")
     if len(sys.argv) > 1:
         model_dir = sys.argv[1]
     else:
         model_dir = "checkpoints"
-    audio_prompt="tests/sample_prompt.wav"
+    audio_prompt = "tests/sample_prompt.wav"
     tts = IndexTTS(cfg_path=f"{model_dir}/config.yaml", model_dir=model_dir, use_fp16=False, use_cuda_kernel=False)
     text = "晕 XUAN4 是 一 种 not very good GAN3 觉"
     text_tokens = tts.tokenizer.encode(text)
-    text_tokens = torch.tensor(text_tokens, dtype=torch.int32, device=tts.device).unsqueeze(0) # [1, L]
+    text_tokens = torch.tensor(text_tokens, dtype=torch.int32, device=tts.device).unsqueeze(0)  # [1, L]
 
     audio, sr = torchaudio.load(audio_prompt)
     audio = torch.mean(audio, dim=0, keepdim=True)
@@ -49,9 +51,9 @@ if __name__ == "__main__":
         baseline = baseline.squeeze(0)
         print("Inference padded text tokens...")
         pad_text_tokens = [
-            F.pad(text_tokens, (8, 0), value=0), # left bos
-            F.pad(text_tokens, (0, 8), value=1), # right eos
-            F.pad(F.pad(text_tokens, (4, 0), value=0), (0, 4), value=1), # both side
+            F.pad(text_tokens, (8, 0), value=0),  # left bos
+            F.pad(text_tokens, (0, 8), value=1),  # right eos
+            F.pad(F.pad(text_tokens, (4, 0), value=0), (0, 4), value=1),  # both side
             F.pad(F.pad(text_tokens, (6, 0), value=0), (0, 2), value=1),
             F.pad(F.pad(text_tokens, (0, 4), value=0), (0, 4), value=1),
         ]
@@ -68,21 +70,21 @@ if __name__ == "__main__":
         del pad_text_tokens
     mismatch_idx = []
     print("baseline:", baseline.shape, baseline)
-    print("--"*10)
+    print("--" * 10)
     print("baseline vs padded output:")
     for i in range(len(output_for_padded)):
         if not baseline.equal(output_for_padded[i]):
             mismatch_idx.append(i)
-    
+
     if len(mismatch_idx) > 0:
         print("mismatch:", mismatch_idx)
         for i in mismatch_idx:
             print(f"[{i}]: {output_for_padded[i]}")
     else:
         print("all matched")
-    
+
     del output_for_padded
-    print("--"*10)
+    print("--" * 10)
     print("baseline vs batched output:")
     mismatch_idx = []
     for i in range(batch_output.shape[0]):
@@ -92,8 +94,8 @@ if __name__ == "__main__":
         print("mismatch:", mismatch_idx)
         for i in mismatch_idx:
             print(f"[{i}]: {batch_output[i]}")
-    
+
     else:
         print("all matched")
-    
+
     print("Test finished.")

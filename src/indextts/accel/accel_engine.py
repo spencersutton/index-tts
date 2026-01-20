@@ -4,8 +4,8 @@ from typing import List, Optional
 import torch
 from torch import nn
 
-from .attention import ForwardContext, get_forward_context, reset_forward_context, set_forward_context
-from .kv_manager import KVCacheManager, Seq
+from indextts.accel.attention import ForwardContext, get_forward_context, reset_forward_context, set_forward_context
+from indextts.accel.kv_manager import KVCacheManager, Seq
 
 
 class Sampler(nn.Module):
@@ -531,15 +531,3 @@ class AccelInferenceEngine:
         assert output.size(0) == batch_size, f"Output batch size mismatch: {output.size(0)} != {batch_size}"
 
         return output
-
-
-class Sampler(nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    @torch.compile
-    def forward(self, logits: torch.Tensor, temperatures: torch.Tensor):
-        logits = logits.float().div_(temperatures.unsqueeze(dim=1))
-        probs = torch.softmax(logits, dim=-1)
-        sample_tokens = probs.div_(torch.empty_like(probs).exponential_(1).clamp_min_(1e-10)).argmax(dim=-1)
-        return sample_tokens

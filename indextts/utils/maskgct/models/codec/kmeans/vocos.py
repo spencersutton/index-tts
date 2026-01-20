@@ -37,13 +37,7 @@ def symexp(x: torch.Tensor) -> torch.Tensor:
 
 
 class STFT(nn.Module):
-    def __init__(
-        self,
-        n_fft: int,
-        hop_length: int,
-        win_length: int,
-        center=True,
-    ):
+    def __init__(self, n_fft: int, hop_length: int, win_length: int, center=True):
         super().__init__()
         self.center = center
         self.n_fft = n_fft
@@ -95,9 +89,7 @@ class ISTFT(nn.Module):
         padding (str, optional): Type of padding. Options are "center" or "same". Defaults to "same".
     """
 
-    def __init__(
-        self, n_fft: int, hop_length: int, win_length: int, padding: str = "same"
-    ):
+    def __init__(self, n_fft: int, hop_length: int, win_length: int, padding: str = "same"):
         super().__init__()
         if padding not in ["center", "same"]:
             raise ValueError("Padding must be 'center' or 'same'.")
@@ -121,14 +113,7 @@ class ISTFT(nn.Module):
         """
         if self.padding == "center":
             # Fallback to pytorch native implementation
-            return torch.istft(
-                spec,
-                self.n_fft,
-                self.hop_length,
-                self.win_length,
-                self.window,
-                center=True,
-            )
+            return torch.istft(spec, self.n_fft, self.hop_length, self.win_length, self.window, center=True)
         elif self.padding == "same":
             pad = (self.win_length - self.hop_length) // 2
         else:
@@ -144,19 +129,13 @@ class ISTFT(nn.Module):
         # Overlap and Add
         output_size = (T - 1) * self.hop_length + self.win_length
         y = torch.nn.functional.fold(
-            ifft,
-            output_size=(1, output_size),
-            kernel_size=(1, self.win_length),
-            stride=(1, self.hop_length),
+            ifft, output_size=(1, output_size), kernel_size=(1, self.win_length), stride=(1, self.hop_length)
         )[:, 0, 0, pad:-pad]
 
         # Window envelope
         window_sq = self.window.square().expand(1, T, -1).transpose(1, 2)
         window_envelope = torch.nn.functional.fold(
-            window_sq,
-            output_size=(1, output_size),
-            kernel_size=(1, self.win_length),
-            stride=(1, self.hop_length),
+            window_sq, output_size=(1, output_size), kernel_size=(1, self.win_length), stride=(1, self.hop_length)
         ).squeeze()[pad:-pad]
 
         # Normalize
@@ -206,23 +185,17 @@ class MDCT(nn.Module):
                 and N is the number of frequency bins.
         """
         if self.padding == "center":
-            audio = torch.nn.functional.pad(
-                audio, (self.frame_len // 2, self.frame_len // 2)
-            )
+            audio = torch.nn.functional.pad(audio, (self.frame_len // 2, self.frame_len // 2))
         elif self.padding == "same":
             # hop_length is 1/2 frame_len
-            audio = torch.nn.functional.pad(
-                audio, (self.frame_len // 4, self.frame_len // 4)
-            )
+            audio = torch.nn.functional.pad(audio, (self.frame_len // 4, self.frame_len // 4))
         else:
             raise ValueError("Padding must be 'center' or 'same'.")
 
         x = audio.unfold(-1, self.frame_len, self.frame_len // 2)
         N = self.frame_len // 2
         x = x * self.window.expand(x.shape)
-        X = torch.fft.fft(
-            x * view_as_complex(self.pre_twiddle).expand(x.shape), dim=-1
-        )[..., :N]
+        X = torch.fft.fft(x * view_as_complex(self.pre_twiddle).expand(x.shape), dim=-1)[..., :N]
         res = X * view_as_complex(self.post_twiddle).expand(X.shape) * np.sqrt(1 / N)
         return torch.real(res) * np.sqrt(2)
 
@@ -267,14 +240,8 @@ class IMDCT(nn.Module):
         Y = torch.zeros((B, L, N * 2), dtype=X.dtype, device=X.device)
         Y[..., :N] = X
         Y[..., N:] = -1 * torch.conj(torch.flip(X, dims=(-1,)))
-        y = torch.fft.ifft(
-            Y * view_as_complex(self.pre_twiddle).expand(Y.shape), dim=-1
-        )
-        y = (
-            torch.real(y * view_as_complex(self.post_twiddle).expand(y.shape))
-            * np.sqrt(N)
-            * np.sqrt(2)
-        )
+        y = torch.fft.ifft(Y * view_as_complex(self.pre_twiddle).expand(Y.shape), dim=-1)
+        y = torch.real(y * view_as_complex(self.post_twiddle).expand(y.shape)) * np.sqrt(N) * np.sqrt(2)
         result = y * self.window.expand(y.shape)
         output_size = (1, (L + 1) * N)
         audio = torch.nn.functional.fold(
@@ -326,9 +293,7 @@ class ISTFTHead(FourierHead):
         super().__init__()
         out_dim = n_fft + 2
         self.out = torch.nn.Linear(dim, out_dim)
-        self.istft = ISTFT(
-            n_fft=n_fft, hop_length=hop_length, win_length=n_fft, padding=padding
-        )
+        self.istft = ISTFT(n_fft=n_fft, hop_length=hop_length, win_length=n_fft, padding=padding)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -344,9 +309,7 @@ class ISTFTHead(FourierHead):
         x = self.out(x).transpose(1, 2)
         mag, p = x.chunk(2, dim=1)
         mag = torch.exp(mag)
-        mag = torch.clip(
-            mag, max=1e2
-        )  # safeguard to prevent excessively large magnitudes
+        mag = torch.clip(mag, max=1e2)  # safeguard to prevent excessively large magnitudes
         # wrapping happens here. These two lines produce real and imaginary value
         x = torch.cos(p)
         y = torch.sin(p)
@@ -410,9 +373,7 @@ class IMDCTSymExpHead(FourierHead):
         """
         x = self.out(x)
         x = symexp(x)
-        x = torch.clip(
-            x, min=-1e2, max=1e2
-        )  # safeguard to prevent excessively large magnitudes
+        x = torch.clip(x, min=-1e2, max=1e2)  # safeguard to prevent excessively large magnitudes
         audio = self.imdct(x)
         if self.clip_audio:
             audio = torch.clip(x, min=-1.0, max=1.0)
@@ -431,13 +392,7 @@ class IMDCTCosHead(FourierHead):
         clip_audio (bool, optional): Whether to clip the audio output within the range of [-1.0, 1.0]. Defaults to False.
     """
 
-    def __init__(
-        self,
-        dim: int,
-        mdct_frame_len: int,
-        padding: str = "same",
-        clip_audio: bool = False,
-    ):
+    def __init__(self, dim: int, mdct_frame_len: int, padding: str = "same", clip_audio: bool = False):
         super().__init__()
         self.clip_audio = clip_audio
         self.out = nn.Linear(dim, mdct_frame_len)
@@ -456,9 +411,7 @@ class IMDCTCosHead(FourierHead):
         """
         x = self.out(x)
         m, p = x.chunk(2, dim=2)
-        m = torch.exp(m).clip(
-            max=1e2
-        )  # safeguard to prevent excessively large magnitudes
+        m = torch.exp(m).clip(max=1e2)  # safeguard to prevent excessively large magnitudes
         audio = self.imdct(m * torch.cos(p))
         if self.clip_audio:
             audio = torch.clip(x, min=-1.0, max=1.0)
@@ -485,17 +438,13 @@ class ConvNeXtBlock(nn.Module):
         adanorm_num_embeddings: Optional[int] = None,
     ):
         super().__init__()
-        self.dwconv = nn.Conv1d(
-            dim, dim, kernel_size=7, padding=3, groups=dim
-        )  # depthwise conv
+        self.dwconv = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
         self.adanorm = adanorm_num_embeddings is not None
         if adanorm_num_embeddings:
             self.norm = AdaLayerNorm(adanorm_num_embeddings, dim, eps=1e-6)
         else:
             self.norm = nn.LayerNorm(dim, eps=1e-6)
-        self.pwconv1 = nn.Linear(
-            dim, intermediate_dim
-        )  # pointwise/1x1 convs, implemented with linear layers
+        self.pwconv1 = nn.Linear(dim, intermediate_dim)  # pointwise/1x1 convs, implemented with linear layers
         self.act = nn.GELU()
         self.pwconv2 = nn.Linear(intermediate_dim, dim)
         self.gamma = (
@@ -504,9 +453,7 @@ class ConvNeXtBlock(nn.Module):
             else None
         )
 
-    def forward(
-        self, x: torch.Tensor, cond_embedding_id: Optional[torch.Tensor] = None
-    ) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, cond_embedding_id: Optional[torch.Tensor] = None) -> torch.Tensor:
         residual = x
         x = self.dwconv(x)
         x = x.transpose(1, 2)  # (B, C, T) -> (B, T, C)
@@ -539,12 +486,8 @@ class AdaLayerNorm(nn.Module):
         super().__init__()
         self.eps = eps
         self.dim = embedding_dim
-        self.scale = nn.Embedding(
-            num_embeddings=num_embeddings, embedding_dim=embedding_dim
-        )
-        self.shift = nn.Embedding(
-            num_embeddings=num_embeddings, embedding_dim=embedding_dim
-        )
+        self.scale = nn.Embedding(num_embeddings=num_embeddings, embedding_dim=embedding_dim)
+        self.shift = nn.Embedding(num_embeddings=num_embeddings, embedding_dim=embedding_dim)
         torch.nn.init.ones_(self.scale.weight)
         torch.nn.init.zeros_(self.shift.weight)
 
@@ -582,101 +525,47 @@ class ResBlock1(nn.Module):
     ):
         super().__init__()
         self.lrelu_slope = lrelu_slope
-        self.convs1 = nn.ModuleList(
-            [
-                weight_norm(
-                    nn.Conv1d(
-                        dim,
-                        dim,
-                        kernel_size,
-                        1,
-                        dilation=dilation[0],
-                        padding=self.get_padding(kernel_size, dilation[0]),
-                    )
-                ),
-                weight_norm(
-                    nn.Conv1d(
-                        dim,
-                        dim,
-                        kernel_size,
-                        1,
-                        dilation=dilation[1],
-                        padding=self.get_padding(kernel_size, dilation[1]),
-                    )
-                ),
-                weight_norm(
-                    nn.Conv1d(
-                        dim,
-                        dim,
-                        kernel_size,
-                        1,
-                        dilation=dilation[2],
-                        padding=self.get_padding(kernel_size, dilation[2]),
-                    )
-                ),
-            ]
-        )
+        self.convs1 = nn.ModuleList([
+            weight_norm(
+                nn.Conv1d(
+                    dim, dim, kernel_size, 1, dilation=dilation[0], padding=self.get_padding(kernel_size, dilation[0])
+                )
+            ),
+            weight_norm(
+                nn.Conv1d(
+                    dim, dim, kernel_size, 1, dilation=dilation[1], padding=self.get_padding(kernel_size, dilation[1])
+                )
+            ),
+            weight_norm(
+                nn.Conv1d(
+                    dim, dim, kernel_size, 1, dilation=dilation[2], padding=self.get_padding(kernel_size, dilation[2])
+                )
+            ),
+        ])
 
-        self.convs2 = nn.ModuleList(
-            [
-                weight_norm(
-                    nn.Conv1d(
-                        dim,
-                        dim,
-                        kernel_size,
-                        1,
-                        dilation=1,
-                        padding=self.get_padding(kernel_size, 1),
-                    )
-                ),
-                weight_norm(
-                    nn.Conv1d(
-                        dim,
-                        dim,
-                        kernel_size,
-                        1,
-                        dilation=1,
-                        padding=self.get_padding(kernel_size, 1),
-                    )
-                ),
-                weight_norm(
-                    nn.Conv1d(
-                        dim,
-                        dim,
-                        kernel_size,
-                        1,
-                        dilation=1,
-                        padding=self.get_padding(kernel_size, 1),
-                    )
-                ),
-            ]
-        )
+        self.convs2 = nn.ModuleList([
+            weight_norm(nn.Conv1d(dim, dim, kernel_size, 1, dilation=1, padding=self.get_padding(kernel_size, 1))),
+            weight_norm(nn.Conv1d(dim, dim, kernel_size, 1, dilation=1, padding=self.get_padding(kernel_size, 1))),
+            weight_norm(nn.Conv1d(dim, dim, kernel_size, 1, dilation=1, padding=self.get_padding(kernel_size, 1))),
+        ])
 
-        self.gamma = nn.ParameterList(
-            [
-                (
-                    nn.Parameter(
-                        layer_scale_init_value * torch.ones(dim, 1), requires_grad=True
-                    )
-                    if layer_scale_init_value is not None
-                    else None
-                ),
-                (
-                    nn.Parameter(
-                        layer_scale_init_value * torch.ones(dim, 1), requires_grad=True
-                    )
-                    if layer_scale_init_value is not None
-                    else None
-                ),
-                (
-                    nn.Parameter(
-                        layer_scale_init_value * torch.ones(dim, 1), requires_grad=True
-                    )
-                    if layer_scale_init_value is not None
-                    else None
-                ),
-            ]
-        )
+        self.gamma = nn.ParameterList([
+            (
+                nn.Parameter(layer_scale_init_value * torch.ones(dim, 1), requires_grad=True)
+                if layer_scale_init_value is not None
+                else None
+            ),
+            (
+                nn.Parameter(layer_scale_init_value * torch.ones(dim, 1), requires_grad=True)
+                if layer_scale_init_value is not None
+                else None
+            ),
+            (
+                nn.Parameter(layer_scale_init_value * torch.ones(dim, 1), requires_grad=True)
+                if layer_scale_init_value is not None
+                else None
+            ),
+        ])
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         for c1, c2, gamma in zip(self.convs1, self.convs2, self.gamma):
@@ -748,17 +637,15 @@ class VocosBackbone(Backbone):
         else:
             self.norm = nn.LayerNorm(dim, eps=1e-6)
         layer_scale_init_value = layer_scale_init_value or 1 / num_layers
-        self.convnext = nn.ModuleList(
-            [
-                ConvNeXtBlock(
-                    dim=dim,
-                    intermediate_dim=intermediate_dim,
-                    layer_scale_init_value=layer_scale_init_value,
-                    adanorm_num_embeddings=adanorm_num_embeddings,
-                )
-                for _ in range(num_layers)
-            ]
-        )
+        self.convnext = nn.ModuleList([
+            ConvNeXtBlock(
+                dim=dim,
+                intermediate_dim=intermediate_dim,
+                layer_scale_init_value=layer_scale_init_value,
+                adanorm_num_embeddings=adanorm_num_embeddings,
+            )
+            for _ in range(num_layers)
+        ])
         self.final_layer_norm = nn.LayerNorm(dim, eps=1e-6)
         self.apply(self._init_weights)
 
@@ -793,25 +680,14 @@ class VocosResNetBackbone(Backbone):
         layer_scale_init_value (float, optional): Initial value for layer scaling. Defaults to None.
     """
 
-    def __init__(
-        self,
-        input_channels,
-        dim,
-        num_blocks,
-        layer_scale_init_value=None,
-    ):
+    def __init__(self, input_channels, dim, num_blocks, layer_scale_init_value=None):
         super().__init__()
         self.input_channels = input_channels
-        self.embed = weight_norm(
-            nn.Conv1d(input_channels, dim, kernel_size=3, padding=1)
-        )
+        self.embed = weight_norm(nn.Conv1d(input_channels, dim, kernel_size=3, padding=1))
         layer_scale_init_value = layer_scale_init_value or 1 / num_blocks / 3
-        self.resnet = nn.Sequential(
-            *[
-                ResBlock1(dim=dim, layer_scale_init_value=layer_scale_init_value)
-                for _ in range(num_blocks)
-            ]
-        )
+        self.resnet = nn.Sequential(*[
+            ResBlock1(dim=dim, layer_scale_init_value=layer_scale_init_value) for _ in range(num_blocks)
+        ])
 
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
         x = self.embed(x)

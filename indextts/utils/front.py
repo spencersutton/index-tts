@@ -1,11 +1,10 @@
-
 import re
 import sys
 import traceback
 import warnings
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Final, overload
+from typing import Any, Final, cast, overload
 
 from sentencepiece import SentencePieceProcessor
 
@@ -22,7 +21,7 @@ punctuation_marks_tokens: Final = [
 
 
 class TextNormalizer:
-    def __init__(self, enable_glossary=False) -> None:
+    def __init__(self, enable_glossary: bool = False) -> None:
         self.zh_normalizer = None
         self.en_normalizer = None
         self.char_rep_map = {
@@ -233,7 +232,7 @@ class TextNormalizer:
             transformed_text = transformed_text.replace(f"<n_{number}>", name)
         return transformed_text
 
-    def save_tech_terms(self, original_text):
+    def save_tech_terms(self, original_text: str) -> tuple[str, list[str] | None]:
         """
         保护技术术语中的连字符，防止被中文normalizer解析为减号
         策略：将术语中的连字符替换为特殊占位符<H>，数字仍可被正常处理
@@ -241,12 +240,12 @@ class TextNormalizer:
         最终恢复为：GPT-五-nano
         """
         tech_pattern = re.compile(TextNormalizer.TECH_TERM_PATTERN)
-        original_tech_list = tech_pattern.findall(original_text)
+        original_tech_list = cast(list[str], tech_pattern.findall(original_text))
         if len(original_tech_list) == 0:
             return (original_text, None)
 
         # 去重并按长度降序排列（避免短匹配先替换导致问题）
-        original_tech_list = sorted(set(original_tech_list), key=len, reverse=True)
+        original_tech_list = cast(list[str], sorted(set(original_tech_list), key=len, reverse=True))
         transformed_text = original_text
 
         # 将术语中的连字符替换为占位符 <H>
@@ -257,7 +256,7 @@ class TextNormalizer:
 
         return transformed_text, original_tech_list
 
-    def restore_tech_terms(self, normalized_text, original_tech_list):
+    def restore_tech_terms(self, normalized_text: str, original_tech_list: list[str] | None) -> str:
         """
         恢复技术术语中的连字符
         将占位符 <H> 恢复为连字符 -
@@ -268,10 +267,9 @@ class TextNormalizer:
 
         # 清理 <H> 周围可能的空格，然后恢复为连字符
         # 处理模式: " <H> " -> "-", " <H>" -> "-", "<H> " -> "-", "<H>" -> "-"
-        transformed_text = re.sub(r"\s*<H>\s*", "-", normalized_text)
-        return transformed_text
+        return re.sub(r"\s*<H>\s*", "-", normalized_text)
 
-    def apply_glossary_terms(self, text, lang="zh"):
+    def apply_glossary_terms(self, text: str, lang: str = "zh") -> str:
         """
         应用术语词汇表，将专业术语替换为对应语言的读法
 
@@ -294,7 +292,7 @@ class TextNormalizer:
         sorted_terms = sorted(self.term_glossary.keys(), key=len, reverse=True)
 
         @lru_cache(maxsize=42)
-        def get_term_pattern(term: str):
+        def get_term_pattern(term: str) -> re.Pattern:
             return re.compile(re.escape(term), re.IGNORECASE)
 
         transformed_text = text
@@ -310,7 +308,7 @@ class TextNormalizer:
 
         return transformed_text
 
-    def load_glossary(self, glossary_dict):
+    def load_glossary(self, glossary_dict: dict[str, dict[str, str] | str]) -> None:
         """
         加载外部术语词汇表
 
@@ -326,7 +324,7 @@ class TextNormalizer:
         if glossary_dict and isinstance(glossary_dict, dict):
             self.term_glossary.update(glossary_dict)
 
-    def load_glossary_from_yaml(self, glossary_path):
+    def load_glossary_from_yaml(self, glossary_path: Path) -> bool:
         """
         从 YAML 文件加载术语词汇表
 
@@ -342,17 +340,17 @@ class TextNormalizer:
               zh: M 二
             NVMe: N-V-M-E  # 中英文相同读法
         """
-        if glossary_path and os.path.exists(glossary_path):
+        if glossary_path and Path(glossary_path).exists():
             import yaml
 
-            with open(glossary_path, encoding="utf-8") as f:
+            with glossary_path.open(encoding="utf-8") as f:
                 external_glossary = yaml.safe_load(f)
                 if external_glossary and isinstance(external_glossary, dict):
                     self.term_glossary = external_glossary
                     return True
         return False
 
-    def save_glossary_to_yaml(self, glossary_path):
+    def save_glossary_to_yaml(self, glossary_path: Path) -> None:
         """
         保存术语词汇表到 YAML 文件
 
@@ -361,7 +359,7 @@ class TextNormalizer:
         """
         import yaml
 
-        with open(glossary_path, "w", encoding="utf-8") as f:
+        with glossary_path.open("w", encoding="utf-8") as f:
             yaml.dump(self.term_glossary, f, allow_unicode=True, default_flow_style=False)
 
     def save_pinyin_tones(self, original_text: str) -> tuple[str, list[str] | None]:

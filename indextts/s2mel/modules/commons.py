@@ -21,7 +21,7 @@ def sequence_mask(length, max_length=None):
 
 
 class MyModel(nn.Module):
-    def __init__(self, args):
+    def __init__(self, args) -> None:
         super().__init__()
         from indextts.s2mel.modules.flow_matching import CFM
         from indextts.s2mel.modules.length_regulator import InterpolateRegulator
@@ -44,7 +44,7 @@ class MyModel(nn.Module):
     def forward(self, x, target_lengths, prompt_len, cond, y):
         return self.models["cfm"](x, target_lengths, prompt_len, cond, y)
 
-    def enable_torch_compile(self):
+    def enable_torch_compile(self) -> None:
         """Enable torch.compile optimization.
 
         This method applies torch.compile to the model for significant

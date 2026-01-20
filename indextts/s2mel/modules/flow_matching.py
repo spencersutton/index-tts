@@ -8,7 +8,7 @@ from indextts.s2mel.modules.diffusion_transformer import DiT
 
 
 class BASECFM(nn.Module, ABC):
-    def __init__(self, args):
+    def __init__(self, args) -> None:
         super().__init__()
         self.sigma_min = 1e-6
 
@@ -158,14 +158,14 @@ class BASECFM(nn.Module, ABC):
 
 
 class CFM(BASECFM):
-    def __init__(self, args):
+    def __init__(self, args) -> None:
         super().__init__(args)
         if args.dit_type == "DiT":
             self.estimator = DiT(args)
         else:
             raise NotImplementedError(f"Unknown diffusion type {args.dit_type}")
 
-    def enable_torch_compile(self):
+    def enable_torch_compile(self) -> None:
         """Enable torch.compile optimization for the estimator model.
 
         This method applies torch.compile to the estimator (DiT model) for significant

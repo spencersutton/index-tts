@@ -22,7 +22,7 @@ class ConvNeXtBlock(nn.Module):
 
     def __init__(
         self, dim: int, intermediate_dim: int, layer_scale_init_value: float, adanorm_num_embeddings: int | None = None
-    ):
+    ) -> None:
         super().__init__()
         self.dwconv = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
         self.adanorm = adanorm_num_embeddings is not None
@@ -67,7 +67,7 @@ class AdaLayerNorm(nn.Module):
         embedding_dim (int): Dimension of the embeddings.
     """
 
-    def __init__(self, num_embeddings: int, embedding_dim: int, eps: float = 1e-6):
+    def __init__(self, num_embeddings: int, embedding_dim: int, eps: float = 1e-6) -> None:
         super().__init__()
         self.eps = eps
         self.dim = embedding_dim
@@ -121,7 +121,7 @@ class VocosBackbone(Backbone):
         num_layers: int,
         layer_scale_init_value: float | None = None,
         adanorm_num_embeddings: int | None = None,
-    ):
+    ) -> None:
         super().__init__()
         self.input_channels = input_channels
         self.embed = nn.Conv1d(input_channels, dim, kernel_size=7, padding=3)
@@ -143,7 +143,7 @@ class VocosBackbone(Backbone):
         self.final_layer_norm = nn.LayerNorm(dim, eps=1e-6)
         self.apply(self._init_weights)
 
-    def _init_weights(self, m):
+    def _init_weights(self, m) -> None:
         if isinstance(m, (nn.Conv1d, nn.Linear)):
             nn.init.trunc_normal_(m.weight, std=0.02)
             nn.init.constant_(m.bias, 0)

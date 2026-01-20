@@ -19,7 +19,7 @@ class PositionwiseFeedForward(nn.Module):
         activation (nn.Module): Activation function
     """
 
-    def __init__(self, idim: int, hidden_units: int, activation: nn.Module = nn.ReLU()):
+    def __init__(self, idim: int, hidden_units: int, activation: nn.Module = nn.ReLU()) -> None:
         """Construct a PositionwiseFeedForward object."""
         super().__init__()
         self.w_1 = nn.Linear(idim, hidden_units)
@@ -41,7 +41,7 @@ class PositionwiseFeedForward(nn.Module):
 class ConvolutionModule(nn.Module):
     """ConvolutionModule in Conformer model."""
 
-    def __init__(self, channels: int, activation: nn.Module = nn.ReLU(), bias: bool = True):
+    def __init__(self, channels: int, activation: nn.Module = nn.ReLU(), bias: bool = True) -> None:
         """Construct an ConvolutionModule object.
         Args:
             channels (int): The number of channels of conv layers.
@@ -147,7 +147,7 @@ class ConformerEncoderLayer(nn.Module):
         self_attn: nn.Module,
         feed_forward: nn.Module | None = None,
         conv_module: nn.Module | None = None,
-    ):
+    ) -> None:
         """Construct an EncoderLayer object."""
         super().__init__()
         self.self_attn = self_attn
@@ -237,7 +237,7 @@ class BaseEncoder(nn.Module):
         attention_heads: int = 4,
         linear_units: int = 2048,
         num_blocks: int = 6,
-    ):
+    ) -> None:
         """
         Args:
             input_size (int): input dim
@@ -323,7 +323,7 @@ class ConformerEncoder(BaseEncoder):
         attention_heads: int = 4,
         linear_units: int = 2048,
         num_blocks: int = 6,
-    ):
+    ) -> None:
         super().__init__(
             input_size,
             output_size,

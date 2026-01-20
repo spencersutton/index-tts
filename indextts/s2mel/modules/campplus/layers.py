@@ -37,7 +37,7 @@ class StatsPool(nn.Module):
 
 
 class TDNNLayer(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, bias=False):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, bias=False) -> None:
         super().__init__()
         if padding < 0:
             assert kernel_size % 2 == 1, f"Expect equal paddings, but got even kernel size ({kernel_size})"
@@ -53,7 +53,7 @@ class TDNNLayer(nn.Module):
 
 
 class CAMLayer(nn.Module):
-    def __init__(self, stride, padding, dilation, bias, reduction=2):
+    def __init__(self, stride, padding, dilation, bias, reduction=2) -> None:
         super().__init__()
         self.linear_local = nn.Conv1d(128, 32, 3, stride=stride, padding=padding, dilation=dilation, bias=bias)
         self.linear1 = nn.Conv1d(128, 128 // reduction, 1)
@@ -81,7 +81,7 @@ class CAMLayer(nn.Module):
 
 
 class CAMDenseTDNNLayer(nn.Module):
-    def __init__(self, in_channels, stride=1, dilation=1, bias=False):
+    def __init__(self, in_channels, stride=1, dilation=1, bias=False) -> None:
         super().__init__()
         self.memory_efficient = False
         self.nonlinear1 = get_nonlinear("batchnorm-relu", in_channels)
@@ -98,7 +98,7 @@ class CAMDenseTDNNLayer(nn.Module):
 
 
 class CAMDenseTDNNBlock(nn.ModuleList):
-    def __init__(self, num_layers, in_channels, stride=1, dilation=1, bias=False):
+    def __init__(self, num_layers, in_channels, stride=1, dilation=1, bias=False) -> None:
         super().__init__()
         for i in range(num_layers):
             layer = CAMDenseTDNNLayer(in_channels=in_channels + i * 32, stride=stride, dilation=dilation, bias=bias)
@@ -111,7 +111,7 @@ class CAMDenseTDNNBlock(nn.ModuleList):
 
 
 class TransitLayer(nn.Module):
-    def __init__(self, in_channels, out_channels, bias=True):
+    def __init__(self, in_channels, out_channels, bias=True) -> None:
         super().__init__()
         self.nonlinear = get_nonlinear("batchnorm-relu", in_channels)
         self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
@@ -122,7 +122,7 @@ class TransitLayer(nn.Module):
 
 
 class DenseLayer(nn.Module):
-    def __init__(self, in_channels, out_channels, bias=False):
+    def __init__(self, in_channels, out_channels, bias=False) -> None:
         super().__init__()
         self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
         self.nonlinear = get_nonlinear("batchnorm_", out_channels)
@@ -138,7 +138,7 @@ class DenseLayer(nn.Module):
 class BasicResBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, in_planes, planes, stride=1):
+    def __init__(self, in_planes, planes, stride=1) -> None:
         super().__init__()
         self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, stride=(stride, 1), padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)

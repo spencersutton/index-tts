@@ -24,10 +24,10 @@ class ConvLayerNorm(nn.LayerNorm):
     before running the normalization and moves them back to original position right after.
     """
 
-    def __init__(self, normalized_shape: int | list[int] | torch.Size, **kwargs):
+    def __init__(self, normalized_shape: int | list[int] | torch.Size, **kwargs) -> None:
         super().__init__(normalized_shape, **kwargs)
 
-    def forward(self, x):
+    def forward(self, x) -> None:
         x = einops.rearrange(x, "b ... t -> b t ...")
         x = super().forward(x)
         x = einops.rearrange(x, "b t ... -> b ... t")
@@ -102,7 +102,9 @@ class NormConv1d(nn.Module):
     to provide a uniform interface across normalization approaches.
     """
 
-    def __init__(self, *args, causal: bool = False, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs):
+    def __init__(
+        self, *args, causal: bool = False, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs
+    ) -> None:
         super().__init__()
         self.conv = apply_parametrization_norm(nn.Conv1d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.conv, causal, norm, **norm_kwargs)
@@ -132,7 +134,7 @@ class SConv1d(nn.Module):
         norm_kwargs: dict[str, tp.Any] = {},
         pad_mode: str = "reflect",
         **kwargs,
-    ):
+    ) -> None:
         super().__init__()
         # warn user on unusual setup between dilation and stride
         if stride > 1 and dilation > 1:

@@ -23,7 +23,7 @@ class TimestepEmbedder(nn.Module):
     Embeds scalar timesteps into vector representations.
     """
 
-    def __init__(self, hidden_size, frequency_embedding_size=256):
+    def __init__(self, hidden_size, frequency_embedding_size=256) -> None:
         super().__init__()
         self.mlp = nn.Sequential(
             nn.Linear(frequency_embedding_size, hidden_size, bias=True),
@@ -65,7 +65,7 @@ class FinalLayer(nn.Module):
     The final layer of DiT.
     """
 
-    def __init__(self, hidden_size, patch_size, out_channels):
+    def __init__(self, hidden_size, patch_size, out_channels) -> None:
         super().__init__()
         self.norm_final = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
         self.linear = weight_norm(nn.Linear(hidden_size, patch_size * patch_size * out_channels, bias=True))
@@ -78,7 +78,7 @@ class FinalLayer(nn.Module):
 
 
 class DiT(nn.Module):
-    def __init__(self, args):
+    def __init__(self, args) -> None:
         super().__init__()
         self.time_as_token = args.DiT.time_as_token if hasattr(args.DiT, "time_as_token") else False
         self.style_as_token = args.DiT.style_as_token if hasattr(args.DiT, "style_as_token") else False
@@ -151,7 +151,7 @@ class DiT(nn.Module):
         if self.style_as_token:
             self.style_in = nn.Linear(args.style_encoder.dim, args.DiT.hidden_dim)
 
-    def setup_caches(self, max_batch_size, max_seq_length):
+    def setup_caches(self, max_batch_size, max_seq_length) -> None:
         self.transformer.setup_caches(max_batch_size, max_seq_length, use_kv_cache=False)
 
     def forward(self, x, prompt_x, x_lens, t, style, cond, mask_content=False):

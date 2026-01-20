@@ -10,8 +10,7 @@ def fused_add_tanh_sigmoid_multiply(input_a, input_b, n_channels):
     t_act_part, s_act_part = torch.split(in_act, n_channels_int, dim=1)
     t_act = torch.tanh(t_act_part)
     s_act = torch.sigmoid(s_act_part)
-    acts = t_act * s_act
-    return acts
+    return t_act * s_act
 
 
 def sequence_mask(length, max_length=None):
@@ -45,8 +44,7 @@ class MyModel(nn.Module):
         })
 
     def forward(self, x, target_lengths, prompt_len, cond, y):
-        x = self.models["cfm"](x, target_lengths, prompt_len, cond, y)
-        return x
+        return self.models["cfm"](x, target_lengths, prompt_len, cond, y)
 
     def enable_torch_compile(self):
         """Enable torch.compile optimization.

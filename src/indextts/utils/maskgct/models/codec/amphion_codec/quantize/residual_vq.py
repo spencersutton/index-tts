@@ -24,6 +24,7 @@ class ResidualVQ(nn.Module):
         num_quantizers: int = 8,
         codebook_size: int = 1024,
         codebook_dim: int = 256,
+        quantizer_dropout: float = 0.5,
         **kwargs,
     ):
         super().__init__()
@@ -32,6 +33,7 @@ class ResidualVQ(nn.Module):
         self.num_quantizers = num_quantizers
         self.codebook_size = codebook_size
         self.codebook_dim = codebook_dim
+        self.quantizer_dropout = quantizer_dropout
 
         self.quantizers = nn.ModuleList([
             FactorizedVectorQuantize(

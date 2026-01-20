@@ -1,8 +1,7 @@
-from typing import Optional, Tuple
 
 import torch
 from torch import nn
-from torch.nn.utils import weight_norm, remove_weight_norm
+from torch.nn.utils import remove_weight_norm, weight_norm
 
 
 class ConvNeXtBlock(nn.Module):
@@ -22,7 +21,7 @@ class ConvNeXtBlock(nn.Module):
         dim: int,
         intermediate_dim: int,
         layer_scale_init_value: float,
-        adanorm_num_embeddings: Optional[int] = None,
+        adanorm_num_embeddings: int | None = None,
     ):
         super().__init__()
         self.dwconv = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
@@ -40,7 +39,7 @@ class ConvNeXtBlock(nn.Module):
             else None
         )
 
-    def forward(self, x: torch.Tensor, cond_embedding_id: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, cond_embedding_id: torch.Tensor | None = None) -> torch.Tensor:
         residual = x
         x = self.dwconv(x)
         x = x.transpose(1, 2)  # (B, C, T) -> (B, T, C)
@@ -106,68 +105,47 @@ class ResBlock1(nn.Module):
         self,
         dim: int,
         kernel_size: int = 3,
-        dilation: Tuple[int, int, int] = (1, 3, 5),
+        dilation: tuple[int, int, int] = (1, 3, 5),
         lrelu_slope: float = 0.1,
-        layer_scale_init_value: Optional[float] = None,
+        layer_scale_init_value: float | None = None,
     ):
         super().__init__()
         self.lrelu_slope = lrelu_slope
-        self.convs1 = nn.ModuleList(
-            [
-                weight_norm(
-                    nn.Conv1d(
-                        dim,
-                        dim,
-                        kernel_size,
-                        1,
-                        dilation=dilation[0],
-                        padding=self.get_padding(kernel_size, dilation[0]),
-                    )
-                ),
-                weight_norm(
-                    nn.Conv1d(
-                        dim,
-                        dim,
-                        kernel_size,
-                        1,
-                        dilation=dilation[1],
-                        padding=self.get_padding(kernel_size, dilation[1]),
-                    )
-                ),
-                weight_norm(
-                    nn.Conv1d(
-                        dim,
-                        dim,
-                        kernel_size,
-                        1,
-                        dilation=dilation[2],
-                        padding=self.get_padding(kernel_size, dilation[2]),
-                    )
-                ),
-            ]
-        )
+        self.convs1 = nn.ModuleList([
+            weight_norm(
+                nn.Conv1d(
+                    dim, dim, kernel_size, 1, dilation=dilation[0], padding=self.get_padding(kernel_size, dilation[0])
+                )
+            ),
+            weight_norm(
+                nn.Conv1d(
+                    dim, dim, kernel_size, 1, dilation=dilation[1], padding=self.get_padding(kernel_size, dilation[1])
+                )
+            ),
+            weight_norm(
+                nn.Conv1d(
+                    dim, dim, kernel_size, 1, dilation=dilation[2], padding=self.get_padding(kernel_size, dilation[2])
+                )
+            ),
+        ])
 
-        self.convs2 = nn.ModuleList(
-            [
-                weight_norm(nn.Conv1d(dim, dim, kernel_size, 1, dilation=1, padding=self.get_padding(kernel_size, 1))),
-                weight_norm(nn.Conv1d(dim, dim, kernel_size, 1, dilation=1, padding=self.get_padding(kernel_size, 1))),
-                weight_norm(nn.Conv1d(dim, dim, kernel_size, 1, dilation=1, padding=self.get_padding(kernel_size, 1))),
-            ]
-        )
+        self.convs2 = nn.ModuleList([
+            weight_norm(nn.Conv1d(dim, dim, kernel_size, 1, dilation=1, padding=self.get_padding(kernel_size, 1))),
+            weight_norm(nn.Conv1d(dim, dim, kernel_size, 1, dilation=1, padding=self.get_padding(kernel_size, 1))),
+            weight_norm(nn.Conv1d(dim, dim, kernel_size, 1, dilation=1, padding=self.get_padding(kernel_size, 1))),
+        ])
 
-        self.gamma = nn.ParameterList(
-            [
-                nn.Parameter(layer_scale_init_value * torch.ones(dim, 1), requires_grad=True)
-                if layer_scale_init_value is not None
-                else None,
-                nn.Parameter(layer_scale_init_value * torch.ones(dim, 1), requires_grad=True)
-                if layer_scale_init_value is not None
-                else None,
-                nn.Parameter(layer_scale_init_value * torch.ones(dim, 1), requires_grad=True)
-                if layer_scale_init_value is not None
-                else None,
-            ]
-        )
+        self.gamma = nn.ParameterList([
+            nn.Parameter(layer_scale_init_value * torch.ones(dim, 1), requires_grad=True)
+            if layer_scale_init_value is not None
+            else None,
+            nn.Parameter(layer_scale_init_value * torch.ones(dim, 1), requires_grad=True)
+            if layer_scale_init_value is not None
+            else None,
+            nn.Parameter(layer_scale_init_value * torch.ones(dim, 1), requires_grad=True)
+            if layer_scale_init_value is not None
+            else None,
+        ])
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         for c1, c2, gamma in zip(self.convs1, self.convs2, self.gamma):

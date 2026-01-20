@@ -33,15 +33,8 @@ def load():
             name=name,
             sources=sources,
             build_directory=buildpath,
-            extra_cflags=[
-                "-O3",
-            ],
-            extra_cuda_cflags=[
-                "-O3",
-                "-gencode",
-                "arch=compute_70,code=sm_70",
-                "--use_fast_math",
-            ]
+            extra_cflags=["-O3"],
+            extra_cuda_cflags=["-O3", "-gencode", "arch=compute_70,code=sm_70", "--use_fast_math"]
             + extra_cuda_flags
             + cc_flag,
             verbose=True,
@@ -54,21 +47,14 @@ def load():
         "--expt-extended-lambda",
     ]
 
-    sources = [
-        srcpath / "anti_alias_activation.cpp",
-        srcpath / "anti_alias_activation_cuda.cu",
-    ]
-    anti_alias_activation_cuda = _cpp_extention_load_helper(
-        "anti_alias_activation_cuda", sources, extra_cuda_flags
-    )
+    sources = [srcpath / "anti_alias_activation.cpp", srcpath / "anti_alias_activation_cuda.cu"]
+    anti_alias_activation_cuda = _cpp_extention_load_helper("anti_alias_activation_cuda", sources, extra_cuda_flags)
 
     return anti_alias_activation_cuda
 
 
 def _get_cuda_bare_metal_version(cuda_dir):
-    raw_output = subprocess.check_output(
-        [cuda_dir + "/bin/nvcc", "-V"], universal_newlines=True
-    )
+    raw_output = subprocess.check_output([cuda_dir + "/bin/nvcc", "-V"], universal_newlines=True)
     output = raw_output.split()
     release_idx = output.index("release") + 1
     release = output[release_idx].split(".")
@@ -80,7 +66,7 @@ def _get_cuda_bare_metal_version(cuda_dir):
 
 def _create_build_dir(buildpath):
     try:
-        os.mkdir(buildpath)
+        pathlib.Path(buildpath).mkdir()
     except OSError:
-        if not os.path.isdir(buildpath):
+        if not pathlib.Path(buildpath).is_dir():
             print(f"Creation of the build directory {buildpath} failed")

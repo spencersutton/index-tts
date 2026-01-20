@@ -9,15 +9,12 @@ Authors
  * Sarthak Yadav 2022
 """
 
-import logging
 import math
-from typing import Tuple
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchaudio
 
 
 class SincConv(nn.Module):
@@ -99,9 +96,7 @@ class SincConv(nn.Module):
             self.in_channels = self._check_input_shape(input_shape)
 
         if self.out_channels % self.in_channels != 0:
-            raise ValueError(
-                "Number of output channels must be divisible by in_channels"
-            )
+            raise ValueError("Number of output channels must be divisible by in_channels")
 
         # Initialize Sinc filters
         self._init_sinc_conv()
@@ -127,9 +122,7 @@ class SincConv(nn.Module):
             x = x.unsqueeze(1)
 
         if self.padding == "same":
-            x = self._manage_padding(
-                x, self.kernel_size, self.dilation, self.stride
-            )
+            x = self._manage_padding(x, self.kernel_size, self.dilation, self.stride)
 
         elif self.padding == "causal":
             num_pad = (self.kernel_size - 1) * self.dilation
@@ -139,21 +132,11 @@ class SincConv(nn.Module):
             pass
 
         else:
-            raise ValueError(
-                "Padding must be 'same', 'valid' or 'causal'. Got %s."
-                % (self.padding)
-            )
+            raise ValueError("Padding must be 'same', 'valid' or 'causal'. Got %s." % (self.padding))
 
         sinc_filters = self._get_sinc_filters()
 
-        wx = F.conv1d(
-            x,
-            sinc_filters,
-            stride=self.stride,
-            padding=0,
-            dilation=self.dilation,
-            groups=self.in_channels,
-        )
+        wx = F.conv1d(x, sinc_filters, stride=self.stride, padding=0, dilation=self.dilation, groups=self.in_channels)
 
         if unsqueeze:
             wx = wx.squeeze(1)
@@ -170,16 +153,11 @@ class SincConv(nn.Module):
         elif len(shape) == 3:
             in_channels = shape[-1]
         else:
-            raise ValueError(
-                "sincconv expects 2d or 3d inputs. Got " + str(len(shape))
-            )
+            raise ValueError("sincconv expects 2d or 3d inputs. Got " + str(len(shape)))
 
         # Kernel size must be odd
         if self.kernel_size % 2 == 0:
-            raise ValueError(
-                "The field kernel size must be an odd number. Got %s."
-                % (self.kernel_size)
-            )
+            raise ValueError("The field kernel size must be an odd number. Got %s." % (self.kernel_size))
         return in_channels
 
     def _get_sinc_filters(self):
@@ -188,11 +166,7 @@ class SincConv(nn.Module):
         low = self.min_low_hz + torch.abs(self.low_hz_)
 
         # Setting minimum band and minimum freq
-        high = torch.clamp(
-            low + self.min_band_hz + torch.abs(self.band_hz_),
-            self.min_low_hz,
-            self.sample_rate / 2,
-        )
+        high = torch.clamp(low + self.min_band_hz + torch.abs(self.band_hz_), self.min_low_hz, self.sample_rate / 2)
         band = (high - low)[:, 0]
 
         # Passing from n_ to the corresponding f_times_t domain
@@ -202,10 +176,7 @@ class SincConv(nn.Module):
         f_times_t_high = torch.matmul(high, self.n_)
 
         # Left part of the filters.
-        band_pass_left = (
-            (torch.sin(f_times_t_high) - torch.sin(f_times_t_low))
-            / (self.n_ / 2)
-        ) * self.window_
+        band_pass_left = ((torch.sin(f_times_t_high) - torch.sin(f_times_t_low)) / (self.n_ / 2)) * self.window_
 
         # Central element of the filter
         band_pass_center = 2 * band.view(-1, 1)
@@ -214,9 +185,7 @@ class SincConv(nn.Module):
         band_pass_right = torch.flip(band_pass_left, dims=[1])
 
         # Combining left, central, and right part of the filter
-        band_pass = torch.cat(
-            [band_pass_left, band_pass_center, band_pass_right], dim=1
-        )
+        band_pass = torch.cat([band_pass_left, band_pass_center, band_pass_right], dim=1)
 
         # Amplitude normalization
         band_pass = band_pass / (2 * band[:, None])
@@ -232,11 +201,7 @@ class SincConv(nn.Module):
         # Initialize filterbanks such that they are equally spaced in Mel scale
         high_hz = self.sample_rate / 2 - (self.min_low_hz + self.min_band_hz)
 
-        mel = torch.linspace(
-            self._to_mel(self.min_low_hz),
-            self._to_mel(high_hz),
-            self.out_channels + 1,
-        )
+        mel = torch.linspace(self._to_mel(self.min_low_hz), self._to_mel(high_hz), self.out_channels + 1)
 
         hz = self._to_hz(mel)
 
@@ -249,18 +214,12 @@ class SincConv(nn.Module):
         self.band_hz_ = nn.Parameter(self.band_hz_)
 
         # Hamming window
-        n_lin = torch.linspace(
-            0, (self.kernel_size / 2) - 1, steps=int((self.kernel_size / 2))
-        )
-        self.window_ = 0.54 - 0.46 * torch.cos(
-            2 * math.pi * n_lin / self.kernel_size
-        )
+        n_lin = torch.linspace(0, (self.kernel_size / 2) - 1, steps=int(self.kernel_size / 2))
+        self.window_ = 0.54 - 0.46 * torch.cos(2 * math.pi * n_lin / self.kernel_size)
 
         # Time axis  (only half is needed due to symmetry)
         n = (self.kernel_size - 1) / 2.0
-        self.n_ = (
-            2 * math.pi * torch.arange(-n, 0).view(1, -1) / self.sample_rate
-        )
+        self.n_ = 2 * math.pi * torch.arange(-n, 0).view(1, -1) / self.sample_rate
 
     def _to_mel(self, hz):
         """Converts frequency in Hz to the mel scale."""
@@ -345,9 +304,7 @@ class Conv1d(nn.Module):
     Example
     -------
     >>> inp_tensor = torch.rand([10, 40, 16])
-    >>> cnn_1d = Conv1d(
-    ...     input_shape=inp_tensor.shape, out_channels=8, kernel_size=5
-    ... )
+    >>> cnn_1d = Conv1d(input_shape=inp_tensor.shape, out_channels=8, kernel_size=5)
     >>> out_tensor = cnn_1d(inp_tensor)
     >>> out_tensor.shape
     torch.Size([10, 40, 8])
@@ -428,9 +385,7 @@ class Conv1d(nn.Module):
             x = x.unsqueeze(1)
 
         if self.padding == "same":
-            x = self._manage_padding(
-                x, self.kernel_size, self.dilation, self.stride
-            )
+            x = self._manage_padding(x, self.kernel_size, self.dilation, self.stride)
 
         elif self.padding == "causal":
             num_pad = (self.kernel_size - 1) * self.dilation
@@ -440,10 +395,7 @@ class Conv1d(nn.Module):
             pass
 
         else:
-            raise ValueError(
-                "Padding must be 'same', 'valid' or 'causal'. Got "
-                + self.padding
-            )
+            raise ValueError("Padding must be 'same', 'valid' or 'causal'. Got " + self.padding)
 
         wx = self.conv(x)
 
@@ -498,16 +450,11 @@ class Conv1d(nn.Module):
         elif len(shape) == 3:
             in_channels = shape[2]
         else:
-            raise ValueError(
-                "conv1d expects 2d, 3d inputs. Got " + str(len(shape))
-            )
+            raise ValueError("conv1d expects 2d, 3d inputs. Got " + str(len(shape)))
 
         # Kernel size must be odd
         if not self.padding == "valid" and self.kernel_size % 2 == 0:
-            raise ValueError(
-                "The field kernel size must be an odd number. Got %s."
-                % (self.kernel_size)
-            )
+            raise ValueError("The field kernel size must be an odd number. Got %s." % (self.kernel_size))
 
         return in_channels
 
@@ -535,12 +482,6 @@ def get_padding_elem(L_in: int, stride: int, kernel_size: int, dilation: int):
         padding = [math.floor(kernel_size / 2), math.floor(kernel_size / 2)]
 
     else:
-        L_out = (
-            math.floor((L_in - dilation * (kernel_size - 1) - 1) / stride) + 1
-        )
-        padding = [
-            math.floor((L_in - L_out) / 2),
-            math.floor((L_in - L_out) / 2),
-        ]
+        L_out = math.floor((L_in - dilation * (kernel_size - 1) - 1) / stride) + 1
+        padding = [math.floor((L_in - L_out) / 2), math.floor((L_in - L_out) / 2)]
     return padding
-

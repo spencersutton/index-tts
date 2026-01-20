@@ -5,19 +5,15 @@
 
 
 import math
-import os.path
 
-import numpy as np
 import torch
-from torch import nn
-from torch.nn import functional as F
 from munch import Munch
-import json
+from torch.nn import functional as F
 
 
 class AttrDict(dict):
     def __init__(self, *args, **kwargs):
-        super(AttrDict, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.__dict__ = self
 
 
@@ -46,9 +42,7 @@ def intersperse(lst, item):
 def kl_divergence(m_p, logs_p, m_q, logs_q):
     """KL(P||Q)"""
     kl = (logs_q - logs_p) - 0.5
-    kl += (
-        0.5 * (torch.exp(2.0 * logs_p) + ((m_p - m_q) ** 2)) * torch.exp(-2.0 * logs_q)
-    )
+    kl += 0.5 * (torch.exp(2.0 * logs_p) + ((m_p - m_q) ** 2)) * torch.exp(-2.0 * logs_q)
     return kl
 
 
@@ -86,9 +80,7 @@ def rand_slice_segments(x, x_lengths=None, segment_size=4):
     if x_lengths is None:
         x_lengths = t
     ids_str_max = x_lengths - segment_size + 1
-    ids_str = ((torch.rand([b]).to(device=x.device) * ids_str_max).clip(0)).to(
-        dtype=torch.long
-    )
+    ids_str = ((torch.rand([b]).to(device=x.device) * ids_str_max).clip(0)).to(dtype=torch.long)
     ret = slice_segments(x, ids_str, segment_size)
     return ret, ids_str
 
@@ -96,9 +88,7 @@ def rand_slice_segments(x, x_lengths=None, segment_size=4):
 def get_timing_signal_1d(length, channels, min_timescale=1.0, max_timescale=1.0e4):
     position = torch.arange(length, dtype=torch.float)
     num_timescales = channels // 2
-    log_timescale_increment = math.log(float(max_timescale) / float(min_timescale)) / (
-        num_timescales - 1
-    )
+    log_timescale_increment = math.log(float(max_timescale) / float(min_timescale)) / (num_timescales - 1)
     inv_timescales = min_timescale * torch.exp(
         torch.arange(num_timescales, dtype=torch.float) * -log_timescale_increment
     )
@@ -198,6 +188,8 @@ def log_norm(x, mean=-4, std=4, dim=2):
     return x
 
 
+import pathlib
+
 from huggingface_hub import hf_hub_download
 
 
@@ -206,7 +198,7 @@ def load_F0_models(path):
     from .JDC.model import JDCNet
 
     F0_model = JDCNet(num_class=1, seq_len=192)
-    if not os.path.exists(path):
+    if not pathlib.Path(path).exists():
         path = hf_hub_download(repo_id="Plachta/JDCnet", filename="bst.t7")
     params = torch.load(path, map_location="cpu")["net"]
     F0_model.load_state_dict(params)
@@ -216,20 +208,17 @@ def load_F0_models(path):
 
 
 # Generators
-from modules.dac.model.dac import Encoder, Decoder
-from .quantize import FAquantizer, FApredictors
+from modules.dac.model.dac import Decoder, Encoder
 
 # Discriminators
 from modules.dac.model.discriminator import Discriminator
 
+from .quantize import FApredictors, FAquantizer
+
 
 def build_model(args):
     encoder = Encoder(
-        d_model=args.DAC.encoder_dim,
-        strides=args.DAC.encoder_rates,
-        d_latent=1024,
-        causal=args.causal,
-        lstm=args.lstm,
+        d_model=args.DAC.encoder_dim, strides=args.DAC.encoder_rates, d_latent=1024, causal=args.causal, lstm=args.lstm
     )
 
     quantizer = FAquantizer(
@@ -277,24 +266,13 @@ def build_model(args):
     )
 
     nets = Munch(
-        encoder=encoder,
-        quantizer=quantizer,
-        decoder=decoder,
-        discriminator=discriminator,
-        fa_predictors=fa_predictors,
+        encoder=encoder, quantizer=quantizer, decoder=decoder, discriminator=discriminator, fa_predictors=fa_predictors
     )
 
     return nets
 
 
-def load_checkpoint(
-    model,
-    optimizer,
-    path,
-    load_only_params=True,
-    ignore_modules=[],
-    is_distributed=False,
-):
+def load_checkpoint(model, optimizer, path, load_only_params=True, ignore_modules=[], is_distributed=False):
     state = torch.load(path, map_location="cpu")
     params = state["net"]
     for key in model:
@@ -325,7 +303,6 @@ def load_checkpoint(
 def recursive_munch(d):
     if isinstance(d, dict):
         return Munch((k, recursive_munch(v)) for k, v in d.items())
-    elif isinstance(d, list):
+    if isinstance(d, list):
         return [recursive_munch(v) for v in d]
-    else:
-        return d
+    return d

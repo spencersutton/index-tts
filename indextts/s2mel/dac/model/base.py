@@ -1,7 +1,6 @@
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 import torch
@@ -39,7 +38,7 @@ class DACFile:
             },
         }
         path = Path(path).with_suffix(".dac")
-        with open(path, "wb") as f:
+        with Path(path).open("wb") as f:
             np.save(f, artifacts)
         return path
 
@@ -48,9 +47,7 @@ class DACFile:
         artifacts = np.load(path, allow_pickle=True)[()]
         codes = torch.from_numpy(artifacts["codes"].astype(int))
         if artifacts["metadata"].get("dac_version", None) not in SUPPORTED_VERSIONS:
-            raise RuntimeError(
-                f"Given file {path} can't be loaded with this version of descript-audio-codec."
-            )
+            raise RuntimeError(f"Given file {path} can't be loaded with this version of descript-audio-codec.")
         return cls(codes=codes, **artifacts["metadata"])
 
 
@@ -65,9 +62,7 @@ class CodecMixin:
     def padding(self, value):
         assert isinstance(value, bool)
 
-        layers = [
-            l for l in self.modules() if isinstance(l, (nn.Conv1d, nn.ConvTranspose1d))
-        ]
+        layers = [l for l in self.modules() if isinstance(l, (nn.Conv1d, nn.ConvTranspose1d))]
 
         for layer in layers:
             if value:
@@ -125,7 +120,7 @@ class CodecMixin:
     @torch.no_grad()
     def compress(
         self,
-        audio_path_or_signal: Union[str, Path, AudioSignal],
+        audio_path_or_signal: str | Path | AudioSignal,
         win_duration: float = 1.0,
         verbose: bool = False,
         normalize_db: float = -16,
@@ -181,9 +176,7 @@ class CodecMixin:
 
         nb, nac, nt = audio_signal.audio_data.shape
         audio_signal.audio_data = audio_signal.audio_data.reshape(nb * nac, 1, nt)
-        win_duration = (
-            audio_signal.signal_duration if win_duration is None else win_duration
-        )
+        win_duration = audio_signal.signal_duration if win_duration is None else win_duration
 
         if audio_signal.signal_duration <= win_duration:
             # Unchunked compression (used if signal length < win duration)
@@ -233,11 +226,7 @@ class CodecMixin:
         return dac_file
 
     @torch.no_grad()
-    def decompress(
-        self,
-        obj: Union[str, Path, DACFile],
-        verbose: bool = False,
-    ) -> AudioSignal:
+    def decompress(self, obj: str | Path | DACFile, verbose: bool = False) -> AudioSignal:
         """Reconstruct audio from a given .dac file
 
         Parameters
@@ -286,9 +275,7 @@ class CodecMixin:
         resample_fn(obj.sample_rate)
         recons = recons[..., : obj.original_length]
         loudness_fn()
-        recons.audio_data = recons.audio_data.reshape(
-            -1, obj.channels, obj.original_length
-        )
+        recons.audio_data = recons.audio_data.reshape(-1, obj.channels, obj.original_length)
 
         self.padding = original_padding
         return recons

@@ -15,10 +15,10 @@
 import typing as tp
 
 import numpy as np
-import torch.nn as nn
 import torch
+import torch.nn as nn
 
-from . import SConv1d, SConvTranspose1d, SLSTM
+from . import SLSTM, SConv1d, SConvTranspose1d
 
 
 @torch.jit.script
@@ -58,21 +58,19 @@ class SEANetResnetBlock(nn.Module):
     def __init__(
         self,
         dim: int,
-        kernel_sizes: tp.List[int] = [3, 1],
-        dilations: tp.List[int] = [1, 1],
+        kernel_sizes: list[int] = [3, 1],
+        dilations: list[int] = [1, 1],
         activation: str = "ELU",
         activation_params: dict = {"alpha": 1.0},
         norm: str = "weight_norm",
-        norm_params: tp.Dict[str, tp.Any] = {},
+        norm_params: dict[str, tp.Any] = {},
         causal: bool = False,
         pad_mode: str = "reflect",
         compress: int = 2,
         true_skip: bool = True,
     ):
         super().__init__()
-        assert len(kernel_sizes) == len(
-            dilations
-        ), "Number of kernel sizes should match number of dilations"
+        assert len(kernel_sizes) == len(dilations), "Number of kernel sizes should match number of dilations"
         act = getattr(nn, activation) if activation != "Snake" else Snake1d
         hidden = dim // compress
         block = []
@@ -98,13 +96,7 @@ class SEANetResnetBlock(nn.Module):
             self.shortcut = nn.Identity()
         else:
             self.shortcut = SConv1d(
-                dim,
-                dim,
-                kernel_size=1,
-                norm=norm,
-                norm_kwargs=norm_params,
-                causal=causal,
-                pad_mode=pad_mode,
+                dim, dim, kernel_size=1, norm=norm, norm_kwargs=norm_params, causal=causal, pad_mode=pad_mode
             )
 
     def forward(self, x):
@@ -143,11 +135,11 @@ class SEANetEncoder(nn.Module):
         dimension: int = 128,
         n_filters: int = 32,
         n_residual_layers: int = 1,
-        ratios: tp.List[int] = [8, 5, 4, 2],
+        ratios: list[int] = [8, 5, 4, 2],
         activation: str = "ELU",
         activation_params: dict = {"alpha": 1.0},
         norm: str = "weight_norm",
-        norm_params: tp.Dict[str, tp.Any] = {},
+        norm_params: dict[str, tp.Any] = {},
         kernel_size: int = 7,
         last_kernel_size: int = 7,
         residual_kernel_size: int = 3,
@@ -170,7 +162,7 @@ class SEANetEncoder(nn.Module):
 
         act = getattr(nn, activation) if activation != "Snake" else Snake1d
         mult = 1
-        model: tp.List[nn.Module] = [
+        model: list[nn.Module] = [
             SConv1d(
                 channels,
                 mult * n_filters,
@@ -203,11 +195,7 @@ class SEANetEncoder(nn.Module):
 
             # Add downsampling layers
             model += [
-                (
-                    act(**activation_params)
-                    if activation != "Snake"
-                    else act(mult * n_filters)
-                ),
+                (act(**activation_params) if activation != "Snake" else act(mult * n_filters)),
                 SConv1d(
                     mult * n_filters,
                     mult * n_filters * 2,
@@ -222,17 +210,11 @@ class SEANetEncoder(nn.Module):
             mult *= 2
 
         if lstm:
-            model += [
-                SLSTM(mult * n_filters, num_layers=lstm, bidirectional=bidirectional)
-            ]
+            model += [SLSTM(mult * n_filters, num_layers=lstm, bidirectional=bidirectional)]
 
         mult = mult * 2 if bidirectional else mult
         model += [
-            (
-                act(**activation_params)
-                if activation != "Snake"
-                else act(mult * n_filters)
-            ),
+            (act(**activation_params) if activation != "Snake" else act(mult * n_filters)),
             SConv1d(
                 mult * n_filters,
                 dimension,
@@ -284,13 +266,13 @@ class SEANetDecoder(nn.Module):
         dimension: int = 128,
         n_filters: int = 32,
         n_residual_layers: int = 1,
-        ratios: tp.List[int] = [8, 5, 4, 2],
+        ratios: list[int] = [8, 5, 4, 2],
         activation: str = "ELU",
         activation_params: dict = {"alpha": 1.0},
-        final_activation: tp.Optional[str] = None,
-        final_activation_params: tp.Optional[dict] = None,
+        final_activation: str | None = None,
+        final_activation_params: dict | None = None,
         norm: str = "weight_norm",
-        norm_params: tp.Dict[str, tp.Any] = {},
+        norm_params: dict[str, tp.Any] = {},
         kernel_size: int = 7,
         last_kernel_size: int = 7,
         residual_kernel_size: int = 3,
@@ -314,7 +296,7 @@ class SEANetDecoder(nn.Module):
 
         act = getattr(nn, activation) if activation != "Snake" else Snake1d
         mult = int(2 ** len(self.ratios))
-        model: tp.List[nn.Module] = [
+        model: list[nn.Module] = [
             SConv1d(
                 dimension,
                 mult * n_filters,
@@ -327,19 +309,13 @@ class SEANetDecoder(nn.Module):
         ]
 
         if lstm:
-            model += [
-                SLSTM(mult * n_filters, num_layers=lstm, bidirectional=bidirectional)
-            ]
+            model += [SLSTM(mult * n_filters, num_layers=lstm, bidirectional=bidirectional)]
 
         # Upsample to raw audio scale
         for i, ratio in enumerate(self.ratios):
             # Add upsampling layers
             model += [
-                (
-                    act(**activation_params)
-                    if activation != "Snake"
-                    else act(mult * n_filters)
-                ),
+                (act(**activation_params) if activation != "Snake" else act(mult * n_filters)),
                 SConvTranspose1d(
                     mult * n_filters,
                     mult * n_filters // 2,

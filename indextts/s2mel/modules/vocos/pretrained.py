@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Tuple, Union, Optional
+from typing import Any
 
 import torch
-import yaml
 from torch import nn
+
 from .heads import ISTFTHead
 from .models import VocosBackbone
 
@@ -17,9 +17,7 @@ class Vocos(nn.Module):
     a backbone, and a head.
     """
 
-    def __init__(
-        self, args,
-    ):
+    def __init__(self, args):
         super().__init__()
         self.backbone = VocosBackbone(
             input_channels=args.vocos.backbone.input_channels,

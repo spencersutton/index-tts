@@ -1,18 +1,16 @@
-from transformers import SeamlessM4TFeatureExtractor
-from transformers import Wav2Vec2BertModel
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
-import librosa
 import os
-import pickle
-import math
-import json
-import safetensors
+import pathlib
+
 import json5
+import librosa
+import numpy as np
+import safetensors
+import torch
+
 # from codec.kmeans.repcodec_model import RepCodec
 from startts.examples.ftchar.models.codec.kmeans.repcodec_model import RepCodec
+from transformers import SeamlessM4TFeatureExtractor, Wav2Vec2BertModel
+
 
 class JsonHParams:
     def __init__(self, **kwargs):
@@ -56,8 +54,7 @@ def _load_config(config_fn, lowercase=False):
     Returns:
         dict: dictionary that stores configurations
     """
-    with open(config_fn, "r") as f:
-        data = f.read()
+    data = pathlib.Path(config_fn).read_text()
     config_ = json5.loads(data)
     if "base_config" in config_:
         # load configurations from new path
@@ -85,9 +82,10 @@ def load_config(config_fn, lowercase=False):
     cfg = JsonHParams(**config_)
     return cfg
 
+
 class Extract_wav2vectbert:
-    def __init__(self,device):
-    #semantic_model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0")
+    def __init__(self, device):
+        # semantic_model = Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0")
         self.semantic_model = Wav2Vec2BertModel.from_pretrained("./MaskGCT_model/w2v_bert/")
         self.semantic_model.eval()
         self.semantic_model.to(device)
@@ -96,31 +94,28 @@ class Extract_wav2vectbert:
         self.semantic_std = torch.sqrt(self.stat_mean_var["var"])
         self.semantic_mean = self.semantic_mean.to(device)
         self.semantic_std = self.semantic_std.to(device)
-        self.processor = SeamlessM4TFeatureExtractor.from_pretrained(
-                "./MaskGCT_model/w2v_bert/")
+        self.processor = SeamlessM4TFeatureExtractor.from_pretrained("./MaskGCT_model/w2v_bert/")
         self.device = device
-        
-        cfg_maskgct = load_config('./MaskGCT_model/maskgct.json')
+
+        cfg_maskgct = load_config("./MaskGCT_model/maskgct.json")
         cfg = cfg_maskgct.model.semantic_codec
-        self.semantic_code_ckpt = r'./MaskGCT_model/semantic_codec/model.safetensors'
+        self.semantic_code_ckpt = r"./MaskGCT_model/semantic_codec/model.safetensors"
         self.semantic_codec = RepCodec(cfg=cfg)
         self.semantic_codec.eval()
         self.semantic_codec.to(device)
         safetensors.torch.load_model(self.semantic_codec, self.semantic_code_ckpt)
 
     @torch.no_grad()
-    def extract_features(self, speech): # speech [b,T]
+    def extract_features(self, speech):  # speech [b,T]
         inputs = self.processor(speech, sampling_rate=16000, return_tensors="pt")
         input_features = inputs["input_features"]
         attention_mask = inputs["attention_mask"]
-        return input_features, attention_mask #[2, 620, 160] [2, 620]
+        return input_features, attention_mask  # [2, 620, 160] [2, 620]
 
     @torch.no_grad()
     def extract_semantic_code(self, input_features, attention_mask):
-        vq_emb = self.semantic_model(           # Wav2Vec2BertModel
-            input_features=input_features,
-            attention_mask=attention_mask,
-            output_hidden_states=True,
+        vq_emb = self.semantic_model(  # Wav2Vec2BertModel
+            input_features=input_features, attention_mask=attention_mask, output_hidden_states=True
         )
         feat = vq_emb.hidden_states[17]  # (B, T, C)
         feat = (feat - self.semantic_mean.to(feat)) / self.semantic_std.to(feat)
@@ -129,20 +124,20 @@ class Extract_wav2vectbert:
         return semantic_code, rec_feat
 
     def feature_extract(self, prompt_speech):
-        
+
         input_features, attention_mask = self.extract_features(prompt_speech)
         input_features = input_features.to(self.device)
         attention_mask = attention_mask.to(self.device)
         semantic_code, rec_feat = self.extract_semantic_code(input_features, attention_mask)
-        return semantic_code,rec_feat
-            
-if __name__=='__main__':
-    speech_path = 'test/magi1.wav'
+        return semantic_code, rec_feat
+
+
+if __name__ == "__main__":
+    speech_path = "test/magi1.wav"
     speech = librosa.load(speech_path, sr=16000)[0]
-    speech = np.c_[speech,speech,speech].T #[2, 198559] 
+    speech = np.c_[speech, speech, speech].T  # [2, 198559]
     print(speech.shape)
-            
-    Extract_feature = Extract_wav2vectbert('cuda:0')
-    semantic_code,rec_feat = Extract_feature.feature_extract(speech)
-    print(semantic_code.shape,rec_feat.shape)
-    
+
+    Extract_feature = Extract_wav2vectbert("cuda:0")
+    semantic_code, rec_feat = Extract_feature.feature_extract(speech)
+    print(semantic_code.shape, rec_feat.shape)

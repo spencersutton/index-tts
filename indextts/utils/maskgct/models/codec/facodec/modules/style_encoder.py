@@ -5,15 +5,16 @@
 
 # This code is modified from https://github.com/sh-lee-prml/HierSpeechpp/blob/main/ttv_v1/styleencoder.py
 
-from . import attentions
-from torch import nn
 import torch
+from torch import nn
 from torch.nn import functional as F
+
+from . import attentions
 
 
 class Mish(nn.Module):
     def __init__(self):
-        super(Mish, self).__init__()
+        super().__init__()
 
     def forward(self, x):
         return x * torch.tanh(F.softplus(x))
@@ -26,11 +27,9 @@ class Conv1dGLU(nn.Module):
     """
 
     def __init__(self, in_channels, out_channels, kernel_size, dropout):
-        super(Conv1dGLU, self).__init__()
+        super().__init__()
         self.out_channels = out_channels
-        self.conv1 = nn.Conv1d(
-            in_channels, 2 * out_channels, kernel_size=kernel_size, padding=2
-        )
+        self.conv1 = nn.Conv1d(in_channels, 2 * out_channels, kernel_size=kernel_size, padding=2)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):

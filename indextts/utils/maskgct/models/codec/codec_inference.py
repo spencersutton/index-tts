@@ -3,37 +3,29 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os
-import torch
 import json
-import json5
-import time
-import accelerate
+import os
 import random
-import numpy as np
 import shutil
-
-from pathlib import Path
-from tqdm import tqdm
+import time
 from glob import glob
+from pathlib import Path
+
+import accelerate
+import json5
+import numpy as np
+import torch
 from accelerate.logging import get_logger
-from torch.utils.data import DataLoader
-
-from models.vocoders.vocoder_dataset import (
-    VocoderDataset,
-    VocoderCollator,
-    VocoderConcatDataset,
-)
-
-from models.vocoders.gan.generator import bigvgan, hifigan, melgan, nsfhifigan, apnet
-from models.vocoders.flow.waveglow import waveglow
-from models.vocoders.diffusion.diffwave import diffwave
 from models.vocoders.autoregressive.wavenet import wavenet
 from models.vocoders.autoregressive.wavernn import wavernn
-
-from models.vocoders.gan import gan_vocoder_inference
 from models.vocoders.diffusion import diffusion_vocoder_inference
-
+from models.vocoders.diffusion.diffwave import diffwave
+from models.vocoders.flow.waveglow import waveglow
+from models.vocoders.gan import gan_vocoder_inference
+from models.vocoders.gan.generator import apnet, bigvgan, hifigan, melgan, nsfhifigan
+from models.vocoders.vocoder_dataset import VocoderCollator, VocoderConcatDataset, VocoderDataset
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 from utils.io import save_audio
 
 _vocoders = {
@@ -75,7 +67,7 @@ _vocoder_infer_funcs = {
 }
 
 
-class VocoderInference(object):
+class VocoderInference:
     def __init__(self, args=None, cfg=None, infer_type="from_dataset"):
         super().__init__()
 
@@ -101,22 +93,20 @@ class VocoderInference(object):
         self.vocoder_dir = args.vocoder_dir
         self.logger.debug(f"Vocoder dir: {args.vocoder_dir}")
 
-        os.makedirs(args.output_dir, exist_ok=True)
-        if os.path.exists(os.path.join(args.output_dir, "pred")):
+        Path(args.output_dir).mkdir(exist_ok=True, parents=True)
+        if Path(os.path.join(args.output_dir, "pred")).exists():
             shutil.rmtree(os.path.join(args.output_dir, "pred"))
-        if os.path.exists(os.path.join(args.output_dir, "gt")):
+        if Path(os.path.join(args.output_dir, "gt")).exists():
             shutil.rmtree(os.path.join(args.output_dir, "gt"))
-        os.makedirs(os.path.join(args.output_dir, "pred"), exist_ok=True)
-        os.makedirs(os.path.join(args.output_dir, "gt"), exist_ok=True)
+        Path(os.path.join(args.output_dir, "pred")).mkdir(exist_ok=True, parents=True)
+        Path(os.path.join(args.output_dir, "gt")).mkdir(exist_ok=True, parents=True)
 
         # Set random seed
         with self.accelerator.main_process_first():
             start = time.monotonic_ns()
             self._set_random_seed(self.cfg.train.random_seed)
             end = time.monotonic_ns()
-            self.logger.debug(
-                f"Setting random seed done in {(end - start) / 1e6:.2f}ms"
-            )
+            self.logger.debug(f"Setting random seed done in {(end - start) / 1e6:.2f}ms")
             self.logger.debug(f"Random seed: {self.cfg.train.random_seed}")
 
         # Setup inference mode
@@ -149,9 +139,7 @@ class VocoderInference(object):
         self.logger.info("Initializing accelerate...")
         start = time.monotonic_ns()
         self.accelerator = accelerate.Accelerator()
-        (self.model, self.test_dataloader) = self.accelerator.prepare(
-            self.model, self.test_dataloader
-        )
+        (self.model, self.test_dataloader) = self.accelerator.prepare(self.model, self.test_dataloader)
         end = time.monotonic_ns()
         self.accelerator.wait_for_everyone()
         self.logger.info(f"Initializing accelerate done in {(end - start) / 1e6:.3f}ms")
@@ -159,8 +147,8 @@ class VocoderInference(object):
         with self.accelerator.main_process_first():
             self.logger.info("Loading checkpoint...")
             start = time.monotonic_ns()
-            if os.path.isdir(args.vocoder_dir):
-                if os.path.isdir(os.path.join(args.vocoder_dir, "checkpoint")):
+            if Path(args.vocoder_dir).is_dir():
+                if Path(os.path.join(args.vocoder_dir, "checkpoint")).is_dir():
                     self._load_model(os.path.join(args.vocoder_dir, "checkpoint"))
                 else:
                     self._load_model(os.path.join(args.vocoder_dir))
@@ -173,7 +161,7 @@ class VocoderInference(object):
         self.accelerator.wait_for_everyone()
 
     def _build_tmp_dataset_from_feature(self):
-        if os.path.exists(os.path.join(self.cfg.preprocess.processed_dir, "tmp")):
+        if Path(os.path.join(self.cfg.preprocess.processed_dir, "tmp")).exists():
             shutil.rmtree(os.path.join(self.cfg.preprocess.processed_dir, "tmp"))
 
         utts = []
@@ -183,24 +171,19 @@ class VocoderInference(object):
             utt = {"Dataset": "tmp", "Uid": uid, "index": i}
             utts.append(utt)
 
-        os.makedirs(os.path.join(self.cfg.preprocess.processed_dir, "tmp"))
-        with open(
-            os.path.join(self.cfg.preprocess.processed_dir, "tmp", "test.json"), "w"
-        ) as f:
+        Path(os.path.join(self.cfg.preprocess.processed_dir, "tmp")).mkdir(parents=True)
+        with Path(os.path.join(self.cfg.preprocess.processed_dir, "tmp", "test.json")).open("w") as f:
             json.dump(utts, f)
 
         meta_info = {"dataset": "tmp", "test": {"size": len(utts)}}
 
-        with open(
-            os.path.join(self.cfg.preprocess.processed_dir, "tmp", "meta_info.json"),
-            "w",
-        ) as f:
+        with Path(os.path.join(self.cfg.preprocess.processed_dir, "tmp", "meta_info.json")).open("w") as f:
             json.dump(meta_info, f)
 
         features = glob(os.path.join(self.args.feature_folder, "*"))
         for feature in features:
             feature_name = feature.split("/")[-1]
-            if os.path.isfile(feature):
+            if Path(feature).is_file():
                 continue
             shutil.copytree(
                 os.path.join(self.args.feature_folder, feature_name),
@@ -208,7 +191,7 @@ class VocoderInference(object):
             )
 
     def _build_tmp_dataset_from_audio(self):
-        if os.path.exists(os.path.join(self.cfg.preprocess.processed_dir, "tmp")):
+        if Path(os.path.join(self.cfg.preprocess.processed_dir, "tmp")).exists():
             shutil.rmtree(os.path.join(self.cfg.preprocess.processed_dir, "tmp"))
 
         utts = []
@@ -218,18 +201,13 @@ class VocoderInference(object):
             utt = {"Dataset": "tmp", "Uid": uid, "index": i, "Path": audio}
             utts.append(utt)
 
-        os.makedirs(os.path.join(self.cfg.preprocess.processed_dir, "tmp"))
-        with open(
-            os.path.join(self.cfg.preprocess.processed_dir, "tmp", "test.json"), "w"
-        ) as f:
+        Path(os.path.join(self.cfg.preprocess.processed_dir, "tmp")).mkdir(parents=True)
+        with Path(os.path.join(self.cfg.preprocess.processed_dir, "tmp", "test.json")).open("w") as f:
             json.dump(utts, f)
 
         meta_info = {"dataset": "tmp", "test": {"size": len(utts)}}
 
-        with open(
-            os.path.join(self.cfg.preprocess.processed_dir, "tmp", "meta_info.json"),
-            "w",
-        ) as f:
+        with Path(os.path.join(self.cfg.preprocess.processed_dir, "tmp", "meta_info.json")).open("w") as f:
             json.dump(meta_info, f)
 
         from processors import acoustic_extractor
@@ -257,11 +235,7 @@ class VocoderInference(object):
         test_collate = Collator(self.cfg)
         test_batch_size = min(self.cfg.inference.batch_size, len(test_dataset))
         test_dataloader = DataLoader(
-            test_dataset,
-            collate_fn=test_collate,
-            num_workers=1,
-            batch_size=test_batch_size,
-            shuffle=False,
+            test_dataset, collate_fn=test_collate, num_workers=1, batch_size=test_batch_size, shuffle=False
         )
         self.test_batch_size = test_batch_size
         self.test_dataset = test_dataset
@@ -273,63 +247,45 @@ class VocoderInference(object):
         it will load the checkpoint specified by checkpoint_path.
         **Only use this method after** ``accelerator.prepare()``.
         """
-        if os.path.isdir(checkpoint_dir):
+        if Path(checkpoint_dir).is_dir():
             if "epoch" in checkpoint_dir and "step" in checkpoint_dir:
                 checkpoint_path = checkpoint_dir
             else:
                 # Load the latest accelerator state dicts
-                ls = [
-                    str(i)
-                    for i in Path(checkpoint_dir).glob("*")
-                    if not "audio" in str(i)
-                ]
-                ls.sort(
-                    key=lambda x: int(x.split("/")[-1].split("_")[0].split("-")[-1]),
-                    reverse=True,
-                )
+                ls = [str(i) for i in Path(checkpoint_dir).glob("*") if "audio" not in str(i)]
+                ls.sort(key=lambda x: int(x.split("/")[-1].split("_")[0].split("-")[-1]), reverse=True)
                 checkpoint_path = ls[0]
             accelerate.load_checkpoint_and_dispatch(
-                self.accelerator.unwrap_model(self.model),
-                os.path.join(checkpoint_path, "pytorch_model.bin"),
+                self.accelerator.unwrap_model(self.model), os.path.join(checkpoint_path, "pytorch_model.bin")
             )
             return str(checkpoint_path)
-        else:
-            # Load old .pt checkpoints
-            if self.cfg.model.generator in [
-                "bigvgan",
-                "hifigan",
-                "melgan",
-                "nsfhifigan",
-            ]:
-                ckpt = torch.load(
-                    checkpoint_dir,
-                    map_location=(
-                        torch.device("cuda")
-                        if torch.cuda.is_available()
-                        else torch.device("cpu")
-                    ),
-                )
-                if from_multi_gpu:
-                    pretrained_generator_dict = ckpt["generator_state_dict"]
-                    generator_dict = self.model.state_dict()
+        # Load old .pt checkpoints
+        if self.cfg.model.generator in ["bigvgan", "hifigan", "melgan", "nsfhifigan"]:
+            ckpt = torch.load(
+                checkpoint_dir,
+                map_location=(torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")),
+            )
+            if from_multi_gpu:
+                pretrained_generator_dict = ckpt["generator_state_dict"]
+                generator_dict = self.model.state_dict()
 
-                    new_generator_dict = {
-                        k.split("module.")[-1]: v
-                        for k, v in pretrained_generator_dict.items()
-                        if (
-                            k.split("module.")[-1] in generator_dict
-                            and v.shape == generator_dict[k.split("module.")[-1]].shape
-                        )
-                    }
+                new_generator_dict = {
+                    k.split("module.")[-1]: v
+                    for k, v in pretrained_generator_dict.items()
+                    if (
+                        k.split("module.")[-1] in generator_dict
+                        and v.shape == generator_dict[k.split("module.")[-1]].shape
+                    )
+                }
 
-                    generator_dict.update(new_generator_dict)
+                generator_dict.update(new_generator_dict)
 
-                    self.model.load_state_dict(generator_dict)
-                else:
-                    self.model.load_state_dict(ckpt["generator_state_dict"])
+                self.model.load_state_dict(generator_dict)
             else:
-                self.model.load_state_dict(torch.load(checkpoint_dir)["state_dict"])
-            return str(checkpoint_dir)
+                self.model.load_state_dict(ckpt["generator_state_dict"])
+        else:
+            self.model.load_state_dict(torch.load(checkpoint_dir)["state_dict"])
+        return str(checkpoint_dir)
 
     def inference(self):
         """Inference via batches"""
@@ -344,10 +300,7 @@ class VocoderInference(object):
                 )
             else:
                 audio_pred = _vocoder_forward_funcs[self.cfg.model.generator](
-                    self.cfg,
-                    self.model,
-                    batch["mel"].transpose(-1, -2),
-                    device=next(self.model.parameters()).device,
+                    self.cfg, self.model, batch["mel"].transpose(-1, -2), device=next(self.model.parameters()).device
                 )
             audio_ls = audio_pred.chunk(self.test_batch_size)
             audio_gt_ls = batch["audio"].cpu().chunk(self.test_batch_size)
@@ -370,7 +323,7 @@ class VocoderInference(object):
                 )
                 j += 1
 
-        if os.path.exists(os.path.join(self.cfg.preprocess.processed_dir, "tmp")):
+        if Path(os.path.join(self.cfg.preprocess.processed_dir, "tmp")).exists():
             shutil.rmtree(os.path.join(self.cfg.preprocess.processed_dir, "tmp"))
 
     def _set_random_seed(self, seed):
@@ -383,42 +336,25 @@ class VocoderInference(object):
         return sum(p.numel() for p in model.parameters())
 
     def _dump_cfg(self, path):
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        json5.dump(
-            self.cfg,
-            open(path, "w"),
-            indent=4,
-            sort_keys=True,
-            ensure_ascii=False,
-            quote_keys=True,
-        )
+        Path(os.path.dirname(path)).mkdir(exist_ok=True, parents=True)
+        json5.dump(self.cfg, Path(path).open("w"), indent=4, sort_keys=True, ensure_ascii=False, quote_keys=True)
 
 
-def load_nnvocoder(
-    cfg,
-    vocoder_name,
-    weights_file,
-    from_multi_gpu=False,
-):
+def load_nnvocoder(cfg, vocoder_name, weights_file, from_multi_gpu=False):
     """Load the specified vocoder.
     cfg: the vocoder config filer.
     weights_file: a folder or a .pt path.
     from_multi_gpu: automatically remove the "module" string in state dicts if "True".
     """
-    print("Loading Vocoder from Weights file: {}".format(weights_file))
+    print(f"Loading Vocoder from Weights file: {weights_file}")
 
     # Build model
     model = _vocoders[vocoder_name](cfg)
-    if not os.path.isdir(weights_file):
+    if not Path(weights_file).is_dir():
         # Load from .pt file
         if vocoder_name in ["bigvgan", "hifigan", "melgan", "nsfhifigan"]:
             ckpt = torch.load(
-                weights_file,
-                map_location=(
-                    torch.device("cuda")
-                    if torch.cuda.is_available()
-                    else torch.device("cpu")
-                ),
+                weights_file, map_location=(torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
             )
             if from_multi_gpu:
                 pretrained_generator_dict = ckpt["generator_state_dict"]
@@ -443,7 +379,7 @@ def load_nnvocoder(
     else:
         # Load from accelerator state dict
         weights_file = os.path.join(weights_file, "checkpoint")
-        ls = [str(i) for i in Path(weights_file).glob("*") if not "audio" in str(i)]
+        ls = [str(i) for i in Path(weights_file).glob("*") if "audio" not in str(i)]
         ls.sort(key=lambda x: int(x.split("_")[-3].split("-")[-1]), reverse=True)
         checkpoint_path = ls[0]
         accelerator = accelerate.Accelerator()
@@ -468,15 +404,7 @@ def tensorize(data, device, n_samples):
     return data
 
 
-def synthesis(
-    cfg,
-    vocoder_weight_file,
-    n_samples,
-    pred,
-    f0s=None,
-    batch_size=64,
-    fast_inference=False,
-):
+def synthesis(cfg, vocoder_weight_file, n_samples, pred, f0s=None, batch_size=64, fast_inference=False):
     """Synthesis audios from a given vocoder and series of given features.
     cfg: vocoder config.
     vocoder_weight_file: a folder of accelerator state dict or a path to the .pt file.
@@ -485,7 +413,7 @@ def synthesis(
 
     vocoder_name = cfg.model.generator
 
-    print("Synthesis audios using {} vocoder...".format(vocoder_name))
+    print(f"Synthesis audios using {vocoder_name} vocoder...")
 
     ###### TODO: World Vocoder Refactor ######
     # if vocoder_name == "world":
@@ -495,21 +423,14 @@ def synthesis(
     #     return
 
     # ====== Loading neural vocoder model ======
-    vocoder = load_nnvocoder(
-        cfg, vocoder_name, weights_file=vocoder_weight_file, from_multi_gpu=True
-    )
+    vocoder = load_nnvocoder(cfg, vocoder_name, weights_file=vocoder_weight_file, from_multi_gpu=True)
     device = next(vocoder.parameters()).device
 
     # ====== Inference for predicted acoustic features ======
     # pred: (frame_len, n_mels) -> (n_mels, frame_len)
     mels_pred = tensorize([p.T for p in pred], device, n_samples)
-    print("For predicted mels, #sample = {}...".format(len(mels_pred)))
+    print(f"For predicted mels, #sample = {len(mels_pred)}...")
     audios_pred = _vocoder_infer_funcs[vocoder_name](
-        cfg,
-        vocoder,
-        mels_pred,
-        f0s=f0s,
-        batch_size=batch_size,
-        fast_inference=fast_inference,
+        cfg, vocoder, mels_pred, f0s=f0s, batch_size=batch_size, fast_inference=fast_inference
     )
     return audios_pred

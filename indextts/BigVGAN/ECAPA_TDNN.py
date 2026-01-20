@@ -4,7 +4,7 @@ Authors
  * Hwidong Na 2020
 """
 
-import torch  # noqa: F401
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -36,8 +36,8 @@ def length_to_mask(length, max_len=None, dtype=None, device=None):
 
     Example
     -------
-    >>> length=torch.Tensor([1,2,3])
-    >>> mask=length_to_mask(length)
+    >>> length = torch.Tensor([1, 2, 3])
+    >>> mask = length_to_mask(length)
     >>> mask
     tensor([[1., 0., 0.],
             [1., 1., 0.],
@@ -47,9 +47,9 @@ def length_to_mask(length, max_len=None, dtype=None, device=None):
 
     if max_len is None:
         max_len = length.max().long().item()  # using arange to generate mask
-    mask = torch.arange(
-        max_len, device=length.device, dtype=length.dtype
-    ).expand(len(length), max_len) < length.unsqueeze(1)
+    mask = torch.arange(max_len, device=length.device, dtype=length.dtype).expand(
+        len(length), max_len
+    ) < length.unsqueeze(1)
 
     if dtype is None:
         dtype = length.dtype
@@ -103,15 +103,7 @@ class TDNNBlock(nn.Module):
     torch.Size([8, 120, 64])
     """
 
-    def __init__(
-        self,
-        in_channels,
-        out_channels,
-        kernel_size,
-        dilation,
-        activation=nn.ReLU,
-        groups=1,
-    ):
+    def __init__(self, in_channels, out_channels, kernel_size, dilation, activation=nn.ReLU, groups=1):
         super().__init__()
         self.conv = Conv1d(
             in_channels=in_channels,
@@ -153,9 +145,7 @@ class Res2NetBlock(torch.nn.Module):
     torch.Size([8, 120, 64])
     """
 
-    def __init__(
-        self, in_channels, out_channels, scale=8, kernel_size=3, dilation=1
-    ):
+    def __init__(self, in_channels, out_channels, scale=8, kernel_size=3, dilation=1):
         super().__init__()
         assert in_channels % scale == 0
         assert out_channels % scale == 0
@@ -163,17 +153,9 @@ class Res2NetBlock(torch.nn.Module):
         in_channel = in_channels // scale
         hidden_channel = out_channels // scale
 
-        self.blocks = nn.ModuleList(
-            [
-                TDNNBlock(
-                    in_channel,
-                    hidden_channel,
-                    kernel_size=kernel_size,
-                    dilation=dilation,
-                )
-                for i in range(scale - 1)
-            ]
-        )
+        self.blocks = nn.ModuleList([
+            TDNNBlock(in_channel, hidden_channel, kernel_size=kernel_size, dilation=dilation) for i in range(scale - 1)
+        ])
         self.scale = scale
 
     def forward(self, x):
@@ -216,13 +198,9 @@ class SEBlock(nn.Module):
     def __init__(self, in_channels, se_channels, out_channels):
         super().__init__()
 
-        self.conv1 = Conv1d(
-            in_channels=in_channels, out_channels=se_channels, kernel_size=1
-        )
+        self.conv1 = Conv1d(in_channels=in_channels, out_channels=se_channels, kernel_size=1)
         self.relu = torch.nn.ReLU(inplace=True)
-        self.conv2 = Conv1d(
-            in_channels=se_channels, out_channels=out_channels, kernel_size=1
-        )
+        self.conv2 = Conv1d(in_channels=se_channels, out_channels=out_channels, kernel_size=1)
         self.sigmoid = torch.nn.Sigmoid()
 
     def forward(self, x, lengths=None):
@@ -275,9 +253,7 @@ class AttentiveStatisticsPooling(nn.Module):
         else:
             self.tdnn = TDNNBlock(channels, attention_channels, 1, 1)
         self.tanh = nn.Tanh()
-        self.conv = Conv1d(
-            in_channels=attention_channels, out_channels=channels, kernel_size=1
-        )
+        self.conv = Conv1d(in_channels=attention_channels, out_channels=channels, kernel_size=1)
 
     def forward(self, x, lengths=None):
         """Calculates mean and std for a batch (input tensor).
@@ -298,9 +274,7 @@ class AttentiveStatisticsPooling(nn.Module):
 
         def _compute_statistics(x, m, dim=2, eps=self.eps):
             mean = (m * x).sum(dim)
-            std = torch.sqrt(
-                (m * (x - mean.unsqueeze(dim)).pow(2)).sum(dim).clamp(eps)
-            )
+            std = torch.sqrt((m * (x - mean.unsqueeze(dim)).pow(2)).sum(dim).clamp(eps))
             return mean, std
 
         if lengths is None:
@@ -384,33 +358,17 @@ class SERes2NetBlock(nn.Module):
         super().__init__()
         self.out_channels = out_channels
         self.tdnn1 = TDNNBlock(
-            in_channels,
-            out_channels,
-            kernel_size=1,
-            dilation=1,
-            activation=activation,
-            groups=groups,
+            in_channels, out_channels, kernel_size=1, dilation=1, activation=activation, groups=groups
         )
-        self.res2net_block = Res2NetBlock(
-            out_channels, out_channels, res2net_scale, kernel_size, dilation
-        )
+        self.res2net_block = Res2NetBlock(out_channels, out_channels, res2net_scale, kernel_size, dilation)
         self.tdnn2 = TDNNBlock(
-            out_channels,
-            out_channels,
-            kernel_size=1,
-            dilation=1,
-            activation=activation,
-            groups=groups,
+            out_channels, out_channels, kernel_size=1, dilation=1, activation=activation, groups=groups
         )
         self.se_block = SEBlock(out_channels, se_channels, out_channels)
 
         self.shortcut = None
         if in_channels != out_channels:
-            self.shortcut = Conv1d(
-                in_channels=in_channels,
-                out_channels=out_channels,
-                kernel_size=1,
-            )
+            self.shortcut = Conv1d(in_channels=in_channels, out_channels=out_channels, kernel_size=1)
 
     def forward(self, x, lengths=None):
         """Processes the input tensor x and returns an output tensor."""
@@ -489,16 +447,7 @@ class ECAPA_TDNN(torch.nn.Module):
         self.blocks = nn.ModuleList()
 
         # The initial TDNN layer
-        self.blocks.append(
-            TDNNBlock(
-                input_size,
-                channels[0],
-                kernel_sizes[0],
-                dilations[0],
-                activation,
-                groups[0],
-            )
-        )
+        self.blocks.append(TDNNBlock(input_size, channels[0], kernel_sizes[0], dilations[0], activation, groups[0]))
 
         # SE-Res2Net layers
         for i in range(1, len(channels) - 1):
@@ -527,18 +476,12 @@ class ECAPA_TDNN(torch.nn.Module):
 
         # Attentive Statistical Pooling
         self.asp = AttentiveStatisticsPooling(
-            channels[-1],
-            attention_channels=attention_channels,
-            global_context=global_context,
+            channels[-1], attention_channels=attention_channels, global_context=global_context
         )
         self.asp_bn = BatchNorm1d(input_size=channels[-1] * 2)
 
         # Final linear transformation
-        self.fc = Conv1d(
-            in_channels=channels[-1] * 2,
-            out_channels=lin_neurons,
-            kernel_size=1,
-        )
+        self.fc = Conv1d(in_channels=channels[-1] * 2, out_channels=lin_neurons, kernel_size=1)
 
     def forward(self, x, lengths=None):
         """Returns the embedding vector.
@@ -600,7 +543,7 @@ class Classifier(torch.nn.Module):
     Example
     -------
     >>> classify = Classifier(input_size=2, lin_neurons=2, out_neurons=2)
-    >>> outputs = torch.tensor([ [1., -1.], [-9., 1.], [0.9, 0.1], [0.1, 0.9] ])
+    >>> outputs = torch.tensor([[1.0, -1.0], [-9.0, 1.0], [0.9, 0.1], [0.1, 0.9]])
     >>> outputs = outputs.unsqueeze(1)
     >>> cos = classify(outputs)
     >>> (cos < -1.0).long().sum()
@@ -609,30 +552,19 @@ class Classifier(torch.nn.Module):
     tensor(0)
     """
 
-    def __init__(
-        self,
-        input_size,
-        device="cpu",
-        lin_blocks=0,
-        lin_neurons=192,
-        out_neurons=1211,
-    ):
+    def __init__(self, input_size, device="cpu", lin_blocks=0, lin_neurons=192, out_neurons=1211):
         super().__init__()
         self.blocks = nn.ModuleList()
 
         for block_index in range(lin_blocks):
-            self.blocks.extend(
-                [
-                    _BatchNorm1d(input_size=input_size),
-                    Linear(input_size=input_size, n_neurons=lin_neurons),
-                ]
-            )
+            self.blocks.extend([
+                _BatchNorm1d(input_size=input_size),
+                Linear(input_size=input_size, n_neurons=lin_neurons),
+            ])
             input_size = lin_neurons
 
         # Final Layer
-        self.weight = nn.Parameter(
-            torch.FloatTensor(out_neurons, input_size, device=device)
-        )
+        self.weight = nn.Parameter(torch.FloatTensor(out_neurons, input_size, device=device))
         nn.init.xavier_uniform_(self.weight)
 
     def forward(self, x):

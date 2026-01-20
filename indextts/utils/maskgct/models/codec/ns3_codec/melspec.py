@@ -1,13 +1,8 @@
-import torch
-import pyworld as pw
+
 import numpy as np
-import soundfile as sf
-import os
-from torchaudio.functional import pitch_shift
-import librosa
-from librosa.filters import mel as librosa_mel_fn
+import torch
 import torch.nn as nn
-import torch.nn.functional as F
+from librosa.filters import mel as librosa_mel_fn
 
 
 def dynamic_range_compression(x, C=1, clip_val=1e-5):
@@ -37,18 +32,8 @@ def spectral_de_normalize_torch(magnitudes):
 
 
 class MelSpectrogram(nn.Module):
-    def __init__(
-        self,
-        n_fft,
-        num_mels,
-        sampling_rate,
-        hop_size,
-        win_size,
-        fmin,
-        fmax,
-        center=False,
-    ):
-        super(MelSpectrogram, self).__init__()
+    def __init__(self, n_fft, num_mels, sampling_rate, hop_size, win_size, fmin, fmax, center=False):
+        super().__init__()
         self.n_fft = n_fft
         self.hop_size = hop_size
         self.win_size = win_size
@@ -61,9 +46,7 @@ class MelSpectrogram(nn.Module):
         mel_basis = {}
         hann_window = {}
 
-        mel = librosa_mel_fn(
-            sr=sampling_rate, n_fft=n_fft, n_mels=num_mels, fmin=fmin, fmax=fmax
-        )
+        mel = librosa_mel_fn(sr=sampling_rate, n_fft=n_fft, n_mels=num_mels, fmin=fmin, fmax=fmax)
         mel_basis = torch.from_numpy(mel).float()
         hann_window = torch.hann_window(win_size)
 
@@ -73,10 +56,7 @@ class MelSpectrogram(nn.Module):
     def forward(self, y):
         y = torch.nn.functional.pad(
             y.unsqueeze(1),
-            (
-                int((self.n_fft - self.hop_size) / 2),
-                int((self.n_fft - self.hop_size) / 2),
-            ),
+            (int((self.n_fft - self.hop_size) / 2), int((self.n_fft - self.hop_size) / 2)),
             mode="reflect",
         )
         y = y.squeeze(1)

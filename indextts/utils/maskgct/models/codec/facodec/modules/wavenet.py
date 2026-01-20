@@ -5,12 +5,10 @@
 
 # This code is modified from https://github.com/sh-lee-prml/HierSpeechpp/blob/main/ttv_v1/modules.py
 
-import math
 import torch
+from modules.dac.model.encodec import SConv1d
 from torch import nn
 from torch.nn import functional as F
-
-from modules.dac.model.encodec import SConv1d
 
 from . import commons
 
@@ -33,15 +31,7 @@ class LayerNorm(nn.Module):
 
 
 class ConvReluNorm(nn.Module):
-    def __init__(
-        self,
-        in_channels,
-        hidden_channels,
-        out_channels,
-        kernel_size,
-        n_layers,
-        p_dropout,
-    ):
+    def __init__(self, in_channels, hidden_channels, out_channels, kernel_size, n_layers, p_dropout):
         super().__init__()
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels
@@ -53,22 +43,11 @@ class ConvReluNorm(nn.Module):
 
         self.conv_layers = nn.ModuleList()
         self.norm_layers = nn.ModuleList()
-        self.conv_layers.append(
-            nn.Conv1d(
-                in_channels, hidden_channels, kernel_size, padding=kernel_size // 2
-            )
-        )
+        self.conv_layers.append(nn.Conv1d(in_channels, hidden_channels, kernel_size, padding=kernel_size // 2))
         self.norm_layers.append(LayerNorm(hidden_channels))
         self.relu_drop = nn.Sequential(nn.ReLU(), nn.Dropout(p_dropout))
         for _ in range(n_layers - 1):
-            self.conv_layers.append(
-                nn.Conv1d(
-                    hidden_channels,
-                    hidden_channels,
-                    kernel_size,
-                    padding=kernel_size // 2,
-                )
-            )
+            self.conv_layers.append(nn.Conv1d(hidden_channels, hidden_channels, kernel_size, padding=kernel_size // 2))
             self.norm_layers.append(LayerNorm(hidden_channels))
         self.proj = nn.Conv1d(hidden_channels, out_channels, 1)
         self.proj.weight.data.zero_()
@@ -105,14 +84,7 @@ class DDSConv(nn.Module):
             dilation = kernel_size**i
             padding = (kernel_size * dilation - dilation) // 2
             self.convs_sep.append(
-                nn.Conv1d(
-                    channels,
-                    channels,
-                    kernel_size,
-                    groups=channels,
-                    dilation=dilation,
-                    padding=padding,
-                )
+                nn.Conv1d(channels, channels, kernel_size, groups=channels, dilation=dilation, padding=padding)
             )
             self.convs_1x1.append(nn.Conv1d(channels, channels, 1))
             self.norms_1.append(LayerNorm(channels))
@@ -135,16 +107,9 @@ class DDSConv(nn.Module):
 
 class WN(torch.nn.Module):
     def __init__(
-        self,
-        hidden_channels,
-        kernel_size,
-        dilation_rate,
-        n_layers,
-        gin_channels=0,
-        p_dropout=0,
-        causal=False,
+        self, hidden_channels, kernel_size, dilation_rate, n_layers, gin_channels=0, p_dropout=0, causal=False
     ):
-        super(WN, self).__init__()
+        super().__init__()
         conv1d_type = SConv1d
         assert kernel_size % 2 == 1
         self.hidden_channels = hidden_channels
@@ -159,9 +124,7 @@ class WN(torch.nn.Module):
         self.drop = nn.Dropout(p_dropout)
 
         if gin_channels != 0:
-            self.cond_layer = conv1d_type(
-                gin_channels, 2 * hidden_channels * n_layers, 1, norm="weight_norm"
-            )
+            self.cond_layer = conv1d_type(gin_channels, 2 * hidden_channels * n_layers, 1, norm="weight_norm")
 
         for i in range(n_layers):
             dilation = dilation_rate**i
@@ -183,9 +146,7 @@ class WN(torch.nn.Module):
             else:
                 res_skip_channels = hidden_channels
 
-            res_skip_layer = conv1d_type(
-                hidden_channels, res_skip_channels, 1, norm="weight_norm", causal=causal
-            )
+            res_skip_layer = conv1d_type(hidden_channels, res_skip_channels, 1, norm="weight_norm", causal=causal)
             self.res_skip_layers.append(res_skip_layer)
 
     def forward(self, x, x_mask, g=None, **kwargs):

@@ -2,17 +2,18 @@
 #   LICENSE is in incl_licenses directory.
 
 import os
+import pathlib
 import shutil
 
 
 class AttrDict(dict):
     def __init__(self, *args, **kwargs):
-        super(AttrDict, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.__dict__ = self
 
 
 def build_env(config, config_name, path):
     t_path = os.path.join(path, config_name)
     if config != t_path:
-        os.makedirs(path, exist_ok=True)
+        pathlib.Path(path).mkdir(exist_ok=True, parents=True)
         shutil.copyfile(config, os.path.join(path, config_name))

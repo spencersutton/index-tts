@@ -2,9 +2,7 @@ import warnings
 from pathlib import Path
 
 import argbind
-import numpy as np
 import torch
-from audiotools import AudioSignal
 from tqdm import tqdm
 
 from dac import DACFile
@@ -47,12 +45,7 @@ def decode(
     model_type : str, optional
         The type of model to use. Must be one of "44khz", "24khz", or "16khz". Defaults to "44khz". Ignored if `weights_path` is specified.
     """
-    generator = load_model(
-        model_type=model_type,
-        model_bitrate=model_bitrate,
-        tag=model_tag,
-        load_path=weights_path,
-    )
+    generator = load_model(model_type=model_type, model_bitrate=model_bitrate, tag=model_tag, load_path=weights_path)
     generator.to(device)
     generator.eval()
 
@@ -68,7 +61,7 @@ def decode(
     output = Path(output)
     output.mkdir(parents=True, exist_ok=True)
 
-    for i in tqdm(range(len(input_files)), desc=f"Decoding files"):
+    for i in tqdm(range(len(input_files)), desc="Decoding files"):
         # Load file
         artifact = DACFile.load(input_files[i])
 

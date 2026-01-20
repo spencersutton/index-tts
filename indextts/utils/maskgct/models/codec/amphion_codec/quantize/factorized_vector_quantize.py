@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -21,13 +20,7 @@ def WNConvTranspose1d(*args, **kwargs):
 
 class FactorizedVectorQuantize(nn.Module):
     def __init__(
-        self,
-        input_dim,
-        codebook_size,
-        codebook_dim,
-        commitment=0.005,
-        codebook_loss_weight=1.0,
-        use_l2_normlize=True,
+        self, input_dim, codebook_size, codebook_dim, commitment=0.005, codebook_loss_weight=1.0, use_l2_normlize=True
     ):
         super().__init__()
         self.input_dim = input_dim
@@ -39,9 +32,7 @@ class FactorizedVectorQuantize(nn.Module):
 
         if self.input_dim != self.codebook_dim:
             self.in_project = WNConv1d(self.input_dim, self.codebook_dim, kernel_size=1)
-            self.out_project = WNConv1d(
-                self.codebook_dim, self.input_dim, kernel_size=1
-            )
+            self.out_project = WNConv1d(self.codebook_dim, self.input_dim, kernel_size=1)
 
         else:
             self.in_project = nn.Identity()
@@ -75,14 +66,8 @@ class FactorizedVectorQuantize(nn.Module):
 
         # Compute commitment loss and codebook loss
         if self.training:
-            commit_loss = (
-                F.mse_loss(z_e, z_q.detach(), reduction="none").mean([1, 2])
-                * self.commitment
-            )
-            codebook_loss = (
-                F.mse_loss(z_q, z_e.detach(), reduction="none").mean([1, 2])
-                * self.codebook_loss_weight
-            )
+            commit_loss = F.mse_loss(z_e, z_q.detach(), reduction="none").mean([1, 2]) * self.commitment
+            codebook_loss = F.mse_loss(z_q, z_e.detach(), reduction="none").mean([1, 2]) * self.codebook_loss_weight
         else:
             commit_loss = torch.zeros(z.shape[0], device=z.device)
             codebook_loss = torch.zeros(z.shape[0], device=z.device)

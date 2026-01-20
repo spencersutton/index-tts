@@ -3,6 +3,7 @@
 
 import glob
 import os
+import pathlib
 
 import matplotlib
 import matplotlib.pylab as plt
@@ -28,14 +29,7 @@ def plot_spectrogram(spectrogram):
 
 def plot_spectrogram_clipped(spectrogram, clip_max=2.0):
     fig, ax = plt.subplots(figsize=(10, 2))
-    im = ax.imshow(
-        spectrogram,
-        aspect="auto",
-        origin="lower",
-        interpolation="none",
-        vmin=1e-6,
-        vmax=clip_max,
-    )
+    im = ax.imshow(spectrogram, aspect="auto", origin="lower", interpolation="none", vmin=1e-6, vmax=clip_max)
     plt.colorbar(im, ax=ax)
 
     fig.canvas.draw()
@@ -61,7 +55,7 @@ def get_padding(kernel_size, dilation=1):
 
 
 def load_checkpoint(filepath, device):
-    assert os.path.isfile(filepath)
+    assert pathlib.Path(filepath).is_file()
     print(f"Loading '{filepath}'")
     checkpoint_dict = torch.load(filepath, map_location=device)
     print("Complete.")
@@ -87,7 +81,7 @@ def scan_checkpoint(cp_dir, prefix, renamed_file=None):
     # If no pattern-based checkpoints are found, check for renamed file
     if renamed_file:
         renamed_path = os.path.join(cp_dir, renamed_file)
-        if os.path.isfile(renamed_path):
+        if pathlib.Path(renamed_path).is_file():
             print(f"[INFO] Resuming from renamed checkpoint: '{renamed_file}'")
             return renamed_path
 

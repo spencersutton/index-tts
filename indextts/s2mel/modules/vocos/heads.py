@@ -1,11 +1,10 @@
-from typing import Optional
 
 import torch
 from torch import nn
 from torchaudio.functional.functional import _hz_to_mel, _mel_to_hz
 
-from .spectral_ops import IMDCT, ISTFT
 from .modules import symexp
+from .spectral_ops import IMDCT, ISTFT
 
 
 class FourierHead(nn.Module):
@@ -63,7 +62,7 @@ class ISTFTHead(FourierHead):
         # only costs time
         # phase = torch.atan2(y, x)
         # S = mag * torch.exp(phase * 1j)
-        # better directly produce the complex value 
+        # better directly produce the complex value
         S = mag * (x + 1j * y)
         audio = self.istft(S)
         return audio
@@ -87,7 +86,7 @@ class IMDCTSymExpHead(FourierHead):
         dim: int,
         mdct_frame_len: int,
         padding: str = "same",
-        sample_rate: Optional[int] = None,
+        sample_rate: int | None = None,
         clip_audio: bool = False,
     ):
         super().__init__()

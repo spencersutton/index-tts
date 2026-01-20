@@ -3,18 +3,13 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import torch
 import random
 
-import numpy as np
-
-import torchaudio
 import librosa
-from torch.nn import functional as F
-
-from torch.nn.utils.rnn import pad_sequence
+import numpy as np
+import torch
+import torchaudio
 from utils.data_utils import *
-from models.codec.codec_dataset import CodecDataset
 
 
 class FAcodecDataset(torch.utils.data.Dataset):
@@ -43,9 +38,7 @@ class FAcodecDataset(torch.utils.data.Dataset):
         self.mean, self.std = -4, 4
 
     def preprocess(self, wave):
-        wave_tensor = (
-            torch.from_numpy(wave).float() if isinstance(wave, np.ndarray) else wave
-        )
+        wave_tensor = torch.from_numpy(wave).float() if isinstance(wave, np.ndarray) else wave
         mel_tensor = self.to_mel(wave_tensor)
         mel_tensor = (torch.log(1e-5 + mel_tensor.unsqueeze(0)) - self.mean) / self.std
         return mel_tensor
@@ -63,7 +56,7 @@ class FAcodecDataset(torch.utils.data.Dataset):
         return wave, mel
 
 
-class FAcodecCollator(object):
+class FAcodecCollator:
     """Zero-pads model inputs and targets based on number of frames per step"""
 
     def __init__(self, cfg):

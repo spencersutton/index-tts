@@ -3,24 +3,22 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import shutil
 import warnings
-import argparse
+
 import torch
-import os
-import yaml
 
 warnings.simplefilter("ignore")
 
-from .modules.commons import *
-import time
-
-import torchaudio
-import librosa
+import pathlib
 from collections import OrderedDict
 
+import librosa
+import torchaudio
 
-class FAcodecInference(object):
+from .modules.commons import *
+
+
+class FAcodecInference:
     def __init__(self, args=None, cfg=None):
         self.args = args
         self.cfg = cfg
@@ -40,8 +38,7 @@ class FAcodecInference(object):
         for key, state_dict in sd.items():
             new_state_dict = OrderedDict()
             for k, v in state_dict.items():
-                if k.startswith("module."):
-                    k = k[7:]
+                k = k.removeprefix("module.")
                 new_state_dict[k] = v
             new_params[key] = new_state_dict
         for key in new_params:
@@ -55,14 +52,7 @@ class FAcodecInference(object):
         source_audio = torch.tensor(source_audio).unsqueeze(0).float().to(self.device)
 
         z = self.model.encoder(source_audio[None, ...].to(self.device).float())
-        (
-            z,
-            quantized,
-            commitment_loss,
-            codebook_loss,
-            timbre,
-            codes,
-        ) = self.model.quantizer(
+        (z, quantized, commitment_loss, codebook_loss, timbre, codes) = self.model.quantizer(
             z,
             source_audio[None, ...].to(self.device).float(),
             n_c=self.cfg.model_params.n_c_codebooks,
@@ -71,18 +61,13 @@ class FAcodecInference(object):
 
         full_pred_wave = self.model.decoder(z)
 
-        os.makedirs(output_dir, exist_ok=True)
+        pathlib.Path(output_dir).mkdir(exist_ok=True, parents=True)
         source_name = source.split("/")[-1].split(".")[0]
         torchaudio.save(
-            f"{output_dir}/reconstructed_{source_name}.wav",
-            full_pred_wave[0].cpu(),
-            self.cfg.preprocess_params.sr,
+            f"{output_dir}/reconstructed_{source_name}.wav", full_pred_wave[0].cpu(), self.cfg.preprocess_params.sr
         )
 
-        print(
-            "Reconstructed audio saved as: ",
-            f"{output_dir}/reconstructed_{source_name}.wav",
-        )
+        print("Reconstructed audio saved as: ", f"{output_dir}/reconstructed_{source_name}.wav")
 
         return quantized, codes
 
@@ -92,37 +77,24 @@ class FAcodecInference(object):
         source_audio = torch.tensor(source_audio).unsqueeze(0).float().to(self.device)
 
         reference_audio = librosa.load(reference, sr=self.cfg.preprocess_params.sr)[0]
-        reference_audio = (
-            torch.tensor(reference_audio).unsqueeze(0).float().to(self.device)
-        )
+        reference_audio = torch.tensor(reference_audio).unsqueeze(0).float().to(self.device)
 
         z = self.model.encoder(source_audio[None, ...].to(self.device).float())
         z, quantized, commitment_loss, codebook_loss, timbre = self.model.quantizer(
-            z,
-            source_audio[None, ...].to(self.device).float(),
-            n_c=self.cfg.model_params.n_c_codebooks,
+            z, source_audio[None, ...].to(self.device).float(), n_c=self.cfg.model_params.n_c_codebooks
         )
 
         z_ref = self.model.encoder(reference_audio[None, ...].to(self.device).float())
-        (
-            z_ref,
-            quantized_ref,
-            commitment_loss_ref,
-            codebook_loss_ref,
-            timbre_ref,
-        ) = self.model.quantizer(
-            z_ref,
-            reference_audio[None, ...].to(self.device).float(),
-            n_c=self.cfg.model_params.n_c_codebooks,
+        (z_ref, quantized_ref, commitment_loss_ref, codebook_loss_ref, timbre_ref) = self.model.quantizer(
+            z_ref, reference_audio[None, ...].to(self.device).float(), n_c=self.cfg.model_params.n_c_codebooks
         )
 
         z_conv = self.model.quantizer.voice_conversion(
-            quantized[0] + quantized[1],
-            reference_audio[None, ...].to(self.device).float(),
+            quantized[0] + quantized[1], reference_audio[None, ...].to(self.device).float()
         )
         full_pred_wave = self.model.decoder(z_conv)
 
-        os.makedirs(output_dir, exist_ok=True)
+        pathlib.Path(output_dir).mkdir(exist_ok=True, parents=True)
         source_name = source.split("/")[-1].split(".")[0]
         reference_name = reference.split("/")[-1].split(".")[0]
         torchaudio.save(
@@ -131,7 +103,4 @@ class FAcodecInference(object):
             self.cfg.preprocess_params.sr,
         )
 
-        print(
-            "Voice conversion results saved as: ",
-            f"{output_dir}/converted_{source_name}_to_{reference_name}.wav",
-        )
+        print("Voice conversion results saved as: ", f"{output_dir}/converted_{source_name}_to_{reference_name}.wav")

@@ -3,20 +3,15 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Union
 
-import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from einops import rearrange
-from torch.nn.utils import weight_norm
 
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.factorized_vector_quantize import (
     FactorizedVectorQuantize,
 )
-from indextts.utils.maskgct.models.codec.amphion_codec.quantize.vector_quantize import VectorQuantize
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.lookup_free_quantize import LookupFreeQuantize
+from indextts.utils.maskgct.models.codec.amphion_codec.quantize.vector_quantize import VectorQuantize
 
 
 class ResidualVQ(nn.Module):
@@ -53,17 +48,10 @@ class ResidualVQ(nn.Module):
         else:
             raise ValueError(f"Unknown quantizer type {quantizer_type}")
 
-        self.quantizers = nn.ModuleList(
-            [
-                VQ(
-                    input_dim=input_dim,
-                    codebook_size=codebook_size,
-                    codebook_dim=codebook_dim,
-                    **kwargs,
-                )
-                for _ in range(num_quantizers)
-            ]
-        )
+        self.quantizers = nn.ModuleList([
+            VQ(input_dim=input_dim, codebook_size=codebook_size, codebook_dim=codebook_dim, **kwargs)
+            for _ in range(num_quantizers)
+        ])
 
     def forward(self, z, n_quantizers: int = None):
         """
@@ -109,14 +97,10 @@ class ResidualVQ(nn.Module):
             if self.training is False and i >= n_quantizers:
                 break
 
-            z_q_i, commit_loss_i, codebook_loss_i, indices_i, z_e_i = quantizer(
-                residual
-            )
+            z_q_i, commit_loss_i, codebook_loss_i, indices_i, z_e_i = quantizer(residual)
 
             # Create mask to apply quantizer dropout
-            mask = (
-                torch.full((z.shape[0],), fill_value=i, device=z.device) < n_quantizers
-            )
+            mask = torch.full((z.shape[0],), fill_value=i, device=z.device) < n_quantizers
             quantized_out = quantized_out + z_q_i * mask[:, None, None]
             residual = residual - z_q_i
 
@@ -129,17 +113,10 @@ class ResidualVQ(nn.Module):
             all_quantized.append(z_q_i)
 
         all_commit_losses, all_codebook_losses, all_indices, all_quantized = map(
-            torch.stack,
-            (all_commit_losses, all_codebook_losses, all_indices, all_quantized),
+            torch.stack, (all_commit_losses, all_codebook_losses, all_indices, all_quantized)
         )
 
-        return (
-            quantized_out,
-            all_indices,
-            all_commit_losses,
-            all_codebook_losses,
-            all_quantized,
-        )
+        return (quantized_out, all_indices, all_commit_losses, all_codebook_losses, all_quantized)
 
     def vq2emb(self, vq, n_quantizers=None):
         quantized_out = 0.0

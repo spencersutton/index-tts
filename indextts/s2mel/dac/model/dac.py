@@ -1,6 +1,4 @@
 import math
-from typing import List
-from typing import Union
 
 import numpy as np
 import torch
@@ -8,12 +6,11 @@ from audiotools import AudioSignal
 from audiotools.ml import BaseModel
 from torch import nn
 
-from .base import CodecMixin
 from indextts.s2mel.dac.nn.layers import Snake1d
-from indextts.s2mel.dac.nn.layers import WNConv1d
-from indextts.s2mel.dac.nn.layers import WNConvTranspose1d
 from indextts.s2mel.dac.nn.quantize import ResidualVectorQuantize
-from .encodec import SConv1d, SConvTranspose1d, SLSTM
+
+from .base import CodecMixin
+from .encodec import SLSTM, SConv1d, SConvTranspose1d
 
 
 def init_weights(m):
@@ -25,13 +22,13 @@ def init_weights(m):
 class ResidualUnit(nn.Module):
     def __init__(self, dim: int = 16, dilation: int = 1, causal: bool = False):
         super().__init__()
-        conv1d_type = SConv1d# if causal else WNConv1d
+        conv1d_type = SConv1d  # if causal else WNConv1d
         pad = ((7 - 1) * dilation) // 2
         self.block = nn.Sequential(
             Snake1d(dim),
-            conv1d_type(dim, dim, kernel_size=7, dilation=dilation, padding=pad, causal=causal, norm='weight_norm'),
+            conv1d_type(dim, dim, kernel_size=7, dilation=dilation, padding=pad, causal=causal, norm="weight_norm"),
             Snake1d(dim),
-            conv1d_type(dim, dim, kernel_size=1, causal=causal, norm='weight_norm'),
+            conv1d_type(dim, dim, kernel_size=1, causal=causal, norm="weight_norm"),
         )
 
     def forward(self, x):
@@ -45,7 +42,7 @@ class ResidualUnit(nn.Module):
 class EncoderBlock(nn.Module):
     def __init__(self, dim: int = 16, stride: int = 1, causal: bool = False):
         super().__init__()
-        conv1d_type = SConv1d# if causal else WNConv1d
+        conv1d_type = SConv1d  # if causal else WNConv1d
         self.block = nn.Sequential(
             ResidualUnit(dim // 2, dilation=1, causal=causal),
             ResidualUnit(dim // 2, dilation=3, causal=causal),
@@ -58,7 +55,7 @@ class EncoderBlock(nn.Module):
                 stride=stride,
                 padding=math.ceil(stride / 2),
                 causal=causal,
-                norm='weight_norm',
+                norm="weight_norm",
             ),
         )
 
@@ -68,17 +65,12 @@ class EncoderBlock(nn.Module):
 
 class Encoder(nn.Module):
     def __init__(
-        self,
-        d_model: int = 64,
-        strides: list = [2, 4, 8, 8],
-        d_latent: int = 64,
-        causal: bool = False,
-        lstm: int = 2,
+        self, d_model: int = 64, strides: list = [2, 4, 8, 8], d_latent: int = 64, causal: bool = False, lstm: int = 2
     ):
         super().__init__()
-        conv1d_type = SConv1d# if causal else WNConv1d
+        conv1d_type = SConv1d  # if causal else WNConv1d
         # Create first convolution
-        self.block = [conv1d_type(1, d_model, kernel_size=7, padding=3, causal=causal, norm='weight_norm')]
+        self.block = [conv1d_type(1, d_model, kernel_size=7, padding=3, causal=causal, norm="weight_norm")]
 
         # Create EncoderBlocks that double channels as they downsample by `stride`
         for stride in strides:
@@ -93,7 +85,7 @@ class Encoder(nn.Module):
         # Create last convolution
         self.block += [
             Snake1d(d_model),
-            conv1d_type(d_model, d_latent, kernel_size=3, padding=1, causal=causal, norm='weight_norm'),
+            conv1d_type(d_model, d_latent, kernel_size=3, padding=1, causal=causal, norm="weight_norm"),
         ]
 
         # Wrap black into nn.Sequential
@@ -118,7 +110,7 @@ class Encoder(nn.Module):
 class DecoderBlock(nn.Module):
     def __init__(self, input_dim: int = 16, output_dim: int = 8, stride: int = 1, causal: bool = False):
         super().__init__()
-        conv1d_type = SConvTranspose1d #if causal else WNConvTranspose1d
+        conv1d_type = SConvTranspose1d  # if causal else WNConvTranspose1d
         self.block = nn.Sequential(
             Snake1d(input_dim),
             conv1d_type(
@@ -128,7 +120,7 @@ class DecoderBlock(nn.Module):
                 stride=stride,
                 padding=math.ceil(stride / 2),
                 causal=causal,
-                norm='weight_norm'
+                norm="weight_norm",
             ),
             ResidualUnit(output_dim, dilation=1, causal=causal),
             ResidualUnit(output_dim, dilation=3, causal=causal),
@@ -140,19 +132,11 @@ class DecoderBlock(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(
-        self,
-        input_channel,
-        channels,
-        rates,
-        d_out: int = 1,
-        causal: bool = False,
-        lstm: int = 2,
-    ):
+    def __init__(self, input_channel, channels, rates, d_out: int = 1, causal: bool = False, lstm: int = 2):
         super().__init__()
-        conv1d_type = SConv1d# if causal else WNConv1d
+        conv1d_type = SConv1d  # if causal else WNConv1d
         # Add first conv layer
-        layers = [conv1d_type(input_channel, channels, kernel_size=7, padding=3, causal=causal, norm='weight_norm')]
+        layers = [conv1d_type(input_channel, channels, kernel_size=7, padding=3, causal=causal, norm="weight_norm")]
 
         if lstm:
             layers += [SLSTM(channels, num_layers=lstm)]
@@ -166,7 +150,7 @@ class Decoder(nn.Module):
         # Add final conv layer
         layers += [
             Snake1d(output_dim),
-            conv1d_type(output_dim, d_out, kernel_size=7, padding=3, causal=causal, norm='weight_norm'),
+            conv1d_type(output_dim, d_out, kernel_size=7, padding=3, causal=causal, norm="weight_norm"),
             nn.Tanh(),
         ]
 
@@ -180,13 +164,13 @@ class DAC(BaseModel, CodecMixin):
     def __init__(
         self,
         encoder_dim: int = 64,
-        encoder_rates: List[int] = [2, 4, 8, 8],
+        encoder_rates: list[int] = [2, 4, 8, 8],
         latent_dim: int = None,
         decoder_dim: int = 1536,
-        decoder_rates: List[int] = [8, 8, 4, 2],
+        decoder_rates: list[int] = [8, 8, 4, 2],
         n_codebooks: int = 9,
         codebook_size: int = 1024,
-        codebook_dim: Union[int, list] = 8,
+        codebook_dim: int | list = 8,
         quantizer_dropout: bool = False,
         sample_rate: int = 44100,
         lstm: int = 2,
@@ -219,13 +203,7 @@ class DAC(BaseModel, CodecMixin):
             quantizer_dropout=quantizer_dropout,
         )
 
-        self.decoder = Decoder(
-            latent_dim,
-            decoder_dim,
-            decoder_rates,
-            lstm=lstm,
-            causal=causal,
-        )
+        self.decoder = Decoder(latent_dim, decoder_dim, decoder_rates, lstm=lstm, causal=causal)
         self.sample_rate = sample_rate
         self.apply(init_weights)
 
@@ -242,11 +220,7 @@ class DAC(BaseModel, CodecMixin):
 
         return audio_data
 
-    def encode(
-        self,
-        audio_data: torch.Tensor,
-        n_quantizers: int = None,
-    ):
+    def encode(self, audio_data: torch.Tensor, n_quantizers: int = None):
         """Encode given audio data and return quantized latent codes
 
         Parameters
@@ -277,9 +251,7 @@ class DAC(BaseModel, CodecMixin):
                 Number of samples in input audio
         """
         z = self.encoder(audio_data)
-        z, codes, latents, commitment_loss, codebook_loss = self.quantizer(
-            z, n_quantizers
-        )
+        z, codes, latents, commitment_loss, codebook_loss = self.quantizer(z, n_quantizers)
         return z, codes, latents, commitment_loss, codebook_loss
 
     def decode(self, z: torch.Tensor):
@@ -301,12 +273,7 @@ class DAC(BaseModel, CodecMixin):
         """
         return self.decoder(z)
 
-    def forward(
-        self,
-        audio_data: torch.Tensor,
-        sample_rate: int = None,
-        n_quantizers: int = None,
-    ):
+    def forward(self, audio_data: torch.Tensor, sample_rate: int = None, n_quantizers: int = None):
         """Model forward pass
 
         Parameters
@@ -343,9 +310,7 @@ class DAC(BaseModel, CodecMixin):
         """
         length = audio_data.shape[-1]
         audio_data = self.preprocess(audio_data, sample_rate)
-        z, codes, latents, commitment_loss, codebook_loss = self.encode(
-            audio_data, n_quantizers
-        )
+        z, codes, latents, commitment_loss, codebook_loss = self.encode(audio_data, n_quantizers)
 
         x = self.decode(z)
         return {
@@ -359,15 +324,16 @@ class DAC(BaseModel, CodecMixin):
 
 
 if __name__ == "__main__":
-    import numpy as np
     from functools import partial
+
+    import numpy as np
 
     model = DAC().to("cpu")
 
     for n, m in model.named_modules():
         o = m.extra_repr()
         p = sum([np.prod(p.size()) for p in m.parameters()])
-        fn = lambda o, p: o + f" {p/1e6:<.3f}M params."
+        fn = lambda o, p: o + f" {p / 1e6:<.3f}M params."
         setattr(m, "extra_repr", partial(fn, o=o, p=p))
     print(model)
     print("Total # of params: ", sum([np.prod(p.size()) for p in model.parameters()]))

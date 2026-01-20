@@ -23,34 +23,28 @@ from torch.nn.utils import spectral_norm, weight_norm
 
 from .norm import ConvLayerNorm
 
-
-CONV_NORMALIZATIONS = frozenset(
-    [
-        "none",
-        "weight_norm",
-        "spectral_norm",
-        "time_layer_norm",
-        "layer_norm",
-        "time_group_norm",
-    ]
-)
+CONV_NORMALIZATIONS = frozenset([
+    "none",
+    "weight_norm",
+    "spectral_norm",
+    "time_layer_norm",
+    "layer_norm",
+    "time_group_norm",
+])
 
 
 def apply_parametrization_norm(module: nn.Module, norm: str = "none") -> nn.Module:
     assert norm in CONV_NORMALIZATIONS
     if norm == "weight_norm":
         return weight_norm(module)
-    elif norm == "spectral_norm":
+    if norm == "spectral_norm":
         return spectral_norm(module)
-    else:
-        # We already check was in CONV_NORMALIZATION, so any other choice
-        # doesn't need reparametrization.
-        return module
+    # We already check was in CONV_NORMALIZATION, so any other choice
+    # doesn't need reparametrization.
+    return module
 
 
-def get_norm_module(
-    module: nn.Module, causal: bool = False, norm: str = "none", **norm_kwargs
-) -> nn.Module:
+def get_norm_module(module: nn.Module, causal: bool = False, norm: str = "none", **norm_kwargs) -> nn.Module:
     """Return the proper normalization module. If causal is True, this will ensure the returned
     module is causal, or return an error if the normalization doesn't support causal evaluation.
     """
@@ -58,18 +52,15 @@ def get_norm_module(
     if norm == "layer_norm":
         assert isinstance(module, nn.modules.conv._ConvNd)
         return ConvLayerNorm(module.out_channels, **norm_kwargs)
-    elif norm == "time_group_norm":
+    if norm == "time_group_norm":
         if causal:
             raise ValueError("GroupNorm doesn't support causal evaluation.")
         assert isinstance(module, nn.modules.conv._ConvNd)
         return nn.GroupNorm(1, module.out_channels, **norm_kwargs)
-    else:
-        return nn.Identity()
+    return nn.Identity()
 
 
-def get_extra_padding_for_conv1d(
-    x: torch.Tensor, kernel_size: int, stride: int, padding_total: int = 0
-) -> int:
+def get_extra_padding_for_conv1d(x: torch.Tensor, kernel_size: int, stride: int, padding_total: int = 0) -> int:
     """See `pad_for_conv1d`."""
     length = x.shape[-1]
     n_frames = (length - kernel_size + padding_total) / stride + 1
@@ -77,9 +68,7 @@ def get_extra_padding_for_conv1d(
     return ideal_length - length
 
 
-def pad_for_conv1d(
-    x: torch.Tensor, kernel_size: int, stride: int, padding_total: int = 0
-):
+def pad_for_conv1d(x: torch.Tensor, kernel_size: int, stride: int, padding_total: int = 0):
     """Pad for a convolution to make sure that the last window is full.
     Extra padding is added at the end. This is required to ensure that we can rebuild
     an output of the same length, as otherwise, even with padding, some time steps
@@ -94,12 +83,7 @@ def pad_for_conv1d(
     return F.pad(x, (0, extra_padding))
 
 
-def pad1d(
-    x: torch.Tensor,
-    paddings: tp.Tuple[int, int],
-    mode: str = "zero",
-    value: float = 0.0,
-):
+def pad1d(x: torch.Tensor, paddings: tuple[int, int], mode: str = "zero", value: float = 0.0):
     """Tiny wrapper around F.pad, just to allow for reflect padding on small input.
     If this is the case, we insert extra 0 padding to the right before the reflection happen.
     """
@@ -115,11 +99,10 @@ def pad1d(
         padded = F.pad(x, paddings, mode, value)
         end = padded.shape[-1] - extra_pad
         return padded[..., :end]
-    else:
-        return F.pad(x, paddings, mode, value)
+    return F.pad(x, paddings, mode, value)
 
 
-def unpad1d(x: torch.Tensor, paddings: tp.Tuple[int, int]):
+def unpad1d(x: torch.Tensor, paddings: tuple[int, int]):
     """Remove padding from x, handling properly zero padding. Only for 1d!"""
     padding_left, padding_right = paddings
     assert padding_left >= 0 and padding_right >= 0, (padding_left, padding_right)
@@ -134,12 +117,7 @@ class NormConv1d(nn.Module):
     """
 
     def __init__(
-        self,
-        *args,
-        causal: bool = False,
-        norm: str = "none",
-        norm_kwargs: tp.Dict[str, tp.Any] = {},
-        **kwargs,
+        self, *args, causal: bool = False, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs
     ):
         super().__init__()
         self.conv = apply_parametrization_norm(nn.Conv1d(*args, **kwargs), norm)
@@ -157,13 +135,7 @@ class NormConv2d(nn.Module):
     to provide a uniform interface across normalization approaches.
     """
 
-    def __init__(
-        self,
-        *args,
-        norm: str = "none",
-        norm_kwargs: tp.Dict[str, tp.Any] = {},
-        **kwargs,
-    ):
+    def __init__(self, *args, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs):
         super().__init__()
         self.conv = apply_parametrization_norm(nn.Conv2d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.conv, causal=False, norm=norm, **norm_kwargs)
@@ -181,17 +153,10 @@ class NormConvTranspose1d(nn.Module):
     """
 
     def __init__(
-        self,
-        *args,
-        causal: bool = False,
-        norm: str = "none",
-        norm_kwargs: tp.Dict[str, tp.Any] = {},
-        **kwargs,
+        self, *args, causal: bool = False, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs
     ):
         super().__init__()
-        self.convtr = apply_parametrization_norm(
-            nn.ConvTranspose1d(*args, **kwargs), norm
-        )
+        self.convtr = apply_parametrization_norm(nn.ConvTranspose1d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.convtr, causal, norm, **norm_kwargs)
         self.norm_type = norm
 
@@ -206,17 +171,9 @@ class NormConvTranspose2d(nn.Module):
     to provide a uniform interface across normalization approaches.
     """
 
-    def __init__(
-        self,
-        *args,
-        norm: str = "none",
-        norm_kwargs: tp.Dict[str, tp.Any] = {},
-        **kwargs,
-    ):
+    def __init__(self, *args, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs):
         super().__init__()
-        self.convtr = apply_parametrization_norm(
-            nn.ConvTranspose2d(*args, **kwargs), norm
-        )
+        self.convtr = apply_parametrization_norm(nn.ConvTranspose2d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.convtr, causal=False, norm=norm, **norm_kwargs)
 
     def forward(self, x):
@@ -241,7 +198,7 @@ class SConv1d(nn.Module):
         bias: bool = True,
         causal: bool = False,
         norm: str = "none",
-        norm_kwargs: tp.Dict[str, tp.Any] = {},
+        norm_kwargs: dict[str, tp.Any] = {},
         pad_mode: str = "reflect",
     ):
         super().__init__()
@@ -272,9 +229,7 @@ class SConv1d(nn.Module):
         stride = self.conv.conv.stride[0]
         dilation = self.conv.conv.dilation[0]
         padding_total = (kernel_size - 1) * dilation - (stride - 1)
-        extra_padding = get_extra_padding_for_conv1d(
-            x, kernel_size, stride, padding_total
-        )
+        extra_padding = get_extra_padding_for_conv1d(x, kernel_size, stride, padding_total)
         if self.causal:
             # Left padding for causal
             x = pad1d(x, (padding_total, extra_padding), mode=self.pad_mode)
@@ -282,9 +237,7 @@ class SConv1d(nn.Module):
             # Asymmetric padding required for odd strides
             padding_right = padding_total // 2
             padding_left = padding_total - padding_right
-            x = pad1d(
-                x, (padding_left, padding_right + extra_padding), mode=self.pad_mode
-            )
+            x = pad1d(x, (padding_left, padding_right + extra_padding), mode=self.pad_mode)
         return self.conv(x)
 
 
@@ -302,23 +255,17 @@ class SConvTranspose1d(nn.Module):
         causal: bool = False,
         norm: str = "none",
         trim_right_ratio: float = 1.0,
-        norm_kwargs: tp.Dict[str, tp.Any] = {},
+        norm_kwargs: dict[str, tp.Any] = {},
     ):
         super().__init__()
         self.convtr = NormConvTranspose1d(
-            in_channels,
-            out_channels,
-            kernel_size,
-            stride,
-            causal=causal,
-            norm=norm,
-            norm_kwargs=norm_kwargs,
+            in_channels, out_channels, kernel_size, stride, causal=causal, norm=norm, norm_kwargs=norm_kwargs
         )
         self.causal = causal
         self.trim_right_ratio = trim_right_ratio
-        assert (
-            self.causal or self.trim_right_ratio == 1.0
-        ), "`trim_right_ratio` != 1.0 only makes sense for causal convolutions"
+        assert self.causal or self.trim_right_ratio == 1.0, (
+            "`trim_right_ratio` != 1.0 only makes sense for causal convolutions"
+        )
         assert self.trim_right_ratio >= 0.0 and self.trim_right_ratio <= 1.0
 
     def forward(self, x):

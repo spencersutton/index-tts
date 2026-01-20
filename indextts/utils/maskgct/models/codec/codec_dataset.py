@@ -3,13 +3,15 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Iterable
-import torch
+import pathlib
+from collections.abc import Iterable
+
 import numpy as np
+import torch
 import torch.utils.data
 from torch.nn.utils.rnn import pad_sequence
-from utils.data_utils import *
 from torch.utils.data import ConcatDataset, Dataset
+from utils.data_utils import *
 
 
 class CodecDataset(torch.utils.data.Dataset):
@@ -36,39 +38,30 @@ class CodecDataset(torch.utils.data.Dataset):
             for utt_info in self.metadata:
                 dataset = utt_info["Dataset"]
                 uid = utt_info["Uid"]
-                utt = "{}_{}".format(dataset, uid)
+                utt = f"{dataset}_{uid}"
 
                 self.utt2audio_path[utt] = os.path.join(
-                    cfg.preprocess.processed_dir,
-                    dataset,
-                    cfg.preprocess.audio_dir,
-                    uid + ".npy",
+                    cfg.preprocess.processed_dir, dataset, cfg.preprocess.audio_dir, uid + ".npy"
                 )
         elif cfg.preprocess.use_label:
             self.utt2label_path = {}
             for utt_info in self.metadata:
                 dataset = utt_info["Dataset"]
                 uid = utt_info["Uid"]
-                utt = "{}_{}".format(dataset, uid)
+                utt = f"{dataset}_{uid}"
 
                 self.utt2label_path[utt] = os.path.join(
-                    cfg.preprocess.processed_dir,
-                    dataset,
-                    cfg.preprocess.label_dir,
-                    uid + ".npy",
+                    cfg.preprocess.processed_dir, dataset, cfg.preprocess.label_dir, uid + ".npy"
                 )
         elif cfg.preprocess.use_one_hot:
             self.utt2one_hot_path = {}
             for utt_info in self.metadata:
                 dataset = utt_info["Dataset"]
                 uid = utt_info["Uid"]
-                utt = "{}_{}".format(dataset, uid)
+                utt = f"{dataset}_{uid}"
 
                 self.utt2one_hot_path[utt] = os.path.join(
-                    cfg.preprocess.processed_dir,
-                    dataset,
-                    cfg.preprocess.one_hot_dir,
-                    uid + ".npy",
+                    cfg.preprocess.processed_dir, dataset, cfg.preprocess.one_hot_dir, uid + ".npy"
                 )
 
         if cfg.preprocess.use_mel:
@@ -76,13 +69,10 @@ class CodecDataset(torch.utils.data.Dataset):
             for utt_info in self.metadata:
                 dataset = utt_info["Dataset"]
                 uid = utt_info["Uid"]
-                utt = "{}_{}".format(dataset, uid)
+                utt = f"{dataset}_{uid}"
 
                 self.utt2mel_path[utt] = os.path.join(
-                    cfg.preprocess.processed_dir,
-                    dataset,
-                    cfg.preprocess.mel_dir,
-                    uid + ".npy",
+                    cfg.preprocess.processed_dir, dataset, cfg.preprocess.mel_dir, uid + ".npy"
                 )
 
         if cfg.preprocess.use_frame_pitch:
@@ -90,13 +80,10 @@ class CodecDataset(torch.utils.data.Dataset):
             for utt_info in self.metadata:
                 dataset = utt_info["Dataset"]
                 uid = utt_info["Uid"]
-                utt = "{}_{}".format(dataset, uid)
+                utt = f"{dataset}_{uid}"
 
                 self.utt2frame_pitch_path[utt] = os.path.join(
-                    cfg.preprocess.processed_dir,
-                    dataset,
-                    cfg.preprocess.pitch_dir,
-                    uid + ".npy",
+                    cfg.preprocess.processed_dir, dataset, cfg.preprocess.pitch_dir, uid + ".npy"
                 )
 
         if cfg.preprocess.use_uv:
@@ -104,12 +91,9 @@ class CodecDataset(torch.utils.data.Dataset):
             for utt_info in self.metadata:
                 dataset = utt_info["Dataset"]
                 uid = utt_info["Uid"]
-                utt = "{}_{}".format(dataset, uid)
+                utt = f"{dataset}_{uid}"
                 self.utt2uv_path[utt] = os.path.join(
-                    cfg.preprocess.processed_dir,
-                    dataset,
-                    cfg.preprocess.uv_dir,
-                    uid + ".npy",
+                    cfg.preprocess.processed_dir, dataset, cfg.preprocess.uv_dir, uid + ".npy"
                 )
 
         if cfg.preprocess.use_amplitude_phase:
@@ -120,30 +104,18 @@ class CodecDataset(torch.utils.data.Dataset):
             for utt_info in self.metadata:
                 dataset = utt_info["Dataset"]
                 uid = utt_info["Uid"]
-                utt = "{}_{}".format(dataset, uid)
+                utt = f"{dataset}_{uid}"
                 self.utt2logamp_path[utt] = os.path.join(
-                    cfg.preprocess.processed_dir,
-                    dataset,
-                    cfg.preprocess.log_amplitude_dir,
-                    uid + ".npy",
+                    cfg.preprocess.processed_dir, dataset, cfg.preprocess.log_amplitude_dir, uid + ".npy"
                 )
                 self.utt2pha_path[utt] = os.path.join(
-                    cfg.preprocess.processed_dir,
-                    dataset,
-                    cfg.preprocess.phase_dir,
-                    uid + ".npy",
+                    cfg.preprocess.processed_dir, dataset, cfg.preprocess.phase_dir, uid + ".npy"
                 )
                 self.utt2rea_path[utt] = os.path.join(
-                    cfg.preprocess.processed_dir,
-                    dataset,
-                    cfg.preprocess.real_dir,
-                    uid + ".npy",
+                    cfg.preprocess.processed_dir, dataset, cfg.preprocess.real_dir, uid + ".npy"
                 )
                 self.utt2imag_path[utt] = os.path.join(
-                    cfg.preprocess.processed_dir,
-                    dataset,
-                    cfg.preprocess.imaginary_dir,
-                    uid + ".npy",
+                    cfg.preprocess.processed_dir, dataset, cfg.preprocess.imaginary_dir, uid + ".npy"
                 )
 
     def __getitem__(self, index):
@@ -151,7 +123,7 @@ class CodecDataset(torch.utils.data.Dataset):
 
         dataset = utt_info["Dataset"]
         uid = utt_info["Uid"]
-        utt = "{}_{}".format(dataset, uid)
+        utt = f"{dataset}_{uid}"
 
         single_feature = dict()
 
@@ -159,7 +131,7 @@ class CodecDataset(torch.utils.data.Dataset):
             mel = np.load(self.utt2mel_path[utt])
             assert mel.shape[0] == self.cfg.preprocess.n_mel  # [n_mels, T]
 
-            if "target_len" not in single_feature.keys():
+            if "target_len" not in single_feature:
                 single_feature["target_len"] = mel.shape[1]
 
             single_feature["mel"] = mel
@@ -167,12 +139,10 @@ class CodecDataset(torch.utils.data.Dataset):
         if self.cfg.preprocess.use_frame_pitch:
             frame_pitch = np.load(self.utt2frame_pitch_path[utt])
 
-            if "target_len" not in single_feature.keys():
+            if "target_len" not in single_feature:
                 single_feature["target_len"] = len(frame_pitch)
 
-            aligned_frame_pitch = align_length(
-                frame_pitch, single_feature["target_len"]
-            )
+            aligned_frame_pitch = align_length(frame_pitch, single_feature["target_len"])
 
             single_feature["frame_pitch"] = aligned_frame_pitch
 
@@ -184,7 +154,7 @@ class CodecDataset(torch.utils.data.Dataset):
         return single_feature
 
     def get_metadata(self):
-        with open(self.metafile_path, "r", encoding="utf-8") as f:
+        with pathlib.Path(self.metafile_path).open("r", encoding="utf-8") as f:
             metadata = json.load(f)
 
         return metadata
@@ -226,7 +196,7 @@ class CodecConcatDataset(ConcatDataset):
                     self.eval_pitchs.append(dataset.eval_pitch)
 
 
-class CodecCollator(object):
+class CodecCollator:
     """Zero-pads model inputs and targets based on number of frames per step"""
 
     def __init__(self, cfg):
@@ -241,24 +211,14 @@ class CodecCollator(object):
 
         for key in batch[0].keys():
             if key == "target_len":
-                packed_batch_features["target_len"] = torch.LongTensor(
-                    [b["target_len"] for b in batch]
-                )
-                masks = [
-                    torch.ones((b["target_len"], 1), dtype=torch.long) for b in batch
-                ]
-                packed_batch_features["mask"] = pad_sequence(
-                    masks, batch_first=True, padding_value=0
-                )
+                packed_batch_features["target_len"] = torch.LongTensor([b["target_len"] for b in batch])
+                masks = [torch.ones((b["target_len"], 1), dtype=torch.long) for b in batch]
+                packed_batch_features["mask"] = pad_sequence(masks, batch_first=True, padding_value=0)
             elif key == "mel":
                 values = [torch.from_numpy(b[key]).T for b in batch]
-                packed_batch_features[key] = pad_sequence(
-                    values, batch_first=True, padding_value=0
-                )
+                packed_batch_features[key] = pad_sequence(values, batch_first=True, padding_value=0)
             else:
                 values = [torch.from_numpy(b[key]) for b in batch]
-                packed_batch_features[key] = pad_sequence(
-                    values, batch_first=True, padding_value=0
-                )
+                packed_batch_features[key] = pad_sequence(values, batch_first=True, padding_value=0)
 
         return packed_batch_features

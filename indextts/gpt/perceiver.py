@@ -22,7 +22,7 @@ def once(fn):
     def inner(x):
         nonlocal called
         if called:
-            return
+            return None
         called = True
         return fn(x)
 
@@ -43,9 +43,9 @@ class Attend(nn.Module):
         self.register_buffer("mask", None, persistent=False)
 
         self.use_flash = use_flash
-        assert not (
-            use_flash and version.parse(torch.__version__) < version.parse("2.0.0")
-        ), "in order to use flash attention, you must be using pytorch 2.0 or above"
+        assert not (use_flash and version.parse(torch.__version__) < version.parse("2.0.0")), (
+            "in order to use flash attention, you must be using pytorch 2.0 or above"
+        )
 
         # determine efficient attention configs for cuda and cpu
         self.config = namedtuple("EfficientAttentionConfig", ["enable_flash", "enable_math", "enable_mem_efficient"])
@@ -213,9 +213,7 @@ def FeedForward(dim, mult=4, causal_conv=False):
     conv = None
     if causal_conv:
         conv = nn.Sequential(
-            Rearrange("b n d -> b d n"),
-            CausalConv1d(dim_inner, dim_inner, 3),
-            Rearrange("b d n -> b n d"),
+            Rearrange("b n d -> b d n"), CausalConv1d(dim_inner, dim_inner, 3), Rearrange("b d n -> b n d")
         )
 
     return Sequential(nn.Linear(dim, dim_inner * 2), GEGLU(), conv, nn.Linear(dim_inner, dim))
@@ -223,15 +221,7 @@ def FeedForward(dim, mult=4, causal_conv=False):
 
 class PerceiverResampler(nn.Module):
     def __init__(
-        self,
-        dim,
-        depth=2,
-        dim_context=None,
-        num_latents=32,
-        dim_head=64,
-        heads=8,
-        ff_mult=4,
-        use_flash_attn=False,
+        self, dim, depth=2, dim_context=None, num_latents=32, dim_head=64, heads=8, ff_mult=4, use_flash_attn=False
     ):
         super().__init__()
         dim_context = default(dim_context, dim)
@@ -244,18 +234,16 @@ class PerceiverResampler(nn.Module):
         self.layers = nn.ModuleList([])
         for _ in range(depth):
             self.layers.append(
-                nn.ModuleList(
-                    [
-                        Attention(
-                            dim=dim,
-                            dim_head=dim_head,
-                            heads=heads,
-                            use_flash=use_flash_attn,
-                            cross_attn_include_queries=True,
-                        ),
-                        FeedForward(dim=dim, mult=ff_mult),
-                    ]
-                )
+                nn.ModuleList([
+                    Attention(
+                        dim=dim,
+                        dim_head=dim_head,
+                        heads=heads,
+                        use_flash=use_flash_attn,
+                        cross_attn_include_queries=True,
+                    ),
+                    FeedForward(dim=dim, mult=ff_mult),
+                ])
             )
 
         self.norm = RMSNorm(dim)

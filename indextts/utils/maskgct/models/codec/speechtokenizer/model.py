@@ -3,12 +3,15 @@
 # This code is modified from https://github.com/ZhangXInFD/SpeechTokenizer/blob/main/speechtokenizer/model.py
 # Licensed under Apache License 2.0
 
-from .modules.seanet import SEANetEncoder, SEANetDecoder
-from .modules.quantization import ResidualVectorQuantizer
+import pathlib
+
+import numpy as np
+import torch
 import torch.nn as nn
 from einops import rearrange
-import torch
-import numpy as np
+
+from .modules.quantization import ResidualVectorQuantizer
+from .modules.seanet import SEANetDecoder, SEANetEncoder
 
 
 class SpeechTokenizer(nn.Module):
@@ -37,15 +40,11 @@ class SpeechTokenizer(nn.Module):
         self.n_q = config.get("n_q")
         self.downsample_rate = np.prod(config.get("strides"))
         if config.get("dimension") != config.get("semantic_dimension"):
-            self.transform = nn.Linear(
-                config.get("dimension"), config.get("semantic_dimension")
-            )
+            self.transform = nn.Linear(config.get("dimension"), config.get("semantic_dimension"))
         else:
             self.transform = nn.Identity()
         self.quantizer = ResidualVectorQuantizer(
-            dimension=config.get("dimension"),
-            n_q=config.get("n_q"),
-            bins=config.get("codebook_size"),
+            dimension=config.get("dimension"), n_q=config.get("n_q"), bins=config.get("codebook_size")
         )
         self.decoder = SEANetDecoder(
             n_filters=config.get("n_filters"),
@@ -78,7 +77,7 @@ class SpeechTokenizer(nn.Module):
         """
         import json
 
-        with open(config_path) as f:
+        with pathlib.Path(config_path).open() as f:
             cfg = json.load(f)
         model = cls(cfg)
         params = torch.load(ckpt_path, map_location="cpu")
@@ -107,11 +106,9 @@ class SpeechTokenizer(nn.Module):
             Output of RVQ's first layer. Shape: (batch, timesteps, dimension)
 
         """
-        n_q = n_q if n_q else self.n_q
+        n_q = n_q or self.n_q
         e = self.encoder(x)
-        quantized, codes, commit_loss, quantized_list = self.quantizer(
-            e, n_q=n_q, layers=layers
-        )
+        quantized, codes, commit_loss, quantized_list = self.quantizer(e, n_q=n_q, layers=layers)
         feature = rearrange(quantized_list[0], "b d t -> b t d")
         feature = self.transform(feature)
         o = self.decoder(quantized)
@@ -134,7 +131,7 @@ class SpeechTokenizer(nn.Module):
 
         """
         e = self.encoder(x)
-        layers = layers if layers else list(range(self.n_q))
+        layers = layers or list(range(self.n_q))
         quantized, codes, commit_loss, quantized_list = self.quantizer(e, layers=layers)
         return quantized_list
 
@@ -159,7 +156,7 @@ class SpeechTokenizer(nn.Module):
         e = self.encoder(x)
         if st is None:
             st = 0
-        n_q = n_q if n_q else self.n_q
+        n_q = n_q or self.n_q
         codes = self.quantizer.encode(e, n_q=n_q, st=st)
         return codes
 

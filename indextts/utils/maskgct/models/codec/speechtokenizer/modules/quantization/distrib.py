@@ -20,15 +20,13 @@ import torch
 def rank():
     if torch.distributed.is_initialized():
         return torch.distributed.get_rank()
-    else:
-        return 0
+    return 0
 
 
 def world_size():
     if torch.distributed.is_initialized():
         return torch.distributed.get_world_size()
-    else:
-        return 1
+    return 1
 
 
 def is_distributed():
@@ -44,7 +42,7 @@ def _is_complex_or_float(tensor):
     return torch.is_floating_point(tensor) or torch.is_complex(tensor)
 
 
-def _check_number_of_params(params: tp.List[torch.Tensor]):
+def _check_number_of_params(params: list[torch.Tensor]):
     # utility function to check that the number of params in all workers is the same,
     # and thus avoid a deadlock with distributed all reduce.
     if not is_distributed() or not params:
@@ -56,8 +54,7 @@ def _check_number_of_params(params: tp.List[torch.Tensor]):
         # If not all the workers have the same number, for at least one of them,
         # this inequality will be verified.
         raise RuntimeError(
-            f"Mismatch in number of params: ours is {len(params)}, "
-            "at least one worker has a different one."
+            f"Mismatch in number of params: ours is {len(params)}, at least one worker has a different one."
         )
 
 
@@ -88,9 +85,7 @@ def sync_buffer(buffers, average=True):
     for buffer in buffers:
         if torch.is_floating_point(buffer.data):
             if average:
-                handle = torch.distributed.all_reduce(
-                    buffer.data, op=torch.distributed.ReduceOp.SUM, async_op=True
-                )
+                handle = torch.distributed.all_reduce(buffer.data, op=torch.distributed.ReduceOp.SUM, async_op=True)
             else:
                 handle = torch.distributed.broadcast(buffer.data, src=0, async_op=True)
             handles.append((buffer, handle))
@@ -111,16 +106,14 @@ def sync_grad(params):
     handles = []
     for p in params:
         if p.grad is not None:
-            handle = torch.distributed.all_reduce(
-                p.grad.data, op=torch.distributed.ReduceOp.SUM, async_op=True
-            )
+            handle = torch.distributed.all_reduce(p.grad.data, op=torch.distributed.ReduceOp.SUM, async_op=True)
             handles.append((p, handle))
     for p, handle in handles:
         handle.wait()
         p.grad.data /= world_size()
 
 
-def average_metrics(metrics: tp.Dict[str, float], count=1.0):
+def average_metrics(metrics: dict[str, float], count=1.0):
     """Average a dictionary of metrics across all workers, using the optional
     `count` as unormalized weight.
     """

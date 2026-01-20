@@ -65,11 +65,7 @@ class BatchNorm1d(nn.Module):
             input_size = input_shape[-1]
 
         self.norm = nn.BatchNorm1d(
-            input_size,
-            eps=eps,
-            momentum=momentum,
-            affine=affine,
-            track_running_stats=track_running_stats,
+            input_size, eps=eps, momentum=momentum, affine=affine, track_running_stats=track_running_stats
         )
 
     def forward(self, x):
@@ -91,9 +87,7 @@ class BatchNorm1d(nn.Module):
             if x.ndim == 3:
                 x = x.reshape(shape_or[0] * shape_or[1], shape_or[2])
             else:
-                x = x.reshape(
-                    shape_or[0] * shape_or[1], shape_or[3], shape_or[2]
-                )
+                x = x.reshape(shape_or[0] * shape_or[1], shape_or[3], shape_or[2])
 
         elif not self.skip_transpose:
             x = x.transpose(-1, 1)
@@ -138,13 +132,7 @@ class BatchNorm2d(nn.Module):
     """
 
     def __init__(
-        self,
-        input_shape=None,
-        input_size=None,
-        eps=1e-05,
-        momentum=0.1,
-        affine=True,
-        track_running_stats=True,
+        self, input_shape=None, input_size=None, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
     ):
         super().__init__()
 
@@ -155,11 +143,7 @@ class BatchNorm2d(nn.Module):
             input_size = input_shape[-1]
 
         self.norm = nn.BatchNorm2d(
-            input_size,
-            eps=eps,
-            momentum=momentum,
-            affine=affine,
-            track_running_stats=track_running_stats,
+            input_size, eps=eps, momentum=momentum, affine=affine, track_running_stats=track_running_stats
         )
 
     def forward(self, x):
@@ -207,13 +191,7 @@ class LayerNorm(nn.Module):
     torch.Size([100, 101, 128])
     """
 
-    def __init__(
-        self,
-        input_size=None,
-        input_shape=None,
-        eps=1e-05,
-        elementwise_affine=True,
-    ):
+    def __init__(self, input_size=None, input_shape=None, eps=1e-05, elementwise_affine=True):
         super().__init__()
         self.eps = eps
         self.elementwise_affine = elementwise_affine
@@ -221,11 +199,7 @@ class LayerNorm(nn.Module):
         if input_shape is not None:
             input_size = input_shape[2:]
 
-        self.norm = torch.nn.LayerNorm(
-            input_size,
-            eps=self.eps,
-            elementwise_affine=self.elementwise_affine,
-        )
+        self.norm = torch.nn.LayerNorm(input_size, eps=self.eps, elementwise_affine=self.elementwise_affine)
 
     def forward(self, x):
         """Returns the normalized input tensor.
@@ -274,13 +248,7 @@ class InstanceNorm1d(nn.Module):
     """
 
     def __init__(
-        self,
-        input_shape=None,
-        input_size=None,
-        eps=1e-05,
-        momentum=0.1,
-        track_running_stats=True,
-        affine=False,
+        self, input_shape=None, input_size=None, eps=1e-05, momentum=0.1, track_running_stats=True, affine=False
     ):
         super().__init__()
 
@@ -291,11 +259,7 @@ class InstanceNorm1d(nn.Module):
             input_size = input_shape[-1]
 
         self.norm = nn.InstanceNorm1d(
-            input_size,
-            eps=eps,
-            momentum=momentum,
-            track_running_stats=track_running_stats,
-            affine=affine,
+            input_size, eps=eps, momentum=momentum, track_running_stats=track_running_stats, affine=affine
         )
 
     def forward(self, x):
@@ -350,13 +314,7 @@ class InstanceNorm2d(nn.Module):
     """
 
     def __init__(
-        self,
-        input_shape=None,
-        input_size=None,
-        eps=1e-05,
-        momentum=0.1,
-        track_running_stats=True,
-        affine=False,
+        self, input_shape=None, input_size=None, eps=1e-05, momentum=0.1, track_running_stats=True, affine=False
     ):
         super().__init__()
 
@@ -367,11 +325,7 @@ class InstanceNorm2d(nn.Module):
             input_size = input_shape[-1]
 
         self.norm = nn.InstanceNorm2d(
-            input_size,
-            eps=eps,
-            momentum=momentum,
-            track_running_stats=track_running_stats,
-            affine=affine,
+            input_size, eps=eps, momentum=momentum, track_running_stats=track_running_stats, affine=affine
         )
 
     def forward(self, x):
@@ -421,14 +375,7 @@ class GroupNorm(nn.Module):
     torch.Size([100, 101, 128])
     """
 
-    def __init__(
-        self,
-        input_shape=None,
-        input_size=None,
-        num_groups=None,
-        eps=1e-05,
-        affine=True,
-    ):
+    def __init__(self, input_shape=None, input_size=None, num_groups=None, eps=1e-05, affine=True):
         super().__init__()
         self.eps = eps
         self.affine = affine
@@ -442,12 +389,7 @@ class GroupNorm(nn.Module):
         if input_shape is not None:
             input_size = input_shape[-1]
 
-        self.norm = torch.nn.GroupNorm(
-            num_groups,
-            input_size,
-            eps=self.eps,
-            affine=self.affine,
-        )
+        self.norm = torch.nn.GroupNorm(num_groups, input_size, eps=self.eps, affine=self.affine)
 
     def forward(self, x):
         """Returns the normalized input tensor.
@@ -510,18 +452,8 @@ class ExponentialMovingAverage(nn.Module):
         self._per_channel = per_channel
         self.skip_transpose = skip_transpose
         self.trainable = trainable
-        weights = (
-            torch.ones(
-                input_size,
-            )
-            if self._per_channel
-            else torch.ones(
-                1,
-            )
-        )
-        self._weights = nn.Parameter(
-            weights * self._coeff_init, requires_grad=trainable
-        )
+        weights = torch.ones(input_size) if self._per_channel else torch.ones(1)
+        self._weights = nn.Parameter(weights * self._coeff_init, requires_grad=trainable)
 
     def forward(self, x):
         """Returns the normalized input tensor.
@@ -593,7 +525,7 @@ class PCEN(nn.Module):
     Example
     -------
     >>> inp_tensor = torch.rand([10, 50, 40])
-    >>> pcen = PCEN(40, alpha=0.96)         # sPCEN
+    >>> pcen = PCEN(40, alpha=0.96)  # sPCEN
     >>> out_tensor = pcen(inp_tensor)
     >>> out_tensor.shape
     torch.Size([10, 50, 40])
@@ -616,15 +548,9 @@ class PCEN(nn.Module):
         self._floor = floor
         self._per_channel_smooth_coef = per_channel_smooth_coef
         self.skip_transpose = skip_transpose
-        self.alpha = nn.Parameter(
-            torch.ones(input_size) * alpha, requires_grad=trainable
-        )
-        self.delta = nn.Parameter(
-            torch.ones(input_size) * delta, requires_grad=trainable
-        )
-        self.root = nn.Parameter(
-            torch.ones(input_size) * root, requires_grad=trainable
-        )
+        self.alpha = nn.Parameter(torch.ones(input_size) * alpha, requires_grad=trainable)
+        self.delta = nn.Parameter(torch.ones(input_size) * delta, requires_grad=trainable)
+        self.root = nn.Parameter(torch.ones(input_size) * root, requires_grad=trainable)
 
         self.ema = ExponentialMovingAverage(
             input_size,
@@ -649,22 +575,13 @@ class PCEN(nn.Module):
         """
         if not self.skip_transpose:
             x = x.transpose(1, -1)
-        alpha = torch.min(
-            self.alpha, torch.tensor(1.0, dtype=x.dtype, device=x.device)
-        )
-        root = torch.max(
-            self.root, torch.tensor(1.0, dtype=x.dtype, device=x.device)
-        )
+        alpha = torch.min(self.alpha, torch.tensor(1.0, dtype=x.dtype, device=x.device))
+        root = torch.max(self.root, torch.tensor(1.0, dtype=x.dtype, device=x.device))
         ema_smoother = self.ema(x)
         one_over_root = 1.0 / root
         output = (
-            x / (self._floor + ema_smoother) ** alpha.view(1, -1, 1)
-            + self.delta.view(1, -1, 1)
-        ) ** one_over_root.view(1, -1, 1) - self.delta.view(
-            1, -1, 1
-        ) ** one_over_root.view(
-            1, -1, 1
-        )
+            x / (self._floor + ema_smoother) ** alpha.view(1, -1, 1) + self.delta.view(1, -1, 1)
+        ) ** one_over_root.view(1, -1, 1) - self.delta.view(1, -1, 1) ** one_over_root.view(1, -1, 1)
         if not self.skip_transpose:
             output = output.transpose(1, -1)
         return output

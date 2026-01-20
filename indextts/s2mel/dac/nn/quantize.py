@@ -1,13 +1,12 @@
-from typing import Union
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange
-from torch.nn.utils import weight_norm
 
 from indextts.s2mel.dac.nn.layers import WNConv1d
+
 
 class VectorQuantizeLegacy(nn.Module):
     """
@@ -53,9 +52,7 @@ class VectorQuantizeLegacy(nn.Module):
         else:
             commitment_loss = F.mse_loss(z_e, z_q.detach())
             codebook_loss = F.mse_loss(z_q, z_e.detach())
-        z_q = (
-            z_e + (z_q - z_e).detach()
-        )  # noop in forward pass, straight-through gradient estimator in backward pass
+        z_q = z_e + (z_q - z_e).detach()  # noop in forward pass, straight-through gradient estimator in backward pass
 
         return z_q, indices, z_e, commitment_loss, codebook_loss
 
@@ -82,6 +79,7 @@ class VectorQuantizeLegacy(nn.Module):
         indices = rearrange((-dist).max(1)[1], "(b t) -> b t", b=latents.size(0))
         z_q = self.decode_code(indices)
         return z_q, indices
+
 
 class VectorQuantize(nn.Module):
     """
@@ -138,9 +136,7 @@ class VectorQuantize(nn.Module):
             commitment_loss = F.mse_loss(z_e, z_q.detach())
             codebook_loss = F.mse_loss(z_q, z_e.detach())
 
-        z_q = (
-            z_e + (z_q - z_e).detach()
-        )  # noop in forward pass, straight-through gradient estimator in backward pass
+        z_q = z_e + (z_q - z_e).detach()  # noop in forward pass, straight-through gradient estimator in backward pass
 
         z_q = self.out_proj(z_q)
 
@@ -182,7 +178,7 @@ class ResidualVectorQuantize(nn.Module):
         input_dim: int = 512,
         n_codebooks: int = 9,
         codebook_size: int = 1024,
-        codebook_dim: Union[int, list] = 8,
+        codebook_dim: int | list = 8,
         quantizer_dropout: float = 0.0,
     ):
         super().__init__()
@@ -193,12 +189,9 @@ class ResidualVectorQuantize(nn.Module):
         self.codebook_dim = codebook_dim
         self.codebook_size = codebook_size
 
-        self.quantizers = nn.ModuleList(
-            [
-                VectorQuantize(input_dim, codebook_size, codebook_dim[i])
-                for i in range(n_codebooks)
-            ]
-        )
+        self.quantizers = nn.ModuleList([
+            VectorQuantize(input_dim, codebook_size, codebook_dim[i]) for i in range(n_codebooks)
+        ])
         self.quantizer_dropout = quantizer_dropout
 
     def forward(self, z, n_quantizers: int = None):
@@ -251,14 +244,10 @@ class ResidualVectorQuantize(nn.Module):
             if self.training is False and i >= n_quantizers:
                 break
 
-            z_q_i, commitment_loss_i, codebook_loss_i, indices_i, z_e_i = quantizer(
-                residual
-            )
+            z_q_i, commitment_loss_i, codebook_loss_i, indices_i, z_e_i = quantizer(residual)
 
             # Create mask to apply quantizer dropout
-            mask = (
-                torch.full((z.shape[0],), fill_value=i, device=z.device) < n_quantizers
-            )
+            mask = torch.full((z.shape[0],), fill_value=i, device=z.device) < n_quantizers
             z_q = z_q + z_q_i * mask[:, None, None]
             residual = residual - z_q_i
 
@@ -317,9 +306,7 @@ class ResidualVectorQuantize(nn.Module):
         codes = []
         dims = np.cumsum([0] + [q.codebook_dim for q in self.quantizers])
 
-        n_codebooks = np.where(dims <= latents.shape[1])[0].max(axis=0, keepdims=True)[
-            0
-        ]
+        n_codebooks = np.where(dims <= latents.shape[1])[0].max(axis=0, keepdims=True)[0]
         for i in range(n_codebooks):
             j, k = dims[i], dims[i + 1]
             z_p_i, codes_i = self.quantizers[i].decode_latents(latents[:, j:k, :])

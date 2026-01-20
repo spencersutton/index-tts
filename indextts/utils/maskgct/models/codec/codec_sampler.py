@@ -7,12 +7,7 @@ import math
 import random
 
 from torch.utils.data import ConcatDataset, Dataset
-from torch.utils.data.sampler import (
-    BatchSampler,
-    RandomSampler,
-    Sampler,
-    SequentialSampler,
-)
+from torch.utils.data.sampler import BatchSampler, RandomSampler, Sampler, SequentialSampler
 
 
 class ScheduledSampler(Sampler):
@@ -30,25 +25,15 @@ class ScheduledSampler(Sampler):
         [3, 4, 5, 0, 1, 2, 6, 7, 8]
     """
 
-    def __init__(
-        self, concat_dataset, batch_size, holistic_shuffle, logger=None, type="train"
-    ):
+    def __init__(self, concat_dataset, batch_size, holistic_shuffle, logger=None, type="train"):
         if not isinstance(concat_dataset, ConcatDataset):
             raise ValueError(
-                "concat_dataset must be an instance of ConcatDataset, but got {}".format(
-                    type(concat_dataset)
-                )
+                f"concat_dataset must be an instance of ConcatDataset, but got {type(concat_dataset)}"
             )
         if not isinstance(batch_size, int):
-            raise ValueError(
-                "batch_size must be an integer, but got {}".format(type(batch_size))
-            )
+            raise ValueError(f"batch_size must be an integer, but got {type(batch_size)}")
         if not isinstance(holistic_shuffle, bool):
-            raise ValueError(
-                "holistic_shuffle must be a boolean, but got {}".format(
-                    type(holistic_shuffle)
-                )
-            )
+            raise ValueError(f"holistic_shuffle must be a boolean, but got {type(holistic_shuffle)}")
 
         self.concat_dataset = concat_dataset
         self.batch_size = batch_size
@@ -64,33 +49,22 @@ class ScheduledSampler(Sampler):
                 affected_dataset_len.append(dataset_len)
 
         self.type = type
-        for dataset_name, dataset_len in zip(
-            affected_dataset_name, affected_dataset_len
-        ):
+        for dataset_name, dataset_len in zip(affected_dataset_name, affected_dataset_len):
             if not type == "valid":
                 logger.warning(
-                    "The {} dataset {} has a length of {}, which is smaller than the batch size {}. This may cause unexpected behavior.".format(
-                        type, dataset_name, dataset_len, batch_size
-                    )
+                    f"The {type} dataset {dataset_name} has a length of {dataset_len}, which is smaller than the batch size {batch_size}. This may cause unexpected behavior."
                 )
 
     def __len__(self):
         # the number of batches with drop last
-        num_of_batches = sum(
-            [
-                math.floor(len(dataset) / self.batch_size)
-                for dataset in self.concat_dataset.datasets
-            ]
-        )
+        num_of_batches = sum([math.floor(len(dataset) / self.batch_size) for dataset in self.concat_dataset.datasets])
         return num_of_batches * self.batch_size
 
     def __iter__(self):
         iters = []
         for dataset in self.concat_dataset.datasets:
             iters.append(
-                SequentialSampler(dataset).__iter__()
-                if self.holistic_shuffle
-                else RandomSampler(dataset).__iter__()
+                SequentialSampler(dataset).__iter__() if self.holistic_shuffle else RandomSampler(dataset).__iter__()
             )
         init_indices = [0] + self.concat_dataset.cumulative_sizes[:-1]
         output_batches = []
@@ -111,16 +85,8 @@ class ScheduledSampler(Sampler):
 
 
 def build_samplers(concat_dataset: Dataset, cfg, logger, type):
-    sampler = ScheduledSampler(
-        concat_dataset,
-        cfg.train.batch_size,
-        cfg.train.sampler.holistic_shuffle,
-        logger,
-        type,
-    )
+    sampler = ScheduledSampler(concat_dataset, cfg.train.batch_size, cfg.train.sampler.holistic_shuffle, logger, type)
     batch_sampler = BatchSampler(
-        sampler,
-        cfg.train.batch_size,
-        cfg.train.sampler.drop_last if not type == "valid" else False,
+        sampler, cfg.train.batch_size, cfg.train.sampler.drop_last if not type == "valid" else False
     )
     return sampler, batch_sampler

@@ -5,8 +5,8 @@
 
 import os
 import random
-from pathlib import Path
 import re
+from pathlib import Path
 
 import accelerate
 import json5
@@ -14,9 +14,6 @@ import numpy as np
 import torch
 from accelerate.utils import ProjectConfiguration
 from torch.utils.data import DataLoader
-from tqdm import tqdm
-
-from models.codec.codec_sampler import build_samplers
 
 
 class CodecTrainer:
@@ -25,20 +22,16 @@ class CodecTrainer:
 
     def _init_accelerator(self):
         """Initialize the accelerator components."""
-        self.exp_dir = os.path.join(
-            os.path.abspath(self.cfg.log_dir), self.args.exp_name
-        )
-        project_config = ProjectConfiguration(
-            project_dir=self.exp_dir, logging_dir=os.path.join(self.exp_dir, "log")
-        )
+        self.exp_dir = os.path.join(os.path.abspath(self.cfg.log_dir), self.args.exp_name)
+        project_config = ProjectConfiguration(project_dir=self.exp_dir, logging_dir=os.path.join(self.exp_dir, "log"))
         self.accelerator = accelerate.Accelerator(
             gradient_accumulation_steps=self.cfg.train.gradient_accumulation_step,
             log_with=self.cfg.train.tracker,
             project_config=project_config,
         )
         if self.accelerator.is_main_process:
-            os.makedirs(project_config.project_dir, exist_ok=True)
-            os.makedirs(project_config.logging_dir, exist_ok=True)
+            Path(project_config.project_dir).mkdir(exist_ok=True, parents=True)
+            Path(project_config.logging_dir).mkdir(exist_ok=True, parents=True)
         with self.accelerator.main_process_first():
             self.accelerator.init_trackers(self.args.exp_name)
 
@@ -96,12 +89,11 @@ class CodecTrainer:
             self.accelerator.load_state(checkpoint_path)
         elif resume_type == "finetune":
             accelerate.load_checkpoint_and_dispatch(
-                self.accelerator.unwrap_model(self.model),
-                os.path.join(checkpoint_path, "pytorch_model.bin"),
+                self.accelerator.unwrap_model(self.model), os.path.join(checkpoint_path, "pytorch_model.bin")
             )
             self.logger.info("Load model weights for finetune SUCCESS!")
         else:
-            raise ValueError("Unsupported resume type: {}".format(resume_type))
+            raise ValueError(f"Unsupported resume type: {resume_type}")
         self.epoch = int(checkpoint_path.split("_")[-3].split("-")[-1]) + 1
         self.step = int(checkpoint_path.split("_")[-2].split("-")[-1]) + 1
         return checkpoint_path
@@ -133,7 +125,7 @@ class CodecTrainer:
     def _check_nan(self, loss):
         if torch.any(torch.isnan(loss)):
             self.logger.fatal("Fatal Error: NaN!")
-            self.logger.error("loss = {:.6f}".format(loss.item()), in_order=True)
+            self.logger.error(f"loss = {loss.item():.6f}", in_order=True)
 
     def _check_basic_configs(self):
         if self.cfg.train.gradient_accumulation_step <= 0:
@@ -150,15 +142,8 @@ class CodecTrainer:
         pass
 
     def _dump_cfg(self, path):
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        json5.dump(
-            self.cfg,
-            open(path, "w"),
-            indent=4,
-            sort_keys=True,
-            ensure_ascii=False,
-            quote_keys=True,
-        )
+        Path(os.path.dirname(path)).mkdir(exist_ok=True, parents=True)
+        json5.dump(self.cfg, Path(path).open("w"), indent=4, sort_keys=True, ensure_ascii=False, quote_keys=True)
 
     def _is_valid_pattern(self, directory_name):
         directory_name = str(directory_name)

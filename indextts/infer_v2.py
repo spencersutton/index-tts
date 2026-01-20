@@ -226,7 +226,7 @@ class IndexTTS2:
         model_dir: Path = CHECKPOINT_DIR,
         use_fp16: bool = False,
         device: str | None = None,
-        use_cuda_kernel: bool | None = None,
+        use_cuda_kernel: bool = False,
         use_deepspeed: bool = False,
         use_accel: bool = False,
         use_torch_compile: bool = False,
@@ -242,30 +242,12 @@ class IndexTTS2:
             use_accel (bool): whether to use acceleration engine for GPT2 or not.
             use_torch_compile (bool): whether to use torch.compile for optimization or not.
         """
-        if device is not None:
-            self.device = device
-            self.use_fp16 = False if device == "cpu" else use_fp16
-            self.use_cuda_kernel = use_cuda_kernel is not None and use_cuda_kernel and device.startswith("cuda")
-        elif torch.cuda.is_available():
-            self.device = "cuda:0"
-            self.use_fp16 = use_fp16
-            self.use_cuda_kernel = use_cuda_kernel is None or use_cuda_kernel
-        elif hasattr(torch, "xpu") and torch.xpu.is_available():
-            self.device = "xpu"
-            self.use_fp16 = use_fp16
-            self.use_cuda_kernel = False
-        elif hasattr(torch, "mps") and torch.backends.mps.is_available():
-            self.device = "mps"
-            self.use_fp16 = False  # Use float16 on MPS is overhead than float32
-            self.use_cuda_kernel = False
-        else:
-            self.device = "cpu"
-            self.use_fp16 = False
-            self.use_cuda_kernel = False
-            print(">> Be patient, it may take a while to run in CPU mode.")
 
+        self.device = device or torch.accelerator.current_accelerator() or torch.get_default_device()
+        self.use_cuda_kernel = use_cuda_kernel and self.device.startswith("cuda")
+        self.use_fp16 = use_fp16 and self.device not in ["cpu", "mps"]
         self.cfg = cast(IndexTTSConfig, OmegaConf.load(cfg_path))
-        self.dtype = torch.float16 if self.use_fp16 else None
+        self.dtype = torch.float16 if self.use_fp16 else torch.get_default_dtype()
         self.use_accel = use_accel
 
         if use_deepspeed:
@@ -567,10 +549,7 @@ class IndexTTS2:
                 print("text_token_syms is same as segment tokens", text_token_syms == sent)
 
             with torch.inference_mode():
-                with (
-                    torch.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype),
-                    gpt_gen_time,
-                ):
+                with torch.autocast(text_tokens.device.type, dtype=self.dtype), gpt_gen_time:
                     emo_vec = self.gpt.get_emo_vec(emo_cond_emb)
                     base_vec = self.gpt.get_emo_vec(spk_cond_emb)
 
@@ -611,10 +590,7 @@ class IndexTTS2:
                 ]
                 codes = codes[:, : max(code_lens)]
 
-                with (
-                    torch.autocast(text_tokens.device.type, enabled=self.dtype is not None, dtype=self.dtype),
-                    gpt_forward_time,
-                ):
+                with torch.autocast(text_tokens.device.type, dtype=self.dtype), gpt_forward_time:
                     latent = self.gpt(
                         speech_conditioning_latent,
                         text_tokens,

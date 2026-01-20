@@ -1,3 +1,4 @@
+from numba import MutableSequence
 from collections import OrderedDict
 from collections import abc as container_abcs
 from collections.abc import Iterable, Iterator, Mapping
@@ -42,7 +43,7 @@ class Sequential[T: Module](Module):
     def insert(self, index: int, module: T) -> Self: ...
     def extend(self, sequential: Iterable[T]) -> Self: ...
 
-class ModuleList[T: Module](Module):
+class ModuleList[T: Module](Module, list[T]):
     def __init__(self, modules: Iterable[T] | None = None) -> None: ...
     @overload
     def __getitem__(self, idx: slice) -> Self: ...

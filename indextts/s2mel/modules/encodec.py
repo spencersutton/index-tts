@@ -18,10 +18,13 @@ class NormConv1d(nn.Module):
     to provide a uniform interface across normalization approaches.
     """
 
+    conv: nn.Conv1d
+    norm: nn.Identity
+
     def __init__(self, in_channels: int, out_channels: int, kernel_size: int) -> None:
         super().__init__()
 
-        self.conv: nn.Conv1d = weight_norm(nn.Conv1d(in_channels, out_channels, kernel_size))
+        self.conv = weight_norm(nn.Conv1d(in_channels, out_channels, kernel_size))
         self.norm = nn.Identity()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -36,7 +39,7 @@ class SConv1d(nn.Module):
     Conv1d layer with built-in handling of asymmetric padding and normalization.
     """
 
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: int = 1) -> None:
+    def __init__(self, in_channels: int, out_channels: int, kernel_size: int) -> None:
         super().__init__()
 
         self.kernel_size = kernel_size

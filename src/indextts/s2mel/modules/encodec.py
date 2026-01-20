@@ -31,7 +31,6 @@ class ConvLayerNorm(nn.LayerNorm):
         x = einops.rearrange(x, "b ... t -> b t ...")
         x = super().forward(x)
         x = einops.rearrange(x, "b t ... -> b ... t")
-        return
 
 
 CONV_NORMALIZATIONS = frozenset([
@@ -48,12 +47,11 @@ def apply_parametrization_norm(module: nn.Module, norm: str = "none") -> nn.Modu
     assert norm in CONV_NORMALIZATIONS
     if norm == "weight_norm":
         return weight_norm(module)
-    elif norm == "spectral_norm":
+    if norm == "spectral_norm":
         return spectral_norm(module)
-    else:
-        # We already check was in CONV_NORMALIZATION, so any other choice
-        # doesn't need reparametrization.
-        return module
+    # We already check was in CONV_NORMALIZATION, so any other choice
+    # doesn't need reparametrization.
+    return module
 
 
 def get_norm_module(module: nn.Module, causal: bool = False, norm: str = "none", **norm_kwargs) -> nn.Module:
@@ -64,13 +62,12 @@ def get_norm_module(module: nn.Module, causal: bool = False, norm: str = "none",
     if norm == "layer_norm":
         assert isinstance(module, nn.modules.conv._ConvNd)
         return ConvLayerNorm(module.out_channels, **norm_kwargs)
-    elif norm == "time_group_norm":
+    if norm == "time_group_norm":
         if causal:
             raise ValueError("GroupNorm doesn't support causal evaluation.")
         assert isinstance(module, nn.modules.conv._ConvNd)
         return nn.GroupNorm(1, module.out_channels, **norm_kwargs)
-    else:
-        return nn.Identity()
+    return nn.Identity()
 
 
 def get_extra_padding_for_conv1d(x: torch.Tensor, kernel_size: int, stride: int, padding_total: int = 0) -> int:
@@ -97,8 +94,7 @@ def pad1d(x: torch.Tensor, paddings: tuple[int, int], mode: str = "zero", value:
         padded = F.pad(x, paddings, mode, value)
         end = padded.shape[-1] - extra_pad
         return padded[..., :end]
-    else:
-        return F.pad(x, paddings, mode, value)
+    return F.pad(x, paddings, mode, value)
 
 
 class NormConv1d(nn.Module):
@@ -114,8 +110,7 @@ class NormConv1d(nn.Module):
 
     def forward(self, x):
         x = self.conv(x)
-        x = self.norm(x)
-        return x
+        return self.norm(x)
 
 
 class SConv1d(nn.Module):
@@ -161,7 +156,7 @@ class SConv1d(nn.Module):
         self.pad_mode = pad_mode
 
     def forward(self, x):
-        B, C, T = x.shape
+        _B, _C, _T = x.shape
         kernel_size = self.conv.conv.kernel_size[0]
         stride = self.conv.conv.stride[0]
         dilation = self.conv.conv.dilation[0]

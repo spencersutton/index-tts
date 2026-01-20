@@ -1,5 +1,6 @@
 import json
 import os
+import pathlib
 import random
 import re
 import time
@@ -214,8 +215,7 @@ class IndexTTS2:
             input_features=input_features, attention_mask=attention_mask, output_hidden_states=True
         )
         feat = vq_emb.hidden_states[17]  # (B, T, C)
-        feat = (feat - self.semantic_mean) / self.semantic_std
-        return feat
+        return (feat - self.semantic_mean) / self.semantic_std
 
     def remove_long_silence(self, codes: torch.Tensor, silent_token=52, max_consecutive=30):
         """
@@ -380,9 +380,9 @@ class IndexTTS2:
                 more_segment_before,
                 **generation_kwargs,
             )
-        else:
-            try:
-                return list(
+        try:
+            return next(
+                iter(
                     self.infer_generator(
                         spk_audio_prompt,
                         text,
@@ -400,9 +400,10 @@ class IndexTTS2:
                         more_segment_before,
                         **generation_kwargs,
                     )
-                )[0]
-            except IndexError:
-                return None
+                )
+            )
+        except IndexError:
+            return None
 
     def infer_generator(
         self,
@@ -734,11 +735,11 @@ class IndexTTS2:
         wav = wav.cpu()  # to cpu
         if output_path:
             # 直接保存音频到指定路径中
-            if os.path.isfile(output_path):
-                os.remove(output_path)
+            if pathlib.Path(output_path).is_file():
+                pathlib.Path(output_path).unlink()
                 print(">> remove old wav file:", output_path)
-            if os.path.dirname(output_path) != "":
-                os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            if pathlib.Path(output_path).parent != "":
+                pathlib.Path(pathlib.Path(output_path).parent).mkdir(exist_ok=True, parents=True)
             torchaudio.save(output_path, wav.type(torch.int16), sampling_rate)
             print(">> wav file saved to:", output_path)
             if stream_return:
@@ -758,8 +759,7 @@ def find_most_similar_cosine(query_vector, matrix):
     matrix = matrix.float()
 
     similarities = F.cosine_similarity(query_vector, matrix, dim=1)
-    most_similar_index = torch.argmax(similarities)
-    return most_similar_index
+    return torch.argmax(similarities)
 
 
 class QwenEmotion:

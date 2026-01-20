@@ -2,11 +2,11 @@
 # Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
 
 from collections import OrderedDict
+from typing import assert_never
 
 import torch
 import torch.nn.functional as F
 from torch import nn
-from typing_extensions import assert_never
 
 
 def get_nonlinear(config_str, channels):
@@ -16,7 +16,7 @@ def get_nonlinear(config_str, channels):
             "relu": nn.ReLU(inplace=True),
         })
         return nn.Sequential(modules)
-    elif config_str == "batchnorm_":
+    if config_str == "batchnorm_":
         modules: OrderedDict[str, nn.Module] = OrderedDict({"batchnorm": nn.BatchNorm1d(channels, affine=False)})
         return nn.Sequential(modules)
     assert_never(config_str)
@@ -49,8 +49,7 @@ class TDNNLayer(nn.Module):
 
     def forward(self, x):
         x = self.linear(x)
-        x = self.nonlinear(x)
-        return x
+        return self.nonlinear(x)
 
 
 class CAMLayer(nn.Module):
@@ -78,8 +77,7 @@ class CAMLayer(nn.Module):
             raise ValueError("Wrong segment pooling type.")
         shape = seg.shape
         seg = seg.unsqueeze(-1).expand(*shape, seg_len).reshape(*shape[:-1], -1)
-        seg = seg[..., : x.shape[-1]]
-        return seg
+        return seg[..., : x.shape[-1]]
 
 
 class CAMDenseTDNNLayer(nn.Module):
@@ -96,8 +94,7 @@ class CAMDenseTDNNLayer(nn.Module):
 
     def forward(self, x):
         x = self.bn_function(x)
-        x = self.cam_layer(self.nonlinear2(x))
-        return x
+        return self.cam_layer(self.nonlinear2(x))
 
 
 class CAMDenseTDNNBlock(nn.ModuleList):
@@ -121,8 +118,7 @@ class TransitLayer(nn.Module):
 
     def forward(self, x):
         x = self.nonlinear(x)
-        x = self.linear(x)
-        return x
+        return self.linear(x)
 
 
 class DenseLayer(nn.Module):
@@ -136,8 +132,7 @@ class DenseLayer(nn.Module):
             x = self.linear(x.unsqueeze(dim=-1)).squeeze(dim=-1)
         else:
             x = self.linear(x)
-        x = self.nonlinear(x)
-        return x
+        return self.nonlinear(x)
 
 
 class BasicResBlock(nn.Module):
@@ -161,5 +156,4 @@ class BasicResBlock(nn.Module):
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
         out += self.shortcut(x)
-        out = F.relu(out)
-        return out
+        return F.relu(out)

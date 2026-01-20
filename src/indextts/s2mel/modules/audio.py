@@ -7,8 +7,7 @@ def dynamic_range_compression_torch(x, C=1, clip_val=1e-5):
 
 
 def spectral_normalize_torch(magnitudes):
-    output = dynamic_range_compression_torch(magnitudes)
-    return output
+    return dynamic_range_compression_torch(magnitudes)
 
 
 mel_basis = {}
@@ -17,7 +16,7 @@ hann_window = {}
 
 def mel_spectrogram(y, n_fft, num_mels, sampling_rate, hop_size, win_size, fmin, fmax, center=False):
     global mel_basis, hann_window  # pylint: disable=global-statement
-    if f"{str(sampling_rate)}_{str(fmax)}_{str(y.device)}" not in mel_basis:
+    if f"{sampling_rate!s}_{fmax!s}_{y.device!s}" not in mel_basis:
         mel = librosa_mel_fn(sr=sampling_rate, n_fft=n_fft, n_mels=num_mels, fmin=fmin, fmax=fmax)
         mel_basis[str(sampling_rate) + "_" + str(fmax) + "_" + str(y.device)] = (
             torch.from_numpy(mel).float().to(y.device)
@@ -47,6 +46,4 @@ def mel_spectrogram(y, n_fft, num_mels, sampling_rate, hop_size, win_size, fmin,
     spec = torch.sqrt(spec.pow(2).sum(-1) + (1e-9))
 
     spec = torch.matmul(mel_basis[str(sampling_rate) + "_" + str(fmax) + "_" + str(y.device)], spec)
-    spec = spectral_normalize_torch(spec)
-
-    return spec
+    return spectral_normalize_torch(spec)

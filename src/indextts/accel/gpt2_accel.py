@@ -103,13 +103,13 @@ class GPT2AccelAttention(nn.Module):
         return outputs
 
     def _split_heads(self, tensor, num_heads, head_dim):
-        new_shape = tensor.size()[:-1] + (num_heads, head_dim)
+        new_shape = (*tensor.size()[:-1], num_heads, head_dim)
         tensor = tensor.view(new_shape)
         return tensor.permute(0, 2, 1, 3)  # (batch, head, seq_length, head_features)
 
     def _merge_heads(self, tensor, num_heads, head_dim):
         tensor = tensor.permute(0, 2, 1, 3).contiguous()
-        new_shape = tensor.size()[:-2] + (num_heads * head_dim,)
+        new_shape = (*tensor.size()[:-2], num_heads * head_dim)
         return tensor.view(new_shape)
 
 
@@ -153,19 +153,18 @@ class GPT2AccelModel(GPT2Model):
                     last_hidden_state=hidden_states, past_key_values=None, hidden_states=None, attentions=None
                 )
             return (hidden_states,)
-        else:
-            return super().forward(
-                input_ids=input_ids,
-                past_key_values=None,
-                attention_mask=attention_mask,
-                token_type_ids=token_type_ids,
-                position_ids=position_ids,
-                head_mask=head_mask,
-                inputs_embeds=None,
-                encoder_hidden_states=encoder_hidden_states,
-                encoder_attention_mask=encoder_attention_mask,
-                use_cache=False,
-                output_attentions=output_attentions,
-                output_hidden_states=output_hidden_states,
-                return_dict=return_dict,
-            )
+        return super().forward(
+            input_ids=input_ids,
+            past_key_values=None,
+            attention_mask=attention_mask,
+            token_type_ids=token_type_ids,
+            position_ids=position_ids,
+            head_mask=head_mask,
+            inputs_embeds=None,
+            encoder_hidden_states=encoder_hidden_states,
+            encoder_attention_mask=encoder_attention_mask,
+            use_cache=False,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            return_dict=return_dict,
+        )

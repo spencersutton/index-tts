@@ -1,5 +1,6 @@
 import argparse
 import math
+from collections import UserDict
 
 import numpy as np
 import torch
@@ -13,13 +14,12 @@ def str2bool(v):
         return v
     if v.lower() in ("yes", "true", "t", "y", "1"):
         return True
-    elif v.lower() in ("no", "false", "f", "n", "0"):
+    if v.lower() in ("no", "false", "f", "n", "0"):
         return False
-    else:
-        raise argparse.ArgumentTypeError("Boolean value expected.")
+    raise argparse.ArgumentTypeError("Boolean value expected.")
 
 
-class AttrDict(dict):
+class AttrDict(UserDict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__dict__ = self
@@ -37,8 +37,7 @@ def get_padding(kernel_size, dilation=1):
 
 def convert_pad_shape(pad_shape):
     l = pad_shape[::-1]
-    pad_shape = [item for sublist in l for item in sublist]
-    return pad_shape
+    return [item for sublist in l for item in sublist]
 
 
 def intersperse(lst, item):
@@ -61,8 +60,7 @@ def rand_gumbel(shape):
 
 
 def rand_gumbel_like(x):
-    g = rand_gumbel(x.size()).to(dtype=x.dtype, device=x.device)
-    return g
+    return rand_gumbel(x.size()).to(dtype=x.dtype, device=x.device)
 
 
 def slice_segments(x, ids_str, segment_size=4):
@@ -84,7 +82,7 @@ def slice_segments_audio(x, ids_str, segment_size=4):
 
 
 def rand_slice_segments(x, x_lengths=None, segment_size=4):
-    b, d, t = x.size()
+    b, _d, t = x.size()
     if x_lengths is None:
         x_lengths = t
     ids_str_max = x_lengths - segment_size + 1
@@ -103,25 +101,23 @@ def get_timing_signal_1d(length, channels, min_timescale=1.0, max_timescale=1.0e
     scaled_time = position.unsqueeze(0) * inv_timescales.unsqueeze(1)
     signal = torch.cat([torch.sin(scaled_time), torch.cos(scaled_time)], 0)
     signal = F.pad(signal, [0, 0, 0, channels % 2])
-    signal = signal.view(1, channels, length)
-    return signal
+    return signal.view(1, channels, length)
 
 
 def add_timing_signal_1d(x, min_timescale=1.0, max_timescale=1.0e4):
-    b, channels, length = x.size()
+    _b, channels, length = x.size()
     signal = get_timing_signal_1d(length, channels, min_timescale, max_timescale)
     return x + signal.to(dtype=x.dtype, device=x.device)
 
 
 def cat_timing_signal_1d(x, min_timescale=1.0, max_timescale=1.0e4, axis=1):
-    b, channels, length = x.size()
+    _b, channels, length = x.size()
     signal = get_timing_signal_1d(length, channels, min_timescale, max_timescale)
     return torch.cat([x, signal.to(dtype=x.dtype, device=x.device)], axis)
 
 
 def subsequent_mask(length):
-    mask = torch.tril(torch.ones(length, length)).unsqueeze(0).unsqueeze(0)
-    return mask
+    return torch.tril(torch.ones(length, length)).unsqueeze(0).unsqueeze(0)
 
 
 @torch.jit.script
@@ -132,13 +128,16 @@ def fused_add_tanh_sigmoid_multiply(input_a, input_b, n_channels):
     t_act_part, s_act_part = torch.split(in_act, n_channels_int, dim=1)
     t_act = torch.tanh(t_act_part)
     s_act = torch.sigmoid(s_act_part)
-    acts = t_act * s_act
-    return acts
+    return t_act * s_act
+
+
+def convert_pad_shape(pad_shape):
+    l = pad_shape[::-1]
+    return [item for sublist in l for item in sublist]
 
 
 def shift_1d(x):
-    x = F.pad(x, convert_pad_shape([[0, 0], [0, 0], [1, 0]]))[:, :, :-1]
-    return x
+    return F.pad(x, convert_pad_shape([[0, 0], [0, 0], [1, 0]]))[:, :, :-1]
 
 
 def sequence_mask(length, max_length=None):
@@ -173,8 +172,7 @@ def generate_path(duration, mask):
     path = sequence_mask(cum_duration_flat, t_y).to(mask.dtype)
     path = path.view(b, t_x, t_y)
     path = path - F.pad(path, convert_pad_shape([[0, 0], [1, 0], [0, 0]]))[:, :-1]
-    path = path.unsqueeze(1).transpose(2, 3) * mask
-    return path
+    return path.unsqueeze(1).transpose(2, 3) * mask
 
 
 def clip_grad_value_(parameters, clip_value, norm_type=2):
@@ -191,16 +189,14 @@ def clip_grad_value_(parameters, clip_value, norm_type=2):
         total_norm += param_norm.item() ** norm_type
         if clip_value is not None:
             p.grad.data.clamp_(min=-clip_value, max=clip_value)
-    total_norm = total_norm ** (1.0 / norm_type)
-    return total_norm
+    return total_norm ** (1.0 / norm_type)
 
 
 def log_norm(x, mean=-4, std=4, dim=2):
     """
     normalized log mel -> mel -> norm -> log(norm)
     """
-    x = torch.log(torch.exp(x * std + mean).norm(dim=dim))
-    return x
+    return torch.log(torch.exp(x * std + mean).norm(dim=dim))
 
 
 def load_F0_models(path):
@@ -253,7 +249,7 @@ def modify_w2v_forward(self, output_layer=15):
 
         for i, layer in enumerate(self.layers):
             if output_hidden_states:
-                all_hidden_states = all_hidden_states + (hidden_states,)
+                all_hidden_states = (*all_hidden_states, hidden_states)
 
             # add LayerDrop (see https://arxiv.org/abs/1909.11556 for description)
             dropout_probability = torch.rand([])
@@ -284,13 +280,13 @@ def modify_w2v_forward(self, output_layer=15):
                 layer_outputs = (None, None)
 
             if output_attentions:
-                all_self_attentions = all_self_attentions + (layer_outputs[1],)
+                all_self_attentions = (*all_self_attentions, layer_outputs[1])
 
             if i == output_layer - 1:
                 break
 
         if output_hidden_states:
-            all_hidden_states = all_hidden_states + (hidden_states,)
+            all_hidden_states = (*all_hidden_states, hidden_states)
 
         if not return_dict:
             return tuple(v for v in [hidden_states, all_hidden_states, all_self_attentions] if v is not None)
@@ -327,7 +323,7 @@ def plot_spectrogram_to_numpy(spectrogram):
 
     fig.canvas.draw()
     data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep="")
-    data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    data = data.reshape((*fig.canvas.get_width_height()[::-1], 3))
     plt.close()
     return data
 
@@ -383,24 +379,19 @@ class MyModel(nn.Module):
             self.models = nn.ModuleDict({"cfm": CFM(args), "length_regulator": length_regulator})
 
     def forward(self, x, target_lengths, prompt_len, cond, y):
-        x = self.models["cfm"](x, target_lengths, prompt_len, cond, y)
-        return x
+        return self.models["cfm"](x, target_lengths, prompt_len, cond, y)
 
     def forward2(self, S_ori, target_lengths, F0_ori):
-        x = self.models["length_regulator"](S_ori, ylens=target_lengths, f0=F0_ori)
-        return x
+        return self.models["length_regulator"](S_ori, ylens=target_lengths, f0=F0_ori)
 
     def forward_emovec(self, x):
-        x = self.models["emo_layer"](x)
-        return x
+        return self.models["emo_layer"](x)
 
     def forward_emo_encoder(self, x):
-        x = self.models["emo_encoder"](x)
-        return x
+        return self.models["emo_encoder"](x)
 
     def forward_gpt(self, x):
-        x = self.models["gpt_layer"](x)
-        return x
+        return self.models["gpt_layer"](x)
 
     def enable_torch_compile(self):
         """Enable torch.compile optimization.
@@ -570,7 +561,6 @@ def load_checkpoint2(
 def recursive_munch(d):
     if isinstance(d, dict):
         return Munch((k, recursive_munch(v)) for k, v in d.items())
-    elif isinstance(d, list):
+    if isinstance(d, list):
         return [recursive_munch(v) for v in d]
-    else:
-        return d
+    return d

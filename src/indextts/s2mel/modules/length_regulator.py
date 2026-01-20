@@ -21,8 +21,7 @@ def f0_to_coarse(f0, f0_bin):
     f0_coarse = f0_coarse * (f0_coarse > 0)
     f0_coarse = f0_coarse + ((f0_coarse < 1) * 1)
     f0_coarse = f0_coarse * (f0_coarse < f0_bin)
-    f0_coarse = f0_coarse + ((f0_coarse >= f0_bin) * (f0_bin - 1))
-    return f0_coarse
+    return f0_coarse + ((f0_coarse >= f0_bin) * (f0_bin - 1))
 
 
 class InterpolateRegulator(nn.Module):
@@ -31,9 +30,9 @@ class InterpolateRegulator(nn.Module):
         channels: int,
         sampling_ratios: tuple,
         is_discrete: bool = False,
-        in_channels: int = None,  # only applies to continuous input
+        in_channels: int | None = None,  # only applies to continuous input
         codebook_size: int = 1024,  # for discrete only
-        out_channels: int = None,
+        out_channels: int | None = None,
         groups: int = 1,
         n_codebooks: int = 1,  # number of codebooks
     ):

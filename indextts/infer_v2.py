@@ -109,7 +109,7 @@ class IndexTTS2:
         return QwenEmotion(self.cfg.qwen_emo_path)
 
     @cached_property[TextNormalizer]
-    def normalizer(self) -> TextNormalizer:
+    def normalizer(self) -> TextNormalizer:  # noqa: PLR6301
         normalizer = TextNormalizer()
         normalizer.load()
         return normalizer
@@ -211,7 +211,7 @@ class IndexTTS2:
         return model
 
     @cached_property[transformers.SeamlessM4TFeatureExtractor]
-    def extract_features(self) -> transformers.SeamlessM4TFeatureExtractor:
+    def extract_features(self) -> transformers.SeamlessM4TFeatureExtractor:  # noqa: PLR6301
         return transformers.SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
 
     def __init__(
@@ -248,7 +248,7 @@ class IndexTTS2:
 
         if use_deepspeed:
             try:
-                import deepspeed  # type: ignore  # noqa: F401
+                import deepspeed  # type: ignore  # noqa: F401, PLC0415
             except (ImportError, OSError, CalledProcessError) as e:
                 use_deepspeed = False
                 print(f">> Failed to load DeepSpeed. Falling back to normal inference. Error: {e}")
@@ -258,7 +258,7 @@ class IndexTTS2:
         if self.use_cuda_kernel:
             # preload the CUDA kernel for BigVGAN
             try:
-                from bigvganinference.alias_free_activation.cuda import activation1d
+                from bigvganinference.alias_free_activation.cuda import activation1d  # noqa: PLC0415
 
                 print(">> Preload custom CUDA kernel for BigVGAN", activation1d.anti_alias_activation_cuda)
             except Exception as e:

@@ -2,6 +2,7 @@ import re
 import sys
 import traceback
 import warnings
+from collections.abc import Sequence
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Final, cast, overload
@@ -202,7 +203,7 @@ class TextNormalizer:
         return pinyin.upper()
 
     @staticmethod
-    def save_names(original_text: str) -> tuple[str, list[str] | None]:
+    def save_names(original_text: str) -> tuple[str, Sequence[str] | None]:
         """
         替换人名为占位符 <n_a>、 <n_b>, ...
         例如：克里斯托弗·诺兰 -> <n_a>
@@ -222,7 +223,7 @@ class TextNormalizer:
         return transformed_text, original_name_list
 
     @staticmethod
-    def restore_names(normalized_text: str, original_name_list: list[str] | None) -> str:
+    def restore_names(normalized_text: str, original_name_list: Sequence[str] | None) -> str:
         """
         恢复人名为原来的文字
         例如：<n_a> -> original_name_list[0]
@@ -238,7 +239,7 @@ class TextNormalizer:
         return transformed_text
 
     @staticmethod
-    def save_tech_terms(original_text: str) -> tuple[str, list[str] | None]:
+    def save_tech_terms(original_text: str) -> tuple[str, Sequence[str] | None]:
         """
         保护技术术语中的连字符，防止被中文normalizer解析为减号
         策略：将术语中的连字符替换为特殊占位符<H>，数字仍可被正常处理
@@ -263,7 +264,7 @@ class TextNormalizer:
         return transformed_text, original_tech_list
 
     @staticmethod
-    def restore_tech_terms(normalized_text: str, original_tech_list: list[str] | None) -> str:
+    def restore_tech_terms(normalized_text: str, original_tech_list: Sequence[str] | None) -> str:
         """
         恢复技术术语中的连字符
         将占位符 <H> 恢复为连字符 -
@@ -366,7 +367,7 @@ class TextNormalizer:
             yaml.dump(self.term_glossary, f, allow_unicode=True, default_flow_style=False)
 
     @staticmethod
-    def save_pinyin_tones(original_text: str) -> tuple[str, list[str] | None]:
+    def save_pinyin_tones(original_text: str) -> tuple[str, Sequence[str] | None]:
         """
         替换拼音声调为占位符 <pinyin_a>, <pinyin_b>, ...
         例如：xuan4 -> <pinyin_a>
@@ -385,7 +386,7 @@ class TextNormalizer:
 
         return transformed_text, original_pinyin_list
 
-    def restore_pinyin_tones(self, normalized_text: str, original_pinyin_list: list[str] | None) -> str:
+    def restore_pinyin_tones(self, normalized_text: str, original_pinyin_list: Sequence[str] | None) -> str:
         """
         恢复拼音中的音调数字（1-5）为原来的拼音
         例如：<pinyin_a> -> original_pinyin_list[0]
@@ -473,12 +474,12 @@ class TextTokenizer:
     def convert_ids_to_tokens(self, ids: int) -> str: ...
 
     @overload
-    def convert_ids_to_tokens(self, ids: list[int]) -> list[str]: ...
+    def convert_ids_to_tokens(self, ids: Sequence[int]) -> list[str]: ...
 
-    def convert_ids_to_tokens(self, ids: list[int] | int):
+    def convert_ids_to_tokens(self, ids: Sequence[int] | int):
         return self.sp_model.IdToPiece(ids)
 
-    def convert_tokens_to_ids(self, tokens: list[str] | str) -> list[int]:
+    def convert_tokens_to_ids(self, tokens: Sequence[str] | str) -> list[int]:
         if isinstance(tokens, str):
             tokens = [tokens]
         return [self.sp_model.PieceToId(token) for token in tokens]
@@ -522,8 +523,8 @@ class TextTokenizer:
 
     @staticmethod
     def split_segments_by_token(
-        tokenized_str: list[str],
-        split_tokens: list[str],
+        tokenized_str: Sequence[str],
+        split_tokens: Sequence[str],
         max_text_tokens_per_segment: int,
         quick_streaming_tokens: int = 0,
     ) -> list[list[str]]:
@@ -609,7 +610,7 @@ class TextTokenizer:
 
     @staticmethod
     def split_segments(
-        tokenized: list[str], max_text_tokens_per_segment: int = 120, quick_streaming_tokens: int = 0
+        tokenized: Sequence[str], max_text_tokens_per_segment: int = 120, quick_streaming_tokens: int = 0
     ) -> list[list[str]]:
         return TextTokenizer.split_segments_by_token(
             tokenized,

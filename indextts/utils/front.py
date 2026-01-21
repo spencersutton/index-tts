@@ -79,7 +79,7 @@ class TextNormalizer:
         #     "C#": "C sharp",
         #     "CMake": "C Make",
         # }
-        self.term_glossary = dict()
+        self.term_glossary = {}
 
     def match_email(self, email: str) -> bool:
         # 正则表达式匹配邮箱格式：数字英文@数字英文.英文
@@ -208,7 +208,7 @@ class TextNormalizer:
         original_name_list = re.findall(name_pattern, original_text)
         if len(original_name_list) == 0:
             return (original_text, None)
-        original_name_list = list(set("".join(n) for n in original_name_list))
+        original_name_list = list({"".join(n) for n in original_name_list})
         transformed_text = original_text
         # 替换占位符 <n_a>、 <n_b>, ...
         for i, name in enumerate(original_name_list):
@@ -372,7 +372,7 @@ class TextNormalizer:
         original_pinyin_list = re.findall(origin_pinyin_pattern, original_text)
         if len(original_pinyin_list) == 0:
             return (original_text, None)
-        original_pinyin_list = list(set("".join(p) for p in original_pinyin_list))
+        original_pinyin_list = list({"".join(p) for p in original_pinyin_list})
         transformed_text = original_text
         # 替换为占位符 <pinyin_a>, <pinyin_b>, ...
         for i, pinyin in enumerate(original_pinyin_list):

@@ -130,10 +130,10 @@ class UnifiedVoice(nn.Module):
             # Check if flash attention is available
             try:
                 import flash_attn  # noqa: F401 # type: ignore
-            except ImportError:
+            except ImportError as err:
                 raise ImportError(
                     "flash_attn is required for acceleration but not installed. Please install from https://github.com/Dao-AILab/flash-attention/releases/"
-                )
+                ) from err
 
             from indextts.accel import AccelInferenceEngine, GPT2AccelModel
 

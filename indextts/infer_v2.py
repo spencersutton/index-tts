@@ -244,6 +244,8 @@ class IndexTTS2:
         self.dtype = torch.float16 if self.use_fp16 else torch.get_default_dtype()
         self.use_accel = use_accel
 
+        self.stop_mel_token = self.cfg.gpt.stop_mel_token
+
         if use_deepspeed:
             try:
                 import deepspeed  # type: ignore  # noqa: F401
@@ -548,7 +550,7 @@ class IndexTTS2:
                         **generation_kwargs,
                     )
 
-                if not has_warned and (codes[:, -1] != self.cfg.gpt.stop_mel_token).any():
+                if not has_warned and (codes[:, -1] != self.stop_mel_token).any():
                     warnings.warn(
                         f"WARN: generation stopped due to exceeding `max_mel_tokens` ({max_mel_tokens}). "
                         f"Input text tokens: {text_tokens.shape[1]}. "
@@ -558,8 +560,7 @@ class IndexTTS2:
                     has_warned = True
 
                 code_lens: list[int] = [
-                    x.tolist().index(self.cfg.gpt.stop_mel_token) if self.cfg.gpt.stop_mel_token in x else len(x)
-                    for x in codes
+                    x.tolist().index(self.stop_mel_token) if self.stop_mel_token in x else len(x) for x in codes
                 ]
                 codes = codes[:, : max(code_lens)]
 

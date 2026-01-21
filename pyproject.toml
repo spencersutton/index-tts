@@ -91,32 +91,31 @@ skip-magic-trailing-comma = true
 [tool.ruff.lint]
 exclude = ["overrides/**", "tests/**"]
 extend-select = [
+  "ANN",
+  "B",
+  "C",
+  "FURB",
   "I",
-  "UP",
-  "SIM",
-  "RUF",
-  "RET",
   "PLR1711",
   "PLR6301",
-  "PLC0415",
-  "FURB",
-  "PYI",
   "PTH",
-  "ANN",
-  "C",
-  "B",
+  "PYI",
+  "RET",
+  "RUF",
+  "SIM",
+  "UP",
 ]
 ignore = [
-  "SIM108",
+  "ANN401",
+  "B008",
+  "B028",
+  "B901",
+  "B905",
+  "C901",
   "RUF001",
   "RUF002",
   "RUF003",
-  "ANN401",
-  "C901",
-  "B028",
-  "B905",
-  "B008",
-  "B901",
+  "SIM108",
 ]
 isort.split-on-trailing-comma = false
 

@@ -68,9 +68,7 @@ def find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> Tensor:
     return torch.argmax(similarities)
 
 
-def _load_and_cut_audio(
-    audio_path: Path, verbose: bool = False, sample_rate: float | None = None
-) -> tuple[Tensor, int]:
+def _load_and_cut_audio(audio_path: Path, sample_rate: float | None = None) -> tuple[Tensor, int]:
     if not sample_rate:
         audio, sample_rate = librosa.load(audio_path)
     else:
@@ -79,8 +77,6 @@ def _load_and_cut_audio(
     max_audio_samples = int(MAX_AUDIO_LENGTH_SECONDS * sample_rate)
 
     if audio.shape[1] > max_audio_samples:
-        if verbose:
-            print(f"Audio too long ({audio.shape[1]} samples), truncating to {max_audio_samples} samples")
         audio = audio[:, :max_audio_samples]
     return audio, int(sample_rate)
 
@@ -324,7 +320,6 @@ class IndexTTS2:
         stream_return: bool = False,
         use_emo_text: bool = False,
         use_random: bool = False,
-        verbose: bool = False,
         **generation_kwargs: Any,
     ) -> Path | Generator[Tensor] | None:
         gen = self.infer_generator(
@@ -338,7 +333,6 @@ class IndexTTS2:
             emo_text,
             use_random,
             interval_silence,
-            verbose,
             max_text_tokens_per_segment,
             stream_return,
             more_segment_before,
@@ -364,7 +358,6 @@ class IndexTTS2:
         emo_text: str | None = None,
         use_random: bool = False,
         interval_silence: int = 200,
-        verbose: bool = False,
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
         quick_streaming_tokens: int = 0,
@@ -372,13 +365,6 @@ class IndexTTS2:
     ) -> Generator[Tensor]:
         print(">> starting inference...")
         self._set_gr_progress(0, "starting inference...")
-        if verbose:
-            print(
-                f"origin text:{text}, spk_audio_prompt:{spk_audio_prompt}, "
-                f"emo_audio_prompt:{emo_audio_prompt}, emo_alpha:{emo_alpha}, "
-                f"emo_vector:{emo_vector}, use_emo_text:{use_emo_text}, "
-                f"emo_text:{emo_text}"
-            )
         inference_timer = Timer()
         inference_timer.start()
 
@@ -425,7 +411,7 @@ class IndexTTS2:
                 self.cache_s2mel_prompt = None
                 self.cache_mel = None
                 torch.cuda.empty_cache()
-            audio, sr = _load_and_cut_audio(spk_audio_prompt, verbose)
+            audio, sr = _load_and_cut_audio(spk_audio_prompt)
             audio_22k = cast(Tensor, torchaudio.transforms.Resample(sr, self.cfg.sample_rate)(audio))
             audio_16k = cast(Tensor, torchaudio.transforms.Resample(sr, TARGET_SAMPLING_RATE)(audio))
 
@@ -477,7 +463,7 @@ class IndexTTS2:
             if self.cache_emo_cond is not None:
                 self.cache_emo_cond = None
                 torch.cuda.empty_cache()
-            emo_audio, _ = _load_and_cut_audio(emo_audio_prompt, verbose, sample_rate=TARGET_SAMPLING_RATE)
+            emo_audio, _ = _load_and_cut_audio(emo_audio_prompt, sample_rate=TARGET_SAMPLING_RATE)
             emo_inputs = self.extract_features(
                 emo_audio.tolist(), sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt"
             )
@@ -510,12 +496,6 @@ class IndexTTS2:
             )
             print("     Consider updating the BPE model or modifying the text to avoid unknown tokens.")
 
-        if verbose:
-            print("text_tokens_list:", text_tokens_list)
-            print("segments count:", segments_count)
-            print("max_text_tokens_per_segment:", max_text_tokens_per_segment)
-            print(*segments, sep="\n")
-
         autoregressive_batch_size = 1
         do_sample = generation_kwargs.pop("do_sample", True)
         length_penalty = generation_kwargs.pop("length_penalty", 0.0)
@@ -539,12 +519,6 @@ class IndexTTS2:
 
             text_tokens = self.tokenizer.convert_tokens_to_ids(sent)
             text_tokens = torch.tensor(text_tokens, dtype=torch.int32, device=self.device).unsqueeze(0)
-            if verbose:
-                print(text_tokens)
-                print(f"text_tokens shape: {text_tokens.shape}, text_tokens type: {text_tokens.dtype}")
-                # debug tokenizer
-                text_token_syms = self.tokenizer.convert_ids_to_tokens(text_tokens[0].tolist())
-                print("text_token_syms is same as segment tokens", text_token_syms == sent)
 
             with torch.inference_mode():
                 with torch.autocast(text_tokens.device.type, dtype=self.dtype), gpt_gen_time:
@@ -614,8 +588,6 @@ class IndexTTS2:
                     wav = self.bigvgan(vc_target.float()).squeeze().unsqueeze(0)
                 wav = wav.squeeze(1)
 
-                if verbose:
-                    print(f"wav shape: {wav.shape}", "min:", wav.min(), "max:", wav.max())
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
                     yield wav.cpu()

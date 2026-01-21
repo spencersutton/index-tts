@@ -6,6 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Final, cast, overload
 
+import yaml
 from sentencepiece import SentencePieceProcessor
 
 from indextts.utils.common import de_tokenized_by_CJK_char, tokenize_by_CJK_char
@@ -81,7 +82,8 @@ class TextNormalizer:
         # }
         self.term_glossary = {}
 
-    def match_email(self, email: str) -> bool:
+    @staticmethod
+    def match_email(email: str) -> bool:
         # 正则表达式匹配邮箱格式：数字英文@数字英文.英文
         pattern = r"^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]+$"
         return re.match(pattern, email) is not None
@@ -122,13 +124,13 @@ class TextNormalizer:
         if self.zh_normalizer is not None and self.en_normalizer is not None:
             return
         if sys.platform != "linux":  # Mac and Windows
-            from wetext import Normalizer
+            from wetext import Normalizer  # noqa: PLC0415
 
             self.zh_normalizer = Normalizer(remove_erhua=False, lang="zh", operator="tn")
             self.en_normalizer = Normalizer(lang="en", operator="tn")
         else:
-            from tn.chinese.normalizer import Normalizer as NormalizerZh
-            from tn.english.normalizer import Normalizer as NormalizerEn
+            from tn.chinese.normalizer import Normalizer as NormalizerZh  # noqa: PLC0415
+            from tn.english.normalizer import Normalizer as NormalizerEn  # noqa: PLC0415
 
             # use new cache dir for build tagger rules with disable remove_interjections and remove_erhua
             cache_dir = Path(__file__).resolve().parent / "tagger_cache"
@@ -185,7 +187,8 @@ class TextNormalizer:
             result = pattern.sub(lambda x: self.char_rep_map[x.group()], result)
         return result
 
-    def correct_pinyin(self, pinyin: str) -> str:
+    @staticmethod
+    def correct_pinyin(pinyin: str) -> str:
         """
         将 jqx 的韵母为 u/ü 的拼音转换为 v
         如：ju -> jv , que -> qve, xün -> xvn
@@ -198,7 +201,8 @@ class TextNormalizer:
         pinyin = re.sub(pattern, repl, pinyin, flags=re.IGNORECASE)
         return pinyin.upper()
 
-    def save_names(self, original_text: str) -> tuple[str, list[str] | None]:
+    @staticmethod
+    def save_names(original_text: str) -> tuple[str, list[str] | None]:
         """
         替换人名为占位符 <n_a>、 <n_b>, ...
         例如：克里斯托弗·诺兰 -> <n_a>
@@ -217,7 +221,8 @@ class TextNormalizer:
 
         return transformed_text, original_name_list
 
-    def restore_names(self, normalized_text: str, original_name_list: list[str] | None) -> str:
+    @staticmethod
+    def restore_names(normalized_text: str, original_name_list: list[str] | None) -> str:
         """
         恢复人名为原来的文字
         例如：<n_a> -> original_name_list[0]
@@ -232,7 +237,8 @@ class TextNormalizer:
             transformed_text = transformed_text.replace(f"<n_{number}>", name)
         return transformed_text
 
-    def save_tech_terms(self, original_text: str) -> tuple[str, list[str] | None]:
+    @staticmethod
+    def save_tech_terms(original_text: str) -> tuple[str, list[str] | None]:
         """
         保护技术术语中的连字符，防止被中文normalizer解析为减号
         策略：将术语中的连字符替换为特殊占位符<H>，数字仍可被正常处理
@@ -256,7 +262,8 @@ class TextNormalizer:
 
         return transformed_text, original_tech_list
 
-    def restore_tech_terms(self, normalized_text: str, original_tech_list: list[str] | None) -> str:
+    @staticmethod
+    def restore_tech_terms(normalized_text: str, original_tech_list: list[str] | None) -> str:
         """
         恢复技术术语中的连字符
         将占位符 <H> 恢复为连字符 -
@@ -341,8 +348,6 @@ class TextNormalizer:
             NVMe: N-V-M-E  # 中英文相同读法
         """
         if glossary_path and Path(glossary_path).exists():
-            import yaml
-
             with glossary_path.open(encoding="utf-8") as f:
                 external_glossary = yaml.safe_load(f)
                 if external_glossary and isinstance(external_glossary, dict):
@@ -357,12 +362,11 @@ class TextNormalizer:
         Args:
             glossary_path: YAML 文件路径
         """
-        import yaml
-
         with glossary_path.open("w", encoding="utf-8") as f:
             yaml.dump(self.term_glossary, f, allow_unicode=True, default_flow_style=False)
 
-    def save_pinyin_tones(self, original_text: str) -> tuple[str, list[str] | None]:
+    @staticmethod
+    def save_pinyin_tones(original_text: str) -> tuple[str, list[str] | None]:
         """
         替换拼音声调为占位符 <pinyin_a>, <pinyin_b>, ...
         例如：xuan4 -> <pinyin_a>
@@ -603,8 +607,9 @@ class TextTokenizer:
                 merged_segments.append(segment)
         return merged_segments
 
+    @staticmethod
     def split_segments(
-        self, tokenized: list[str], max_text_tokens_per_segment: int = 120, quick_streaming_tokens: int = 0
+        tokenized: list[str], max_text_tokens_per_segment: int = 120, quick_streaming_tokens: int = 0
     ) -> list[list[str]]:
         return TextTokenizer.split_segments_by_token(
             tokenized,

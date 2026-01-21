@@ -97,12 +97,27 @@ extend-select = [
   "RUF",
   "RET",
   "PLR1711",
+  "PLR6301",
+  "PLC0415",
   "FURB",
   "PYI",
   "PTH",
   "ANN",
+  "C",
+  "B",
 ]
-ignore = ["SIM108", "RUF001", "RUF002", "RUF003", "ANN401"]
+ignore = [
+  "SIM108",
+  "RUF001",
+  "RUF002",
+  "RUF003",
+  "ANN401",
+  "C901",
+  "B028",
+  "B905",
+  "B008",
+  "B901",
+]
 isort.split-on-trailing-comma = false
 
 [dependency-groups]

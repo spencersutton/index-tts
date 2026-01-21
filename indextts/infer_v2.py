@@ -2,10 +2,11 @@ import os
 import random
 import warnings
 from collections.abc import Callable, Generator, Sequence
+from dataclasses import asdict
 from functools import cache, cached_property
 from pathlib import Path
 from subprocess import CalledProcessError
-from typing import Any, cast
+from typing import Any
 
 import huggingface_hub as hf
 import librosa
@@ -15,10 +16,9 @@ import torch.nn.functional as F
 import torchaudio
 import transformers
 from bigvganinference import bigvgan
-from omegaconf import OmegaConf
 from torch import Tensor
 
-from indextts.config import SAMPLING_RATE, STOP_MEL_TOKEN, IndexTTSConfig
+from indextts.config import IndexTTSConfig
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.qwen import QwenEmotion
 from indextts.s2mel.modules.audio import mel_spectrogram
@@ -54,10 +54,10 @@ def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
 
 
 @cache
-def get_silence_interval(size: int, interval_silence: int = 200) -> Tensor:
+def get_silence_interval(size: int, interval_silence: int = 200, sampling_rate: int = 22050) -> Tensor:
     """Silences to be insert between generated segments."""
 
-    return torch.zeros(size, (SAMPLING_RATE * interval_silence) // 1000)
+    return torch.zeros(size, (sampling_rate * interval_silence) // 1000)
 
 
 def find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> Tensor:
@@ -98,7 +98,7 @@ class IndexTTS2:
             data = torch.load(path, map_location=self.device, mmap=True)
 
             with torch.device("meta"):
-                model = UnifiedVoice(**self.cfg.gpt, use_accel=self.use_accel)
+                model = UnifiedVoice(cfg=self.cfg.gpt, use_accel=self.use_accel)
             model.load_state_dict(data, assign=True)
             model = model.eval()
 
@@ -121,7 +121,8 @@ class IndexTTS2:
     @cached_property[TextTokenizer]
     def tokenizer(self) -> TextTokenizer:
         with Timer() as t:
-            path = Path(hf.hf_hub_download(**self.cfg.dataset.bpe_model))
+            print(self.cfg.dataset)
+            path = Path(hf.hf_hub_download(**asdict(self.cfg.dataset)))
             tokenizer = TextTokenizer(path, self.normalizer)
 
         print(f">> bpe model restored in {t:.2f} seconds from: {path}")
@@ -142,14 +143,11 @@ class IndexTTS2:
 
     @cached_property[bigvgan.BigVGAN]
     def bigvgan(self) -> bigvgan.BigVGAN:
-        path = self.cfg.vocoder.name
-        repo = "nvidia/bigvgan_v2_22khz_80band_256x"
-
         with Timer() as t:
-            path = hf.hf_hub_download(repo, filename="bigvgan_generator.pt")
+            path = hf.hf_hub_download(**asdict(self.cfg.vocoder))
             data = torch.load(path, map_location=self.device, mmap=True)
 
-            json_path = hf.hf_hub_download(repo, filename="config.json")
+            json_path = hf.hf_hub_download(self.cfg.vocoder.repo_id, filename="config.json")
             hparams = bigvgan.load_hparams_from_json(json_path)
 
             with torch.device("meta"):
@@ -184,7 +182,7 @@ class IndexTTS2:
     @cached_property[Tensor]
     def semantic_mean(self) -> Tensor:
         with Timer() as t:
-            path = hf.hf_hub_download(**self.cfg.w2v_stat)
+            path = hf.hf_hub_download(**asdict(self.cfg.w2v_stat))
             data = torch.load(path)
             data = data["mean"].to(self.device)
         print(f">> semantic_mean weights restored in {t:.2f} seconds from: {path}")
@@ -193,7 +191,7 @@ class IndexTTS2:
     @cached_property[Tensor]
     def semantic_std(self) -> Tensor:
         with Timer() as t:
-            path = hf.hf_hub_download(**self.cfg.w2v_stat)
+            path = hf.hf_hub_download(**asdict(self.cfg.w2v_stat))
             data = torch.load(path)
             data = torch.sqrt(data["var"]).to(self.device)
         print(f">> semantic_std weights restored in {t:.2f} seconds from: {path}")
@@ -246,7 +244,7 @@ class IndexTTS2:
         self.device = device or torch.accelerator.current_accelerator() or torch.get_default_device()
         self.use_cuda_kernel = use_cuda_kernel and self.device.startswith("cuda")
         self.use_fp16 = use_fp16 and self.device not in ["cpu", "mps"]
-        self.cfg = cast(IndexTTSConfig, OmegaConf.load(cfg_path))
+        self.cfg = IndexTTSConfig()
         self.dtype = torch.float16 if self.use_fp16 else torch.get_default_dtype()
         self.use_accel = use_accel
 
@@ -428,7 +426,7 @@ class IndexTTS2:
                 self.cache_mel = None
                 torch.cuda.empty_cache()
             audio, sr = _load_and_cut_audio(spk_audio_prompt, verbose)
-            audio_22k: Tensor = torchaudio.transforms.Resample(sr, SAMPLING_RATE)(audio)
+            audio_22k: Tensor = torchaudio.transforms.Resample(sr, self.cfg.sample_rate)(audio)
             audio_16k: Tensor = torchaudio.transforms.Resample(sr, TARGET_SAMPLING_RATE)(audio)
 
             inputs = self.extract_features(audio_16k.tolist(), sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt")
@@ -439,7 +437,7 @@ class IndexTTS2:
             spk_cond_emb = self.get_emb(input_features, attention_mask)
 
             s_ref = self.semantic_codec.quantize(spk_cond_emb)
-            ref_mel = mel_spectrogram(audio_22k.to(spk_cond_emb.device).float())
+            ref_mel = mel_spectrogram(audio_22k.to(spk_cond_emb.device).float(), sample_rate=self.cfg.sample_rate)
             ref_target_lengths = torch.tensor([ref_mel.size(2)], dtype=torch.long).to(ref_mel.device)
             feat = torchaudio.compliance.kaldi.fbank(
                 audio_16k.to(ref_mel.device), num_mel_bins=80, dither=0, sample_frequency=TARGET_SAMPLING_RATE
@@ -576,7 +574,7 @@ class IndexTTS2:
                         **generation_kwargs,
                     )
 
-                if not has_warned and (codes[:, -1] != STOP_MEL_TOKEN).any():
+                if not has_warned and (codes[:, -1] != self.cfg.gpt.stop_mel_token).any():
                     warnings.warn(
                         f"WARN: generation stopped due to exceeding `max_mel_tokens` ({max_mel_tokens}). "
                         f"Input text tokens: {text_tokens.shape[1]}. "
@@ -586,7 +584,8 @@ class IndexTTS2:
                     has_warned = True
 
                 code_lens: list[int] = [
-                    x.tolist().index(STOP_MEL_TOKEN) if STOP_MEL_TOKEN in x else len(x) for x in codes
+                    x.tolist().index(self.cfg.gpt.stop_mel_token) if self.cfg.gpt.stop_mel_token in x else len(x)
+                    for x in codes
                 ]
                 codes = codes[:, : max(code_lens)]
 
@@ -620,15 +619,15 @@ class IndexTTS2:
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
                     yield wav.cpu()
-                    yield get_silence_interval(wavs[0].size(0), interval_silence)
+                    yield get_silence_interval(wavs[0].size(0), interval_silence, self.cfg.sample_rate)
         inference_timer.stop()
 
         self._set_gr_progress(0.9, "saving audio...")
-        silence_tensor = get_silence_interval(wavs[0].size(0), interval_silence)
+        silence_tensor = get_silence_interval(wavs[0].size(0), interval_silence, self.cfg.sample_rate)
         # Insert silences between segments
         wavs = [item for x in wavs for item in (x, silence_tensor)][:-1]
         wav = torch.cat(wavs, dim=1)
-        wav_length = wav.shape[-1] / SAMPLING_RATE
+        wav_length = wav.shape[-1] / self.cfg.sample_rate
         print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")
         print(f">> gpt_forward_time: {gpt_forward_time:.2f} seconds")
         print(f">> s2mel_time: {s2mel_time:.2f} seconds")
@@ -646,7 +645,7 @@ class IndexTTS2:
                 print(">> remove old wav file:", output_path)
             if output_path.parent != Path():
                 output_path.parent.mkdir(exist_ok=True, parents=True)
-            torchaudio.save(output_path, wav, SAMPLING_RATE)
+            torchaudio.save(output_path, wav, self.cfg.sample_rate)
             print(">> wav file saved to:", output_path)
             if stream_return:
                 return None
@@ -657,4 +656,4 @@ class IndexTTS2:
             # 返回以符合Gradio的格式要求
             wav_data = wav.type(torch.int16)
             wav_data = wav_data.numpy().T
-            yield (SAMPLING_RATE, wav_data)
+            yield (self.cfg.sample_rate, wav_data)

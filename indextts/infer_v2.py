@@ -140,6 +140,14 @@ class IndexTTS2:
     @cached_property[bigvgan.BigVGAN]
     def bigvgan(self) -> bigvgan.BigVGAN:
         with Timer() as t:
+            # Simpler but slower version
+            if False:
+                model = bigvgan.BigVGAN.from_pretrained(
+                    "nvidia/bigvgan_v2_22khz_80band_256x", use_cuda_kernel=self.use_cuda_kernel
+                )
+                model.remove_weight_norm()
+                model = model.eval().to(self.device)
+
             path = hf.hf_hub_download(**asdict(self.cfg.vocoder))
             data = torch.load(path, map_location=self.device, mmap=True)
 

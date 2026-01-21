@@ -1,7 +1,7 @@
 import os
 import random
 import warnings
-from collections.abc import Callable, Generator, Sequence
+from collections.abc import Callable, Generator, Mapping, Sequence
 from dataclasses import asdict
 from functools import cache, cached_property
 from pathlib import Path
@@ -17,6 +17,7 @@ import torchaudio
 import transformers
 from bigvganinference import bigvgan
 from torch import Tensor
+from torchcodec.encoders import AudioEncoder
 
 from indextts.config import IndexTTSConfig
 from indextts.gpt.model_v2 import UnifiedVoice
@@ -82,6 +83,14 @@ def _load_and_cut_audio(audio_path: Path, sample_rate: float | None = None) -> t
 
 
 class IndexTTS2:
+    cfg: IndexTTSConfig
+    dtype: torch.dtype
+    device: str
+    use_fp16: bool
+    use_cuda_kernel: bool
+    use_accel: bool
+    stop_mel_token: int
+
     def get_matrix(self, filename: str) -> tuple[Tensor, ...]:
         path = hf.hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=filename)
         data = torch.load(path, map_location=self.device)
@@ -245,7 +254,7 @@ class IndexTTS2:
             use_torch_compile (bool): whether to use torch.compile for optimization or not.
         """
 
-        self.device = device or torch.accelerator.current_accelerator() or torch.get_default_device()
+        self.device = str(device or torch.accelerator.current_accelerator() or torch.get_default_device())
         self.use_cuda_kernel = use_cuda_kernel and self.device.startswith("cuda")
         self.use_fp16 = use_fp16 and self.device not in ["cpu", "mps"]
         self.cfg = IndexTTSConfig()
@@ -426,11 +435,8 @@ class IndexTTS2:
             audio_16k = cast(Tensor, torchaudio.transforms.Resample(sr, TARGET_SAMPLING_RATE)(audio))
 
             inputs = self.extract_features(audio_16k.tolist(), sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt")
-            input_features = inputs["input_features"]
-            attention_mask = inputs["attention_mask"]
-            input_features = input_features.to(self.device)
-            attention_mask = attention_mask.to(self.device)
-            spk_cond_emb = self.get_emb(input_features, attention_mask)
+            inputs = cast(Mapping[str, Tensor], inputs.to(self.device))
+            spk_cond_emb = self.get_emb(inputs["input_features"], inputs["attention_mask"])
 
             s_ref = self.semantic_codec.quantize(spk_cond_emb)
             ref_mel = mel_spectrogram(audio_22k.to(spk_cond_emb.device).float(), sample_rate=self.cfg.sample_rate)
@@ -626,7 +632,7 @@ class IndexTTS2:
                 print(">> remove old wav file:", output_path)
             if output_path.parent != Path():
                 output_path.parent.mkdir(exist_ok=True, parents=True)
-            torchaudio.save(output_path, wav, self.cfg.sample_rate)
+            AudioEncoder(wav, sample_rate=self.cfg.sample_rate).to_file(output_path)
             print(">> wav file saved to:", output_path)
             if stream_return:
                 return None

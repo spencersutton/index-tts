@@ -1,5 +1,5 @@
 import sys
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping, MutableMapping, Sequence
 
 import torch
 from torch import Tensor, nn
@@ -33,6 +33,16 @@ class Sampler(nn.Module):
 
 
 class AccelInferenceEngine:
+    model: GPT2AccelModel
+    lm_head: nn.Sequential
+    kv_manager: KVCacheManager
+    sampler: Sampler
+    current_sequences: list[Seq]
+    graphs: MutableMapping[int, torch.cuda.CUDAGraph]
+    graph_vars: Mapping[str, Tensor] | None = None
+    graph_pool: Sequence[int] | None = None
+    graph_captured: bool
+
     def __init__(
         self,
         model: GPT2AccelModel,
@@ -73,8 +83,6 @@ class AccelInferenceEngine:
         self.sampler = Sampler()
         self.current_sequences = []
         self.graphs = {}
-        self.graph_vars: Mapping[str, Tensor] | None = None
-        self.graph_pool: Sequence[int] | None = None
         self.graph_captured = False
 
     def _prepare_decode(self, requests: list[Seq]) -> tuple[Tensor, Tensor]:

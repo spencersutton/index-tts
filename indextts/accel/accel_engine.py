@@ -16,7 +16,7 @@ class Sampler(nn.Module):
         super().__init__()
 
     @torch.compile
-    def forward(self, logits: Tensor, temperatures: Tensor) -> Tensor:
+    def forward(self, logits: Tensor, temperatures: Tensor) -> Tensor:  # noqa: PLR6301
         temperatures = temperatures.to(logits.device).clamp(min=1e-8)
         greedy_mask = temperatures < 1e-5
         temp_for_scaling = torch.where(greedy_mask, 1.0, temperatures)
@@ -118,7 +118,8 @@ class AccelInferenceEngine:
 
         return input_ids, positions
 
-    def _prepare_sample(self, requests: list[Seq], temperature: float) -> Tensor:
+    @staticmethod
+    def _prepare_sample(requests: list[Seq], temperature: float) -> Tensor:
         temperatures = [temperature] * len(requests)
         return torch.tensor(temperatures, dtype=torch.float32, pin_memory=True).cuda(non_blocking=True)
 

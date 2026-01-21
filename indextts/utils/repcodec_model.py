@@ -13,6 +13,12 @@ from torch.nn.utils.parametrizations import weight_norm
 from indextts.util import patch_call, unwrap
 
 
+def _init_weights(m: nn.Module) -> None:
+    if isinstance(m, (nn.Conv1d, nn.Linear)):
+        nn.init.trunc_normal_(m.weight, std=0.02)
+        nn.init.constant_(unwrap(m.bias), 0)
+
+
 class ConvNeXtBlock(nn.Module):
     """ConvNeXt Block adapted from https://github.com/facebookresearch/ConvNeXt to 1D audio signal.
 
@@ -65,12 +71,7 @@ class VocosBackbone(nn.Module):
         self.norm = nn.LayerNorm(384, eps=1e-6)
         self.convnext = nn.ModuleList([ConvNeXtBlock() for _ in range(12)])
         self.final_layer_norm = nn.LayerNorm(384, eps=1e-6)
-        self.apply(self._init_weights)
-
-    def _init_weights(self, m: nn.Module) -> None:
-        if isinstance(m, (nn.Conv1d, nn.Linear)):
-            nn.init.trunc_normal_(m.weight, std=0.02)
-            nn.init.constant_(unwrap(m.bias), 0)
+        self.apply(_init_weights)
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.embed(x)
@@ -185,15 +186,6 @@ class ResidualVQ(nn.Module):
     def __call__(self) -> None: ...
 
 
-def init_weights(m: nn.Module) -> None:
-    if isinstance(m, nn.Conv1d):
-        nn.init.trunc_normal_(m.weight, std=0.02)
-        nn.init.constant_(unwrap(m.bias), 0)
-    if isinstance(m, nn.Linear):
-        nn.init.trunc_normal_(m.weight, std=0.02)
-        nn.init.constant_(m.bias, 0)
-
-
 class RepCodec(nn.Module):
     quantizer: ResidualVQ
 
@@ -203,7 +195,7 @@ class RepCodec(nn.Module):
         self.encoder = nn.Sequential(VocosBackbone(), nn.Linear(384, 1024))
         self.quantizer = ResidualVQ()
 
-        self.apply(init_weights)
+        self.apply(_init_weights)
 
     def quantize(self, x: Tensor) -> Tensor:
         x = self.encoder(x.mT).mT

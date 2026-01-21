@@ -36,14 +36,14 @@ class ConvNeXtBlock(nn.Module):
     pwconv2: nn.Linear
     gamma: nn.Parameter
 
-    def __init__(self) -> None:
+    def __init__(self, dim: int = 384, intermediate_dim: int = 2048) -> None:
         super().__init__()
-        self.dwconv = nn.Conv1d(384, 384, kernel_size=7, padding=3, groups=384)  # depthwise conv
-        self.norm = nn.LayerNorm(384, eps=1e-6)
-        self.pwconv1 = nn.Linear(384, 2048)  # pointwise/1x1 convs, implemented with linear layers
+        self.dwconv = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
+        self.norm = nn.LayerNorm(dim, eps=1e-6)
+        self.pwconv1 = nn.Linear(dim, intermediate_dim)  # pointwise/1x1 convs, implemented with linear layers
         self.act = nn.GELU()
-        self.pwconv2 = nn.Linear(2048, 384)
-        self.gamma = nn.Parameter(1 / 12 * torch.ones(384))
+        self.pwconv2 = nn.Linear(intermediate_dim, dim)
+        self.gamma = nn.Parameter(1 / 12 * torch.ones(dim))
 
     def forward(self, x: Tensor) -> Tensor:
         residual = x
@@ -72,12 +72,12 @@ class VocosBackbone(nn.Module):
     convnext: Sequence[ConvNeXtBlock]
     final_layer_norm: nn.LayerNorm
 
-    def __init__(self) -> None:
+    def __init__(self, in_channels: int, out_channels: int, n_layers: int = 12) -> None:
         super().__init__()
-        self.embed = nn.Conv1d(1024, 384, kernel_size=7, padding=3)
-        self.norm = nn.LayerNorm(384, eps=1e-6)
-        self.convnext = nn.ModuleList([ConvNeXtBlock() for _ in range(12)])
-        self.final_layer_norm = nn.LayerNorm(384, eps=1e-6)
+        self.embed = nn.Conv1d(in_channels, out_channels, kernel_size=7, padding=3)
+        self.norm = nn.LayerNorm(out_channels, eps=1e-6)
+        self.convnext = nn.ModuleList([ConvNeXtBlock() for _ in range(n_layers)])
+        self.final_layer_norm = nn.LayerNorm(out_channels, eps=1e-6)
         self.apply(_init_weights)
 
     def forward(self, x: Tensor) -> Tensor:
@@ -97,13 +97,12 @@ class FactorizedVectorQuantize(nn.Module):
     out_project: nn.Conv1d
     codebook: nn.Embedding
 
-    def __init__(self) -> None:
+    def __init__(self, in_channels: int = 1024, latent_dim: int = 8, codebook_size: int = 8192) -> None:
         super().__init__()
 
-        self.in_project = weight_norm(nn.Conv1d(1024, 8, kernel_size=1))
-        self.out_project = weight_norm(nn.Conv1d(8, 1024, kernel_size=1))
-
-        self.codebook = nn.Embedding(8192, 8)
+        self.in_project = weight_norm(nn.Conv1d(in_channels, latent_dim, kernel_size=1))
+        self.out_project = weight_norm(nn.Conv1d(latent_dim, in_channels, kernel_size=1))
+        self.codebook = nn.Embedding(codebook_size, latent_dim)
 
     def forward(self, z: Tensor) -> Tensor:
         """
@@ -196,10 +195,10 @@ class ResidualVQ(nn.Module):
 class RepCodec(nn.Module):
     quantizer: ResidualVQ
 
-    def __init__(self) -> None:
+    def __init__(self, in_features: int = 384, out_features: int = 1024) -> None:
         super().__init__()
 
-        self.encoder = nn.Sequential(VocosBackbone(), nn.Linear(384, 1024))
+        self.encoder = nn.Sequential(VocosBackbone(out_features, in_features), nn.Linear(in_features, out_features))
         self.quantizer = ResidualVQ()
 
         self.apply(_init_weights)

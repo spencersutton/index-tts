@@ -3,11 +3,9 @@ import torch.nn.functional as F
 from librosa.filters import mel as librosa_mel_fn
 from torch import Tensor
 
-from indextts.config import SAMPLING_RATE
 
-
-def mel_spectrogram(y: Tensor) -> Tensor:
-    mel = librosa_mel_fn(sr=SAMPLING_RATE, n_fft=1024, n_mels=80)
+def mel_spectrogram(y: Tensor, sample_rate: int) -> Tensor:
+    mel = librosa_mel_fn(sr=sample_rate, n_fft=1024, n_mels=80)
 
     y = F.pad(y.unsqueeze(1), (384, 384), mode="reflect")
     y = y.squeeze(1)

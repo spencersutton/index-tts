@@ -6,7 +6,7 @@ from dataclasses import asdict
 from functools import cache, cached_property
 from pathlib import Path
 from subprocess import CalledProcessError
-from typing import Any
+from typing import Any, cast
 
 import huggingface_hub as hf
 import librosa
@@ -426,8 +426,8 @@ class IndexTTS2:
                 self.cache_mel = None
                 torch.cuda.empty_cache()
             audio, sr = _load_and_cut_audio(spk_audio_prompt, verbose)
-            audio_22k: Tensor = torchaudio.transforms.Resample(sr, self.cfg.sample_rate)(audio)
-            audio_16k: Tensor = torchaudio.transforms.Resample(sr, TARGET_SAMPLING_RATE)(audio)
+            audio_22k = cast(Tensor, torchaudio.transforms.Resample(sr, self.cfg.sample_rate)(audio))
+            audio_16k = cast(Tensor, torchaudio.transforms.Resample(sr, TARGET_SAMPLING_RATE)(audio))
 
             inputs = self.extract_features(audio_16k.tolist(), sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt")
             input_features = inputs["input_features"]

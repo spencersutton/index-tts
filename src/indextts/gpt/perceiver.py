@@ -137,7 +137,7 @@ class Attention(nn.Module):
             context = torch.cat((x, context), dim=-2)
 
         q, k, v = (self.to_q(x), *self.to_kv(context).chunk(2, dim=-1))
-        q, k, v = map(lambda t: rearrange(t, "b n (h d) -> b h n d", h=h), (q, k, v))
+        q, k, v = (rearrange(t, "b n (h d) -> b h n d", h=h) for t in (q, k, v))
 
         out = self.attend(q, k, v, mask=mask)
 

@@ -53,7 +53,7 @@ def scan_i18n_strings() -> set[str]:
 
 
 def update_i18n_json(json_file: Path, standard_keys: set[str]) -> None:
-    standard_keys = set(sorted(standard_keys))
+    standard_keys = set(standard_keys)
     print(f" Process {json_file} ".center(TITLE_LEN, "="))
     # 读取 JSON 文件
     with json_file.open(encoding="utf-8") as f:

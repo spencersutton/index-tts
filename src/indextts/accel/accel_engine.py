@@ -1,5 +1,5 @@
 import sys
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping, MutableMapping, Sequence
 
 import torch
 from torch import Tensor, nn
@@ -16,7 +16,7 @@ class Sampler(nn.Module):
         super().__init__()
 
     @torch.compile
-    def forward(self, logits: Tensor, temperatures: Tensor) -> Tensor:
+    def forward(self, logits: Tensor, temperatures: Tensor) -> Tensor:  # noqa: PLR6301
         temperatures = temperatures.to(logits.device).clamp(min=1e-8)
         greedy_mask = temperatures < 1e-5
         temp_for_scaling = torch.where(greedy_mask, 1.0, temperatures)
@@ -33,6 +33,16 @@ class Sampler(nn.Module):
 
 
 class AccelInferenceEngine:
+    model: GPT2AccelModel
+    lm_head: nn.Sequential
+    kv_manager: KVCacheManager
+    sampler: Sampler
+    current_sequences: list[Seq]
+    graphs: MutableMapping[int, torch.cuda.CUDAGraph]
+    graph_vars: Mapping[str, Tensor] | None = None
+    graph_pool: Sequence[int] | None = None
+    graph_captured: bool
+
     def __init__(
         self,
         model: GPT2AccelModel,
@@ -73,8 +83,6 @@ class AccelInferenceEngine:
         self.sampler = Sampler()
         self.current_sequences = []
         self.graphs = {}
-        self.graph_vars: Mapping[str, Tensor] | None = None
-        self.graph_pool: Sequence[int] | None = None
         self.graph_captured = False
 
     def _prepare_decode(self, requests: list[Seq]) -> tuple[Tensor, Tensor]:
@@ -118,7 +126,8 @@ class AccelInferenceEngine:
 
         return input_ids, positions
 
-    def _prepare_sample(self, requests: list[Seq], temperature: float) -> Tensor:
+    @staticmethod
+    def _prepare_sample(requests: list[Seq], temperature: float) -> Tensor:
         temperatures = [temperature] * len(requests)
         return torch.tensor(temperatures, dtype=torch.float32, pin_memory=True).cuda(non_blocking=True)
 
@@ -407,7 +416,7 @@ class AccelInferenceEngine:
 
         remaining_tokens = max_new_tokens - 1
 
-        for step in range(remaining_tokens):
+        for _ in range(remaining_tokens):
             decode_ids, decode_pos = self._prepare_decode(sequences)
 
             context = get_forward_context()

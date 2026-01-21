@@ -18,6 +18,21 @@ if TYPE_CHECKING:
 DIM = 1280
 
 
+def set_padding(input_tokens: Tensor, lengths: Tensor, token: int) -> Tensor:
+    """
+    Given tokens that are derived from a padded audio clip and the actual lengths of each batch element in
+    that audio clip, reformats the tokens with `token` in place of the zero padding. This is required
+    preformatting to create a working TTS model.
+    """
+    for b in range(len(lengths)):
+        # Due to the convolutional nature of how these tokens are generated,
+        # it would be best if the model predicts a token past the actual last token.
+        actual_end = lengths[b]
+        if actual_end < input_tokens.shape[-1]:
+            input_tokens[b, actual_end:] = token
+    return input_tokens
+
+
 class UnifiedVoice(nn.Module):
     if TYPE_CHECKING:
         accel_engine: AccelInferenceEngine | None
@@ -129,13 +144,13 @@ class UnifiedVoice(nn.Module):
         if self.use_accel and torch.cuda.is_available():
             # Check if flash attention is available
             try:
-                import flash_attn  # noqa: F401 # type: ignore
-            except ImportError:
+                import flash_attn  # noqa: F401, PLC0415  # type: ignore
+            except ImportError as err:
                 raise ImportError(
                     "flash_attn is required for acceleration but not installed. Please install from https://github.com/Dao-AILab/flash-attention/releases/"
-                )
+                ) from err
 
-            from indextts.accel import AccelInferenceEngine, GPT2AccelModel
+            from indextts.accel import AccelInferenceEngine, GPT2AccelModel  # noqa: PLC0415
 
             # Create accel model
             accel_gpt = GPT2AccelModel(gpt_config)
@@ -163,14 +178,14 @@ class UnifiedVoice(nn.Module):
             gpt_config, self.gpt, self.mel_pos_embedding, self.mel_embedding, self.final_norm, self.mel_head
         )
         if use_deepspeed and half and torch.cuda.is_available():
-            import deepspeed  # type: ignore
+            import deepspeed  # type: ignore  # noqa: PLC0415
 
             self.ds_engine = deepspeed.init_inference(
                 model=self.inference_model, mp_size=1, replace_with_kernel_inject=True, dtype=torch.float16
             )
             self.inference_model = self.ds_engine.module.eval()
         elif use_deepspeed and torch.cuda.is_available():
-            import deepspeed  # type: ignore
+            import deepspeed  # type: ignore  # noqa: PLC0415
 
             self.ds_engine = deepspeed.init_inference(
                 model=self.inference_model, mp_size=1, replace_with_kernel_inject=True, dtype=torch.float32
@@ -180,20 +195,6 @@ class UnifiedVoice(nn.Module):
             self.inference_model = self.inference_model.eval()
 
         self.gpt.wte = self.mel_embedding
-
-    def set_padding(self, input_tokens: Tensor, lengths: Tensor, token: int) -> Tensor:
-        """
-        Given tokens that are derived from a padded audio clip and the actual lengths of each batch element in
-        that audio clip, reformats the tokens with `token` in place of the zero padding. This is required
-        preformatting to create a working TTS model.
-        """
-        for b in range(len(lengths)):
-            # Due to the convolutional nature of how these tokens are generated,
-            # it would be best if the model predicts a token past the actual last token.
-            actual_end = lengths[b]
-            if actual_end < input_tokens.shape[-1]:
-                input_tokens[b, actual_end:] = token
-        return input_tokens
 
     def forward(
         self,
@@ -219,11 +220,11 @@ class UnifiedVoice(nn.Module):
         """
 
         text_lengths = torch.tensor([text_inputs.shape[-1]], device=device)
-        text_inputs = self.set_padding(text_inputs, text_lengths, self.cfg.stop_text_token)
+        text_inputs = set_padding(text_inputs, text_lengths, self.cfg.stop_text_token)
         text_inputs = F.pad(text_inputs, (0, 1), value=self.cfg.stop_text_token)
 
         mel_codes_lengths = torch.tensor([mel_codes.shape[-1]], device=device)
-        mel_codes = self.set_padding(mel_codes, mel_codes_lengths, self.cfg.stop_mel_token)
+        mel_codes = set_padding(mel_codes, mel_codes_lengths, self.cfg.stop_mel_token)
         mel_codes = F.pad(mel_codes, (0, 1), value=self.cfg.stop_mel_token)
 
         text_inputs = F.pad(text_inputs, (1, 0), value=self.cfg.start_text_token)

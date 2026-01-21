@@ -34,7 +34,7 @@ tracked_files = subprocess.run(["git", "ls-files", "*.py"], cwd=".", capture_out
 
 all_files = sorted(set(tracked_files.stdout.strip().split("\n") + result.stdout.strip().split("\n")))
 
-python_files = set([
+python_files = {
     f
     for f in all_files
     if f.endswith(".py")
@@ -43,9 +43,9 @@ python_files = set([
     and not f.startswith("tools/")
     and f not in {"indextts/cli.py", "sitecustomize.py"}
     and not f.endswith("__init__.py")
-])
+}
 
-unused = sorted(list(python_files - visited - {entry_point}))
+unused = sorted(python_files - visited - {entry_point})
 
 
 def is_ignored(path_list: list[str]) -> set[str]:

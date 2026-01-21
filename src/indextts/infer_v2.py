@@ -1,7 +1,7 @@
 import os
 import random
 import warnings
-from collections.abc import Callable, Generator, Sequence
+from collections.abc import Callable, Generator, Mapping, Sequence
 from dataclasses import asdict
 from functools import cache, cached_property
 from pathlib import Path
@@ -17,6 +17,7 @@ import torchaudio
 import transformers
 from bigvganinference import bigvgan
 from torch import Tensor
+from torchcodec.encoders import AudioEncoder
 
 from indextts.config import IndexTTSConfig
 from indextts.gpt.model_v2 import UnifiedVoice
@@ -26,7 +27,7 @@ from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.commons import MyModel
 from indextts.util import Timer, unwrap
 from indextts.utils.front import TextNormalizer, TextTokenizer
-from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
+from indextts.utils.repcodec_model import RepCodec
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
@@ -41,8 +42,8 @@ def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
     # by de-emphasizing emotions that can cause strange results
 
     # [happy, angry, sad, afraid, disgusted, melancholic, surprised, calm]
-    biases = [0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625]
-    vector = [vec * bias for vec, bias in zip(vector, biases)]
+    biases: list[float] = [0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625]
+    vector: list[float] = [vec * bias for vec, bias in zip(vector, biases)]
 
     # the total emotion sum must be 0.8 or less
     total = sum(vector)
@@ -82,6 +83,14 @@ def _load_and_cut_audio(audio_path: Path, sample_rate: float | None = None) -> t
 
 
 class IndexTTS2:
+    cfg: IndexTTSConfig
+    dtype: torch.dtype
+    device: str
+    use_fp16: bool
+    use_cuda_kernel: bool
+    use_accel: bool
+    stop_mel_token: int
+
     def get_matrix(self, filename: str) -> tuple[Tensor, ...]:
         path = hf.hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=filename)
         data = torch.load(path, map_location=self.device)
@@ -109,7 +118,7 @@ class IndexTTS2:
         return QwenEmotion(self.cfg.qwen_emo_path)
 
     @cached_property[TextNormalizer]
-    def normalizer(self) -> TextNormalizer:
+    def normalizer(self) -> TextNormalizer:  # noqa: PLR6301
         normalizer = TextNormalizer()
         normalizer.load()
         return normalizer
@@ -140,6 +149,14 @@ class IndexTTS2:
     @cached_property[bigvgan.BigVGAN]
     def bigvgan(self) -> bigvgan.BigVGAN:
         with Timer() as t:
+            # Simpler but slower version
+            if False:
+                model = bigvgan.BigVGAN.from_pretrained(
+                    "nvidia/bigvgan_v2_22khz_80band_256x", use_cuda_kernel=self.use_cuda_kernel
+                )
+                model.remove_weight_norm()
+                model = model.eval().to(self.device)
+
             path = hf.hf_hub_download(**asdict(self.cfg.vocoder))
             data = torch.load(path, map_location=self.device, mmap=True)
 
@@ -211,7 +228,7 @@ class IndexTTS2:
         return model
 
     @cached_property[transformers.SeamlessM4TFeatureExtractor]
-    def extract_features(self) -> transformers.SeamlessM4TFeatureExtractor:
+    def extract_features(self) -> transformers.SeamlessM4TFeatureExtractor:  # noqa: PLR6301
         return transformers.SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
 
     def __init__(
@@ -237,7 +254,7 @@ class IndexTTS2:
             use_torch_compile (bool): whether to use torch.compile for optimization or not.
         """
 
-        self.device = device or torch.accelerator.current_accelerator() or torch.get_default_device()
+        self.device = str(device or torch.accelerator.current_accelerator() or torch.get_default_device())
         self.use_cuda_kernel = use_cuda_kernel and self.device.startswith("cuda")
         self.use_fp16 = use_fp16 and self.device not in ["cpu", "mps"]
         self.cfg = IndexTTSConfig()
@@ -418,11 +435,8 @@ class IndexTTS2:
             audio_16k = cast(Tensor, torchaudio.transforms.Resample(sr, TARGET_SAMPLING_RATE)(audio))
 
             inputs = self.extract_features(audio_16k.tolist(), sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt")
-            input_features = inputs["input_features"]
-            attention_mask = inputs["attention_mask"]
-            input_features = input_features.to(self.device)
-            attention_mask = attention_mask.to(self.device)
-            spk_cond_emb = self.get_emb(input_features, attention_mask)
+            inputs = cast(Mapping[str, Tensor], inputs.to(self.device))
+            spk_cond_emb = self.get_emb(inputs["input_features"], inputs["attention_mask"])
 
             s_ref = self.semantic_codec.quantize(spk_cond_emb)
             ref_mel = mel_spectrogram(audio_22k.to(spk_cond_emb.device).float(), sample_rate=self.cfg.sample_rate)
@@ -598,7 +612,7 @@ class IndexTTS2:
         self._set_gr_progress(0.9, "saving audio...")
         silence_tensor = get_silence_interval(wavs[0].size(0), interval_silence, self.cfg.sample_rate)
         # Insert silences between segments
-        wavs = [item for x in wavs for item in (x, silence_tensor)][:-1]
+        wavs: list[Tensor] = [item for x in wavs for item in (x, silence_tensor)][:-1]
         wav = torch.cat(wavs, dim=1)
         wav_length = wav.shape[-1] / self.cfg.sample_rate
         print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")
@@ -618,7 +632,7 @@ class IndexTTS2:
                 print(">> remove old wav file:", output_path)
             if output_path.parent != Path():
                 output_path.parent.mkdir(exist_ok=True, parents=True)
-            torchaudio.save(output_path, wav, self.cfg.sample_rate)
+            AudioEncoder(wav, sample_rate=self.cfg.sample_rate).to_file(output_path)
             print(">> wav file saved to:", output_path)
             if stream_return:
                 return None

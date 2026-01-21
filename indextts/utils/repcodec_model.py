@@ -29,6 +29,13 @@ class ConvNeXtBlock(nn.Module):
             Defaults to None.
     """
 
+    act: nn.GELU
+    dwconv: nn.Conv1d
+    norm: nn.LayerNorm
+    pwconv1: nn.Linear
+    pwconv2: nn.Linear
+    gamma: nn.Parameter
+
     def __init__(self) -> None:
         super().__init__()
         self.dwconv = nn.Conv1d(384, 384, kernel_size=7, padding=3, groups=384)  # depthwise conv

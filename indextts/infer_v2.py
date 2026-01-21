@@ -41,8 +41,8 @@ def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
     # by de-emphasizing emotions that can cause strange results
 
     # [happy, angry, sad, afraid, disgusted, melancholic, surprised, calm]
-    biases = [0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625]
-    vector = [vec * bias for vec, bias in zip(vector, biases)]
+    biases: list[float] = [0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625]
+    vector: list[float] = [vec * bias for vec, bias in zip(vector, biases)]
 
     # the total emotion sum must be 0.8 or less
     total = sum(vector)
@@ -598,7 +598,7 @@ class IndexTTS2:
         self._set_gr_progress(0.9, "saving audio...")
         silence_tensor = get_silence_interval(wavs[0].size(0), interval_silence, self.cfg.sample_rate)
         # Insert silences between segments
-        wavs = [item for x in wavs for item in (x, silence_tensor)][:-1]
+        wavs: list[Tensor] = [item for x in wavs for item in (x, silence_tensor)][:-1]
         wav = torch.cat(wavs, dim=1)
         wav_length = wav.shape[-1] / self.cfg.sample_rate
         print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")

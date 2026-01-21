@@ -26,7 +26,7 @@ from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.commons import MyModel
 from indextts.util import Timer, unwrap
 from indextts.utils.front import TextNormalizer, TextTokenizer
-from indextts.utils.maskgct.models.codec.kmeans.repcodec_model import RepCodec
+from indextts.utils.repcodec_model import RepCodec
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 

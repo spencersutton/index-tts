@@ -248,7 +248,7 @@ class IndexTTS2:
 
         if use_deepspeed:
             try:
-                import deepspeed  # type: ignore  # noqa: F401, PLC0415
+                import deepspeed  # type: ignore  # noqa: F401
             except (ImportError, OSError, CalledProcessError) as e:
                 use_deepspeed = False
                 print(f">> Failed to load DeepSpeed. Falling back to normal inference. Error: {e}")
@@ -258,7 +258,7 @@ class IndexTTS2:
         if self.use_cuda_kernel:
             # preload the CUDA kernel for BigVGAN
             try:
-                from bigvganinference.alias_free_activation.cuda import activation1d  # noqa: PLC0415
+                from bigvganinference.alias_free_activation.cuda import activation1d
 
                 print(">> Preload custom CUDA kernel for BigVGAN", activation1d.anti_alias_activation_cuda)
             except Exception as e:

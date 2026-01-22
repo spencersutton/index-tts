@@ -61,12 +61,12 @@ def get_silence_interval(size: int, interval_silence: int = 200, sampling_rate: 
     return torch.zeros(size, (sampling_rate * interval_silence) // 1000)
 
 
-def find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> Tensor:
+def find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> int:
     query_vector = query_vector.float()
     matrix = matrix.float()
 
     similarities = F.cosine_similarity(query_vector, matrix, dim=1)
-    return torch.argmax(similarities)
+    return int(torch.argmax(similarities))
 
 
 def _load_and_cut_audio(audio_path: Path, sample_rate: float | None = None) -> tuple[Tensor, int]:
@@ -110,6 +110,7 @@ class IndexTTS2:
         return self.get_emb(inputs["input_features"], inputs["attention_mask"])
 
     def generate_emotion_matrix(self, weight_vector: Tensor, style: Tensor, use_random: bool = False) -> Tensor:
+        index: list[int]
         if use_random:
             index = [random.randint(0, x - 1) for x in EMO_NUM]
         else:
@@ -384,7 +385,7 @@ class IndexTTS2:
         except IndexError:
             return None
 
-    @lru_cache(5)  # noqa: B019
+    @lru_cache  # noqa: B019
     def extract_audio_features(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         print(">> extracting audio features from prompt:", prompt)
         audio, sr = _load_and_cut_audio(prompt)
@@ -464,7 +465,7 @@ class IndexTTS2:
             # must always use alpha=1.0 when we don't have an external reference voice
             emo_alpha = 1.0
 
-        prompt_condition, style, ref_mel, spk_cond_emb = self.extract_audio_features(spk_audio_prompt)
+        prompt_condition, style, ref_mel, speaker_conditioning_embedding = self.extract_audio_features(spk_audio_prompt)
 
         weight_vector = None
         emotion_matrix = None
@@ -472,7 +473,7 @@ class IndexTTS2:
             weight_vector = torch.tensor(emo_vector, device=self.device)
             emotion_matrix = self.generate_emotion_matrix(weight_vector, style, use_random=use_random)
 
-        emo_cond_emb = self.extract_emotion_features(emo_audio_prompt)
+        emotion_conditioning_embedding = self.extract_emotion_features(emo_audio_prompt)
 
         self._set_gr_progress(0.1, "text processing...")
         text_tokens_list = self.tokenizer.tokenize(text)
@@ -518,19 +519,19 @@ class IndexTTS2:
 
             with torch.inference_mode():
                 with torch.autocast(text_tokens.device.type, dtype=self.dtype), gpt_gen_time:
-                    emo_vec = self.gpt.get_emo_vec(emo_cond_emb)
-                    base_vec = self.gpt.get_emo_vec(spk_cond_emb)
+                    emotion_vector = self.gpt.get_emo_vec(emotion_conditioning_embedding)
+                    base_vector = self.gpt.get_emo_vec(speaker_conditioning_embedding)
 
-                    emotion_vector = base_vec + emo_alpha * (emo_vec - base_vec)
+                    emotion_vector = base_vector + emo_alpha * (emotion_vector - base_vector)
 
                     if weight_vector is not None and emotion_matrix is not None:
                         emotion_vector = emotion_matrix + (1 - torch.sum(weight_vector)) * emotion_vector
 
-                    speech_conditioning_latent = self.gpt.process_speech_condition(spk_cond_emb)
+                    speech_conditioning_latent = self.gpt.process_speech_condition(speaker_conditioning_embedding)
                     codes = self.gpt.inference_speech(
                         speech_conditioning_latent,
                         text_tokens,
-                        emo_cond_emb,
+                        emotion_conditioning_embedding,
                         emo_vec=emotion_vector,
                         do_sample=do_sample,
                         top_p=top_p,
@@ -558,23 +559,23 @@ class IndexTTS2:
                 ]
                 codes = codes[:, : max(code_lens)]
 
-                with torch.autocast(text_tokens.device.type, dtype=self.dtype), gpt_forward_time:
+                with torch.autocast(self.device, dtype=self.dtype), gpt_forward_time:
                     latent = self.gpt(
                         speech_conditioning_latent,
                         text_tokens,
                         codes,
-                        emo_cond_emb,
+                        emotion_conditioning_embedding,
                         emo_vec=emotion_vector,
-                        use_speed=spk_cond_emb.size(0),
+                        use_speed=speaker_conditioning_embedding.size(0),
                         device=self.device,
                     )
 
                 with s2mel_time:
-                    s_infer = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
-                    s_infer = s_infer.mT + self.s2mel.gpt_layer(latent)
+                    semantic_inference = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
+                    semantic_inference = semantic_inference.mT + self.s2mel.gpt_layer(latent)
                     target_lengths = (torch.tensor(code_lens, device=self.device) * 1.72).long()
 
-                    cond = self.s2mel.length_regulator(s_infer, ylens=target_lengths)
+                    cond = self.s2mel.length_regulator(semantic_inference, ylens=target_lengths)
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
                     vc_target = self.s2mel.cfm.inference(cat_condition, unwrap(ref_mel), unwrap(style))
                     vc_target = vc_target[:, :, ref_mel.size(-1) :]

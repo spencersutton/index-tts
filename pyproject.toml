@@ -121,7 +121,11 @@ ignore = [
 isort.split-on-trailing-comma = false
 
 [dependency-groups]
-dev = ["rich>=14.1.0"]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "rich>=14.1.0",
+]
 
 [tool.ty.environment]
 extra-paths = ["overrides"]

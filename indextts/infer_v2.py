@@ -577,11 +577,11 @@ class IndexTTS2:
 
                     cond = self.s2mel.length_regulator(semantic_inference, ylens=target_lengths)
                     cat_condition = torch.cat([prompt_condition, cond], dim=1)
-                    vc_target = self.s2mel.cfm.inference(cat_condition, unwrap(ref_mel), unwrap(style))
-                    vc_target = vc_target[:, :, ref_mel.size(-1) :]
+                    voice_conversion_target = self.s2mel.cfm.inference(cat_condition, unwrap(ref_mel), unwrap(style))
+                    voice_conversion_target = voice_conversion_target[:, :, ref_mel.size(-1) :]
 
                 with bigvgan_time:
-                    wav = self.bigvgan(vc_target.float()).squeeze().unsqueeze(0)
+                    wav = self.bigvgan(voice_conversion_target.float()).squeeze().unsqueeze(0)
                 wav = wav.squeeze(1)
 
                 wavs.append(wav.cpu())  # to cpu before saving

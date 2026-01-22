@@ -60,7 +60,7 @@ def store_kvcache_kernel(
     slot_mapping_ptr: Tensor,
     D: tl.constexpr,
 ) -> None:
-    BLOCK_SIZE: tl.constexpr = 2048
+    BLOCK_SIZE: tl.constexpr = 2048  # ty:ignore[invalid-assignment]
     idx = tl.program_id(0)
     slot = tl.load(slot_mapping_ptr + idx)
     if slot == -1:
@@ -88,7 +88,7 @@ def store_kvcache(key: Tensor, value: Tensor, k_cache: Tensor, v_cache: Tensor, 
     assert key.stride(1) == head_dim and value.stride(1) == head_dim
     assert k_cache.stride(1) == D and v_cache.stride(1) == D
     assert slot_mapping.numel() == N
-    store_kvcache_kernel[N,](key, key.stride(0), value, value.stride(0), k_cache, v_cache, slot_mapping, D)
+    store_kvcache_kernel[N,](key, key.stride(0), value, value.stride(0), k_cache, v_cache, slot_mapping, D)  # ty:ignore[invalid-argument-type]
 
 
 class Attention(nn.Module):

@@ -31,12 +31,6 @@ if not model_dir.exists():
     print(f"Model directory {model_dir} does not exist. Please download the model first.")
     sys.exit(1)
 
-for file in ["bpe.model", "gpt.pth", "config.yaml", "s2mel.pth", "wav2vec2bert_stats.pt"]:
-    file_path = model_dir / file
-    if not file_path.exists():
-        print(f"Required file {file_path} does not exist. Please download it.")
-        sys.exit(1)
-
 i18n = I18nAuto(language="Auto")
 MODE = "local"
 tts = IndexTTS2(

@@ -28,7 +28,6 @@ def main() -> None:
     )
     args = parser.parse_args()
     voice_file = Path(args.voice)
-    config_path = Path(args.config)
     output_path = Path(args.output_path)
     model_dir = Path(args.model_dir)
 
@@ -38,10 +37,6 @@ def main() -> None:
         sys.exit(1)
     if not voice_file.exists():
         print(f"Audio prompt file {voice_file} does not exist.")
-        parser.print_help()
-        sys.exit(1)
-    if not config_path.exists():
-        print(f"Config file {config_path} does not exist.")
         parser.print_help()
         sys.exit(1)
 
@@ -75,7 +70,7 @@ def main() -> None:
     from indextts.infer_v2 import IndexTTS2
 
     print("Initializing IndexTTS2...")
-    tts = IndexTTS2(cfg_path=config_path, model_dir=model_dir, use_fp16=args.fp16, device=args.device)
+    tts = IndexTTS2(model_dir=model_dir, use_fp16=args.fp16, device=args.device)
     print("Start inference...")
     tts.infer(output_path=output_path, spk_audio_prompt=voice_file, text=args.text.strip())
 

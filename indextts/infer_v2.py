@@ -263,7 +263,6 @@ class IndexTTS2:
 
     def __init__(
         self,
-        cfg_path: Path = CHECKPOINT_DIR / "config.yaml",
         model_dir: Path = CHECKPOINT_DIR,
         use_fp16: bool = False,
         device: str | None = None,
@@ -274,7 +273,6 @@ class IndexTTS2:
     ) -> None:
         """
         Args:
-            cfg_path (str): path to the config file.
             model_dir (str): path to the model directory.
             use_fp16 (bool): whether to use fp16.
             device (str): device to use (e.g., 'cuda:0', 'cpu'). If None, it will be set automatically based on the availability of CUDA or MPS.

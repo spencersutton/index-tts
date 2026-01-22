@@ -386,10 +386,10 @@ class UnifiedVoice(nn.Module):
 
     def get_emo_vec(self, latent: Tensor) -> Tensor:
         input, mask = self.emo_conditioning_encoder(latent)
-        conds_mask = self.emo_cond_mask_pad(mask.squeeze(1))
-        conds = self.emo_perceiver_encoder(input, conds_mask)
-        emotion_vector = self.emovec_layer(conds.squeeze(1))
-        return self.emo_layer(emotion_vector)
+        mask = self.emo_cond_mask_pad(mask.squeeze(1))
+        conds = self.emo_perceiver_encoder(input, mask)
+        vector = self.emovec_layer(conds.squeeze(1))
+        return self.emo_layer(vector)
 
     @patch_call(forward)
     def __call__(self) -> None: ...

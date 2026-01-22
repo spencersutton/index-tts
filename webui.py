@@ -14,7 +14,6 @@ from indextts.util import unwrap
 from tools.i18n.i18n import I18nAuto
 
 parser = argparse.ArgumentParser(description="IndexTTS WebUI", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("--verbose", action="store_true", default=False, help="Enable verbose mode")
 parser.add_argument("--port", type=int, default=7860, help="Port to run the web UI on")
 parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to run the web UI on")
 parser.add_argument("--model_dir", type=str, default="./checkpoints", help="Model checkpoints directory")
@@ -174,7 +173,6 @@ def gen_single(
         top_p=float(top_p),
         use_emo_text=(emo_control_method == 3),
         use_random=emo_random,
-        verbose=cmd_args.verbose,
     )
     return gr.update(value=output, visible=True)
 

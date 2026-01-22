@@ -632,24 +632,14 @@ class IndexTTS2:
         print(f">> Generated audio length: {wav_length:.2f} seconds")
         print(f">> RTF: {inference_timer.elapsed / wav_length:.4f}")
 
-        # save audio
-        wav = wav.cpu()  # to cpu
+        wav = wav.cpu()
         if output_path:
-            # 直接保存音频到指定路径中
-            if output_path.is_file():
-                output_path.unlink()
-                print(">> remove old wav file:", output_path)
-            if output_path.parent != Path():
-                output_path.parent.mkdir(exist_ok=True, parents=True)
+            # Save audio directly to the specified path
             AudioEncoder(wav, sample_rate=self.cfg.sample_rate).to_file(output_path)
             print(">> wav file saved to:", output_path)
-            if stream_return:
-                return None
             yield output_path
         else:
-            if stream_return:
-                return None
-            # 返回以符合Gradio的格式要求
+            # Return in a format compatible with Gradio
             wav_data = wav.type(torch.int16)
             wav_data = wav_data.numpy().T
             yield (self.cfg.sample_rate, wav_data)

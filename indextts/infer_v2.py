@@ -388,23 +388,27 @@ class IndexTTS2:
     def extract_audio_features(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         print(">> extracting audio features from prompt:", prompt)
         audio, sr = _load_and_cut_audio(prompt)
-        audio_22k = cast(Tensor, torchaudio.transforms.Resample(sr, self.cfg.sample_rate)(audio))
-        audio_16k = cast(Tensor, torchaudio.transforms.Resample(sr, TARGET_SAMPLING_RATE)(audio))
+        audio_16k = torchaudio.transforms.Resample(sr)(audio)
+        resampler_22050 = torchaudio.transforms.Resample(sr, 22050)
 
-        inputs = self.extract_features(audio_16k.tolist(), sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt")
-        inputs = cast(Mapping[str, Tensor], inputs.to(self.device))
-        embedding = self.get_emb(inputs["input_features"], inputs["attention_mask"])
-
-        mel = mel_spectrogram(audio_22k.to(self.device).float(), sample_rate=self.cfg.sample_rate)
-        target_lengths = torch.tensor([mel.size(2)], dtype=torch.long, device=self.device)
+        mel = mel_spectrogram(resampler_22050(audio), sample_rate=resampler_22050.new_freq)
         feat = torchaudio.compliance.kaldi.fbank(
-            audio_16k.to(mel.device), num_mel_bins=80, dither=0, sample_frequency=TARGET_SAMPLING_RATE
+            audio_16k.to(self.device), num_mel_bins=80, dither=0, sample_frequency=TARGET_SAMPLING_RATE
         )
         feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
         style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
 
-        s_ref = self.semantic_codec.quantize(embedding)
-        prompt_condition = self.s2mel.length_regulator(s_ref, ylens=target_lengths)
+        inputs = cast(
+            Mapping[str, Tensor],
+            self.extract_features(audio_16k.tolist(), sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt").to(
+                self.device
+            ),
+        )
+
+        embedding = self.get_emb(inputs["input_features"], inputs["attention_mask"])
+        prompt_condition = self.s2mel.length_regulator(
+            self.semantic_codec.quantize(embedding), ylens=torch.tensor([mel.size(2)], device=self.device)
+        )
         return prompt_condition, style, mel, embedding
 
     @torch.inference_mode()

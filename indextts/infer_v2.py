@@ -3,7 +3,7 @@ import random
 import warnings
 from collections.abc import Callable, Generator, Mapping, Sequence
 from dataclasses import asdict
-from functools import cache, cached_property
+from functools import cache, cached_property, lru_cache
 from pathlib import Path
 from subprocess import CalledProcessError
 from typing import Any, cast
@@ -96,20 +96,12 @@ class IndexTTS2:
 
     glossary_path: Path
 
-    # Cache reference audio:
-    cache_spk_cond: Tensor | None = None
-    cache_s2mel_style: Tensor | None = None
-    cache_s2mel_prompt: Tensor | None = None
-    cache_spk_audio_prompt: Path | None = None
-    cache_emo_cond: Tensor | None = None
-    cache_emo_audio_prompt: Path | None = None
-    cache_mel: Tensor | None = None
-
     gr_progress: Callable[..., None] | None = None
     model_version: int | None
 
     has_warned: bool = False
 
+    @lru_cache(5)  # noqa: B019
     def extract_emotion_features(self, prompt: Path) -> Tensor:
         audio, _ = _load_and_cut_audio(prompt, sample_rate=TARGET_SAMPLING_RATE)
         inputs = self.extract_features(audio.tolist(), sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt")
@@ -391,6 +383,7 @@ class IndexTTS2:
         except IndexError:
             return None
 
+    @lru_cache(5)  # noqa: B019
     def generate_audio_features(self, spk_audio_prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         audio, sr = _load_and_cut_audio(spk_audio_prompt)
         audio_22k = cast(Tensor, torchaudio.transforms.Resample(sr, self.cfg.sample_rate)(audio))
@@ -442,8 +435,7 @@ class IndexTTS2:
 
         if use_emo_text:
             # automatically generate emotion vectors from text prompt
-            if emo_text is None:
-                emo_text = text  # use main text prompt
+            emo_text = emo_text or text  # use main text prompt
             emo_dict = self.qwen_emo.inference(emo_text)
             print(f"detected emotion vectors from text: {emo_dict}")
             # convert ordered dict to list of vectors; the order is VERY important!
@@ -466,30 +458,7 @@ class IndexTTS2:
             # must always use alpha=1.0 when we don't have an external reference voice
             emo_alpha = 1.0
 
-        # 如果参考音频改变了，才需要重新生成, 提升速度
-        if (
-            self.cache_spk_cond is None
-            or self.cache_s2mel_prompt is None
-            or self.cache_spk_audio_prompt != spk_audio_prompt
-        ):
-            if self.cache_spk_cond is not None:
-                self.cache_spk_cond = None
-                self.cache_s2mel_style = None
-                self.cache_s2mel_prompt = None
-                self.cache_mel = None
-                torch.cuda.empty_cache()
-            prompt_condition, style, ref_mel, spk_cond_emb = self.generate_audio_features(spk_audio_prompt)
-
-            self.cache_spk_cond = spk_cond_emb
-            self.cache_s2mel_style = style
-            self.cache_s2mel_prompt = prompt_condition
-            self.cache_spk_audio_prompt = spk_audio_prompt
-            self.cache_mel = ref_mel
-        else:
-            style = self.cache_s2mel_style
-            prompt_condition = self.cache_s2mel_prompt
-            spk_cond_emb = self.cache_spk_cond
-            ref_mel = self.cache_mel
+        prompt_condition, style, ref_mel, spk_cond_emb = self.generate_audio_features(spk_audio_prompt)
 
         weight_vector = None
         emotion_matrix = None
@@ -497,16 +466,7 @@ class IndexTTS2:
             weight_vector = torch.tensor(emo_vector, device=self.device)
             emotion_matrix = self.generate_emotion_matrix(weight_vector, style, use_random=use_random)
 
-        if self.cache_emo_cond is None or self.cache_emo_audio_prompt != emo_audio_prompt:
-            if self.cache_emo_cond is not None:
-                self.cache_emo_cond = None
-                torch.cuda.empty_cache()
-
-            emo_cond_emb = self.extract_emotion_features(emo_audio_prompt)
-            self.cache_emo_cond = emo_cond_emb
-            self.cache_emo_audio_prompt = emo_audio_prompt
-        else:
-            emo_cond_emb = self.cache_emo_cond
+        emo_cond_emb = self.extract_emotion_features(emo_audio_prompt)
 
         self._set_gr_progress(0.1, "text processing...")
         text_tokens_list = self.tokenizer.tokenize(text)

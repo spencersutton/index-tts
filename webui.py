@@ -33,11 +33,7 @@ if not model_dir.exists():
 i18n = I18nAuto(language="Auto")
 MODE = "local"
 tts = IndexTTS2(
-    model_dir=model_dir,
-    cfg_path=model_dir / "config.yaml",
-    use_fp16=cmd_args.fp16,
-    use_deepspeed=cmd_args.deepspeed,
-    use_cuda_kernel=cmd_args.cuda_kernel,
+    model_dir=model_dir, use_fp16=cmd_args.fp16, use_deepspeed=cmd_args.deepspeed, use_cuda_kernel=cmd_args.cuda_kernel
 )
 # 支持的语言列表
 LANGUAGES = {"中文": "zh_CN", "English": "en_US"}

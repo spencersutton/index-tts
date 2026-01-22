@@ -385,6 +385,27 @@ class IndexTTS2:
         except IndexError:
             return None
 
+    def generate_audio_features(self, spk_audio_prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+        audio, sr = _load_and_cut_audio(spk_audio_prompt)
+        audio_22k = cast(Tensor, torchaudio.transforms.Resample(sr, self.cfg.sample_rate)(audio))
+        audio_16k = cast(Tensor, torchaudio.transforms.Resample(sr, TARGET_SAMPLING_RATE)(audio))
+
+        inputs = self.extract_features(audio_16k.tolist(), sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt")
+        inputs = cast(Mapping[str, Tensor], inputs.to(self.device))
+        spk_cond_emb = self.get_emb(inputs["input_features"], inputs["attention_mask"])
+
+        s_ref = self.semantic_codec.quantize(spk_cond_emb)
+        ref_mel = mel_spectrogram(audio_22k.to(spk_cond_emb.device).float(), sample_rate=self.cfg.sample_rate)
+        ref_target_lengths = torch.tensor([ref_mel.size(2)], dtype=torch.long).to(ref_mel.device)
+        feat = torchaudio.compliance.kaldi.fbank(
+            audio_16k.to(ref_mel.device), num_mel_bins=80, dither=0, sample_frequency=TARGET_SAMPLING_RATE
+        )
+        feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
+        style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
+
+        prompt_condition = self.s2mel.length_regulator(s_ref, ylens=ref_target_lengths)
+        return prompt_condition, style, ref_mel, spk_cond_emb
+
     @torch.inference_mode()
     def infer_generator(
         self,
@@ -451,24 +472,7 @@ class IndexTTS2:
                 self.cache_s2mel_prompt = None
                 self.cache_mel = None
                 torch.cuda.empty_cache()
-            audio, sr = _load_and_cut_audio(spk_audio_prompt)
-            audio_22k = cast(Tensor, torchaudio.transforms.Resample(sr, self.cfg.sample_rate)(audio))
-            audio_16k = cast(Tensor, torchaudio.transforms.Resample(sr, TARGET_SAMPLING_RATE)(audio))
-
-            inputs = self.extract_features(audio_16k.tolist(), sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt")
-            inputs = cast(Mapping[str, Tensor], inputs.to(self.device))
-            spk_cond_emb = self.get_emb(inputs["input_features"], inputs["attention_mask"])
-
-            s_ref = self.semantic_codec.quantize(spk_cond_emb)
-            ref_mel = mel_spectrogram(audio_22k.to(spk_cond_emb.device).float(), sample_rate=self.cfg.sample_rate)
-            ref_target_lengths = torch.tensor([ref_mel.size(2)], dtype=torch.long).to(ref_mel.device)
-            feat = torchaudio.compliance.kaldi.fbank(
-                audio_16k.to(ref_mel.device), num_mel_bins=80, dither=0, sample_frequency=TARGET_SAMPLING_RATE
-            )
-            feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
-            style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
-
-            prompt_condition = self.s2mel.length_regulator(s_ref, ylens=ref_target_lengths)
+            prompt_condition, style, ref_mel, spk_cond_emb = self.generate_audio_features(spk_audio_prompt)
 
             self.cache_spk_cond = spk_cond_emb
             self.cache_s2mel_style = style

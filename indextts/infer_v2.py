@@ -91,6 +91,25 @@ class IndexTTS2:
     use_accel: bool
     stop_mel_token: int
 
+    emo_matrix: tuple[Tensor, ...]
+    spk_matrix: tuple[Tensor, ...]
+
+    glossary_path: Path
+
+    # Cache reference audio:
+    cache_spk_cond: Tensor | None = None
+    cache_s2mel_style: Tensor | None = None
+    cache_s2mel_prompt: Tensor | None = None
+    cache_spk_audio_prompt: Path | None = None
+    cache_emo_cond: Tensor | None = None
+    cache_emo_audio_prompt: Path | None = None
+    cache_mel: Tensor | None = None
+
+    gr_progress: Callable[..., None] | None = None
+    model_version: int | None
+
+    has_warned: bool = False
+
     def get_matrix(self, filename: str) -> tuple[Tensor, ...]:
         path = hf.hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=filename)
         data = torch.load(path, map_location=self.device)
@@ -126,7 +145,6 @@ class IndexTTS2:
     @cached_property[TextTokenizer]
     def tokenizer(self) -> TextTokenizer:
         with Timer() as t:
-            print(self.cfg.dataset)
             path = Path(hf.hf_hub_download(**asdict(self.cfg.dataset)))
             tokenizer = TextTokenizer(path, self.normalizer)
 
@@ -298,18 +316,9 @@ class IndexTTS2:
             self.normalizer.load_glossary_from_yaml(self.glossary_path)
             print(">> Glossary loaded from:", self.glossary_path)
 
-        # 缓存参考音频：
-        self.cache_spk_cond: Tensor | None = None
-        self.cache_s2mel_style: Tensor | None = None
-        self.cache_s2mel_prompt: Tensor | None = None
-        self.cache_spk_audio_prompt: Path | None = None
-        self.cache_emo_cond: Tensor | None = None
-        self.cache_emo_audio_prompt: Path | None = None
-        self.cache_mel: Tensor | None = None
-
         # 进度引用显示（可选）
         self.gr_progress: Callable[..., None] | None = None
-        self.model_version = self.cfg.version if hasattr(self.cfg, "version") else None
+        self.model_version = int(self.cfg.version)
 
     @torch.inference_mode()
     def get_emb(self, input_features: Tensor, attention_mask: Tensor) -> Tensor:

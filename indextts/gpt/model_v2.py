@@ -144,13 +144,13 @@ class UnifiedVoice(nn.Module):
         if self.use_accel and torch.cuda.is_available():
             # Check if flash attention is available
             try:
-                import flash_attn  # noqa: F401, PLC0415  # type: ignore
+                import flash_attn  # noqa: F401  # type: ignore
             except ImportError as err:
                 raise ImportError(
                     "flash_attn is required for acceleration but not installed. Please install from https://github.com/Dao-AILab/flash-attention/releases/"
                 ) from err
 
-            from indextts.accel import AccelInferenceEngine, GPT2AccelModel  # noqa: PLC0415
+            from indextts.accel import AccelInferenceEngine, GPT2AccelModel
 
             # Create accel model
             accel_gpt = GPT2AccelModel(gpt_config)
@@ -178,14 +178,14 @@ class UnifiedVoice(nn.Module):
             gpt_config, self.gpt, self.mel_pos_embedding, self.mel_embedding, self.final_norm, self.mel_head
         )
         if use_deepspeed and half and torch.cuda.is_available():
-            import deepspeed  # type: ignore  # noqa: PLC0415
+            import deepspeed  # type: ignore
 
             self.ds_engine = deepspeed.init_inference(
                 model=self.inference_model, mp_size=1, replace_with_kernel_inject=True, dtype=torch.float16
             )
             self.inference_model = self.ds_engine.module.eval()
         elif use_deepspeed and torch.cuda.is_available():
-            import deepspeed  # type: ignore  # noqa: PLC0415
+            import deepspeed  # type: ignore
 
             self.ds_engine = deepspeed.init_inference(
                 model=self.inference_model, mp_size=1, replace_with_kernel_inject=True, dtype=torch.float32

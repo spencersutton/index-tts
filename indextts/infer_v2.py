@@ -110,6 +110,12 @@ class IndexTTS2:
 
     has_warned: bool = False
 
+    def extract_emotion_features(self, prompt: Path) -> Tensor:
+        audio, _ = _load_and_cut_audio(prompt, sample_rate=TARGET_SAMPLING_RATE)
+        inputs = self.extract_features(audio.tolist(), sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt")
+        inputs = inputs.to(self.device)
+        return self.get_emb(inputs["input_features"], inputs["attention_mask"])
+
     def generate_emotion_matrix(self, weight_vector: Tensor, style: Tensor, use_random: bool = False) -> Tensor:
         if use_random:
             index = [random.randint(0, x - 1) for x in EMO_NUM]
@@ -495,16 +501,8 @@ class IndexTTS2:
             if self.cache_emo_cond is not None:
                 self.cache_emo_cond = None
                 torch.cuda.empty_cache()
-            emo_audio, _ = _load_and_cut_audio(emo_audio_prompt, sample_rate=TARGET_SAMPLING_RATE)
-            emo_inputs = self.extract_features(
-                emo_audio.tolist(), sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt"
-            )
-            emo_input_features = emo_inputs["input_features"]
-            emo_attention_mask = emo_inputs["attention_mask"]
-            emo_input_features = emo_input_features.to(self.device)
-            emo_attention_mask = emo_attention_mask.to(self.device)
-            emo_cond_emb = self.get_emb(emo_input_features, emo_attention_mask)
 
+            emo_cond_emb = self.extract_emotion_features(emo_audio_prompt)
             self.cache_emo_cond = emo_cond_emb
             self.cache_emo_audio_prompt = emo_audio_prompt
         else:

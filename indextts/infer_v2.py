@@ -103,6 +103,7 @@ class IndexTTS2:
 
     @lru_cache(5)  # noqa: B019
     def extract_emotion_features(self, prompt: Path) -> Tensor:
+        print(">> extracting emotion features from prompt:", prompt)
         audio, _ = _load_and_cut_audio(prompt, sample_rate=TARGET_SAMPLING_RATE)
         inputs = self.extract_features(audio.tolist(), sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt")
         inputs = inputs.to(self.device)
@@ -384,26 +385,27 @@ class IndexTTS2:
             return None
 
     @lru_cache(5)  # noqa: B019
-    def generate_audio_features(self, spk_audio_prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
-        audio, sr = _load_and_cut_audio(spk_audio_prompt)
+    def extract_audio_features(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+        print(">> extracting audio features from prompt:", prompt)
+        audio, sr = _load_and_cut_audio(prompt)
         audio_22k = cast(Tensor, torchaudio.transforms.Resample(sr, self.cfg.sample_rate)(audio))
         audio_16k = cast(Tensor, torchaudio.transforms.Resample(sr, TARGET_SAMPLING_RATE)(audio))
 
         inputs = self.extract_features(audio_16k.tolist(), sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt")
         inputs = cast(Mapping[str, Tensor], inputs.to(self.device))
-        spk_cond_emb = self.get_emb(inputs["input_features"], inputs["attention_mask"])
+        embedding = self.get_emb(inputs["input_features"], inputs["attention_mask"])
 
-        s_ref = self.semantic_codec.quantize(spk_cond_emb)
-        ref_mel = mel_spectrogram(audio_22k.to(spk_cond_emb.device).float(), sample_rate=self.cfg.sample_rate)
-        ref_target_lengths = torch.tensor([ref_mel.size(2)], dtype=torch.long).to(ref_mel.device)
+        mel = mel_spectrogram(audio_22k.to(self.device).float(), sample_rate=self.cfg.sample_rate)
+        target_lengths = torch.tensor([mel.size(2)], dtype=torch.long, device=self.device)
         feat = torchaudio.compliance.kaldi.fbank(
-            audio_16k.to(ref_mel.device), num_mel_bins=80, dither=0, sample_frequency=TARGET_SAMPLING_RATE
+            audio_16k.to(mel.device), num_mel_bins=80, dither=0, sample_frequency=TARGET_SAMPLING_RATE
         )
         feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
         style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
 
-        prompt_condition = self.s2mel.length_regulator(s_ref, ylens=ref_target_lengths)
-        return prompt_condition, style, ref_mel, spk_cond_emb
+        s_ref = self.semantic_codec.quantize(embedding)
+        prompt_condition = self.s2mel.length_regulator(s_ref, ylens=target_lengths)
+        return prompt_condition, style, mel, embedding
 
     @torch.inference_mode()
     def infer_generator(
@@ -458,7 +460,7 @@ class IndexTTS2:
             # must always use alpha=1.0 when we don't have an external reference voice
             emo_alpha = 1.0
 
-        prompt_condition, style, ref_mel, spk_cond_emb = self.generate_audio_features(spk_audio_prompt)
+        prompt_condition, style, ref_mel, spk_cond_emb = self.extract_audio_features(spk_audio_prompt)
 
         weight_vector = None
         emotion_matrix = None

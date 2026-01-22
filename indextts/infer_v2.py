@@ -110,6 +110,18 @@ class IndexTTS2:
 
     has_warned: bool = False
 
+    def generate_emotion_matrix(self, weight_vector: Tensor, style: Tensor, use_random: bool = False) -> Tensor:
+        if use_random:
+            index = [random.randint(0, x - 1) for x in EMO_NUM]
+        else:
+            index = [find_most_similar_cosine(style, tmp) for tmp in self.spk_matrix]
+
+        matrix = [x[index].unsqueeze(0) for index, x in zip(index, self.emo_matrix)]
+        matrix = torch.cat(matrix, 0)
+        matrix = weight_vector.unsqueeze(1) * matrix
+        matrix = torch.sum(matrix, 0)
+        return matrix.unsqueeze(0)
+
     def get_matrix(self, filename: str) -> tuple[Tensor, ...]:
         path = hf.hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=filename)
         data = torch.load(path, map_location=self.device)
@@ -470,19 +482,10 @@ class IndexTTS2:
             ref_mel = self.cache_mel
 
         weight_vector = None
-        emovec_mat = None
-        if emo_vector is not None:
+        emotion_matrix = None
+        if emo_vector is not None and style is not None:
             weight_vector = torch.tensor(emo_vector, device=self.device)
-            if use_random:
-                random_index = [random.randint(0, x - 1) for x in EMO_NUM]
-            else:
-                random_index = [find_most_similar_cosine(unwrap(style), tmp) for tmp in self.spk_matrix]
-
-            emo_matrix = [tmp[index].unsqueeze(0) for index, tmp in zip(random_index, self.emo_matrix)]
-            emo_matrix = torch.cat(emo_matrix, 0)
-            emovec_mat = weight_vector.unsqueeze(1) * emo_matrix
-            emovec_mat = torch.sum(emovec_mat, 0)
-            emovec_mat = emovec_mat.unsqueeze(0)
+            emotion_matrix = self.generate_emotion_matrix(weight_vector, style, use_random=use_random)
 
         if self.cache_emo_cond is None or self.cache_emo_audio_prompt != emo_audio_prompt:
             if self.cache_emo_cond is not None:
@@ -550,17 +553,17 @@ class IndexTTS2:
                     emo_vec = self.gpt.get_emo_vec(emo_cond_emb)
                     base_vec = self.gpt.get_emo_vec(spk_cond_emb)
 
-                    emovec = base_vec + emo_alpha * (emo_vec - base_vec)
+                    emotion_vector = base_vec + emo_alpha * (emo_vec - base_vec)
 
-                    if weight_vector is not None and emovec_mat is not None:
-                        emovec = emovec_mat + (1 - torch.sum(weight_vector)) * emovec
+                    if weight_vector is not None and emotion_matrix is not None:
+                        emotion_vector = emotion_matrix + (1 - torch.sum(weight_vector)) * emotion_vector
 
                     speech_conditioning_latent = self.gpt.process_speech_condition(spk_cond_emb)
                     codes = self.gpt.inference_speech(
                         speech_conditioning_latent,
                         text_tokens,
                         emo_cond_emb,
-                        emo_vec=emovec,
+                        emo_vec=emotion_vector,
                         do_sample=do_sample,
                         top_p=top_p,
                         top_k=top_k,
@@ -593,7 +596,7 @@ class IndexTTS2:
                         text_tokens,
                         codes,
                         emo_cond_emb,
-                        emo_vec=emovec,
+                        emo_vec=emotion_vector,
                         use_speed=spk_cond_emb.size(0),
                         device=self.device,
                     )

@@ -25,7 +25,7 @@ from indextts.qwen import QwenEmotion
 from indextts.s2mel.modules.audio import mel_spectrogram
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.commons import MyModel
-from indextts.util import Timer, unwrap
+from indextts.util import Timer
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.repcodec_model import RepCodec
 
@@ -100,6 +100,24 @@ class IndexTTS2:
     model_version: int | None
 
     has_warned: bool = False
+
+    def generate_voice_conversion(
+        self,
+        code_lens: list[int],
+        prompt_condition: Tensor,
+        style: Tensor,
+        ref_mel: Tensor,
+        codes: Tensor,
+        latent: Tensor,
+    ) -> Tensor:
+        semantic_inference = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
+        semantic_inference = semantic_inference.mT + self.s2mel.gpt_layer(latent)
+        target_lengths = (torch.tensor(code_lens, device=self.device) * 1.72).long()
+
+        cond = self.s2mel.length_regulator(semantic_inference, ylens=target_lengths)
+        cond = torch.cat([prompt_condition, cond], dim=1)
+        target = self.s2mel.cfm.inference(cond, ref_mel, style)
+        return target[:, :, ref_mel.size(-1) :]
 
     @lru_cache(5)  # noqa: B019
     def extract_emotion_features(self, prompt: Path) -> Tensor:
@@ -360,6 +378,36 @@ class IndexTTS2:
         use_random: bool = False,
         **generation_kwargs: Any,
     ) -> Path | Generator[Tensor] | None:
+        if use_emo_text or emo_vector is not None:
+            # we're using a text or emotion vector guidance; so we must remove
+            # "emotion reference voice", to ensure we use correct emotion mixing!
+            emo_audio_prompt = None
+
+        if use_emo_text:
+            # automatically generate emotion vectors from text prompt
+            emo_text = emo_text or text  # use main text prompt
+            emo_dict = self.qwen_emo.inference(emo_text)
+            print(f"detected emotion vectors from text: {emo_dict}")
+            # convert ordered dict to list of vectors; the order is VERY important!
+            emo_vector = list(emo_dict.values())
+
+        if emo_vector is not None:
+            # we have emotion vectors; they can't be blended via alpha mixing
+            # in the main inference process later, so we must pre-calculate
+            # their new strengths here based on the alpha instead!
+            emo_vector_scale = max(0.0, min(1.0, emo_alpha))
+            if emo_vector_scale != 1.0:
+                # scale each vector and truncate to 4 decimals (for nicer printing)
+                emo_vector = [int(x * emo_vector_scale * 10000) / 10000 for x in emo_vector]
+                print(f"scaled emotion vectors to {emo_vector_scale}x: {emo_vector}")
+
+        if emo_audio_prompt is None:
+            # we are not using any external "emotion reference voice"; use
+            # speaker's voice as the main emotion reference audio.
+            emo_audio_prompt = spk_audio_prompt
+            # must always use alpha=1.0 when we don't have an external reference voice
+            emo_alpha = 1.0
+
         gen = self.infer_generator(
             spk_audio_prompt,
             text,
@@ -367,8 +415,6 @@ class IndexTTS2:
             emo_audio_prompt,
             emo_alpha,
             emo_vector,
-            use_emo_text,
-            emo_text,
             use_random,
             interval_silence,
             max_text_tokens_per_segment,
@@ -419,8 +465,6 @@ class IndexTTS2:
         emo_audio_prompt: Path | None = None,
         emo_alpha: float = 1.0,
         emo_vector: Sequence[float] | None = None,
-        use_emo_text: bool = False,
-        emo_text: str | None = None,
         use_random: bool = False,
         interval_silence: int = 200,
         max_text_tokens_per_segment: int = 120,
@@ -432,36 +476,6 @@ class IndexTTS2:
         self._set_gr_progress(0, "starting inference...")
         inference_timer = Timer()
         inference_timer.start()
-
-        if use_emo_text or emo_vector is not None:
-            # we're using a text or emotion vector guidance; so we must remove
-            # "emotion reference voice", to ensure we use correct emotion mixing!
-            emo_audio_prompt = None
-
-        if use_emo_text:
-            # automatically generate emotion vectors from text prompt
-            emo_text = emo_text or text  # use main text prompt
-            emo_dict = self.qwen_emo.inference(emo_text)
-            print(f"detected emotion vectors from text: {emo_dict}")
-            # convert ordered dict to list of vectors; the order is VERY important!
-            emo_vector = list(emo_dict.values())
-
-        if emo_vector is not None:
-            # we have emotion vectors; they can't be blended via alpha mixing
-            # in the main inference process later, so we must pre-calculate
-            # their new strengths here based on the alpha instead!
-            emo_vector_scale = max(0.0, min(1.0, emo_alpha))
-            if emo_vector_scale != 1.0:
-                # scale each vector and truncate to 4 decimals (for nicer printing)
-                emo_vector = [int(x * emo_vector_scale * 10000) / 10000 for x in emo_vector]
-                print(f"scaled emotion vectors to {emo_vector_scale}x: {emo_vector}")
-
-        if emo_audio_prompt is None:
-            # we are not using any external "emotion reference voice"; use
-            # speaker's voice as the main emotion reference audio.
-            emo_audio_prompt = spk_audio_prompt
-            # must always use alpha=1.0 when we don't have an external reference voice
-            emo_alpha = 1.0
 
         prompt_condition, style, ref_mel, speaker_conditioning_embedding = self.extract_audio_features(spk_audio_prompt)
 
@@ -568,14 +582,9 @@ class IndexTTS2:
                     )
 
                 with s2mel_time:
-                    semantic_inference = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
-                    semantic_inference = semantic_inference.mT + self.s2mel.gpt_layer(latent)
-                    target_lengths = (torch.tensor(code_lens, device=self.device) * 1.72).long()
-
-                    cond = self.s2mel.length_regulator(semantic_inference, ylens=target_lengths)
-                    cat_condition = torch.cat([prompt_condition, cond], dim=1)
-                    voice_conversion_target = self.s2mel.cfm.inference(cat_condition, unwrap(ref_mel), unwrap(style))
-                    voice_conversion_target = voice_conversion_target[:, :, ref_mel.size(-1) :]
+                    voice_conversion_target = self.generate_voice_conversion(
+                        code_lens, prompt_condition, style, ref_mel, codes, latent
+                    )
 
                 with bigvgan_time:
                     wav = self.bigvgan(voice_conversion_target.float()).squeeze().unsqueeze(0).squeeze(1)

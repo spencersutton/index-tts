@@ -579,8 +579,7 @@ class IndexTTS2:
                     voice_conversion_target = voice_conversion_target[:, :, ref_mel.size(-1) :]
 
                 with bigvgan_time:
-                    wav = self.bigvgan(voice_conversion_target.float()).squeeze().unsqueeze(0)
-                wav = wav.squeeze(1)
+                    wav = self.bigvgan(voice_conversion_target.float()).squeeze().unsqueeze(0).squeeze(1)
 
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:

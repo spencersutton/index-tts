@@ -478,7 +478,6 @@ class IndexTTS2:
         segments = self.tokenizer.split_segments(
             text_tokens_list, max_text_tokens_per_segment, quick_streaming_tokens=quick_streaming_tokens
         )
-        segments_count = len(segments)
 
         text_token_ids = self.tokenizer.convert_tokens_to_ids(text_tokens_list)
         if self.tokenizer.unk_token_id in text_token_ids:
@@ -509,7 +508,7 @@ class IndexTTS2:
         has_warned = False
         for seg_idx, sent in enumerate(segments):
             self._set_gr_progress(
-                0.2 + 0.7 * seg_idx / segments_count, f"speech synthesis {seg_idx + 1}/{segments_count}..."
+                0.2 + 0.7 * seg_idx / len(segments), f"speech synthesis {seg_idx + 1}/{len(segments)}..."
             )
 
             text_tokens = self.tokenizer.convert_tokens_to_ids(sent)

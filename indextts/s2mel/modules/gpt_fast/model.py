@@ -192,7 +192,8 @@ class RMSNorm(nn.Module):
         super().__init__()
         self.weight = nn.Parameter(torch.ones(DIM))
 
-    def _norm(self, x: Tensor) -> Tensor:
+    @staticmethod
+    def _norm(x: Tensor) -> Tensor:
         return x * torch.rsqrt(torch.mean(x * x, dim=-1, keepdim=True) + NORM_EPS)
 
     def forward(self, x: Tensor) -> Tensor:

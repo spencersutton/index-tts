@@ -42,8 +42,8 @@ def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
     # by de-emphasizing emotions that can cause strange results
 
     # [happy, angry, sad, afraid, disgusted, melancholic, surprised, calm]
-    biases: list[float] = [0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625]
-    vector: list[float] = [vec * bias for vec, bias in zip(vector, biases)]
+    biases = [0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625]
+    vector = [vec * bias for vec, bias in zip(vector, biases)]
 
     # the total emotion sum must be 0.8 or less
     total = sum(vector)
@@ -75,6 +75,7 @@ def _load_and_cut_audio(audio_path: Path, sample_rate: float | None = None) -> t
     else:
         audio, _ = librosa.load(audio_path, sr=sample_rate)
     audio = torch.tensor(audio).unsqueeze(0)
+    assert audio.dim() == 2 and audio.size(0) == 1, "Only mono audio is supported."
     max_audio_samples = int(MAX_AUDIO_LENGTH_SECONDS * sample_rate)
 
     if audio.shape[1] > max_audio_samples:
@@ -128,7 +129,6 @@ class IndexTTS2:
         return self.get_emb(inputs["input_features"], inputs["attention_mask"])
 
     def generate_emotion_matrix(self, weight_vector: Tensor, style: Tensor, use_random: bool = False) -> Tensor:
-        index: list[int]
         if use_random:
             index = [random.randint(0, x - 1) for x in EMO_NUM]
         else:
@@ -353,6 +353,7 @@ class IndexTTS2:
         vq_emb = self.semantic_model(
             input_features=input_features, attention_mask=attention_mask, output_hidden_states=True
         )
+        assert vq_emb.hidden_states is not None
         feat = vq_emb.hidden_states[17]  # (B, T, C)
         return (feat - self.semantic_mean) / self.semantic_std
 
@@ -514,7 +515,7 @@ class IndexTTS2:
         top_k = generation_kwargs.pop("top_k", 30)
         top_p = generation_kwargs.pop("top_p", 0.8)
 
-        wavs: list[Tensor] = []
+        wavs = []
         gpt_gen_time = Timer()
         gpt_forward_time = Timer()
         s2mel_time = Timer()
@@ -565,12 +566,17 @@ class IndexTTS2:
                     )
                     has_warned = True
 
-                code_lens: list[int] = [
+                code_lens = [
                     x.tolist().index(self.stop_mel_token) if self.stop_mel_token in x else len(x) for x in codes
                 ]
                 codes = codes[:, : max(code_lens)]
 
                 with torch.autocast(self.device, dtype=self.dtype), gpt_forward_time:
+                    assert speech_conditioning_latent.shape == torch.Size([1, 32, 1280])
+                    assert text_tokens.shape[0] == 1
+                    assert codes.shape[0] == 1
+                    assert emotion_conditioning_embedding.shape == torch.Size([1, 749, 1024])
+                    assert emotion_vector.shape == torch.Size([1, 1280])
                     latent = self.gpt(
                         speech_conditioning_latent,
                         text_tokens,
@@ -598,7 +604,7 @@ class IndexTTS2:
         self._set_gr_progress(0.9, "saving audio...")
         silence_tensor = get_silence_interval(wavs[0].size(0), interval_silence, self.cfg.sample_rate)
         # Insert silences between segments
-        wavs: list[Tensor] = [item for x in wavs for item in (x, silence_tensor)][:-1]
+        wavs = [item for x in wavs for item in (x, silence_tensor)][:-1]
         wav = torch.cat(wavs, dim=1)
         wav_length = wav.shape[-1] / self.cfg.sample_rate
         print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")

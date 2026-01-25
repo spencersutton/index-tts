@@ -142,5 +142,14 @@ exclude = ["tests", "overrides"]
 [[tool.ty.overrides]]
 include = ["indextts/accel/attention.py"]
 
+
 [tool.ty.overrides.rules]
 unresolved-import = "ignore"
+
+[tool.pyrefly]
+project-includes = ["indextts/**/*.py*", "*.py"]
+search-path = ["./overrides"]
+
+[tool.pyrefly.errors]
+# implicit-any = "warn"
+implicit-import = "ignore"

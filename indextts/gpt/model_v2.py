@@ -237,6 +237,7 @@ class UnifiedVoice(nn.Module):
         output = self.gpt(
             inputs_embeds=torch.cat([conds, text_emb, mel_emb], dim=1), return_dict=True, output_attentions=False
         )
+        assert not isinstance(output, tuple)
 
         offset = conds.shape[1]
         enc = unwrap(output.last_hidden_state)[:, offset:]

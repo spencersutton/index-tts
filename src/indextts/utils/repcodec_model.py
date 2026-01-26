@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 from collections.abc import Sequence
+from typing import override
 
 import torch
 import torch.nn.functional as F
@@ -45,6 +46,7 @@ class ConvNeXtBlock(nn.Module):
         self.pwconv2 = nn.Linear(intermediate_dim, dim)
         self.gamma = nn.Parameter(1 / 12 * torch.ones(dim))
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         residual = x
         x = self.dwconv(x)
@@ -76,10 +78,11 @@ class VocosBackbone(nn.Module):
         super().__init__()
         self.embed = nn.Conv1d(in_channels, out_channels, kernel_size=7, padding=3)
         self.norm = nn.LayerNorm(out_channels, eps=1e-6)
-        self.convnext = nn.ModuleList([ConvNeXtBlock() for _ in range(n_layers)])
+        self.convnext = nn.ModuleList([ConvNeXtBlock() for _ in range(n_layers)])  # pyright: ignore[reportAttributeAccessIssue]
         self.final_layer_norm = nn.LayerNorm(out_channels, eps=1e-6)
         self.apply(_init_weights)
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         x = self.embed(x)
         x = self.norm(x.mT)
@@ -104,6 +107,7 @@ class FactorizedVectorQuantize(nn.Module):
         self.out_project = weight_norm(nn.Conv1d(latent_dim, in_channels, kernel_size=1))
         self.codebook = nn.Embedding(codebook_size, latent_dim)
 
+    @override
     def forward(self, z: Tensor) -> Tensor:
         """
         Parameters
@@ -165,8 +169,9 @@ class ResidualVQ(nn.Module):
         super().__init__()
 
         quantizers = [FactorizedVectorQuantize()]
-        self.quantizers = nn.ModuleList(quantizers)
+        self.quantizers = nn.ModuleList(quantizers)  # pyright: ignore[reportAttributeAccessIssue]
 
+    @override
     def forward(self, z: Tensor) -> Tensor:
         """
         Parameters

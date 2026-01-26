@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 from collections.abc import Sequence
 from functools import cached_property
-from typing import cast
+from typing import TYPE_CHECKING, override
 
 import torch
 from torch import Tensor, nn
@@ -36,6 +36,7 @@ class AdaptiveLayerNorm(nn.Module):
         self.project_layer = nn.Linear(DIM, 2 * DIM)
         self.norm = RMSNorm()
 
+    @override
     def forward(self, input: Tensor, embedding: Tensor | None = None) -> Tensor:
         if embedding is None:
             return self.norm(input)
@@ -47,8 +48,9 @@ class AdaptiveLayerNorm(nn.Module):
 
 
 class KVCache(nn.Module):
-    k_cache: Tensor = torch.empty(0)
-    v_cache: Tensor = torch.empty(0)
+    if TYPE_CHECKING:
+        k_cache: Tensor = torch.empty(0)
+        v_cache: Tensor = torch.empty(0)
 
     def __init__(
         self, max_batch_size: int, max_seq_length: int, n_heads: int, head_dim: int, dtype: torch.dtype = torch.bfloat16
@@ -78,7 +80,7 @@ class Transformer(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        self.layers = cast(Sequence[TransformerBlock], nn.ModuleList(TransformerBlock() for _ in range(N_LAYER)))
+        self.layers = nn.ModuleList(TransformerBlock() for _ in range(N_LAYER))  # pyright: ignore[reportAttributeAccessIssue]
         self.norm = AdaptiveLayerNorm()
 
     @cached_property[Tensor]
@@ -93,6 +95,7 @@ class Transformer(nn.Module):
         freqs_cis = torch.polar(torch.ones_like(angles), angles)
         return torch.stack([freqs_cis.real, freqs_cis.imag], dim=-1)
 
+    @override
     def forward(self, x: Tensor, c: Tensor, input_pos: Tensor, mask: Tensor) -> Tensor:
         freqs_cis = self.freqs_cis[input_pos]
         mid = N_LAYER // 2
@@ -124,6 +127,7 @@ class TransformerBlock(nn.Module):
 
         self.skip_in_linear = nn.Linear(DIM * 2, DIM)
 
+    @override
     def forward(
         self, x: Tensor, c: Tensor, input_pos: Tensor, freqs_cis: Tensor, mask: Tensor, skip_in_x: Tensor | None = None
     ) -> Tensor:
@@ -147,6 +151,7 @@ class Attention(nn.Module):
         self.wqkv = nn.Linear(DIM, INTERMEDIATE_SIZE, bias=False)
         self.wo = nn.Linear(DIM, DIM, bias=False)
 
+    @override
     def forward(self, x: Tensor, freqs_cis: Tensor, mask: Tensor) -> Tensor:
         bsz, seqlen, _ = x.shape
 
@@ -180,6 +185,7 @@ class FeedForward(nn.Module):
         self.w3 = nn.Linear(DIM, INTERMEDIATE_SIZE, bias=False)
         self.w2 = nn.Linear(INTERMEDIATE_SIZE, DIM, bias=False)
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         return self.w2(F.silu(self.w1(x)) * self.w3(x))
 
@@ -196,6 +202,7 @@ class RMSNorm(nn.Module):
     def _norm(x: Tensor) -> Tensor:
         return x * torch.rsqrt(torch.mean(x * x, dim=-1, keepdim=True) + NORM_EPS)
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         return self._norm(x.float()).type_as(x) * self.weight
 

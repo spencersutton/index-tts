@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 import torch
 import torch.nn.functional as F
@@ -36,13 +36,13 @@ def set_padding(input_tokens: Tensor, lengths: Tensor, token: int) -> Tensor:
 class UnifiedVoice(nn.Module):
     if TYPE_CHECKING:
         accel_engine: AccelInferenceEngine | None
-    ds_engine: Any
+    ds_engine: Any  # pyright: ignore[reportExplicitAny, reportUninitializedInstanceVariable]
 
     emo_layer: nn.Linear
     emovec_layer: nn.Linear
     final_norm: nn.LayerNorm
     gpt: GPT2Model
-    inference_model: GPT2InferenceModel
+    inference_model: GPT2InferenceModel  # pyright: ignore[reportUninitializedInstanceVariable]
     mel_head: nn.Linear
     speed_emb: nn.Embedding
 
@@ -52,7 +52,6 @@ class UnifiedVoice(nn.Module):
     mel_pos_embedding: LearnedPositionEmbeddings
     text_pos_embedding: LearnedPositionEmbeddings
 
-    cond_num: int
     heads: int
     layers: int
     max_mel_tokens: int
@@ -109,7 +108,7 @@ class UnifiedVoice(nn.Module):
         )
         # Override the built in positional embeddings
         del self.gpt.wpe
-        self.gpt.wpe = lambda x: torch.zeros((x.shape[0], x.shape[1], DIM), device=x.device)
+        self.gpt.wpe = lambda x: torch.zeros((x.shape[0], x.shape[1], DIM), device=x.device)  # type: ignore
         # Built-in token embeddings are unused.
         del self.gpt.wte
         self.mel_pos_embedding = LearnedPositionEmbeddings(max_mel_seq_len)
@@ -157,14 +156,11 @@ class UnifiedVoice(nn.Module):
             accel_gpt.load_state_dict(self.gpt.state_dict(), strict=False)
 
             if half:
-                accel_gpt = accel_gpt.half().cuda()
-            else:
-                accel_gpt = accel_gpt.cuda()
-            accel_gpt.eval()
+                accel_gpt = accel_gpt.half()
 
             lm_head_with_norm = nn.Sequential(self.final_norm, self.mel_head)
             self.accel_engine = AccelInferenceEngine(
-                model=accel_gpt,
+                model=accel_gpt.cuda().eval(),
                 lm_head=lm_head_with_norm,
                 num_layers=self.layers,
                 num_heads=self.heads,
@@ -196,6 +192,7 @@ class UnifiedVoice(nn.Module):
 
         self.gpt.wte = self.mel_embedding
 
+    @override
     def forward(
         self,
         speech_conditioning_latent: Tensor,
@@ -204,7 +201,7 @@ class UnifiedVoice(nn.Module):
         emo_speech_conditioning_latent: Tensor,
         emo_vec: Tensor,
         use_speed: int,
-        device: torch.types.Device,
+        device: str,
     ) -> Tensor:
         """
         Forward pass that uses both text and voice in either text conditioning mode or voice conditioning mode
@@ -221,14 +218,14 @@ class UnifiedVoice(nn.Module):
 
         text_lengths = torch.tensor([text_inputs.shape[-1]], device=device)
         text_inputs = set_padding(text_inputs, text_lengths, self.cfg.stop_text_token)
-        text_inputs = F.pad(text_inputs, (0, 1), value=self.cfg.stop_text_token)
+        text_inputs = F.pad(text_inputs, [0, 1], value=self.cfg.stop_text_token)
 
         mel_codes_lengths = torch.tensor([mel_codes.shape[-1]], device=device)
         mel_codes = set_padding(mel_codes, mel_codes_lengths, self.cfg.stop_mel_token)
-        mel_codes = F.pad(mel_codes, (0, 1), value=self.cfg.stop_mel_token)
+        mel_codes = F.pad(mel_codes, [0, 1], value=self.cfg.stop_mel_token)
 
-        text_inputs = F.pad(text_inputs, (1, 0), value=self.cfg.start_text_token)
-        mel_codes = F.pad(mel_codes, (1, 0), value=self.cfg.start_mel_token)
+        text_inputs = F.pad(text_inputs, [1, 0], value=self.cfg.start_text_token)
+        mel_codes = F.pad(mel_codes, [1, 0], value=self.cfg.start_mel_token)
 
         mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes)
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
@@ -270,8 +267,8 @@ class UnifiedVoice(nn.Module):
             valid_mask = (inputs[i] != self.cfg.stop_text_token) & (inputs[i] != self.cfg.start_text_token)
 
             text_input = inputs[i][valid_mask]
-            text_input = F.pad(text_input, (1, 0), value=self.cfg.start_text_token)
-            text_input = F.pad(text_input, (0, 1), value=self.cfg.stop_text_token)
+            text_input = F.pad(text_input, [1, 0], value=self.cfg.start_text_token)
+            text_input = F.pad(text_input, [0, 1], value=self.cfg.stop_text_token)
             text_input_pos = torch.arange(0, text_input.size(-1), device=device)
 
             text_emb = self.text_embedding(text_input) + self.text_pos_embedding.emb(text_input_pos)
@@ -325,13 +322,11 @@ class UnifiedVoice(nn.Module):
         self,
         speech_conditioning_latent: Tensor,
         text_inputs: Tensor,
-        emo_speech_condition: Tensor,
         *,
         emo_vec: Tensor,
-        input_tokens: None = None,
         num_return_sequences: int = 1,
         max_generate_length: int | None = None,
-        **hf_generate_kwargs: Any,
+        **hf_generate_kwargs: Any,  # pyright: ignore[reportExplicitAny]
     ) -> Tensor:
         """
         Args:
@@ -375,7 +370,7 @@ class UnifiedVoice(nn.Module):
                 num_return_sequences=num_return_sequences,
                 **hf_generate_kwargs,
             )
-        return output[:, trunc_index:]
+        return output[:, trunc_index:]  # pyright: ignore[reportUnknownVariableType]
 
     def process_speech_condition(self, condition: Tensor) -> Tensor:
         if condition.ndim == 2:

@@ -1,7 +1,10 @@
 import json
 import re
+from collections.abc import Mapping
+from typing import Any, cast
 
-from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+from transformers import BatchEncoding, Qwen2Tokenizer, Qwen3ForCausalLM
 
 
 def clamp(value: float, min_val: float, max_val: float) -> float:
@@ -9,9 +12,12 @@ def clamp(value: float, min_val: float, max_val: float) -> float:
 
 
 class QwenEmotion:
+    model: Qwen3ForCausalLM
+    tokenizer: Qwen2Tokenizer
+
     def __init__(self, model_dir: str) -> None:
-        self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
-        self.model = AutoModelForCausalLM.from_pretrained(
+        self.tokenizer = Qwen2Tokenizer.from_pretrained(model_dir)
+        self.model = Qwen3ForCausalLM.from_pretrained(
             model_dir,
             torch_dtype="float16",  # "auto"
             device_map="auto",
@@ -68,13 +74,15 @@ class QwenEmotion:
         text = self.tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True, enable_thinking=False
         )
-        model_inputs = self.tokenizer([text], return_tensors="pt").to(self.model.device)
+        assert not isinstance(text, (BatchEncoding, list))
+        model_inputs = cast(Mapping[str, Any], self.tokenizer([text], return_tensors="pt").to(self.model.device))  # pyright: ignore[reportExplicitAny]
 
         # conduct text completion
         generated_ids = self.model.generate(
-            **model_inputs, max_new_tokens=32768, pad_token_id=self.tokenizer.eos_token_id
+            **model_inputs, max_new_tokens=2**15, pad_token_id=self.tokenizer.eos_token_id
         )
-        output_ids = generated_ids[0][len(model_inputs.input_ids[0]) :].tolist()
+        assert isinstance(generated_ids, torch.Tensor)
+        output_ids = generated_ids[0][len(model_inputs["input_ids"][0]) :].tolist()
 
         # parsing thinking content
         try:

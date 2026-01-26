@@ -1,5 +1,6 @@
 # Adapted from https://github.com/lucidrains/naturalspeech2-pytorch/blob/659bec7f7543e7747e809e950cc2f84242fbeec7/naturalspeech2_pytorch/naturalspeech2_pytorch.py#L532
-from collections.abc import Iterable
+from collections.abc import MutableSequence
+from typing import override
 
 import torch
 import torch.nn.functional as F
@@ -15,6 +16,7 @@ class Attend(nn.Module):
         super().__init__()
         self.attn_dropout = nn.Dropout(0.0)
 
+    @override
     def forward(self, q: Tensor, k: Tensor, v: Tensor, mask: Tensor | None = None) -> Tensor:
         """
         einstein notation
@@ -54,6 +56,7 @@ class RMSNorm(nn.Module):
         self.scale = dim**0.5
         self.gamma = nn.Parameter(torch.ones(dim))
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         return F.normalize(x, dim=-1) * self.scale * self.gamma
 
@@ -62,6 +65,7 @@ class RMSNorm(nn.Module):
 
 
 class GEGLU(nn.Module):
+    @override
     def forward(self, x: Tensor) -> Tensor:
         x, gate = x.chunk(2, dim=-1)
         return F.gelu(gate) * x
@@ -73,7 +77,7 @@ class GEGLU(nn.Module):
 class PerceiverResampler(nn.Module):
     proj_context: nn.Linear
     latents: nn.Parameter
-    layers: Iterable[tuple["Attention", nn.Sequential]]
+    layers: MutableSequence[tuple["Attention", nn.Sequential]]
     norm: RMSNorm
 
     def __init__(self, dim: int, num_latents: int = 32, heads: int = 8, depth: int = 2, dim_context: int = 512) -> None:
@@ -84,11 +88,11 @@ class PerceiverResampler(nn.Module):
         self.latents = nn.Parameter(torch.randn(num_latents, dim))
         nn.init.normal_(self.latents, std=0.02)
 
-        self.layers = nn.ModuleList()
+        self.layers = nn.ModuleList()  # pyright: ignore[reportAttributeAccessIssue]
         dim_inner = int(dim * 4 / 3)
         for _ in range(depth):
             self.layers.append(
-                nn.ModuleList((
+                nn.ModuleList((  # pyright: ignore[reportArgumentType]
                     Attention(dim=dim, heads=heads),
                     nn.Sequential(nn.Linear(dim, dim_inner * 2), GEGLU(), nn.Linear(dim_inner, dim)),
                 ))
@@ -96,6 +100,7 @@ class PerceiverResampler(nn.Module):
 
         self.norm = RMSNorm(dim)
 
+    @override
     def forward(self, x: Tensor, mask: Tensor | None = None) -> Tensor:
         x = self.proj_context(x)
 
@@ -128,13 +133,12 @@ class Attention(nn.Module):
         self.to_kv = nn.Linear(dim, dim_inner * 2, bias=False)
         self.to_out = nn.Linear(dim_inner, dim, bias=False)
 
+    @override
     def forward(self, x: Tensor, context: Tensor | None = None, mask: Tensor | None = None) -> Tensor:
         h = self.heads
 
         context = context if context is not None else x
-
-        if context is not None:
-            context = torch.cat((x, context), dim=-2)
+        context = torch.cat((x, context), dim=-2)
 
         q, k, v = (self.to_q(x), *self.to_kv(context).chunk(2, dim=-1))
         q, k, v = (rearrange(t, "b n (h d) -> b h n d", h=h) for t in (q, k, v))

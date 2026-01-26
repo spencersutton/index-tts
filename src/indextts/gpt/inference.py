@@ -41,7 +41,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         attention_mask: Tensor | None = None,
         inputs_embeds: Tensor | None = None,
         cache_position: Tensor | None = None,
-        **kwargs: Any,
+        **kwargs: Any,  # pyright: ignore[reportExplicitAny]
     ) -> dict[str, transformers.Cache | Tensor | bool | None]:
         token_type_ids = kwargs.get("token_type_ids")  # usually None
         position_ids = kwargs.get("position_ids")
@@ -69,9 +69,10 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             "token_type_ids": token_type_ids,
         }
 
+    @override
     def forward(
         self,
-        input_ids: Tensor | None = None,
+        input_ids: Tensor,
         past_key_values: tuple[tuple[Tensor]] | None = None,
         attention_mask: Tensor | None = None,
         token_type_ids: Tensor | None = None,
@@ -88,6 +89,8 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     ) -> CausalLMOutputWithCrossAttentions | tuple[Tensor, ...]:
         assert inputs_embeds is None  # Not supported by this inference model.
         assert labels is None  # Training not supported by this inference model.
+        assert self.cached_mel_emb is not None, "cached_mel_emb must be set before calling forward()"
+
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
         # Create embedding
         mel_len = self.cached_mel_emb.shape[1]
@@ -103,6 +106,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
                 mel_emb = unwrap(self.cached_mel_emb)
             emb = torch.cat([mel_emb, text_emb], dim=1)
         else:
+            assert attention_mask is not None
             emb = self.embeddings(unwrap(input_ids))
             emb += self.text_pos_embedding.get_fixed_embedding(attention_mask.shape[1] - mel_len, attention_mask.device)
         transformer_outputs = self.transformer(

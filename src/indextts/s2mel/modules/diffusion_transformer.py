@@ -1,4 +1,5 @@
 import math
+from typing import TYPE_CHECKING, override
 
 import torch
 from torch import Tensor, nn
@@ -27,7 +28,8 @@ class TimestepEmbedder(nn.Module):
     Embeds scalar timesteps into vector representations.
     """
 
-    freqs: Tensor
+    if TYPE_CHECKING:
+        freqs: Tensor = torch.empty(0)
 
     def __init__(self) -> None:
         super().__init__()
@@ -49,6 +51,7 @@ class TimestepEmbedder(nn.Module):
         args = 1000 * t[:, None].float() * self.freqs[None]
         return torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
 
+    @override
     def forward(self, t: Tensor) -> Tensor:
         t_freq = self.timestep_embedding(t)
         return self.mlp(t_freq)
@@ -68,6 +71,7 @@ class FinalLayer(nn.Module):
         self.linear = weight_norm(nn.Linear(DIM, DIM))
         self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(DIM, 2 * DIM))
 
+    @override
     def forward(self, x: Tensor, c: Tensor) -> Tensor:
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)
@@ -78,7 +82,8 @@ class FinalLayer(nn.Module):
 
 
 class DiT(nn.Module):
-    input_pos: Tensor
+    if TYPE_CHECKING:
+        input_pos: Tensor = torch.empty(0)
     transformer: Transformer
     x_embedder: nn.Linear
     cond_projection: nn.Linear
@@ -117,6 +122,7 @@ class DiT(nn.Module):
 
         self.cond_x_merge_linear = nn.Linear(DIM + IN_CHANNELS * 2 + STYLE_ENCODER_DIM, DIM)
 
+    @override
     def forward(self, x: Tensor, prompt_x: Tensor, x_lens: Tensor, t: Tensor, style: Tensor, cond: Tensor) -> Tensor:
         """
         x (Tensor): random noise

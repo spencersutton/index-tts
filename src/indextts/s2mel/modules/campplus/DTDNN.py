@@ -1,6 +1,7 @@
 # Copyright 3D-Speaker (https://github.com/alibaba-damo-academy/3D-Speaker). All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
 from collections import OrderedDict
+from typing import override
 
 import torch.nn.functional as F
 from torch import Tensor, nn
@@ -32,6 +33,7 @@ class FCM(nn.Module):
         self.bn2 = nn.BatchNorm2d(M_CHANNELS)
         self.out_channels = M_CHANNELS * 10
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         x = x.unsqueeze(1)
         out = F.relu(self.bn1(self.conv1(x)))
@@ -74,6 +76,7 @@ class CAMPPlus(nn.Module):
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         x = x.permute(0, 2, 1)  # (B,T,F) => (B,F,T)
         x = self.head(x)

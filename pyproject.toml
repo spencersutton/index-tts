@@ -127,29 +127,15 @@ dev = [
     "rich>=14.1.0",
 ]
 
-[tool.ty.environment]
-extra-paths = ["overrides"]
-
-[tool.ty.rules]
-possibly-missing-attribute = "ignore"
-division-by-zero = "warn"
-possibly-unresolved-reference = "warn"
-unsupported-dynamic-base = "warn"
-
-[tool.ty.src]
-exclude = ["tests", "overrides"]
-
-[[tool.ty.overrides]]
-include = ["indextts/accel/attention.py"]
-
-
-[tool.ty.overrides.rules]
-unresolved-import = "ignore"
-
-[tool.pyrefly]
-project-includes = ["indextts/**/*.py*", "*.py"]
-search-path = ["./overrides"]
-
-[tool.pyrefly.errors]
-# implicit-any = "warn"
-implicit-import = "ignore"
+[tool.basedpyright]
+enableTypeIgnoreComments = true
+ignore = ["tools/", "tests/", "sitecustomize.py"]
+reportAny = false
+reportCallInDefaultInitializer = false
+reportIgnoreCommentWithoutRule = false
+reportImplicitStringConcatenation = false
+reportIncompatibleUnannotatedOverride = "warning"
+reportUnannotatedClassAttribute = false
+reportUnknownMemberType = false
+reportUnusedCallResult = false
+stubPath = "../typings"

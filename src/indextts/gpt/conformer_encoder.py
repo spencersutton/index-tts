@@ -1,7 +1,8 @@
 from collections.abc import Sequence
-from typing import cast
+from typing import cast, override
 
 import torch
+import torch.nn.functional as F
 from torch import Tensor, nn
 
 from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
@@ -32,6 +33,7 @@ class PositionwiseFeedForward(nn.Module):
         self.dropout = nn.Dropout(0.0)
         self.w_2 = nn.Linear(hidden_units, idim)
 
+    @override
     def forward(self, xs: Tensor) -> Tensor:
         """Forward function.
 
@@ -66,6 +68,7 @@ class ConvolutionModule(nn.Module):
         self.pointwise_conv2 = nn.Conv1d(OUTPUT_DIM, OUTPUT_DIM, kernel_size=1)
         self.activation = activation
 
+    @override
     def forward(
         self,
         x: Tensor,
@@ -97,7 +100,7 @@ class ConvolutionModule(nn.Module):
 
         # GLU mechanism
         x = self.pointwise_conv1(x)  # (batch, 2*channel, dim)
-        x = nn.functional.glu(x, dim=1)  # (batch, channel, dim)
+        x = F.glu(x, dim=1)  # (batch, channel, dim)
 
         # 1D Depthwise Conv
         x = self.depthwise_conv(x).mT
@@ -140,21 +143,15 @@ class ConformerEncoderLayer(nn.Module):
         self.conv_module = conv_module
         self.norm_ff = nn.LayerNorm(size, eps=1e-5)  # for the FNN module
         self.norm_mha = nn.LayerNorm(size, eps=1e-5)  # for the MHA module
-        if None is not None:
-            self.norm_ff_macaron = nn.LayerNorm(size, eps=1e-5)
-            self.ff_scale = 0.5
-        else:
-            self.ff_scale = 1.0
+        self.ff_scale = 1.0
         if self.conv_module is not None:
             self.norm_conv = nn.LayerNorm(size, eps=1e-5)  # for the CNN module
             self.norm_final = nn.LayerNorm(size, eps=1e-5)  # for the final output of the block
         self.dropout = nn.Dropout(0.0)
         self.size = size
-        if False:
-            self.concat_linear = nn.Linear(size + size, size)
-        else:
-            self.concat_linear = nn.Identity()
+        self.concat_linear = nn.Identity()
 
+    @override
     def forward(
         self,
         x: Tensor,
@@ -234,7 +231,7 @@ class ConformerEncoder(nn.Module):
         self.after_norm = nn.LayerNorm(OUTPUT_DIM, eps=1e-5)
         activation = nn.SiLU()
 
-        self.encoders = cast(
+        self.encoders = cast(  # pyright: ignore[reportInvalidCast]
             Sequence[ConformerEncoderLayer],
             nn.ModuleList([
                 ConformerEncoderLayer(
@@ -247,6 +244,7 @@ class ConformerEncoder(nn.Module):
             ]),
         )
 
+    @override
     def forward(self, xs: Tensor) -> tuple[Tensor, Tensor]:
         """Embed positions in tensor.
 

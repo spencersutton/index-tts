@@ -16,6 +16,7 @@
 """Positonal Encoding Module."""
 
 import math
+from typing import TYPE_CHECKING, override
 
 import torch
 import torch.nn.functional as F
@@ -43,6 +44,9 @@ class RelPositionalEncoding(nn.Module):
         max_len (int): Maximum input length.
     """
 
+    if TYPE_CHECKING:
+        pe: Tensor = torch.empty(0)
+
     def __init__(self, d_model: int) -> None:
         """Construct an PositionalEncoding object."""
         super().__init__()
@@ -69,7 +73,7 @@ class RelPositionalEncoding(nn.Module):
         """
         # How to subscript a Union type:
         #   https://github.com/pytorch/pytorch/issues/69434
-        if isinstance(offset, int) or (isinstance(offset, Tensor) and offset.dim() == 0):
+        if isinstance(offset, int) or offset.dim() == 0:
             assert offset + size < MAX_LEN
             pos_emb = self.pe[:, offset : offset + size]
         else:  # for batched streaming decoding on GPU
@@ -82,6 +86,7 @@ class RelPositionalEncoding(nn.Module):
 
         return pos_emb
 
+    @override
     def forward(self, x: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor]:
         """Compute positional encoding.
         Args:

@@ -2,7 +2,6 @@ import os
 import random
 import warnings
 from collections.abc import Callable, Generator, Mapping, Sequence
-from dataclasses import asdict
 from functools import cache, cached_property, lru_cache
 from pathlib import Path
 from subprocess import CalledProcessError
@@ -33,7 +32,7 @@ os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
 CHECKPOINT_DIR = Path("checkpoints")
 MAX_AUDIO_LENGTH_SECONDS = 15
-TARGET_SAMPLING_RATE = 16000
+SR_16K = 16000
 EMO_NUM = [3, 17, 2, 8, 4, 5, 10, 24]
 
 
@@ -97,6 +96,7 @@ class IndexTTS2:
 
     glossary_path: Path
 
+    # 进度引用显示（可选）
     gr_progress: Callable[..., None] | None = None
     model_version: int | None
 
@@ -123,8 +123,8 @@ class IndexTTS2:
     @lru_cache(5)  # noqa: B019
     def extract_emotion_features(self, prompt: Path) -> Tensor:
         print(">> extracting emotion features from prompt:", prompt)
-        audio, _ = _load_and_cut_audio(prompt, sample_rate=TARGET_SAMPLING_RATE)
-        inputs = self.extract_features(audio.tolist(), sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt")
+        audio, _ = _load_and_cut_audio(prompt, sample_rate=SR_16K)
+        inputs = self.extract_features(audio.numpy(), sampling_rate=SR_16K, return_tensors="pt")
         inputs = inputs.to(self.device)
         return self.get_emb(inputs["input_features"], inputs["attention_mask"])
 
@@ -157,7 +157,7 @@ class IndexTTS2:
             model = model.eval()
 
             if self.use_fp16:
-                model.half()
+                model = model.half()
 
         print(f">> GPT weights restored in {t:.2f} seconds from: {path}")
         return model
@@ -175,7 +175,7 @@ class IndexTTS2:
     @cached_property[TextTokenizer]
     def tokenizer(self) -> TextTokenizer:
         with Timer() as t:
-            path = Path(hf.hf_hub_download(**asdict(self.cfg.dataset)))
+            path = Path(hf.hf_hub_download(repo_id=self.cfg.dataset.repo_id, filename=self.cfg.dataset.filename))
             tokenizer = TextTokenizer(path, self.normalizer)
 
         print(f">> bpe model restored in {t:.2f} seconds from: {path}")
@@ -199,13 +199,13 @@ class IndexTTS2:
         with Timer() as t:
             # Simpler but slower version
             if False:
-                model = bigvgan.BigVGAN.from_pretrained(
+                model = bigvgan.BigVGAN.from_pretrained(  # pyright: ignore[reportUnreachable]
                     "nvidia/bigvgan_v2_22khz_80band_256x", use_cuda_kernel=self.use_cuda_kernel
                 )
                 model.remove_weight_norm()
                 model = model.eval().to(self.device)
 
-            path = hf.hf_hub_download(**asdict(self.cfg.vocoder))
+            path = hf.hf_hub_download(repo_id=self.cfg.vocoder.repo_id, filename=self.cfg.vocoder.filename)
             data = torch.load(path, map_location=self.device, mmap=True)
 
             json_path = hf.hf_hub_download(self.cfg.vocoder.repo_id, filename="config.json")
@@ -227,7 +227,11 @@ class IndexTTS2:
             path = hf.hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
 
             model = RepCodec()
-            safetensors.torch.load_model(model, path, strict=False)
+            missing, unexpected = safetensors.torch.load_model(model, path, strict=False)
+            if missing:
+                print(f">> semantic_codec missing keys: {missing}")
+            if unexpected:
+                print(f">> semantic_codec unexpected keys: {unexpected}")
             model = model.eval().to(self.device)
         print(f">> semantic_codec weights restored from: {path} in {t:.2f} seconds")
         return model
@@ -243,7 +247,7 @@ class IndexTTS2:
     @cached_property[Tensor]
     def semantic_mean(self) -> Tensor:
         with Timer() as t:
-            path = hf.hf_hub_download(**asdict(self.cfg.w2v_stat))
+            path = hf.hf_hub_download(repo_id=self.cfg.w2v_stat.repo_id, filename=self.cfg.w2v_stat.filename)
             data = torch.load(path)
             data = data["mean"].to(self.device)
         print(f">> semantic_mean weights restored in {t:.2f} seconds from: {path}")
@@ -252,7 +256,7 @@ class IndexTTS2:
     @cached_property[Tensor]
     def semantic_std(self) -> Tensor:
         with Timer() as t:
-            path = hf.hf_hub_download(**asdict(self.cfg.w2v_stat))
+            path = hf.hf_hub_download(repo_id=self.cfg.w2v_stat.repo_id, filename=self.cfg.w2v_stat.filename)
             data = torch.load(path)
             data = torch.sqrt(data["var"]).to(self.device)
         print(f">> semantic_std weights restored in {t:.2f} seconds from: {path}")
@@ -344,8 +348,6 @@ class IndexTTS2:
             self.normalizer.load_glossary_from_yaml(self.glossary_path)
             print(">> Glossary loaded from:", self.glossary_path)
 
-        # 进度引用显示（可选）
-        self.gr_progress: Callable[..., None] | None = None
         self.model_version = int(self.cfg.version)
 
     @torch.inference_mode()
@@ -377,7 +379,7 @@ class IndexTTS2:
         stream_return: bool = False,
         use_emo_text: bool = False,
         use_random: bool = False,
-        **generation_kwargs: Any,
+        **generation_kwargs: Any,  # pyright: ignore[reportExplicitAny]
     ) -> Path | Generator[Tensor] | None:
         if use_emo_text or emo_vector is not None:
             # we're using a text or emotion vector guidance; so we must remove
@@ -426,7 +428,7 @@ class IndexTTS2:
         if stream_return:
             return gen
         try:
-            return next(iter(gen))
+            return next(iter(gen))  # pyright: ignore[reportReturnType]
         except IndexError:
             return None
 
@@ -434,21 +436,19 @@ class IndexTTS2:
     def extract_audio_features(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         print(">> extracting audio features from prompt:", prompt)
         audio, sr = _load_and_cut_audio(prompt)
-        audio_16k = torchaudio.transforms.Resample(sr)(audio)
-        resampler_22050 = torchaudio.transforms.Resample(sr, 22050)
+        audio_16k = torchaudio.functional.resample(audio, sr, SR_16K)
+        audio_22k = torchaudio.functional.resample(audio, sr, 22050)
 
-        mel = mel_spectrogram(resampler_22050(audio), sample_rate=resampler_22050.new_freq)
+        mel = mel_spectrogram(audio_22k, sample_rate=22050)
         feat = torchaudio.compliance.kaldi.fbank(
-            audio_16k.to(self.device), num_mel_bins=80, dither=0, sample_frequency=TARGET_SAMPLING_RATE
+            audio_16k.to(self.device), num_mel_bins=80, dither=0, sample_frequency=SR_16K
         )
         feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
         style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
 
         inputs = cast(
             Mapping[str, Tensor],
-            self.extract_features(audio_16k.tolist(), sampling_rate=TARGET_SAMPLING_RATE, return_tensors="pt").to(
-                self.device
-            ),
+            self.extract_features(audio_16k, sampling_rate=SR_16K, return_tensors="pt").to(self.device),
         )
 
         embedding = self.get_emb(inputs["input_features"], inputs["attention_mask"])
@@ -471,7 +471,7 @@ class IndexTTS2:
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
         quick_streaming_tokens: int = 0,
-        **generation_kwargs: Any,
+        **generation_kwargs: Any,  # pyright: ignore[reportExplicitAny]
     ) -> Generator[Tensor]:
         print(">> starting inference...")
         self._set_gr_progress(0, "starting inference...")
@@ -482,7 +482,7 @@ class IndexTTS2:
 
         weight_vector = None
         emotion_matrix = None
-        if emo_vector is not None and style is not None:
+        if emo_vector is not None:
             weight_vector = torch.tensor(emo_vector, device=self.device)
             emotion_matrix = self.generate_emotion_matrix(weight_vector, style, use_random=use_random)
 
@@ -515,7 +515,7 @@ class IndexTTS2:
         top_k = generation_kwargs.pop("top_k", 30)
         top_p = generation_kwargs.pop("top_p", 0.8)
 
-        wavs = []
+        wavs: list[Tensor] = []
         gpt_gen_time = Timer()
         gpt_forward_time = Timer()
         s2mel_time = Timer()
@@ -537,13 +537,14 @@ class IndexTTS2:
                     emotion_vector = base_vector + emo_alpha * (emotion_vector - base_vector)
 
                     if weight_vector is not None and emotion_matrix is not None:
-                        emotion_vector = emotion_matrix + (1 - torch.sum(weight_vector)) * emotion_vector
+                        emotion_vector = torch.as_tensor(
+                            emotion_matrix + (1 - torch.sum(weight_vector)) * emotion_vector
+                        )
 
                     speech_conditioning_latent = self.gpt.process_speech_condition(speaker_conditioning_embedding)
                     codes = self.gpt.inference_speech(
                         speech_conditioning_latent,
                         text_tokens,
-                        emotion_conditioning_embedding,
                         emo_vec=emotion_vector,
                         do_sample=do_sample,
                         top_p=top_p,
@@ -593,7 +594,7 @@ class IndexTTS2:
                     )
 
                 with bigvgan_time:
-                    wav = self.bigvgan(voice_conversion_target.float()).squeeze().unsqueeze(0).squeeze(1)
+                    wav: Tensor = self.bigvgan(voice_conversion_target.float()).squeeze().unsqueeze(0).squeeze(1)
 
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
@@ -620,9 +621,9 @@ class IndexTTS2:
             # Save audio directly to the specified path
             AudioEncoder(wav, sample_rate=self.cfg.sample_rate).to_file(output_path)
             print(">> wav file saved to:", output_path)
-            yield output_path
+            yield output_path  # pyright: ignore[reportReturnType]
         else:
             # Return in a format compatible with Gradio
-            wav_data = wav.type(torch.int16)
+            wav_data = wav.type(torch.int16)  # pyright: ignore[reportUnreachable]
             wav_data = wav_data.numpy().T
             yield (self.cfg.sample_rate, wav_data)

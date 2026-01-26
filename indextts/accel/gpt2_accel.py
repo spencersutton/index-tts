@@ -62,7 +62,7 @@ class GPT2AccelAttention(nn.Module):
         use_cache: bool = False,
         output_attentions: bool = False,
         past_key_value: tuple[Tensor, Tensor] | None = None,
-        **kwargs: dict,
+        **kwargs: object,
     ) -> tuple[Tensor, None] | tuple[Tensor, None, None]:
         if encoder_hidden_states is not None:
             raise NotImplementedError("Cross attention not supported in accel mode")

@@ -14,7 +14,6 @@ from torch.nn import functional as F
 from indextts.s2mel.modules.constants import BLOCK_SIZE, DIM
 from indextts.util import patch_call
 
-DIM = DIM
 N_HEAD = 8
 N_LAYER = 13
 NORM_EPS = 1e-5
@@ -48,13 +47,14 @@ class AdaptiveLayerNorm(nn.Module):
 
 
 class KVCache(nn.Module):
-    k_cache: Tensor
-    v_cache: Tensor
+    k_cache: Tensor = torch.empty(0)
+    v_cache: Tensor = torch.empty(0)
 
     def __init__(
         self, max_batch_size: int, max_seq_length: int, n_heads: int, head_dim: int, dtype: torch.dtype = torch.bfloat16
     ) -> None:
         super().__init__()
+
         cache_shape = (max_batch_size, n_heads, max_seq_length, head_dim)
         self.register_buffer("k_cache", torch.zeros(cache_shape, dtype=dtype))
         self.register_buffer("v_cache", torch.zeros(cache_shape, dtype=dtype))

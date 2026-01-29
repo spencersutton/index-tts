@@ -54,13 +54,13 @@ class ForwardContext:
 @triton.jit  # pyright: ignore[reportUntypedFunctionDecorator]
 @no_type_check
 def store_kvcache_kernel(
-    key_ptr: Tensor,
+    key_ptr: torch.Tensor,
     key_stride: int,
-    value_ptr: Tensor,
+    value_ptr: torch.Tensor,
     value_stride: int,
-    k_cache_ptr: Tensor,
-    v_cache_ptr: Tensor,
-    slot_mapping_ptr: Tensor,
+    k_cache_ptr: torch.Tensor,
+    v_cache_ptr: torch.Tensor,
+    slot_mapping_ptr: torch.Tensor,
     D: tl.constexpr,
 ) -> None:
     BLOCK_SIZE: tl.constexpr = 2048
@@ -105,7 +105,7 @@ class Attention(nn.Module):
 
     @override
     def forward(self, q: Tensor, k: Tensor, v: Tensor) -> Tensor:
-        context = get_forward_context()
+        context = ForwardContext.get_context()
         k_cache, v_cache = self.k_cache, self.v_cache
 
         if k_cache.numel() and v_cache.numel() and context.slot_mapping is not None:

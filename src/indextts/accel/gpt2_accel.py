@@ -2,6 +2,7 @@ from typing import cast, override
 
 import torch
 import transformers
+from jaxtyping import Float, Int
 from torch import Tensor, nn
 from transformers import Conv1D
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
@@ -10,13 +11,13 @@ from transformers.models.gpt2.modeling_gpt2 import GPT2Block, GPT2Model
 from indextts.accel.attention import Attention
 
 
-def _split_heads(tensor: Tensor, num_heads: int, head_dim: int) -> Tensor:
+def _split_heads(tensor: Float[Tensor, "b t d"], num_heads: int, head_dim: int) -> Tensor:
     new_shape = (*tensor.size()[:-1], num_heads, head_dim)
     tensor = tensor.view(new_shape)
     return tensor.permute(0, 2, 1, 3)  # (batch, head, seq_length, head_features)
 
 
-def _merge_heads(tensor: Tensor, num_heads: int, head_dim: int) -> Tensor:
+def _merge_heads(tensor: Float[Tensor, "b h t d"], num_heads: int, head_dim: int) -> Tensor:
     tensor = tensor.permute(0, 2, 1, 3).contiguous()
     new_shape = (*tensor.size()[:-2], num_heads * head_dim)
     return tensor.view(new_shape)
@@ -39,7 +40,7 @@ class GPT2AccelAttention(nn.Module):
             ),
             persistent=False,
         )
-        self.register_buffer("masked_bias", Tensor(-1e4), persistent=False)
+        self.register_buffer("masked_bias", torch.tensor(-1e4), persistent=False)
 
         self.embed_dim = config.hidden_size
         self.num_heads = config.num_attention_heads
@@ -66,15 +67,17 @@ class GPT2AccelAttention(nn.Module):
     @override
     def forward(
         self,
-        hidden_states: Tensor,
-        layer_past: tuple[Tensor, Tensor] | None = None,
-        attention_mask: Tensor | None = None,
-        head_mask: Tensor | None = None,
-        encoder_hidden_states: Tensor | None = None,
-        encoder_attention_mask: Tensor | None = None,
+        hidden_states: Float[Tensor, "b t d"],
+        layer_past: tuple[Float[Tensor, "wrong_rank_probe 999 999"], Float[Tensor, "wrong_rank_probe 999 999"]]
+        | None = None,
+        attention_mask: Int[Tensor, "wrong_rank_probe 999 999"] | None = None,
+        head_mask: Float[Tensor, "wrong_rank_probe 999 999"] | None = None,
+        encoder_hidden_states: Float[Tensor, "wrong_rank_probe 999 999"] | None = None,
+        encoder_attention_mask: Int[Tensor, "wrong_rank_probe 999 999"] | None = None,
         use_cache: bool = False,
         output_attentions: bool = False,
-        past_key_value: tuple[Tensor, Tensor] | None = None,
+        past_key_value: tuple[Float[Tensor, "wrong_rank_probe 999 999"], Float[Tensor, "wrong_rank_probe 999 999"]]
+        | None = None,
         **kwargs: object,
     ) -> tuple[Tensor, None] | tuple[Tensor, None, None]:
         if encoder_hidden_states is not None:
@@ -135,16 +138,16 @@ class GPT2AccelModel(GPT2Model):
     @override
     def forward(
         self,
-        input_ids: Tensor | None = None,
+        input_ids: Int[Tensor, "b t"] | None = None,
         past_key_values: tuple[tuple[Tensor]] | transformers.Cache | None = None,
-        cache_position: Tensor | None = None,
-        attention_mask: Tensor | None = None,
-        token_type_ids: Tensor | None = None,
-        position_ids: Tensor | None = None,
-        head_mask: Tensor | None = None,
-        inputs_embeds: Tensor | None = None,
-        encoder_hidden_states: Tensor | None = None,
-        encoder_attention_mask: Tensor | None = None,
+        cache_position: Int[Tensor, "42"] | None = None,
+        attention_mask: Int[Tensor, "b t"] | None = None,
+        token_type_ids: Int[Tensor, "wrong_rank_probe 999 999"] | None = None,
+        position_ids: Int[Tensor, "b t"] | None = None,
+        head_mask: Float[Tensor, "wrong_rank_probe 999 999"] | None = None,
+        inputs_embeds: Float[Tensor, "b t d"] | None = None,
+        encoder_hidden_states: Float[Tensor, "wrong_rank_probe 999 999"] | None = None,
+        encoder_attention_mask: Int[Tensor, "wrong_rank_probe 999 999"] | None = None,
         use_cache: bool | None = None,
         output_attentions: bool | None = None,
         output_hidden_states: bool | None = None,

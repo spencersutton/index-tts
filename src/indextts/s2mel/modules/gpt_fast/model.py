@@ -8,6 +8,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, override
 
 import torch
+from jaxtyping import Bool, Float, Int
 from torch import Tensor, nn
 from torch.nn import functional as F
 
@@ -37,7 +38,7 @@ class AdaptiveLayerNorm(nn.Module):
         self.norm = RMSNorm()
 
     @override
-    def forward(self, input: Tensor, embedding: Tensor | None = None) -> Tensor:
+    def forward(self, input: Float[Tensor, "b t d"], embedding: Float[Tensor, "b d"] | None = None) -> Tensor:
         if embedding is None:
             return self.norm(input)
         weight, bias = torch.split(self.project_layer(embedding), DIM, dim=-1)
@@ -61,7 +62,9 @@ class KVCache(nn.Module):
         self.register_buffer("k_cache", torch.zeros(cache_shape, dtype=dtype))
         self.register_buffer("v_cache", torch.zeros(cache_shape, dtype=dtype))
 
-    def update(self, input_pos: Tensor, k_val: Tensor, v_val: Tensor) -> tuple[Tensor, Tensor]:
+    def update(
+        self, input_pos: Int[Tensor, "s"], k_val: Float[Tensor, "b h s d"], v_val: Float[Tensor, "b h s d"]
+    ) -> tuple[Tensor, Tensor]:
         # input_pos: [S], k_val: [B, H, S, D]
         assert input_pos.shape[0] == k_val.shape[2]
 
@@ -96,7 +99,13 @@ class Transformer(nn.Module):
         return torch.stack([freqs_cis.real, freqs_cis.imag], dim=-1)
 
     @override
-    def forward(self, x: Tensor, c: Tensor, input_pos: Tensor, mask: Tensor) -> Tensor:
+    def forward(
+        self,
+        x: Float[Tensor, "b t d"],
+        c: Float[Tensor, "b d"],
+        input_pos: Int[Tensor, "t"],
+        mask: Bool[Tensor, "wrong_rank_probe 999 999"],
+    ) -> Tensor:
         freqs_cis = self.freqs_cis[input_pos]
         mid = N_LAYER // 2
         skip_stack: list[Tensor] = []
@@ -129,7 +138,13 @@ class TransformerBlock(nn.Module):
 
     @override
     def forward(
-        self, x: Tensor, c: Tensor, input_pos: Tensor, freqs_cis: Tensor, mask: Tensor, skip_in_x: Tensor | None = None
+        self,
+        x: Float[Tensor, "b t d"],
+        c: Float[Tensor, "b d"],
+        input_pos: Int[Tensor, "t"],
+        freqs_cis: Float[Tensor, "wrong_rank_probe 999 999"],
+        mask: Bool[Tensor, "wrong_rank_probe 999 999"],
+        skip_in_x: Float[Tensor, "b t d"] | None = None,
     ) -> Tensor:
         if skip_in_x is not None:
             x = self.skip_in_linear(torch.cat([x, skip_in_x], dim=-1))
@@ -152,7 +167,12 @@ class Attention(nn.Module):
         self.wo = nn.Linear(DIM, DIM, bias=False)
 
     @override
-    def forward(self, x: Tensor, freqs_cis: Tensor, mask: Tensor) -> Tensor:
+    def forward(
+        self,
+        x: Float[Tensor, "b t d"],
+        freqs_cis: Float[Tensor, "wrong_rank_probe 999 999"],
+        mask: Bool[Tensor, "wrong_rank_probe 999 999"],
+    ) -> Tensor:
         bsz, seqlen, _ = x.shape
 
         query_key_value = self.wqkv(x)
@@ -186,7 +206,7 @@ class FeedForward(nn.Module):
         self.w2 = nn.Linear(INTERMEDIATE_SIZE, DIM, bias=False)
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Float[Tensor, "b t d"]) -> Tensor:
         return self.w2(F.silu(self.w1(x)) * self.w3(x))
 
     @patch_call(forward)
@@ -199,18 +219,18 @@ class RMSNorm(nn.Module):
         self.weight = nn.Parameter(torch.ones(DIM))
 
     @staticmethod
-    def _norm(x: Tensor) -> Tensor:
+    def _norm(x: Float[Tensor, "b t d"]) -> Tensor:
         return x * torch.rsqrt(torch.mean(x * x, dim=-1, keepdim=True) + NORM_EPS)
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Float[Tensor, "b t d"]) -> Tensor:
         return self._norm(x.float()).type_as(x) * self.weight
 
     @patch_call(forward)
     def __call__(self) -> None: ...
 
 
-def apply_rotary_emb(x: Tensor, freqs_cis: Tensor) -> Tensor:
+def apply_rotary_emb(x: Float[Tensor, "b t h d"], freqs_cis: Float[Tensor, "wrong_rank_probe 999 999"]) -> Tensor:
     xshaped = x.float().reshape(*x.shape[:-1], -1, 2)
     freqs_cis = freqs_cis.view(1, xshaped.size(1), 1, xshaped.size(3), 2)
     x_out2 = torch.stack(

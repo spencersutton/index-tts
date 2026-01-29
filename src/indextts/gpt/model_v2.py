@@ -2,6 +2,8 @@ from typing import TYPE_CHECKING, Any, override
 
 import torch
 import torch.nn.functional as F
+from beartype import beartype as typechecker
+from jaxtyping import Float, Int, jaxtyped
 from torch import Tensor, nn
 from transformers import GPT2Config, GPT2Model, LogitsProcessorList
 
@@ -18,7 +20,7 @@ if TYPE_CHECKING:
 DIM = 1280
 
 
-def set_padding(input_tokens: Tensor, lengths: Tensor, token: int) -> Tensor:
+def set_padding(input_tokens: Int[Tensor, "B _"], lengths: list[int], token: int) -> Tensor:
     """
     Given tokens that are derived from a padded audio clip and the actual lengths of each batch element in
     that audio clip, reformats the tokens with `token` in place of the zero padding. This is required
@@ -193,42 +195,35 @@ class UnifiedVoice(nn.Module):
         self.gpt.wte = self.mel_embedding
 
     @override
+    @jaxtyped(typechecker=typechecker)
     def forward(
         self,
-        speech_conditioning_latent: Tensor,
-        text_inputs: Tensor,
-        mel_codes: Tensor,
-        emo_speech_conditioning_latent: Tensor,
-        emo_vec: Tensor,
+        speech_conditioning_latent: Float[Tensor, "B S D"],
+        text_inputs: Int[Tensor, "B L"],
+        mel_codes: Int[Tensor, "B M"],
+        emo_speech_conditioning_latent: Float[Tensor, "B 749 1024"],
+        emo_vec: Float[Tensor, "B D"],
         use_speed: int,
-        device: str,
+        device: torch.types.Device,
     ) -> Tensor:
         """
         Forward pass that uses both text and voice in either text conditioning mode or voice conditioning mode
-
-        speech_conditioning_input: MEL float tensor, (b,1024)
-        text_inputs: long tensor, (b,t)
-        text_lengths: long tensor, (b,)
-        mel_inputs:  long tensor, (b,m)
-        wav_lengths: long tensor, (b,)
 
         If return_attentions is specified, only logits are returned.
         If return_latent is specified, loss & logits are not computed or returned. Only the predicted latents are returned.
         """
 
-        text_lengths = torch.tensor([text_inputs.shape[-1]], device=device)
-        text_inputs = set_padding(text_inputs, text_lengths, self.cfg.stop_text_token)
+        text_inputs = set_padding(text_inputs, [text_inputs.shape[-1]], self.cfg.stop_text_token)
         text_inputs = F.pad(text_inputs, [0, 1], value=self.cfg.stop_text_token)
 
-        mel_codes_lengths = torch.tensor([mel_codes.shape[-1]], device=device)
-        mel_codes = set_padding(mel_codes, mel_codes_lengths, self.cfg.stop_mel_token)
+        mel_codes = set_padding(mel_codes, [mel_codes.shape[-1]], self.cfg.stop_mel_token)
         mel_codes = F.pad(mel_codes, [0, 1], value=self.cfg.stop_mel_token)
 
         text_inputs = F.pad(text_inputs, [1, 0], value=self.cfg.start_text_token)
         mel_codes = F.pad(mel_codes, [1, 0], value=self.cfg.start_mel_token)
 
-        mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes)
-        text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
+        mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes.shape[1], device=device)
+        text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs.shape[1], device=device)
 
         conds = self.combine_latents(speech_conditioning_latent, emo_vec, text_inputs)
         output = self.gpt(
@@ -243,23 +238,25 @@ class UnifiedVoice(nn.Module):
         # Despite the name, these are not logits. Strip off the two tokens added by this forward pass.
         return enc[:, -mel_emb.shape[1] : -2]
 
-    def prepare_gpt_inputs(self, latent: Tensor, inputs: Tensor) -> tuple[Tensor, Tensor, Tensor]:
+    def prepare_gpt_inputs(
+        self, latent: Float[Tensor, "B S D"], inputs: Int[Tensor, "B T"]
+    ) -> tuple[Tensor, Tensor, Tensor]:
         """
         Prepare the inputs for the GPT2InferenceModel to generate.
         Args:
-            conds_latent: (b, 32, dim) audio conditioning embedding by `get_conditioning()`
-            text_inputs: (b, L)
+            conds_latent: (B, 32, dim) audio conditioning embedding by `get_conditioning()`
+            text_inputs: (B, L)
         Returns:
-            input_ids: (b, s+1) the input ids for the GPT2InferenceModel.generate()
-            inputs_embeds: (b, s+1, dim) the input embeddings for the GPT2InferenceModel.forward()
-            attention_mask: (b, s+1) the attention mask for the GPT2InferenceModel.generate()
+            input_ids: (B, s+1) the input ids for the GPT2InferenceModel.generate()
+            inputs_embeds: (B, s+1, dim) the input embeddings for the GPT2InferenceModel.forward()
+            attention_mask: (B, s+1) the attention mask for the GPT2InferenceModel.generate()
         """
-        b = inputs.size(0)
+        B = inputs.size(0)
         L = inputs.size(1)
         device = inputs.device
         single_cond = latent.ndim == 3 and latent.shape[0] == 1
         if not single_cond:
-            assert latent.shape[0] == b, f"batch size mismatch: {latent.shape[0]} vs {b}"
+            assert latent.shape[0] == B, f"batch size mismatch: {latent.shape[0]} vs {B}"
         batched_mel_emb: list[Tensor] = []
         attention_masks: list[Tensor] = []
         target_len = latent.shape[1] + L + 2
@@ -291,11 +288,11 @@ class UnifiedVoice(nn.Module):
             assert mel_emb.shape[0] == target_len, f"mel_emb.shape: {mel_emb.shape}, target_len: {target_len}"
             batched_mel_emb.append(mel_emb)
             attention_masks.append(attention_mask)
-        # [b, s, dim]
+        # [B, s, dim]
         batched_mel_emb_tensor = torch.stack(batched_mel_emb)
-        # [b, s + 1]
+        # [B, s + 1]
         attention_mask = torch.stack(attention_masks)
-        # [b, s + 1]
+        # [B, s + 1]
         fake_inputs = torch.ones(
             (
                 batched_mel_emb_tensor.shape[0],
@@ -307,7 +304,12 @@ class UnifiedVoice(nn.Module):
         fake_inputs[:, -1] = self.cfg.start_mel_token
         return fake_inputs, batched_mel_emb_tensor, attention_mask
 
-    def combine_latents(self, speech_conditioning_latent: Tensor, emo_vec: Tensor, text_inputs: Tensor) -> Tensor:
+    def combine_latents(
+        self,
+        speech_conditioning_latent: Float[Tensor, "B S D"],
+        emo_vec: Float[Tensor, "B D"],
+        text_inputs: Int[Tensor, "B T"],
+    ) -> Tensor:
         template = text_inputs.new_zeros(text_inputs.size(0))
         return torch.cat(
             (
@@ -320,19 +322,19 @@ class UnifiedVoice(nn.Module):
 
     def inference_speech(
         self,
-        speech_conditioning_latent: Tensor,
-        text_inputs: Tensor,
+        speech_conditioning_latent: Float[Tensor, "B S D"],
+        text_inputs: Int[Tensor, "B T"],
         *,
-        emo_vec: Tensor,
+        emo_vec: Float[Tensor, "B D"],
         num_return_sequences: int = 1,
         max_generate_length: int | None = None,
         **hf_generate_kwargs: Any,  # pyright: ignore[reportExplicitAny]
     ) -> Tensor:
         """
         Args:
-            speech_condition: (b, d, frames) or (d, frames)
-            text_inputs: (b, L)
-            cond_mel_lengths: lengths of the conditioning mel spectrograms in shape (b,) or (1,)
+            speech_condition: (B, D, frames) or (D, frames)
+            text_inputs: (B, L)
+            cond_mel_lengths: lengths of the conditioning mel spectrograms in shape (B,) or (1,)
             max_generate_length: limit the number of generated tokens
             hf_generate_kwargs: kwargs for `GPT2InferenceModel.generate(**hf_generate_kwargs)`
         """
@@ -372,7 +374,7 @@ class UnifiedVoice(nn.Module):
             )
         return output[:, trunc_index:]  # pyright: ignore[reportUnknownVariableType]
 
-    def process_speech_condition(self, condition: Tensor) -> Tensor:
+    def process_speech_condition(self, condition: Float[Tensor, "B T D"]) -> Tensor:
         if condition.ndim == 2:
             condition = condition.unsqueeze(0)
 
@@ -380,7 +382,7 @@ class UnifiedVoice(nn.Module):
         mask = self.cond_mask_pad(mask.squeeze(1))
         return self.perceiver_encoder(input, mask)
 
-    def get_emo_vec(self, latent: Tensor) -> Tensor:
+    def get_emo_vec(self, latent: Float[Tensor, "B T D"]) -> Tensor:
         input, mask = self.emo_conditioning_encoder(latent)
         mask = self.emo_cond_mask_pad(mask.squeeze(1))
         conds = self.emo_perceiver_encoder(input, mask)

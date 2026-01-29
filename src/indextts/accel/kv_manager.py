@@ -1,6 +1,7 @@
 import hashlib
 import pickle
 from collections import deque
+from collections.abc import Sequence
 from copy import copy
 
 import torch
@@ -29,8 +30,8 @@ class KVCacheBlock:
 
 
 class Seq:
-    def __init__(self, token_ids: list[int], block_size: int = 256) -> None:
-        self.token_ids = copy(token_ids)
+    def __init__(self, token_ids: Sequence[int], block_size: int = 256) -> None:
+        self.token_ids = list(copy(token_ids))
         self.last_token = token_ids[-1] if token_ids else 0
         self.num_tokens = len(self.token_ids)
         self.num_prompt_tokens = len(token_ids)
@@ -79,9 +80,9 @@ class KVCacheManager:
         self.num_blocks = num_blocks
         self.dtype = dtype
 
-        self.blocks: list[KVCacheBlock] = [KVCacheBlock(i) for i in range(num_blocks)]
+        self.blocks = [KVCacheBlock(i) for i in range(num_blocks)]
         self.block_hash_to_id: dict[bytes, int] = {}
-        self.free_block_ids: deque[int] = deque(range(num_blocks))
+        self.free_block_ids = deque(range(num_blocks))
         self.used_block_ids: set[int] = set()
 
         device = "cuda" if torch.cuda.is_available() else "cpu"

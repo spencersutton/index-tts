@@ -1,14 +1,15 @@
 import sys
 from collections.abc import Mapping, MutableMapping, Sequence
-from typing import override
+from typing import ClassVar, override
 
 import torch
+from jaxtyping import Float, Int
 from torch import Tensor, nn
 
 from indextts.accel.attention import ForwardContext
 from indextts.accel.gpt2_accel import GPT2AccelModel
 from indextts.accel.kv_manager import KVCacheManager, Seq
-from indextts.gpt.model_v2 import LearnedPositionEmbeddings
+from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.util import patch_call, unwrap
 
 
@@ -18,7 +19,7 @@ class Sampler(nn.Module):
 
     @torch.compile
     @override
-    def forward(self, logits: Tensor, temperatures: Tensor) -> Tensor:
+    def forward(self, logits: Float[Tensor, "b v"], temperatures: Float[Tensor, "b"]) -> Tensor:
         temperatures = temperatures.to(logits.device).clamp(min=1e-8)
         greedy_mask = temperatures < 1e-5
         temp_for_scaling = torch.where(greedy_mask, 1.0, temperatures)
@@ -44,6 +45,9 @@ class AccelInferenceEngine:
     graph_vars: Mapping[str, Tensor] | None = None
     graph_pool: Sequence[int] | None = None
     graph_captured: bool
+    graph_bs: ClassVar[list[int]] = [1, 2, 4, 8]
+    _tts_mode: bool = False
+    _tts_prompt_len: int = 0
 
     def __init__(
         self,
@@ -67,8 +71,8 @@ class AccelInferenceEngine:
             num_blocks: Total number of KV cache blocks
             use_cuda_graph: Whether to use CUDA Graph for decode optimization
         """
-        self.model: GPT2AccelModel = model
-        self.lm_head: nn.Sequential = lm_head
+        self.model = model
+        self.lm_head = lm_head
         self.block_size = block_size
         self.num_blocks = num_blocks
         self.use_cuda_graph = use_cuda_graph and torch.cuda.is_available()
@@ -87,7 +91,7 @@ class AccelInferenceEngine:
         self.graphs = {}
         self.graph_captured = False
 
-    def _prepare_decode(self, requests: list[Seq]) -> tuple[Tensor, Tensor]:
+    def _prepare_decode(self, requests: Sequence[Seq]) -> tuple[Tensor, Tensor]:
         if not requests:
             raise RuntimeError("FATAL: No requests provided to _prepare_decode!")
 
@@ -100,7 +104,7 @@ class AccelInferenceEngine:
             input_ids.append(req.last_token)
 
             pos = len(req) - 1
-            if hasattr(self, "_tts_mode") and self._tts_mode:
+            if self._tts_mode:
                 pos -= self._tts_prompt_len - 1
             positions.append(pos)
 
@@ -151,8 +155,6 @@ class AccelInferenceEngine:
         block_tables = torch.zeros(max_bs, max_num_blocks, dtype=torch.int32, device="cuda")
         outputs = torch.zeros(max_bs, self.hidden_size, dtype=model_dtype, device="cuda")
         inputs_embeds_buffer = torch.zeros(max_bs, self.hidden_size, dtype=model_dtype, device="cuda")
-
-        self.graph_bs = [1, 2, 4, 8]
 
         use_tts = tts_mel_embedding is not None and tts_text_pos_embedding is not None
 
@@ -215,14 +217,14 @@ class AccelInferenceEngine:
 
     def _run_decode_with_graph(
         self,
-        input_ids: Tensor,
-        positions: Tensor,
+        input_ids: Int[Tensor, "b"],
+        positions: Int[Tensor, "b"],
         context: ForwardContext,
         tts_mel_embedding: nn.Embedding | None = None,
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,
     ) -> Tensor:
         bs = input_ids.size(0)
-        use_tts_embedding = hasattr(self, "_tts_mode") and self._tts_mode
+        use_tts_embedding = self._tts_mode
 
         if not self.use_cuda_graph or not self.graphs:
             if use_tts_embedding:
@@ -268,14 +270,15 @@ class AccelInferenceEngine:
 
     def generate(
         self,
-        input_ids: Tensor,
+        input_ids: Int[Tensor, "b t"],
         max_new_tokens: int = 100,
         temperature: float = 1.0,
         top_k: int = 50,
         top_p: float = 1.0,
         stop_tokens: list[int] | None = None,
-        attention_mask: Tensor | None = None,
-        tts_embeddings: Tensor | None = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
+        attention_mask: Int[Tensor, "b t"] | None = None,
+        tts_embeddings: Float[Tensor, "b t d"]
+        | None = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
         tts_mel_embedding: nn.Embedding | None = None,  # TTS: mel_embedding layer
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,  # TTS: text_pos_embedding layer
     ) -> Tensor:
@@ -324,18 +327,18 @@ class AccelInferenceEngine:
         )
 
         if is_varlen_batch and attention_mask is not None:
-            seq_lens = [attention_mask[i].sum().item() for i in range(batch_size)]
+            seq_lens = [int(attention_mask[i].sum().item()) for i in range(batch_size)]
         else:
             seq_lens = [actual_seq_len] * batch_size
 
-        sequences = []
+        sequences: list[Seq] = []
         for i in range(batch_size):
             seq_len = seq_lens[i]
-            token_ids = [1] * int(seq_len)
+            token_ids = [1] * seq_len
             if tts_embeddings is not None and seq_len > 0:
                 token_ids[-1] = int(input_ids[i, -1].item()) if input_ids.size(1) > 0 else 1
             else:
-                token_ids = input_ids[i].tolist()
+                token_ids = [int(x) for x in input_ids[i]]
             req = Seq(token_ids)
             self.kv_manager.allocate(req)
             sequences.append(req)
@@ -353,7 +356,7 @@ class AccelInferenceEngine:
             start_emb = start_emb.repeat(batch_size, 1, 1)
 
             if is_varlen_batch:
-                valid_embeddings = []
+                valid_embeddings: list[Tensor] = []
                 for i in range(batch_size):
                     emb_len = seq_lens[i] - 1
                     padding_len = tts_embeddings.size(1) - emb_len
@@ -393,15 +396,14 @@ class AccelInferenceEngine:
         else:
             first_token = torch.argmax(logits, dim=-1)
 
-        first_token_list = first_token.tolist()
-
-        generated_tokens = [[] for _ in range(batch_size)]
+        generated_tokens: list[list[float]] = [[] for _ in range(batch_size)]
         is_finished = [False] * batch_size
 
-        for i, token_id in enumerate(first_token_list):
+        for i, token_id in enumerate(first_token):
             if stop_tokens and token_id in stop_tokens:
                 is_finished[i] = True
             else:
+                token_id = int(token_id)
                 generated_tokens[i].append(token_id)
                 sequences[i].append_token(token_id)
                 self.kv_manager.append_to_seq(sequences[i])
@@ -442,7 +444,7 @@ class AccelInferenceEngine:
                 next_token = self.sampler(logits, temperatures)
             else:
                 next_token = torch.argmax(logits, dim=-1)
-            next_token_list = next_token.tolist()
+            next_token_list = [int(x) for x in next_token]
 
             for i, token_id in enumerate(next_token_list):
                 if is_finished[i]:
@@ -470,7 +472,7 @@ class AccelInferenceEngine:
             for i in range(batch_size):
                 padding_len = max_prompt_len - seq_lens[i]
                 initial_tokens = sequences[i].token_ids[: sequences[i].num_prompt_tokens]
-                padded_prompt = [pad_token] * int(padding_len) + initial_tokens
+                padded_prompt = [pad_token] * padding_len + initial_tokens
                 full_sequence = padded_prompt + generated_tokens[i]
                 output_ids.append(full_sequence)
         else:

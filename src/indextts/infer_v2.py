@@ -15,6 +15,7 @@ import torch.nn.functional as F
 import torchaudio
 import transformers
 from bigvganinference import bigvgan
+from jaxtyping import Float, Int
 from torch import Tensor
 from torchcodec.encoders import AudioEncoder
 
@@ -60,7 +61,7 @@ def get_silence_interval(size: int, interval_silence: int = 200, sampling_rate: 
     return torch.zeros(size, (sampling_rate * interval_silence) // 1000)
 
 
-def find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> int:
+def find_most_similar_cosine(query_vector: Float[Tensor, "1 C"], matrix: Float[Tensor, "N C"]) -> int:
     query_vector = query_vector.float()
     matrix = matrix.float()
 
@@ -105,11 +106,11 @@ class IndexTTS2:
     def generate_voice_conversion(
         self,
         code_lens: list[int],
-        prompt_condition: Tensor,
-        style: Tensor,
-        ref_mel: Tensor,
-        codes: Tensor,
-        latent: Tensor,
+        prompt_condition: Float[Tensor, "B T C"],
+        style: Float[Tensor, "B C"],
+        ref_mel: Float[Tensor, "B N T"],
+        codes: Int[Tensor, "B T"],
+        latent: Float[Tensor, "B T C"],
     ) -> Tensor:
         semantic_inference = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
         semantic_inference = semantic_inference.mT + self.s2mel.gpt_layer(latent)
@@ -128,7 +129,9 @@ class IndexTTS2:
         inputs = inputs.to(self.device)
         return self.get_emb(inputs["input_features"], inputs["attention_mask"])
 
-    def generate_emotion_matrix(self, weight_vector: Tensor, style: Tensor, use_random: bool = False) -> Tensor:
+    def generate_emotion_matrix(
+        self, weight_vector: Float[Tensor, "emo"], style: Float[Tensor, "B C"], use_random: bool = False
+    ) -> Tensor:
         if use_random:
             index = [random.randint(0, x - 1) for x in EMO_NUM]
         else:
@@ -147,7 +150,7 @@ class IndexTTS2:
 
     @cached_property[UnifiedVoice]
     def gpt(self) -> UnifiedVoice:
-        with Timer() as t:
+        with Timer() as T:
             path = hf.hf_hub_download("IndexTeam/IndexTTS-2", filename="gpt.pth")
             data = torch.load(path, map_location=self.device, mmap=True)
 
@@ -159,7 +162,7 @@ class IndexTTS2:
             if self.use_fp16:
                 model = model.half()
 
-        print(f">> GPT weights restored in {t:.2f} seconds from: {path}")
+        print(f">> GPT weights restored in {T:.2f} seconds from: {path}")
         return model
 
     @cached_property[QwenEmotion]
@@ -174,16 +177,16 @@ class IndexTTS2:
 
     @cached_property[TextTokenizer]
     def tokenizer(self) -> TextTokenizer:
-        with Timer() as t:
+        with Timer() as T:
             path = Path(hf.hf_hub_download(repo_id=self.cfg.dataset.repo_id, filename=self.cfg.dataset.filename))
             tokenizer = TextTokenizer(path, self.normalizer)
 
-        print(f">> bpe model restored in {t:.2f} seconds from: {path}")
+        print(f">> bpe model restored in {T:.2f} seconds from: {path}")
         return tokenizer
 
     @cached_property[CAMPPlus]
     def campplus_model(self) -> CAMPPlus:
-        with Timer() as t:
+        with Timer() as T:
             path = hf.hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
             data = torch.load(path, map_location=self.device)
 
@@ -191,12 +194,12 @@ class IndexTTS2:
             model.load_state_dict(data)
             model = model.eval().to(self.device)
 
-        print(f">> campplus_model weights restored in {t:.2f} seconds from: {path}")
+        print(f">> campplus_model weights restored in {T:.2f} seconds from: {path}")
         return model
 
     @cached_property[bigvgan.BigVGAN]
     def bigvgan(self) -> bigvgan.BigVGAN:
-        with Timer() as t:
+        with Timer() as T:
             # Simpler but slower version
             if False:
                 model = bigvgan.BigVGAN.from_pretrained(  # pyright: ignore[reportUnreachable]
@@ -218,12 +221,12 @@ class IndexTTS2:
             model = model.eval()
             model.remove_weight_norm()
 
-        print(f">> bigvgan weights restored in {t:.2f} seconds from: {path}")
+        print(f">> bigvgan weights restored in {T:.2f} seconds from: {path}")
         return model
 
     @cached_property[RepCodec]
     def semantic_codec(self) -> RepCodec:
-        with Timer() as t:
+        with Timer() as T:
             path = hf.hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
 
             model = RepCodec()
@@ -233,38 +236,38 @@ class IndexTTS2:
             if unexpected:
                 print(f">> semantic_codec unexpected keys: {unexpected}")
             model = model.eval().to(self.device)
-        print(f">> semantic_codec weights restored from: {path} in {t:.2f} seconds")
+        print(f">> semantic_codec weights restored from: {path} in {T:.2f} seconds")
         return model
 
     @cached_property[transformers.Wav2Vec2BertModel]
     def semantic_model(self) -> transformers.Wav2Vec2BertModel:
-        with Timer() as t:
+        with Timer() as T:
             model = transformers.Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0")
             model = model.eval().to(self.device)
-        print(f">> semantic_model weights restored in {t:.2f} seconds")
+        print(f">> semantic_model weights restored in {T:.2f} seconds")
         return model
 
     @cached_property[Tensor]
     def semantic_mean(self) -> Tensor:
-        with Timer() as t:
+        with Timer() as T:
             path = hf.hf_hub_download(repo_id=self.cfg.w2v_stat.repo_id, filename=self.cfg.w2v_stat.filename)
             data = torch.load(path)
             data = data["mean"].to(self.device)
-        print(f">> semantic_mean weights restored in {t:.2f} seconds from: {path}")
+        print(f">> semantic_mean weights restored in {T:.2f} seconds from: {path}")
         return data
 
     @cached_property[Tensor]
     def semantic_std(self) -> Tensor:
-        with Timer() as t:
+        with Timer() as T:
             path = hf.hf_hub_download(repo_id=self.cfg.w2v_stat.repo_id, filename=self.cfg.w2v_stat.filename)
             data = torch.load(path)
             data = torch.sqrt(data["var"]).to(self.device)
-        print(f">> semantic_std weights restored in {t:.2f} seconds from: {path}")
+        print(f">> semantic_std weights restored in {T:.2f} seconds from: {path}")
         return data
 
     @cached_property[MyModel]
     def s2mel(self) -> MyModel:
-        with Timer() as t:
+        with Timer() as T:
             path = hf.hf_hub_download("IndexTeam/IndexTTS-2", filename="s2mel.pth")
             data = torch.load(path, map_location=self.device, mmap=True)
             params = data["net"]
@@ -276,7 +279,7 @@ class IndexTTS2:
             model.gpt_layer.load_state_dict(params["gpt_layer"], assign=True)
             model = model.eval()
 
-        print(f">> s2mel weights restored in {t:.2f} seconds: {path}")
+        print(f">> s2mel weights restored in {T:.2f} seconds: {path}")
         return model
 
     @cached_property[transformers.SeamlessM4TFeatureExtractor]
@@ -351,7 +354,7 @@ class IndexTTS2:
         self.model_version = int(self.cfg.version)
 
     @torch.inference_mode()
-    def get_emb(self, input_features: Tensor, attention_mask: Tensor) -> Tensor:
+    def get_emb(self, input_features: Float[Tensor, "B T f"], attention_mask: Int[Tensor, "B T"]) -> Tensor:
         vq_emb = self.semantic_model(
             input_features=input_features, attention_mask=attention_mask, output_hidden_states=True
         )
@@ -395,7 +398,7 @@ class IndexTTS2:
             emo_vector = list(emo_dict.values())
 
         if emo_vector is not None:
-            # we have emotion vectors; they can't be blended via alpha mixing
+            # we have emotion vectors; they can'T be blended via alpha mixing
             # in the main inference process later, so we must pre-calculate
             # their new strengths here based on the alpha instead!
             emo_vector_scale = max(0.0, min(1.0, emo_alpha))
@@ -408,7 +411,7 @@ class IndexTTS2:
             # we are not using any external "emotion reference voice"; use
             # speaker's voice as the main emotion reference audio.
             emo_audio_prompt = spk_audio_prompt
-            # must always use alpha=1.0 when we don't have an external reference voice
+            # must always use alpha=1.0 when we don'T have an external reference voice
             emo_alpha = 1.0
 
         gen = self.infer_generator(
@@ -500,8 +503,8 @@ class IndexTTS2:
                 f"  >> Warning: input text contains {text_token_ids.count(self.tokenizer.unk_token_id)} unknown tokens (id={self.tokenizer.unk_token_id}):"
             )
             print(
-                "     Tokens which can't be encoded: ",
-                [t for t, id in zip(text_tokens_list, text_token_ids) if id == self.tokenizer.unk_token_id],
+                "     Tokens which can'T be encoded: ",
+                [T for T, id in zip(text_tokens_list, text_token_ids) if id == self.tokenizer.unk_token_id],
             )
             print("     Consider updating the BPE model or modifying the text to avoid unknown tokens.")
 

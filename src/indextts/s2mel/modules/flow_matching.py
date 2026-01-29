@@ -1,4 +1,5 @@
 import torch
+from jaxtyping import Float
 from torch import Tensor, nn
 from tqdm import tqdm
 
@@ -16,7 +17,9 @@ class CFM(nn.Module):
         self.estimator = DiT()
 
     @torch.inference_mode()
-    def inference(self, mu: Tensor, prompt: Tensor, style: Tensor) -> Tensor:
+    def inference(
+        self, mu: Float[Tensor, "b t c"], prompt: Float[Tensor, "b c t"], style: Float[Tensor, "b c"]
+    ) -> Tensor:
         """Forward diffusion
 
         Args:
@@ -36,7 +39,14 @@ class CFM(nn.Module):
         t_span = torch.linspace(0, 1, 26, device=mu.device)
         return self.solve_euler(z, prompt, mu, style, t_span)
 
-    def solve_euler(self, x: Tensor, prompt: Tensor, mu: Tensor, style: Tensor, t_span: Tensor) -> Tensor:
+    def solve_euler(
+        self,
+        x: Float[Tensor, "b c t"],
+        prompt: Float[Tensor, "b c t"],
+        mu: Float[Tensor, "b t c"],
+        style: Float[Tensor, "b c"],
+        t_span: Float[Tensor, "t"],
+    ) -> Tensor:
         """
         Fixed euler solver for ODEs.
         Args:

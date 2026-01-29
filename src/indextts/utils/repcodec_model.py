@@ -8,6 +8,7 @@ from typing import override
 import torch
 import torch.nn.functional as F
 from einops import rearrange
+from jaxtyping import Float, Int
 from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
@@ -47,7 +48,7 @@ class ConvNeXtBlock(nn.Module):
         self.gamma = nn.Parameter(1 / 12 * torch.ones(dim))
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:
         residual = x
         x = self.dwconv(x)
         x = x.mT  # (B, C, T) -> (B, T, C)
@@ -83,7 +84,7 @@ class VocosBackbone(nn.Module):
         self.apply(_init_weights)
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:
         x = self.embed(x)
         x = self.norm(x.mT)
         x = x.mT
@@ -108,7 +109,7 @@ class FactorizedVectorQuantize(nn.Module):
         self.codebook = nn.Embedding(codebook_size, latent_dim)
 
     @override
-    def forward(self, z: Tensor) -> Tensor:
+    def forward(self, z: Float[Tensor, "b d t"]) -> Tensor:
         """
         Parameters
         ----------
@@ -128,10 +129,10 @@ class FactorizedVectorQuantize(nn.Module):
 
         return self.out_project(z_q)
 
-    def decode_code(self, embed_id: Tensor) -> Tensor:
+    def decode_code(self, embed_id: Int[Tensor, "b t"]) -> Tensor:
         return F.embedding(embed_id, self.codebook.weight).mT
 
-    def decode_latents(self, latents: Tensor) -> Tensor:
+    def decode_latents(self, latents: Float[Tensor, "b d t"]) -> Tensor:
         encodings = rearrange(latents, "b d t -> (b t) d")
         codebook = self.codebook.weight
 
@@ -149,7 +150,7 @@ class FactorizedVectorQuantize(nn.Module):
         indices = rearrange((-dist).max(1)[1], "(b t) -> b t", b=latents.size(0))
         return self.decode_code(indices)
 
-    def vq2emb(self, vq: Tensor) -> Tensor:
+    def vq2emb(self, vq: Int[Tensor, "b t"]) -> Tensor:
         emb = self.decode_code(vq)
         return self.out_project(emb)
 
@@ -172,7 +173,7 @@ class ResidualVQ(nn.Module):
         self.quantizers = nn.ModuleList(quantizers)  # pyright: ignore[reportAttributeAccessIssue]
 
     @override
-    def forward(self, z: Tensor) -> Tensor:
+    def forward(self, z: Float[Tensor, "b d t"]) -> Tensor:
         """
         Parameters
         ----------
@@ -190,7 +191,7 @@ class ResidualVQ(nn.Module):
 
         return z_q_i * mask[:, None, None]
 
-    def vq2emb(self, vq: Tensor) -> Tensor:
+    def vq2emb(self, vq: Int[Tensor, "q b t"]) -> Tensor:
         return self.quantizers[0].vq2emb(vq[0])
 
     @patch_call(forward)
@@ -208,7 +209,7 @@ class RepCodec(nn.Module):
 
         self.apply(_init_weights)
 
-    def quantize(self, x: Tensor) -> Tensor:
+    def quantize(self, x: Float[Tensor, "b t c"]) -> Tensor:
         x = self.encoder(x.mT).mT
 
         return self.quantizer(x).mT

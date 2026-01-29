@@ -2,6 +2,7 @@ from typing import Any, override
 
 import torch
 import transformers
+from jaxtyping import Float, Int
 from torch import Tensor, nn
 from transformers import GPT2Config, GPT2Model, GPT2PreTrainedModel
 from transformers.generation.utils import GenerationMixin
@@ -36,11 +37,11 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     @override
     def prepare_inputs_for_generation(
         self,
-        input_ids: Tensor,
+        input_ids: Int[Tensor, "b t"],
         past_key_values: transformers.Cache | None = None,
-        attention_mask: Tensor | None = None,
-        inputs_embeds: Tensor | None = None,
-        cache_position: Tensor | None = None,
+        attention_mask: Int[Tensor, "b t"] | None = None,
+        inputs_embeds: Float[Tensor, "b t d"] | None = None,
+        cache_position: Int[Tensor, "b"] | None = None,
         **kwargs: Any,  # pyright: ignore[reportExplicitAny]
     ) -> dict[str, transformers.Cache | Tensor | bool | None]:
         token_type_ids = kwargs.get("token_type_ids")  # usually None
@@ -72,15 +73,15 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     @override
     def forward(
         self,
-        input_ids: Tensor,
-        past_key_values: tuple[tuple[Tensor]] | None = None,
-        attention_mask: Tensor | None = None,
-        token_type_ids: Tensor | None = None,
-        position_ids: Tensor | None = None,
-        head_mask: Tensor | None = None,
-        inputs_embeds: Tensor | None = None,
-        encoder_hidden_states: Tensor | None = None,
-        encoder_attention_mask: Tensor | None = None,
+        input_ids: Int[Tensor, "b t"],
+        past_key_values: transformers.Cache | None = None,
+        attention_mask: Int[Tensor, "b t"] | None = None,
+        token_type_ids: Int[Tensor, "wrong_rank_probe 999 999"] | None = None,
+        position_ids: Int[Tensor, "b t"] | None = None,
+        head_mask: Float[Tensor, "wrong_rank_probe 999 999"] | None = None,
+        inputs_embeds: Float[Tensor, "b t d"] | None = None,
+        encoder_hidden_states: Float[Tensor, "wrong_rank_probe 999 999"] | None = None,
+        encoder_attention_mask: Int[Tensor, "wrong_rank_probe 999 999"] | None = None,
         labels: None = None,
         use_cache: bool | None = None,
         output_attentions: bool | None = None,
@@ -97,7 +98,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         if input_ids.shape[1] != 1:
             text_inputs = unwrap(input_ids)[:, mel_len:]
             text_emb = self.embeddings(text_inputs)
-            text_emb += self.text_pos_embedding(text_emb)
+            text_emb += self.text_pos_embedding(text_emb.shape[1], device=text_emb.device)
             if unwrap(self.cached_mel_emb).shape[0] != text_emb.shape[0]:
                 mel_emb = unwrap(self.cached_mel_emb).repeat_interleave(
                     text_emb.shape[0] // unwrap(self.cached_mel_emb).shape[0], 0

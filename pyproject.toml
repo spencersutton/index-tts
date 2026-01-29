@@ -129,6 +129,13 @@ dev = [
 
 [tool.basedpyright]
 enableTypeIgnoreComments = true
+ignore = ["tools/", "tests/", "sitecustomize.py"]
+reportAny = false
+reportCallInDefaultInitializer = false
 reportIgnoreCommentWithoutRule = false
+reportImplicitStringConcatenation = false
 reportIncompatibleUnannotatedOverride = "warning"
 reportUnannotatedClassAttribute = false
+reportUnknownMemberType = false
+reportUnusedCallResult = false
+stubPath = "../typings"

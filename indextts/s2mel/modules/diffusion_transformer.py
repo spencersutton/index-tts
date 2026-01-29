@@ -14,14 +14,6 @@ from indextts.util import patch_call
 STYLE_ENCODER_DIM = 192
 
 
-def sequence_mask(length: Int[Tensor, "b"] | int, max_length: int | None = None) -> Tensor:
-    length = torch.as_tensor(length)
-    if max_length is None:
-        max_length = int(length.max())
-    x = torch.arange(max_length, dtype=length.dtype, device=length.device)
-    return x.unsqueeze(0) < length.unsqueeze(1)
-
-
 def modulate(x: Float[Tensor, "b t d"], shift: Float[Tensor, "b d"], scale: Float[Tensor, "b d"]) -> Tensor:
     return x * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
 
@@ -167,11 +159,7 @@ class DiT(nn.Module):
 
         x_in = self.cond_x_merge_linear.__call__(x_in)  # (N, T, D) [2, 1863, 512]
 
-        x_mask = (
-            sequence_mask(x_lens, max_length=x_in.size(1)).to(x.device).unsqueeze(1)
-        )  # torch.Size([1, 1, 1863])True
         input_pos = self.input_pos[: x_in.size(1)]  # (T,) range（0，1863）
-        x_mask_expanded = x_mask[:, None, :].repeat(1, 1, x_in.size(1), 1)  # torch.Size([1, 1, 1863, 1863]
         x_res = self.transformer.__call__(x_in, t1.unsqueeze(1), input_pos)  # [2, 1863, 512]
 
         x_res = self.skip_linear.__call__(torch.cat([x_res, x], dim=-1))

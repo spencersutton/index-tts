@@ -1,5 +1,5 @@
 import math
-from typing import override
+from typing import TYPE_CHECKING, override
 
 import torch
 from torch import Tensor, nn
@@ -28,7 +28,8 @@ class TimestepEmbedder(nn.Module):
     Embeds scalar timesteps into vector representations.
     """
 
-    freqs: Tensor
+    if TYPE_CHECKING:
+        freqs: Tensor = torch.empty(0)
 
     def __init__(self) -> None:
         super().__init__()
@@ -81,7 +82,8 @@ class FinalLayer(nn.Module):
 
 
 class DiT(nn.Module):
-    input_pos: Tensor
+    if TYPE_CHECKING:
+        input_pos: Tensor = torch.empty(0)
     transformer: Transformer
     x_embedder: nn.Linear
     cond_projection: nn.Linear

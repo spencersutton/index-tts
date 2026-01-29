@@ -143,8 +143,7 @@ class ConformerEncoderLayer(nn.Module):
         self.conv_module = conv_module
         self.norm_ff = nn.LayerNorm(size, eps=1e-5)  # for the FNN module
         self.norm_mha = nn.LayerNorm(size, eps=1e-5)  # for the MHA module
-        self.norm_ff_macaron = nn.LayerNorm(size, eps=1e-5)
-        self.ff_scale = 0.5
+        self.ff_scale = 1.0
         if self.conv_module is not None:
             self.norm_conv = nn.LayerNorm(size, eps=1e-5)  # for the CNN module
             self.norm_final = nn.LayerNorm(size, eps=1e-5)  # for the final output of the block

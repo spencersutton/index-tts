@@ -94,5 +94,5 @@ class CFM(nn.Module):
         training optimizations if applicable.
         """
         if torch.distributed.is_initialized():
-            torch._inductor.config.reorder_for_compute_comm_overlap = True
+            torch._inductor.config.reorder_for_compute_comm_overlap = True  # pyright: ignore[reportPrivateUsage]
         self.estimator = torch.compile(self.estimator, fullgraph=True, dynamic=True)

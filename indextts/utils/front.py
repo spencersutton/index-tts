@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Final, cast, overload
 
 import yaml
-from sentencepiece import SentencePieceProcessor  # pyright: ignore[reportMissingTypeStubs]
+from sentencepiece import SentencePieceProcessor
 
 from indextts.utils.common import de_tokenized_by_CJK_char, tokenize_by_CJK_char
 
@@ -23,6 +23,8 @@ punctuation_marks_tokens: Final = [
 
 
 class TextNormalizer:
+    
+
     def __init__(self, enable_glossary: bool = False) -> None:
         self.zh_normalizer = None
         self.en_normalizer = None
@@ -125,13 +127,13 @@ class TextNormalizer:
         if self.zh_normalizer is not None and self.en_normalizer is not None:
             return
         if sys.platform != "linux":  # Mac and Windows
-            from wetext import Normalizer  # pyright: ignore[reportMissingTypeStubs]
+            from wetext import Normalizer
 
             self.zh_normalizer = Normalizer(remove_erhua=False, lang="zh", operator="tn")
             self.en_normalizer = Normalizer(lang="en", operator="tn")
         else:
-            from tn.chinese.normalizer import Normalizer as NormalizerZh  # pyright: ignore[reportMissingImports]
-            from tn.english.normalizer import Normalizer as NormalizerEn  # pyright: ignore[reportMissingImports]
+            from tn.chinese.normalizer import Normalizer as NormalizerZh  # type: ignore
+            from tn.english.normalizer import Normalizer as NormalizerEn  # type: ignore
 
             # use new cache dir for build tagger rules with disable remove_interjections and remove_erhua
             cache_dir = Path(__file__).resolve().parent / "tagger_cache"

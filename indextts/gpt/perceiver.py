@@ -88,11 +88,11 @@ class PerceiverResampler(nn.Module):
         self.latents = nn.Parameter(torch.randn(num_latents, dim))
         nn.init.normal_(self.latents, std=0.02)
 
-        self.layers = nn.ModuleList()
+        self.layers = nn.ModuleList()  # pyright: ignore[reportAttributeAccessIssue]
         dim_inner = int(dim * 4 / 3)
         for _ in range(depth):
             self.layers.append(
-                nn.ModuleList((
+                nn.ModuleList((  # pyright: ignore[reportArgumentType]
                     Attention(dim=dim, heads=heads),
                     nn.Sequential(nn.Linear(dim, dim_inner * 2), GEGLU(), nn.Linear(dim_inner, dim)),
                 ))

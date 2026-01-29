@@ -135,7 +135,7 @@ class ConformerEncoderLayer(nn.Module):
         size: int,
         self_attn: RelPositionMultiHeadedAttention,
         feed_forward: PositionwiseFeedForward,
-        conv_module: ConvolutionModule | None = None,
+        conv_module: ConvolutionModule,
     ) -> None:
         """Construct an EncoderLayer object."""
         super().__init__()
@@ -145,9 +145,8 @@ class ConformerEncoderLayer(nn.Module):
         self.norm_ff = nn.LayerNorm(size, eps=1e-5)  # for the FNN module
         self.norm_mha = nn.LayerNorm(size, eps=1e-5)  # for the MHA module
         self.ff_scale = 1.0
-        if self.conv_module is not None:
-            self.norm_conv = nn.LayerNorm(size, eps=1e-5)  # for the CNN module
-            self.norm_final = nn.LayerNorm(size, eps=1e-5)  # for the final output of the block
+        self.norm_conv = nn.LayerNorm(size, eps=1e-5)  # for the CNN module
+        self.norm_final = nn.LayerNorm(size, eps=1e-5)  # for the final output of the block
         self.dropout = nn.Dropout(0.0)
         self.size = size
         self.concat_linear = nn.Identity()

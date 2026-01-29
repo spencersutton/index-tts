@@ -6,13 +6,20 @@ from jaxtyping import Float, Int
 from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
-from indextts.s2mel.modules.commons import sequence_mask
 from indextts.s2mel.modules.constants import BLOCK_SIZE, DIM, IN_CHANNELS
 from indextts.s2mel.modules.gpt_fast.model import Transformer
 from indextts.s2mel.modules.wavenet import WaveNet
 from indextts.util import patch_call
 
 STYLE_ENCODER_DIM = 192
+
+
+def sequence_mask(length: Int[Tensor, "b"] | int, max_length: int | None = None) -> Tensor:
+    length = torch.as_tensor(length)
+    if max_length is None:
+        max_length = int(length.max())
+    x = torch.arange(max_length, dtype=length.dtype, device=length.device)
+    return x.unsqueeze(0) < length.unsqueeze(1)
 
 
 def modulate(x: Float[Tensor, "b t d"], shift: Float[Tensor, "b d"], scale: Float[Tensor, "b d"]) -> Tensor:

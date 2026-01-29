@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 import torch
 import torch.nn.functional as F
@@ -196,6 +196,7 @@ class UnifiedVoice(nn.Module):
 
         self.gpt.wte = self.mel_embedding
 
+    @override
     def forward(
         self,
         speech_conditioning_latent: Tensor,

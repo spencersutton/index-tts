@@ -69,6 +69,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             "token_type_ids": token_type_ids,
         }
 
+    @override
     def forward(
         self,
         input_ids: Tensor | None = None,

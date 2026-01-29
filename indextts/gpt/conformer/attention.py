@@ -17,6 +17,7 @@
 """Multi-Head Attention layer definition."""
 
 import math
+from typing import override
 
 import torch
 from torch import Tensor, nn
@@ -113,6 +114,7 @@ class MultiHeadedAttention(nn.Module):
 
         return self.linear_out(x)  # (batch, time1, d_model)
 
+    @override
     def forward(
         self,
         query: Tensor,
@@ -227,6 +229,7 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
 
         return x
 
+    @override
     def forward(
         self,
         query: Tensor,

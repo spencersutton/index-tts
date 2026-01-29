@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import cast
+from typing import cast, override
 
 import torch
 from torch import Tensor, nn
@@ -32,6 +32,7 @@ class PositionwiseFeedForward(nn.Module):
         self.dropout = nn.Dropout(0.0)
         self.w_2 = nn.Linear(hidden_units, idim)
 
+    @override
     def forward(self, xs: Tensor) -> Tensor:
         """Forward function.
 
@@ -66,6 +67,7 @@ class ConvolutionModule(nn.Module):
         self.pointwise_conv2 = nn.Conv1d(OUTPUT_DIM, OUTPUT_DIM, kernel_size=1)
         self.activation = activation
 
+    @override
     def forward(
         self,
         x: Tensor,
@@ -155,6 +157,7 @@ class ConformerEncoderLayer(nn.Module):
         else:
             self.concat_linear = nn.Identity()
 
+    @override
     def forward(
         self,
         x: Tensor,
@@ -247,6 +250,7 @@ class ConformerEncoder(nn.Module):
             ]),
         )
 
+    @override
     def forward(self, xs: Tensor) -> tuple[Tensor, Tensor]:
         """Embed positions in tensor.
 

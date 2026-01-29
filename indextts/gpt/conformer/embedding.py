@@ -16,6 +16,7 @@
 """Positonal Encoding Module."""
 
 import math
+from typing import override
 
 import torch
 import torch.nn.functional as F
@@ -82,6 +83,7 @@ class RelPositionalEncoding(nn.Module):
 
         return pos_emb
 
+    @override
     def forward(self, x: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor]:
         """Compute positional encoding.
         Args:

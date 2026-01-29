@@ -156,14 +156,11 @@ class UnifiedVoice(nn.Module):
             accel_gpt.load_state_dict(self.gpt.state_dict(), strict=False)
 
             if half:
-                accel_gpt = accel_gpt.half().cuda()
-            else:
-                accel_gpt = accel_gpt.cuda()
-            accel_gpt.eval()
+                accel_gpt = accel_gpt.half()
 
             lm_head_with_norm = nn.Sequential(self.final_norm, self.mel_head)
             self.accel_engine = AccelInferenceEngine(
-                model=accel_gpt,
+                model=accel_gpt.cuda().eval(),
                 lm_head=lm_head_with_norm,
                 num_layers=self.layers,
                 num_heads=self.heads,

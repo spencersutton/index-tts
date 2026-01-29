@@ -5,7 +5,7 @@ from typing import override
 import torch
 from torch import Tensor, nn
 
-from indextts.accel.attention import ForwardContext, get_forward_context, reset_forward_context, set_forward_context
+from indextts.accel.attention import ForwardContext
 from indextts.accel.gpt2_accel import GPT2AccelModel
 from indextts.accel.kv_manager import KVCacheManager, Seq
 from indextts.gpt.model_v2 import LearnedPositionEmbeddings
@@ -124,7 +124,9 @@ class AccelInferenceEngine:
             f"block_tables batch size mismatch: {block_tables.size(0)} vs {len(requests)}"
         )
 
-        set_forward_context(False, slot_mapping=slot_mapping, context_lens=context_lens, block_tables=block_tables)
+        ForwardContext.set_context(
+            False, slot_mapping=slot_mapping, context_lens=context_lens, block_tables=block_tables
+        )
 
         return input_ids, positions
 
@@ -161,7 +163,7 @@ class AccelInferenceEngine:
             context_lens[:bs] = bs + 1
             block_tables[:bs, :] = 0
 
-            set_forward_context(
+            ForwardContext.set_context(
                 False, slot_mapping=slot_mapping[:bs], context_lens=context_lens[:bs], block_tables=block_tables[:bs]
             )
 
@@ -198,7 +200,7 @@ class AccelInferenceEngine:
 
             self.graphs[bs] = graph
             torch.cuda.synchronize()
-            reset_forward_context()
+            ForwardContext.reset_context()
 
         self.graph_vars = {
             "input_ids": input_ids,
@@ -373,13 +375,13 @@ class AccelInferenceEngine:
             ).last_hidden_state
 
         if is_varlen_batch:
-            context = get_forward_context()
+            context = ForwardContext.get_context()
             cu_seqlens = unwrap(context.cu_seqlens_q).cpu().tolist()
             last_hidden = torch.stack([unwrap(hidden_states)[0, cu_seqlens[i + 1] - 1] for i in range(batch_size)])
         else:
             last_hidden = unwrap(hidden_states)[:, -1, :]  # [batch_size, hidden_size]
 
-        reset_forward_context()
+        ForwardContext.reset_context()
 
         if last_hidden.dtype != next(self.lm_head.parameters()).dtype:
             last_hidden = last_hidden.to(next(self.lm_head.parameters()).dtype)
@@ -421,7 +423,7 @@ class AccelInferenceEngine:
         for _ in range(remaining_tokens):
             decode_ids, decode_pos = self._prepare_decode(sequences)
 
-            context = get_forward_context()
+            context = ForwardContext.get_context()
             hidden_states = self._run_decode_with_graph(
                 decode_ids,
                 decode_pos,
@@ -433,7 +435,7 @@ class AccelInferenceEngine:
             # Get logits
             logits = self.lm_head(hidden_states)  # [batch_size, vocab_size]
 
-            reset_forward_context()
+            ForwardContext.reset_context()
 
             temperatures = self._prepare_sample(sequences, temperature)
             if temperature > 0:

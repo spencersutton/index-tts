@@ -1,10 +1,11 @@
+# pyright: reportMissingImports=false
 from dataclasses import dataclass
-from typing import override
+from typing import ClassVar, no_type_check, override
 
 import torch
 import triton
 import triton.language as tl
-from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache
+from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache  # pyright: ignore[reportUnknownVariableType]
 from torch import Tensor, nn
 
 from indextts.util import patch_call
@@ -21,36 +22,37 @@ class ForwardContext:
     context_lens: Tensor | None = None
     block_tables: Tensor | None = None
 
+    _instance: ClassVar["ForwardContext"]
 
-_FORWARD_CONTEXT = ForwardContext()
+    @classmethod
+    def get_context(cls) -> "ForwardContext":
+        if not hasattr(cls, "_instance"):
+            cls._instance = cls()
+        return cls._instance
+
+    @classmethod
+    def set_context(
+        cls,
+        is_prefill: bool,
+        cu_seqlens_q: Tensor | None = None,
+        cu_seqlens_k: Tensor | None = None,
+        max_seqlen_q: int = 0,
+        max_seqlen_k: int = 0,
+        slot_mapping: Tensor | None = None,
+        context_lens: Tensor | None = None,
+        block_tables: Tensor | None = None,
+    ) -> None:
+        cls._instance = cls(
+            is_prefill, cu_seqlens_q, cu_seqlens_k, max_seqlen_q, max_seqlen_k, slot_mapping, context_lens, block_tables
+        )
+
+    @classmethod
+    def reset_context(cls) -> None:
+        cls._instance = cls()
 
 
-def get_forward_context() -> ForwardContext:
-    return _FORWARD_CONTEXT
-
-
-def set_forward_context(
-    is_prefill: bool,
-    cu_seqlens_q: Tensor | None = None,
-    cu_seqlens_k: Tensor | None = None,
-    max_seqlen_q: int = 0,
-    max_seqlen_k: int = 0,
-    slot_mapping: Tensor | None = None,
-    context_lens: Tensor | None = None,
-    block_tables: Tensor | None = None,
-) -> None:
-    global _FORWARD_CONTEXT
-    _FORWARD_CONTEXT = ForwardContext(
-        is_prefill, cu_seqlens_q, cu_seqlens_k, max_seqlen_q, max_seqlen_k, slot_mapping, context_lens, block_tables
-    )
-
-
-def reset_forward_context() -> None:
-    global _FORWARD_CONTEXT
-    _FORWARD_CONTEXT = ForwardContext()
-
-
-@triton.jit
+@triton.jit  # pyright: ignore[reportUntypedFunctionDecorator]
+@no_type_check
 def store_kvcache_kernel(
     key_ptr: Tensor,
     key_stride: int,
@@ -61,7 +63,7 @@ def store_kvcache_kernel(
     slot_mapping_ptr: Tensor,
     D: tl.constexpr,
 ) -> None:
-    BLOCK_SIZE: tl.constexpr = 2048  # ty:ignore[invalid-assignment]
+    BLOCK_SIZE: tl.constexpr = 2048
     idx = tl.program_id(0)
     slot = tl.load(slot_mapping_ptr + idx)
     if slot == -1:
@@ -89,7 +91,7 @@ def store_kvcache(key: Tensor, value: Tensor, k_cache: Tensor, v_cache: Tensor, 
     assert key.stride(1) == head_dim and value.stride(1) == head_dim
     assert k_cache.stride(1) == D and v_cache.stride(1) == D
     assert slot_mapping.numel() == N
-    store_kvcache_kernel[N,](key, key.stride(0), value, value.stride(0), k_cache, v_cache, slot_mapping, D)  # ty:ignore[invalid-argument-type]
+    store_kvcache_kernel[N,](key, key.stride(0), value, value.stride(0), k_cache, v_cache, slot_mapping, D)  # pyright: ignore[reportIndexIssue]
 
 
 class Attention(nn.Module):

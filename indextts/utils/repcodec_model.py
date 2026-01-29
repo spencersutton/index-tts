@@ -78,7 +78,7 @@ class VocosBackbone(nn.Module):
         super().__init__()
         self.embed = nn.Conv1d(in_channels, out_channels, kernel_size=7, padding=3)
         self.norm = nn.LayerNorm(out_channels, eps=1e-6)
-        self.convnext = nn.ModuleList([ConvNeXtBlock() for _ in range(n_layers)])
+        self.convnext = nn.ModuleList([ConvNeXtBlock() for _ in range(n_layers)])  # pyright: ignore[reportAttributeAccessIssue]
         self.final_layer_norm = nn.LayerNorm(out_channels, eps=1e-6)
         self.apply(_init_weights)
 
@@ -169,7 +169,7 @@ class ResidualVQ(nn.Module):
         super().__init__()
 
         quantizers = [FactorizedVectorQuantize()]
-        self.quantizers = nn.ModuleList(quantizers)
+        self.quantizers = nn.ModuleList(quantizers)  # pyright: ignore[reportAttributeAccessIssue]
 
     @override
     def forward(self, z: Tensor) -> Tensor:

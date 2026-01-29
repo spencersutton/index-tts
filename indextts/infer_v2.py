@@ -377,7 +377,7 @@ class IndexTTS2:
         stream_return: bool = False,
         use_emo_text: bool = False,
         use_random: bool = False,
-        **generation_kwargs: Any,
+        **generation_kwargs: Any,  # pyright: ignore[reportExplicitAny]
     ) -> Path | Generator[Tensor] | None:
         if use_emo_text or emo_vector is not None:
             # we're using a text or emotion vector guidance; so we must remove
@@ -426,7 +426,7 @@ class IndexTTS2:
         if stream_return:
             return gen
         try:
-            return next(iter(gen))
+            return next(iter(gen))  # pyright: ignore[reportReturnType]
         except IndexError:
             return None
 

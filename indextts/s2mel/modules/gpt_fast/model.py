@@ -79,7 +79,7 @@ class Transformer(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        self.layers = cast(Sequence[TransformerBlock], nn.ModuleList(TransformerBlock() for _ in range(N_LAYER)))
+        self.layers = nn.ModuleList(TransformerBlock() for _ in range(N_LAYER))  # pyright: ignore[reportAttributeAccessIssue]
         self.norm = AdaptiveLayerNorm()
 
     @cached_property[Tensor]

@@ -1,3 +1,4 @@
+# type: ignore
 import argparse
 import html
 import json

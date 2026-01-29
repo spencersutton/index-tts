@@ -25,11 +25,11 @@ class WaveNet(nn.Module):
         self.cond_layer = SConv1d(DIM, 2 * DIM * NUM_LAYERS, 1)
 
         layers = [SConv1d(DIM, 2 * DIM, KERNEL_SIZE) for _ in range(NUM_LAYERS)]
-        self.in_layers = nn.ModuleList(layers)
+        self.in_layers = nn.ModuleList(layers)  # pyright: ignore[reportAttributeAccessIssue]
 
         layers = [SConv1d(DIM, 2 * DIM, 1) for _ in range(NUM_LAYERS - 1)]
         layers.append(SConv1d(DIM, DIM, 1))
-        self.res_skip_layers = nn.ModuleList(layers)
+        self.res_skip_layers = nn.ModuleList(layers)  # pyright: ignore[reportAttributeAccessIssue]
 
     @override
     def forward(self, x: Tensor, x_mask: Tensor, g: Tensor) -> Tensor:

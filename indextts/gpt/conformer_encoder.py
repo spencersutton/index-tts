@@ -237,7 +237,7 @@ class ConformerEncoder(nn.Module):
         self.after_norm = nn.LayerNorm(OUTPUT_DIM, eps=1e-5)
         activation = nn.SiLU()
 
-        self.encoders = cast(
+        self.encoders = cast(  # pyright: ignore[reportInvalidCast]
             Sequence[ConformerEncoderLayer],
             nn.ModuleList([
                 ConformerEncoderLayer(

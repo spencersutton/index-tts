@@ -41,7 +41,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         attention_mask: Tensor | None = None,
         inputs_embeds: Tensor | None = None,
         cache_position: Tensor | None = None,
-        **kwargs: Any,
+        **kwargs: Any,  # pyright: ignore[reportExplicitAny]
     ) -> dict[str, transformers.Cache | Tensor | bool | None]:
         token_type_ids = kwargs.get("token_type_ids")  # usually None
         position_ids = kwargs.get("position_ids")

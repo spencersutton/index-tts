@@ -36,13 +36,13 @@ def set_padding(input_tokens: Tensor, lengths: Tensor, token: int) -> Tensor:
 class UnifiedVoice(nn.Module):
     if TYPE_CHECKING:
         accel_engine: AccelInferenceEngine | None
-    ds_engine: Any
+    ds_engine: Any  # pyright: ignore[reportExplicitAny, reportUninitializedInstanceVariable]
 
     emo_layer: nn.Linear
     emovec_layer: nn.Linear
     final_norm: nn.LayerNorm
     gpt: GPT2Model
-    inference_model: GPT2InferenceModel
+    inference_model: GPT2InferenceModel  # pyright: ignore[reportUninitializedInstanceVariable]
     mel_head: nn.Linear
     speed_emb: nn.Embedding
 
@@ -109,7 +109,7 @@ class UnifiedVoice(nn.Module):
         )
         # Override the built in positional embeddings
         del self.gpt.wpe
-        self.gpt.wpe = lambda x: torch.zeros((x.shape[0], x.shape[1], DIM), device=x.device)
+        self.gpt.wpe = lambda x: torch.zeros((x.shape[0], x.shape[1], DIM), device=x.device)  # type: ignore
         # Built-in token embeddings are unused.
         del self.gpt.wte
         self.mel_pos_embedding = LearnedPositionEmbeddings(max_mel_seq_len)
@@ -332,7 +332,7 @@ class UnifiedVoice(nn.Module):
         input_tokens: None = None,
         num_return_sequences: int = 1,
         max_generate_length: int | None = None,
-        **hf_generate_kwargs: Any,
+        **hf_generate_kwargs: Any,  # pyright: ignore[reportExplicitAny]
     ) -> Tensor:
         """
         Args:
@@ -376,7 +376,7 @@ class UnifiedVoice(nn.Module):
                 num_return_sequences=num_return_sequences,
                 **hf_generate_kwargs,
             )
-        return output[:, trunc_index:]
+        return output[:, trunc_index:]  # pyright: ignore[reportUnknownVariableType]
 
     def process_speech_condition(self, condition: Tensor) -> Tensor:
         if condition.ndim == 2:

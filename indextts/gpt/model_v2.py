@@ -52,7 +52,6 @@ class UnifiedVoice(nn.Module):
     mel_pos_embedding: LearnedPositionEmbeddings
     text_pos_embedding: LearnedPositionEmbeddings
 
-    cond_num: int
     heads: int
     layers: int
     max_mel_tokens: int
@@ -205,7 +204,7 @@ class UnifiedVoice(nn.Module):
         emo_speech_conditioning_latent: Tensor,
         emo_vec: Tensor,
         use_speed: int,
-        device: torch.types.Device,
+        device: str,
     ) -> Tensor:
         """
         Forward pass that uses both text and voice in either text conditioning mode or voice conditioning mode
@@ -326,10 +325,8 @@ class UnifiedVoice(nn.Module):
         self,
         speech_conditioning_latent: Tensor,
         text_inputs: Tensor,
-        emo_speech_condition: Tensor,
         *,
         emo_vec: Tensor,
-        input_tokens: None = None,
         num_return_sequences: int = 1,
         max_generate_length: int | None = None,
         **hf_generate_kwargs: Any,  # pyright: ignore[reportExplicitAny]

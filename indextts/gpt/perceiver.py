@@ -1,5 +1,5 @@
 # Adapted from https://github.com/lucidrains/naturalspeech2-pytorch/blob/659bec7f7543e7747e809e950cc2f84242fbeec7/naturalspeech2_pytorch/naturalspeech2_pytorch.py#L532
-from collections.abc import Iterable
+from collections.abc import MutableSequence
 from typing import override
 
 import torch
@@ -77,7 +77,7 @@ class GEGLU(nn.Module):
 class PerceiverResampler(nn.Module):
     proj_context: nn.Linear
     latents: nn.Parameter
-    layers: Iterable[tuple["Attention", nn.Sequential]]
+    layers: MutableSequence[tuple["Attention", nn.Sequential]]
     norm: RMSNorm
 
     def __init__(self, dim: int, num_latents: int = 32, heads: int = 8, depth: int = 2, dim_context: int = 512) -> None:

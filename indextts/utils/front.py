@@ -5,7 +5,7 @@ import warnings
 from collections.abc import Sequence
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Final, cast, overload
+from typing import TYPE_CHECKING, Final, cast
 
 import yaml
 from sentencepiece import SentencePieceProcessor
@@ -90,7 +90,7 @@ class TextNormalizer:
         #     "C#": "C sharp",
         #     "CMake": "C Make",
         # }
-        self.term_glossary = {}
+        self.term_glossary: dict[str, dict[str, str] | str] = {}
 
     @staticmethod
     def match_email(email: str) -> bool:
@@ -309,7 +309,7 @@ class TextNormalizer:
         sorted_terms = sorted(self.term_glossary.keys(), key=len, reverse=True)
 
         @lru_cache(maxsize=42)
-        def get_term_pattern(term: str) -> re.Pattern:
+        def get_term_pattern(term: str) -> re.Pattern[str]:
             return re.compile(re.escape(term), re.IGNORECASE)
 
         transformed_text = text
@@ -338,7 +338,7 @@ class TextNormalizer:
                 "PCIe": {"en": "PCIE", "zh": "PCIE"}
             })
         """
-        if glossary_dict and isinstance(glossary_dict, dict):
+        if glossary_dict:
             self.term_glossary.update(glossary_dict)
 
     def load_glossary_from_yaml(self, glossary_path: Path) -> bool:
@@ -417,8 +417,6 @@ class TextTokenizer:
         self.vocab_file = vocab_file
         self.normalizer = normalizer
 
-        if self.vocab_file is None:
-            raise ValueError("vocab_file is None")
         if not self.vocab_file.exists():
             raise ValueError(f"vocab_file {self.vocab_file} does not exist")
         if self.normalizer:
@@ -479,13 +477,7 @@ class TextTokenizer:
     def get_vocab(self) -> dict[str, int]:
         return {self.convert_ids_to_tokens(i): i for i in range(self.vocab_size)}
 
-    @overload
-    def convert_ids_to_tokens(self, ids: int) -> str: ...
-
-    @overload
-    def convert_ids_to_tokens(self, ids: Sequence[int]) -> list[str]: ...
-
-    def convert_ids_to_tokens(self, ids: Sequence[int] | int):
+    def convert_ids_to_tokens(self, ids: int) -> str:
         return self.sp_model.IdToPiece(ids)
 
     def convert_tokens_to_ids(self, tokens: Sequence[str] | str) -> list[int]:
@@ -494,40 +486,34 @@ class TextTokenizer:
         return [self.sp_model.PieceToId(token) for token in tokens]
 
     def tokenize(self, text: str) -> list[str]:
-        return self.encode(text, out_type=str)
+        return self.encode(text)
 
-    @overload
-    def encode(self, text: str, *, out_type: type[str], **kwargs: Any) -> list[str]: ...
-
-    @overload
-    def encode(self, text: str, *, out_type: type[int], **kwargs: Any) -> list[int]: ...
-
-    def encode(self, text: str, **kwargs: Any) -> list[int] | list[str]:
+    def encode(self, text: str) -> list[str]:
         if len(text) == 0:
             return []
         if len(text.strip()) == 1:
-            return self.sp_model.Encode(text, out_type=kwargs.pop("out_type", int), **kwargs)
+            return self.sp_model.Encode(text, out_type=str)
         # 预处理
         if self.normalizer:
             text = self.normalizer.normalize(text)
         if len(self.pre_tokenizers) > 0:
             for pre_tokenizer in self.pre_tokenizers:
                 text = pre_tokenizer(text)
-        return self.sp_model.Encode(text, out_type=kwargs.pop("out_type", int), **kwargs)
+        return self.sp_model.Encode(text, out_type=str)
 
-    def batch_encode(self, texts: list[str], **kwargs: Any) -> list[list[int]]:
+    def batch_encode(self, texts: list[str]) -> list[list[int]] | list[int]:
         # 预处理
         if self.normalizer:
             texts = [self.normalizer.normalize(text) for text in texts]
         if len(self.pre_tokenizers) > 0:
             for pre_tokenizer in self.pre_tokenizers:
                 texts = [pre_tokenizer(text) for text in texts]
-        return self.sp_model.Encode(texts, out_type=kwargs.pop("out_type", int), **kwargs)
+        return self.sp_model.Encode(texts)
 
-    def decode(self, ids: list[int] | int, do_lower_case: bool = False, **kwargs: Any) -> str:
+    def decode(self, ids: list[int] | int, do_lower_case: bool = False) -> str:
         if isinstance(ids, int):
             ids = [ids]
-        decoded = self.sp_model.Decode(ids, out_type=kwargs.pop("out_type", str), **kwargs)
+        decoded = self.sp_model.Decode(ids, out_type=str)
         return de_tokenized_by_CJK_char(decoded, do_lower_case=do_lower_case)
 
     @staticmethod
@@ -544,7 +530,7 @@ class TextTokenizer:
         if len(tokenized_str) == 0:
             return []
         segments: list[list[str]] = []
-        current_segment = []
+        current_segment: list[str] = []
         current_segment_tokens_len = 0
         for i in range(len(tokenized_str)):
             token = tokenized_str[i]
@@ -600,7 +586,7 @@ class TextTokenizer:
             assert current_segment_tokens_len <= max_text_tokens_per_segment
             segments.append(current_segment)
         # 如果相邻的句子加起来长度小于最大限制，且此前token总数超过quick_streaming_tokens，则合并
-        merged_segments = []
+        merged_segments: list[list[str]] = []
         total_token = 0
         for segment in segments:
             total_token += len(segment)

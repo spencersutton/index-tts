@@ -221,14 +221,14 @@ class UnifiedVoice(nn.Module):
 
         text_lengths = torch.tensor([text_inputs.shape[-1]], device=device)
         text_inputs = set_padding(text_inputs, text_lengths, self.cfg.stop_text_token)
-        text_inputs = F.pad(text_inputs, (0, 1), value=self.cfg.stop_text_token)
+        text_inputs = F.pad(text_inputs, [0, 1], value=self.cfg.stop_text_token)
 
         mel_codes_lengths = torch.tensor([mel_codes.shape[-1]], device=device)
         mel_codes = set_padding(mel_codes, mel_codes_lengths, self.cfg.stop_mel_token)
-        mel_codes = F.pad(mel_codes, (0, 1), value=self.cfg.stop_mel_token)
+        mel_codes = F.pad(mel_codes, [0, 1], value=self.cfg.stop_mel_token)
 
-        text_inputs = F.pad(text_inputs, (1, 0), value=self.cfg.start_text_token)
-        mel_codes = F.pad(mel_codes, (1, 0), value=self.cfg.start_mel_token)
+        text_inputs = F.pad(text_inputs, [1, 0], value=self.cfg.start_text_token)
+        mel_codes = F.pad(mel_codes, [1, 0], value=self.cfg.start_mel_token)
 
         mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes)
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
@@ -270,8 +270,8 @@ class UnifiedVoice(nn.Module):
             valid_mask = (inputs[i] != self.cfg.stop_text_token) & (inputs[i] != self.cfg.start_text_token)
 
             text_input = inputs[i][valid_mask]
-            text_input = F.pad(text_input, (1, 0), value=self.cfg.start_text_token)
-            text_input = F.pad(text_input, (0, 1), value=self.cfg.stop_text_token)
+            text_input = F.pad(text_input, [1, 0], value=self.cfg.start_text_token)
+            text_input = F.pad(text_input, [0, 1], value=self.cfg.stop_text_token)
             text_input_pos = torch.arange(0, text_input.size(-1), device=device)
 
             text_emb = self.text_embedding(text_input) + self.text_pos_embedding.emb(text_input_pos)

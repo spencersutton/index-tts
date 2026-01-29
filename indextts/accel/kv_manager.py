@@ -81,7 +81,7 @@ class KVCacheManager:
 
         self.blocks: list[KVCacheBlock] = [KVCacheBlock(i) for i in range(num_blocks)]
         self.block_hash_to_id: dict[bytes, int] = {}
-        self.free_block_ids: deque = deque(range(num_blocks))
+        self.free_block_ids: deque[int] = deque(range(num_blocks))
         self.used_block_ids: set[int] = set()
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -92,7 +92,7 @@ class KVCacheManager:
 
     @classmethod
     def compute_block_hash(cls, token_ids: list[int], parent_hash: bytes | None = None) -> bytes:
-        hash_input = []
+        hash_input: list[bytes | int] = []
         if parent_hash is not None:
             hash_input.append(parent_hash)
         hash_input.extend(token_ids)

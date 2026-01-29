@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from typing import cast, override
 
 import torch
+import torch.nn.functional as F
 from torch import Tensor, nn
 
 from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
@@ -99,7 +100,7 @@ class ConvolutionModule(nn.Module):
 
         # GLU mechanism
         x = self.pointwise_conv1(x)  # (batch, 2*channel, dim)
-        x = nn.functional.glu(x, dim=1)  # (batch, channel, dim)
+        x = F.glu(x, dim=1)  # (batch, channel, dim)
 
         # 1D Depthwise Conv
         x = self.depthwise_conv(x).mT

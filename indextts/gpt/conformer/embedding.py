@@ -73,7 +73,7 @@ class RelPositionalEncoding(nn.Module):
         """
         # How to subscript a Union type:
         #   https://github.com/pytorch/pytorch/issues/69434
-        if isinstance(offset, int) or (isinstance(offset, Tensor) and offset.dim() == 0):
+        if isinstance(offset, int) or offset.dim() == 0:
             assert offset + size < MAX_LEN
             pos_emb = self.pe[:, offset : offset + size]
         else:  # for batched streaming decoding on GPU

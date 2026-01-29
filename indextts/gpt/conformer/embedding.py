@@ -16,7 +16,7 @@
 """Positonal Encoding Module."""
 
 import math
-from typing import override
+from typing import TYPE_CHECKING, override
 
 import torch
 import torch.nn.functional as F
@@ -43,6 +43,9 @@ class RelPositionalEncoding(nn.Module):
         d_model (int): Embedding dimension.
         max_len (int): Maximum input length.
     """
+
+    if TYPE_CHECKING:
+        pe: Tensor = torch.empty(0)
 
     def __init__(self, d_model: int) -> None:
         """Construct an PositionalEncoding object."""

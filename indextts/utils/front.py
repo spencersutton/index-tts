@@ -12,6 +12,9 @@ from sentencepiece import SentencePieceProcessor
 
 from indextts.utils.common import de_tokenized_by_CJK_char, tokenize_by_CJK_char
 
+if TYPE_CHECKING:
+    from wetext import Normalizer
+
 punctuation_marks_tokens: Final = [
     ".",
     "!",
@@ -24,6 +27,10 @@ punctuation_marks_tokens: Final = [
 
 class TextNormalizer:
     
+
+    if TYPE_CHECKING:
+        zh_normalizer: Normalizer | None
+        en_normalizer: Normalizer | None
 
     def __init__(self, enable_glossary: bool = False) -> None:
         self.zh_normalizer = None

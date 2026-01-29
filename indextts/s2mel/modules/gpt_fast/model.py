@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 from collections.abc import Sequence
 from functools import cached_property
-from typing import cast, override
+from typing import TYPE_CHECKING, override
 
 import torch
 from torch import Tensor, nn
@@ -48,8 +48,9 @@ class AdaptiveLayerNorm(nn.Module):
 
 
 class KVCache(nn.Module):
-    k_cache: Tensor = torch.empty(0)
-    v_cache: Tensor = torch.empty(0)
+    if TYPE_CHECKING:
+        k_cache: Tensor = torch.empty(0)
+        v_cache: Tensor = torch.empty(0)
 
     def __init__(
         self, max_batch_size: int, max_seq_length: int, n_heads: int, head_dim: int, dtype: torch.dtype = torch.bfloat16

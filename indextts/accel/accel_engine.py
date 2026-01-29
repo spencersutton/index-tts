@@ -1,5 +1,6 @@
 import sys
 from collections.abc import Mapping, MutableMapping, Sequence
+from typing import override
 
 import torch
 from torch import Tensor, nn
@@ -16,6 +17,7 @@ class Sampler(nn.Module):
         super().__init__()
 
     @torch.compile
+    @override
     def forward(self, logits: Tensor, temperatures: Tensor) -> Tensor:  # noqa: PLR6301
         temperatures = temperatures.to(logits.device).clamp(min=1e-8)
         greedy_mask = temperatures < 1e-5

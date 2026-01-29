@@ -1,6 +1,7 @@
 import functools
 import time
 from collections.abc import Callable
+from typing import override
 
 from torch import nn
 
@@ -38,5 +39,6 @@ class Timer:
     def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
         self.stop()
 
+    @override
     def __format__(self, __format_spec: str, /) -> str:
         return f"{self.elapsed:{__format_spec}}"

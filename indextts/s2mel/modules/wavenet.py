@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import override
 
 import torch
 from torch import Tensor, nn
@@ -30,6 +31,7 @@ class WaveNet(nn.Module):
         layers.append(SConv1d(DIM, DIM, 1))
         self.res_skip_layers = nn.ModuleList(layers)
 
+    @override
     def forward(self, x: Tensor, x_mask: Tensor, g: Tensor) -> Tensor:
         output = torch.zeros_like(x)
 

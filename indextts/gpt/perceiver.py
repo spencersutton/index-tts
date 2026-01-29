@@ -1,5 +1,6 @@
 # Adapted from https://github.com/lucidrains/naturalspeech2-pytorch/blob/659bec7f7543e7747e809e950cc2f84242fbeec7/naturalspeech2_pytorch/naturalspeech2_pytorch.py#L532
 from collections.abc import Iterable
+from typing import override
 
 import torch
 import torch.nn.functional as F
@@ -15,6 +16,7 @@ class Attend(nn.Module):
         super().__init__()
         self.attn_dropout = nn.Dropout(0.0)
 
+    @override
     def forward(self, q: Tensor, k: Tensor, v: Tensor, mask: Tensor | None = None) -> Tensor:
         """
         einstein notation
@@ -54,6 +56,7 @@ class RMSNorm(nn.Module):
         self.scale = dim**0.5
         self.gamma = nn.Parameter(torch.ones(dim))
 
+    @override
     def forward(self, x: Tensor) -> Tensor:
         return F.normalize(x, dim=-1) * self.scale * self.gamma
 
@@ -62,6 +65,7 @@ class RMSNorm(nn.Module):
 
 
 class GEGLU(nn.Module):
+    @override
     def forward(self, x: Tensor) -> Tensor:
         x, gate = x.chunk(2, dim=-1)
         return F.gelu(gate) * x
@@ -96,6 +100,7 @@ class PerceiverResampler(nn.Module):
 
         self.norm = RMSNorm(dim)
 
+    @override
     def forward(self, x: Tensor, mask: Tensor | None = None) -> Tensor:
         x = self.proj_context(x)
 
@@ -128,6 +133,7 @@ class Attention(nn.Module):
         self.to_kv = nn.Linear(dim, dim_inner * 2, bias=False)
         self.to_out = nn.Linear(dim_inner, dim, bias=False)
 
+    @override
     def forward(self, x: Tensor, context: Tensor | None = None, mask: Tensor | None = None) -> Tensor:
         h = self.heads
 

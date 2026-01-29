@@ -1,4 +1,5 @@
 import math
+from typing import override
 
 import torch
 from torch import Tensor, nn
@@ -49,6 +50,7 @@ class TimestepEmbedder(nn.Module):
         args = 1000 * t[:, None].float() * self.freqs[None]
         return torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
 
+    @override
     def forward(self, t: Tensor) -> Tensor:
         t_freq = self.timestep_embedding(t)
         return self.mlp(t_freq)
@@ -68,6 +70,7 @@ class FinalLayer(nn.Module):
         self.linear = weight_norm(nn.Linear(DIM, DIM))
         self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(DIM, 2 * DIM))
 
+    @override
     def forward(self, x: Tensor, c: Tensor) -> Tensor:
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)
@@ -117,6 +120,7 @@ class DiT(nn.Module):
 
         self.cond_x_merge_linear = nn.Linear(DIM + IN_CHANNELS * 2 + STYLE_ENCODER_DIM, DIM)
 
+    @override
     def forward(self, x: Tensor, prompt_x: Tensor, x_lens: Tensor, t: Tensor, style: Tensor, cond: Tensor) -> Tensor:
         """
         x (Tensor): random noise

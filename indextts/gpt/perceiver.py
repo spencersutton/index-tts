@@ -138,9 +138,7 @@ class Attention(nn.Module):
         h = self.heads
 
         context = context if context is not None else x
-
-        if context is not None:
-            context = torch.cat((x, context), dim=-2)
+        context = torch.cat((x, context), dim=-2)
 
         q, k, v = (self.to_q(x), *self.to_kv(context).chunk(2, dim=-1))
         q, k, v = (rearrange(t, "b n (h d) -> b h n d", h=h) for t in (q, k, v))

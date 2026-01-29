@@ -1,6 +1,7 @@
 import hashlib
 import pickle
 from collections import deque
+from collections.abc import Sequence
 from copy import copy
 
 import torch
@@ -29,7 +30,7 @@ class KVCacheBlock:
 
 
 class Seq:
-    def __init__(self, token_ids: list[int], block_size: int = 256) -> None:
+    def __init__(self, token_ids: Sequence[int], block_size: int = 256) -> None:
         self.token_ids = copy(token_ids)
         self.last_token = token_ids[-1] if token_ids else 0
         self.num_tokens = len(self.token_ids)

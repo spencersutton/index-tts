@@ -325,19 +325,19 @@ class AccelInferenceEngine:
         )
 
         if is_varlen_batch and attention_mask is not None:
-            seq_lens = [attention_mask[i].sum().item() for i in range(batch_size)]
+            seq_lens = [int(attention_mask[i].sum().item()) for i in range(batch_size)]
         else:
             seq_lens = [actual_seq_len] * batch_size
 
-        sequences = []
+        sequences: list[Seq] = []
         for i in range(batch_size):
             seq_len = seq_lens[i]
-            token_ids = [1] * int(seq_len)
+            token_ids = [1] * seq_len
             if tts_embeddings is not None and seq_len > 0:
                 token_ids[-1] = int(input_ids[i, -1].item()) if input_ids.size(1) > 0 else 1
             else:
-                token_ids = input_ids[i].tolist()
-            req = Seq([int(x) for x in token_ids])
+                token_ids = [int(x) for x in input_ids[i]]
+            req = Seq(token_ids)
             self.kv_manager.allocate(req)
             sequences.append(req)
 
@@ -394,15 +394,14 @@ class AccelInferenceEngine:
         else:
             first_token = torch.argmax(logits, dim=-1)
 
-        first_token_list = first_token.tolist()
-
-        generated_tokens = [[] for _ in range(batch_size)]
+        generated_tokens: list[list[float]] = [[] for _ in range(batch_size)]
         is_finished = [False] * batch_size
 
-        for i, token_id in enumerate(first_token_list):
+        for i, token_id in enumerate(first_token):
             if stop_tokens and token_id in stop_tokens:
                 is_finished[i] = True
             else:
+                token_id = int(token_id)
                 generated_tokens[i].append(token_id)
                 sequences[i].append_token(token_id)
                 self.kv_manager.append_to_seq(sequences[i])
@@ -443,7 +442,7 @@ class AccelInferenceEngine:
                 next_token = self.sampler(logits, temperatures)
             else:
                 next_token = torch.argmax(logits, dim=-1)
-            next_token_list = next_token.tolist()
+            next_token_list = [int(x) for x in next_token]
 
             for i, token_id in enumerate(next_token_list):
                 if is_finished[i]:

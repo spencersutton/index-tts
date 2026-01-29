@@ -90,7 +90,7 @@ class AccelInferenceEngine:
         self.graphs = {}
         self.graph_captured = False
 
-    def _prepare_decode(self, requests: list[Seq]) -> tuple[Tensor, Tensor]:
+    def _prepare_decode(self, requests: Sequence[Seq]) -> tuple[Tensor, Tensor]:
         if not requests:
             raise RuntimeError("FATAL: No requests provided to _prepare_decode!")
 
@@ -470,7 +470,7 @@ class AccelInferenceEngine:
             for i in range(batch_size):
                 padding_len = max_prompt_len - seq_lens[i]
                 initial_tokens = sequences[i].token_ids[: sequences[i].num_prompt_tokens]
-                padded_prompt = [pad_token] * int(padding_len) + initial_tokens
+                padded_prompt = [pad_token] * padding_len + initial_tokens
                 full_sequence = padded_prompt + generated_tokens[i]
                 output_ids.append(full_sequence)
         else:

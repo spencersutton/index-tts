@@ -273,8 +273,6 @@ class AccelInferenceEngine:
         input_ids: Int[Tensor, "b t"],
         max_new_tokens: int = 100,
         temperature: float = 1.0,
-        top_k: int = 50,
-        top_p: float = 1.0,
         stop_tokens: list[int] | None = None,
         attention_mask: Int[Tensor, "b t"] | None = None,
         tts_embeddings: Float[Tensor, "b t d"]

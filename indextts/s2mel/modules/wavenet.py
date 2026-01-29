@@ -42,7 +42,7 @@ class WaveNet(nn.Module):
         self.res_skip_layers = nn.ModuleList(layers)  # pyright: ignore[reportAttributeAccessIssue]
 
     @override
-    def forward(self, x: Float[Tensor, "b c t"], x_mask: Float[Tensor, "b 1 t"], g: Float[Tensor, "b c t"]) -> Tensor:
+    def forward(self, x: Float[Tensor, "b c t"], g: Float[Tensor, "b c t"]) -> Tensor:
         output = torch.zeros_like(x)
 
         g = self.cond_layer(g)
@@ -58,11 +58,11 @@ class WaveNet(nn.Module):
             res_skip_acts = self.res_skip_layers[i].__call__(acts)
             if i < NUM_LAYERS - 1:
                 res_acts = res_skip_acts[:, :DIM, :]
-                x = (x + res_acts) * x_mask
+                x = x + res_acts
                 output += res_skip_acts[:, DIM:, :]
             else:
                 output += res_skip_acts
-        return output * x_mask
+        return output
 
     @patch_call(forward)
     def __call__(self) -> None: ...

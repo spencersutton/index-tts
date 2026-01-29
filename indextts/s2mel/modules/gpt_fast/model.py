@@ -8,7 +8,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, override
 
 import torch
-from jaxtyping import Bool, Float, Int
+from jaxtyping import Float, Int
 from torch import Tensor, nn
 from torch.nn import functional as F
 
@@ -99,13 +99,7 @@ class Transformer(nn.Module):
         return torch.stack([freqs_cis.real, freqs_cis.imag], dim=-1)
 
     @override
-    def forward(
-        self,
-        x: Float[Tensor, "b t d"],
-        c: Float[Tensor, "b d"],
-        input_pos: Int[Tensor, "t"],
-        mask: Bool[Tensor, "b b t t"],
-    ) -> Tensor:
+    def forward(self, x: Float[Tensor, "b t d"], c: Float[Tensor, "b d"], input_pos: Int[Tensor, "t"]) -> Tensor:
         freqs_cis = self.freqs_cis[input_pos]
         mid = N_LAYER // 2
         skip_stack: list[Tensor] = []
@@ -143,12 +137,11 @@ class TransformerBlock(nn.Module):
         c: Float[Tensor, "b d"],
         input_pos: Int[Tensor, "t"],
         freqs_cis: Float[Tensor, ""],
-        mask: Bool[Tensor, "b b t t"],
         skip_in_x: Float[Tensor, "b t d"] | None = None,
     ) -> Tensor:
         if skip_in_x is not None:
             x = self.skip_in_linear(torch.cat([x, skip_in_x], dim=-1))
-        h = x + self.attention.__call__(self.attention_norm(x, c), freqs_cis, mask)
+        h = x + self.attention.__call__(self.attention_norm(x, c), freqs_cis)
         return h + self.feed_forward.__call__(self.ffn_norm(h, c))
 
     @patch_call(forward)
@@ -167,7 +160,7 @@ class Attention(nn.Module):
         self.wo = nn.Linear(DIM, DIM, bias=False)
 
     @override
-    def forward(self, x: Float[Tensor, "b t d"], freqs_cis: Float[Tensor, ""], mask: Bool[Tensor, ""]) -> Tensor:
+    def forward(self, x: Float[Tensor, "b t d"], freqs_cis: Float[Tensor, ""]) -> Tensor:
         bsz, seqlen, _ = x.shape
 
         query_key_value = self.wqkv(x)
@@ -184,7 +177,7 @@ class Attention(nn.Module):
 
         k = k.repeat_interleave(1, dim=1)
         v = v.repeat_interleave(1, dim=1)
-        y = F.scaled_dot_product_attention(q, k, v, attn_mask=mask, dropout_p=0.0)
+        y = F.scaled_dot_product_attention(q, k, v)
 
         y = y.transpose(1, 2).contiguous().view(bsz, seqlen, DIM)
         return self.wo(y)

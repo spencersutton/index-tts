@@ -2,8 +2,7 @@ from typing import TYPE_CHECKING, Any, override
 
 import torch
 import torch.nn.functional as F
-from beartype import beartype as typechecker
-from jaxtyping import Float, Int, jaxtyped
+from jaxtyping import Float, Int
 from torch import Tensor, nn
 from transformers import GPT2Config, GPT2Model, LogitsProcessorList
 
@@ -195,7 +194,6 @@ class UnifiedVoice(nn.Module):
         self.gpt.wte = self.mel_embedding
 
     @override
-    @jaxtyped(typechecker=typechecker)
     def forward(
         self,
         speech_conditioning_latent: Float[Tensor, "B S D"],

@@ -14,7 +14,7 @@ class CFM(nn.Module):
         super().__init__()
 
         self.criterion = nn.L1Loss()
-        self.estimator = DiT()
+        self.estimator = DiT(dim=512, in_channels=IN_CHANNELS)
 
     @torch.inference_mode()
     def inference(

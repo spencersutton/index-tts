@@ -18,7 +18,7 @@ class Sampler(nn.Module):
 
     @torch.compile
     @override
-    def forward(self, logits: Tensor, temperatures: Tensor) -> Tensor:  # noqa: PLR6301
+    def forward(self, logits: Tensor, temperatures: Tensor) -> Tensor:
         temperatures = temperatures.to(logits.device).clamp(min=1e-8)
         greedy_mask = temperatures < 1e-5
         temp_for_scaling = torch.where(greedy_mask, 1.0, temperatures)

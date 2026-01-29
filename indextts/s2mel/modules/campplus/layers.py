@@ -63,7 +63,7 @@ class CAMLayer(nn.Module):
         m = self.sigmoid(self.linear2(context))
         return y * m
 
-    def seg_pooling(self, x: Tensor) -> Tensor:
+    def seg_pooling(self, x: Tensor) -> Tensor:  # noqa: PLR6301
         seg_len: Final = 100
         seg = F.avg_pool1d(x, kernel_size=seg_len, stride=seg_len, ceil_mode=True)
         shape = seg.shape

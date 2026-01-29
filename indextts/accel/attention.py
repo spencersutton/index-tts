@@ -114,7 +114,7 @@ class Attention(nn.Module):
         if context.is_prefill:
             if context.block_tables is not None:
                 k, v = k_cache, v_cache
-            o = flash_attn_varlen_func(
+            o = flash_attn_varlen_func(  # pyright: ignore[reportUnknownVariableType]
                 q,
                 k,
                 v,
@@ -127,7 +127,7 @@ class Attention(nn.Module):
                 block_table=context.block_tables,
             )
         else:
-            o = flash_attn_with_kvcache(
+            o = flash_attn_with_kvcache(  # pyright: ignore[reportUnknownVariableType]
                 q.unsqueeze(1),
                 k_cache,
                 v_cache,
@@ -136,7 +136,7 @@ class Attention(nn.Module):
                 softmax_scale=self.scale,
                 causal=True,
             )
-        return o
+        return o  # pyright: ignore[reportUnknownVariableType]
 
     @patch_call(forward)
     def __call__(self) -> None: ...

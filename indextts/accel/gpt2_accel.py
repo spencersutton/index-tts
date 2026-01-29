@@ -10,6 +10,18 @@ from transformers.models.gpt2.modeling_gpt2 import GPT2Block, GPT2Model
 from indextts.accel.attention import Attention
 
 
+def _split_heads(tensor: Tensor, num_heads: int, head_dim: int) -> Tensor:
+    new_shape = (*tensor.size()[:-1], num_heads, head_dim)
+    tensor = tensor.view(new_shape)
+    return tensor.permute(0, 2, 1, 3)  # (batch, head, seq_length, head_features)
+
+
+def _merge_heads(tensor: Tensor, num_heads: int, head_dim: int) -> Tensor:
+    tensor = tensor.permute(0, 2, 1, 3).contiguous()
+    new_shape = (*tensor.size()[:-2], num_heads * head_dim)
+    return tensor.view(new_shape)
+
+
 class GPT2AccelAttention(nn.Module):
     c_attn: Conv1D
     c_proj: Conv1D
@@ -72,9 +84,9 @@ class GPT2AccelAttention(nn.Module):
         query, key, value = qkv.split(self.split_size, dim=2)
 
         # [B, T, H*D] -> [B, H, T, D]
-        query = self._split_heads(query, self.num_heads, self.head_dim)
-        key = self._split_heads(key, self.num_heads, self.head_dim)
-        value = self._split_heads(value, self.num_heads, self.head_dim)
+        query = _split_heads(query, self.num_heads, self.head_dim)
+        key = _split_heads(key, self.num_heads, self.head_dim)
+        value = _split_heads(value, self.num_heads, self.head_dim)
 
         # flatten to [B*T, H, D]
         bsz, num_heads, seq_len, head_dim = query.shape
@@ -99,7 +111,7 @@ class GPT2AccelAttention(nn.Module):
         # Reshape back: [B*T, H, D] -> [B, H, T, D]
         attn_output = o_flat.view(bsz, seq_len, num_heads, head_dim).transpose(1, 2)
 
-        attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
+        attn_output = _merge_heads(attn_output, self.num_heads, self.head_dim)
 
         attn_output = self.c_proj(attn_output)
         attn_output = cast(Tensor, self.resid_dropout(attn_output))
@@ -107,16 +119,6 @@ class GPT2AccelAttention(nn.Module):
         if output_attentions:
             return (attn_output, None, None)
         return (attn_output, None)
-
-    def _split_heads(self, tensor: Tensor, num_heads: int, head_dim: int) -> Tensor:
-        new_shape = (*tensor.size()[:-1], num_heads, head_dim)
-        tensor = tensor.view(new_shape)
-        return tensor.permute(0, 2, 1, 3)  # (batch, head, seq_length, head_features)
-
-    def _merge_heads(self, tensor: Tensor, num_heads: int, head_dim: int) -> Tensor:
-        tensor = tensor.permute(0, 2, 1, 3).contiguous()
-        new_shape = (*tensor.size()[:-2], num_heads * head_dim)
-        return tensor.view(new_shape)
 
 
 class GPT2AccelBlock(GPT2Block):

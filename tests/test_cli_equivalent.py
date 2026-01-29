@@ -26,8 +26,8 @@ def test_accel() -> None:
     if output_path.exists():
         output_path.unlink()
 
-    tts = IndexTTS2()
-    result = tts.infer(output_path=output_path, spk_audio_prompt=voice_path, text=text, use_accel=True)
+    tts = IndexTTS2(use_accel=True)
+    result = tts.infer(output_path=output_path, spk_audio_prompt=voice_path, text=text)
 
     assert output_path.exists()
     assert output_path.stat().st_size > 0

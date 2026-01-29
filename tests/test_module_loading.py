@@ -1,7 +1,3 @@
-import os
-
-import pytest
-
 from indextts.infer_v2 import IndexTTS2
 
 

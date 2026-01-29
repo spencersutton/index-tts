@@ -138,7 +138,7 @@ class GPT2AccelModel(GPT2Model):
         self,
         input_ids: Int[Tensor, "b t"] | None = None,
         past_key_values: tuple[tuple[Tensor]] | transformers.Cache | None = None,
-        cache_position: Int[Tensor, "42"] | None = None,
+        cache_position: Int[Tensor, ""] | None = None,
         attention_mask: Int[Tensor, "b t"] | None = None,
         token_type_ids: Int[Tensor, ""] | None = None,
         position_ids: Int[Tensor, "b t"] | None = None,

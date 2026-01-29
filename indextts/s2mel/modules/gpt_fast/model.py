@@ -100,7 +100,11 @@ class Transformer(nn.Module):
 
     @override
     def forward(
-        self, x: Float[Tensor, "b t d"], c: Float[Tensor, "b d"], input_pos: Int[Tensor, "t"], mask: Bool[Tensor, ""]
+        self,
+        x: Float[Tensor, "b t d"],
+        c: Float[Tensor, "b d"],
+        input_pos: Int[Tensor, "t"],
+        mask: Bool[Tensor, "b b t t"],
     ) -> Tensor:
         freqs_cis = self.freqs_cis[input_pos]
         mid = N_LAYER // 2
@@ -139,13 +143,13 @@ class TransformerBlock(nn.Module):
         c: Float[Tensor, "b d"],
         input_pos: Int[Tensor, "t"],
         freqs_cis: Float[Tensor, ""],
-        mask: Bool[Tensor, ""],
+        mask: Bool[Tensor, "b b t t"],
         skip_in_x: Float[Tensor, "b t d"] | None = None,
     ) -> Tensor:
         if skip_in_x is not None:
             x = self.skip_in_linear(torch.cat([x, skip_in_x], dim=-1))
-        h = x + self.attention(self.attention_norm(x, c), freqs_cis, mask)
-        return h + self.feed_forward(self.ffn_norm(h, c))
+        h = x + self.attention.__call__(self.attention_norm(x, c), freqs_cis, mask)
+        return h + self.feed_forward.__call__(self.ffn_norm(h, c))
 
     @patch_call(forward)
     def __call__(self) -> None: ...

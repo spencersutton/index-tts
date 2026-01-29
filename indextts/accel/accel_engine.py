@@ -1,6 +1,6 @@
 import sys
 from collections.abc import Mapping, MutableMapping, Sequence
-from typing import override
+from typing import ClassVar, override
 
 import torch
 from torch import Tensor, nn
@@ -8,7 +8,7 @@ from torch import Tensor, nn
 from indextts.accel.attention import ForwardContext
 from indextts.accel.gpt2_accel import GPT2AccelModel
 from indextts.accel.kv_manager import KVCacheManager, Seq
-from indextts.gpt.model_v2 import LearnedPositionEmbeddings
+from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.util import patch_call, unwrap
 
 
@@ -44,6 +44,9 @@ class AccelInferenceEngine:
     graph_vars: Mapping[str, Tensor] | None = None
     graph_pool: Sequence[int] | None = None
     graph_captured: bool
+    graph_bs: ClassVar[list[int]] = [1, 2, 4, 8]
+    _tts_mode: bool = False
+    _tts_prompt_len: int = 0
 
     def __init__(
         self,
@@ -67,8 +70,8 @@ class AccelInferenceEngine:
             num_blocks: Total number of KV cache blocks
             use_cuda_graph: Whether to use CUDA Graph for decode optimization
         """
-        self.model: GPT2AccelModel = model
-        self.lm_head: nn.Sequential = lm_head
+        self.model = model
+        self.lm_head = lm_head
         self.block_size = block_size
         self.num_blocks = num_blocks
         self.use_cuda_graph = use_cuda_graph and torch.cuda.is_available()
@@ -100,7 +103,7 @@ class AccelInferenceEngine:
             input_ids.append(req.last_token)
 
             pos = len(req) - 1
-            if hasattr(self, "_tts_mode") and self._tts_mode:
+            if self._tts_mode:
                 pos -= self._tts_prompt_len - 1
             positions.append(pos)
 
@@ -151,8 +154,6 @@ class AccelInferenceEngine:
         block_tables = torch.zeros(max_bs, max_num_blocks, dtype=torch.int32, device="cuda")
         outputs = torch.zeros(max_bs, self.hidden_size, dtype=model_dtype, device="cuda")
         inputs_embeds_buffer = torch.zeros(max_bs, self.hidden_size, dtype=model_dtype, device="cuda")
-
-        self.graph_bs = [1, 2, 4, 8]
 
         use_tts = tts_mel_embedding is not None and tts_text_pos_embedding is not None
 
@@ -222,7 +223,7 @@ class AccelInferenceEngine:
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,
     ) -> Tensor:
         bs = input_ids.size(0)
-        use_tts_embedding = hasattr(self, "_tts_mode") and self._tts_mode
+        use_tts_embedding = self._tts_mode
 
         if not self.use_cuda_graph or not self.graphs:
             if use_tts_embedding:
@@ -336,7 +337,7 @@ class AccelInferenceEngine:
                 token_ids[-1] = int(input_ids[i, -1].item()) if input_ids.size(1) > 0 else 1
             else:
                 token_ids = input_ids[i].tolist()
-            req = Seq(token_ids)
+            req = Seq([int(x) for x in token_ids])
             self.kv_manager.allocate(req)
             sequences.append(req)
 
@@ -353,7 +354,7 @@ class AccelInferenceEngine:
             start_emb = start_emb.repeat(batch_size, 1, 1)
 
             if is_varlen_batch:
-                valid_embeddings = []
+                valid_embeddings: list[Tensor] = []
                 for i in range(batch_size):
                     emb_len = seq_lens[i] - 1
                     padding_len = tts_embeddings.size(1) - emb_len

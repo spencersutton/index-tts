@@ -143,20 +143,14 @@ class ConformerEncoderLayer(nn.Module):
         self.conv_module = conv_module
         self.norm_ff = nn.LayerNorm(size, eps=1e-5)  # for the FNN module
         self.norm_mha = nn.LayerNorm(size, eps=1e-5)  # for the MHA module
-        if None is not None:
-            self.norm_ff_macaron = nn.LayerNorm(size, eps=1e-5)
-            self.ff_scale = 0.5
-        else:
-            self.ff_scale = 1.0
+        self.norm_ff_macaron = nn.LayerNorm(size, eps=1e-5)
+        self.ff_scale = 0.5
         if self.conv_module is not None:
             self.norm_conv = nn.LayerNorm(size, eps=1e-5)  # for the CNN module
             self.norm_final = nn.LayerNorm(size, eps=1e-5)  # for the final output of the block
         self.dropout = nn.Dropout(0.0)
         self.size = size
-        if False:
-            self.concat_linear = nn.Linear(size + size, size)
-        else:
-            self.concat_linear = nn.Identity()
+        self.concat_linear = nn.Identity()
 
     @override
     def forward(

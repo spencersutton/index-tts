@@ -1,7 +1,10 @@
 import json
 import re
+from collections.abc import Mapping
+from typing import Any, cast
 
-from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+from transformers import BatchEncoding, Qwen2Tokenizer, Qwen3ForCausalLM
 
 
 def clamp(value: float, min_val: float, max_val: float) -> float:

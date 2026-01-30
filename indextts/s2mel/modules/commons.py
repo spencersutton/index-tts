@@ -1,18 +1,6 @@
 import torch
-from jaxtyping import Float, Int
+from jaxtyping import Int
 from torch import Tensor, nn
-
-from indextts.s2mel.modules.constants import DIM
-
-
-@torch.compile
-def fused_add_tanh_sigmoid_multiply(input_a: Float[Tensor, "b c t"], input_b: Float[Tensor, "b c t"]) -> Tensor:
-    in_act = input_a + input_b
-    # use torch.split to avoid dynamic slicing
-    t_act_part, s_act_part = torch.split(in_act, DIM, dim=1)
-    t_act = torch.tanh(t_act_part)
-    s_act = torch.sigmoid(s_act_part)
-    return t_act * s_act
 
 
 def sequence_mask(length: Int[Tensor, "b"] | int, max_length: int | None = None) -> Tensor:

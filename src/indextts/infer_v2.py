@@ -86,7 +86,7 @@ def _load_and_cut_audio(audio_path: Path, sample_rate: float | None = None) -> t
 class IndexTTS2:
     cfg: IndexTTSConfig
     dtype: torch.dtype
-    device: str
+    device: torch.device
     use_fp16: bool
     use_cuda_kernel: bool
     use_accel: bool
@@ -307,8 +307,10 @@ class IndexTTS2:
             use_torch_compile (bool): whether to use torch.compile for optimization or not.
         """
 
-        self.device = str(device or torch.accelerator.current_accelerator() or torch.get_default_device())
-        self.use_cuda_kernel = use_cuda_kernel and self.device.startswith("cuda")
+        self.device = (
+            torch.device(device) if device else torch.accelerator.current_accelerator() or torch.get_default_device()
+        )
+        self.use_cuda_kernel = use_cuda_kernel and str(self.device).startswith("cuda")
         self.use_fp16 = use_fp16 and self.device not in ["cpu", "mps"]
         self.cfg = IndexTTSConfig()
         self.dtype = torch.float16 if self.use_fp16 else torch.get_default_dtype()
@@ -358,7 +360,7 @@ class IndexTTS2:
         vq_emb = self.semantic_model(
             input_features=input_features, attention_mask=attention_mask, output_hidden_states=True
         )
-        assert vq_emb.hidden_states is not None
+        assert not isinstance(vq_emb, tuple) and vq_emb.hidden_states is not None
         feat = vq_emb.hidden_states[17]  # (B, T, C)
         return (feat - self.semantic_mean) / self.semantic_std
 
@@ -533,7 +535,7 @@ class IndexTTS2:
             text_tokens = torch.tensor(text_tokens, dtype=torch.int32, device=self.device).unsqueeze(0)
 
             with torch.inference_mode():
-                with torch.autocast(text_tokens.device.type, dtype=self.dtype), gpt_gen_time:
+                with torch.autocast(self.device.type, dtype=self.dtype), gpt_gen_time:
                     emotion_vector = self.gpt.get_emo_vec(emotion_conditioning_embedding)
                     base_vector = self.gpt.get_emo_vec(speaker_conditioning_embedding)
 
@@ -575,7 +577,7 @@ class IndexTTS2:
                 ]
                 codes = codes[:, : max(code_lens)]
 
-                with torch.autocast(self.device, dtype=self.dtype), gpt_forward_time:
+                with torch.autocast(self.device.type, dtype=self.dtype), gpt_forward_time:
                     assert speech_conditioning_latent.shape == torch.Size([1, 32, 1280])
                     assert text_tokens.shape[0] == 1
                     assert codes.shape[0] == 1

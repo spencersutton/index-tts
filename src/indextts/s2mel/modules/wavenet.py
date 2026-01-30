@@ -5,12 +5,21 @@ import torch
 from jaxtyping import Float
 from torch import Tensor, nn
 
-from indextts.s2mel.modules.commons import fused_add_tanh_sigmoid_multiply
 from indextts.s2mel.modules.constants import DIM, NUM_LAYERS, P_DROPOUT
 from indextts.s2mel.modules.encodec import SConv1d
 from indextts.util import patch_call
 
 KERNEL_SIZE = 5
+
+
+@torch.compile
+def fused_add_tanh_sigmoid_multiply(input_a: Float[Tensor, "b c t"], input_b: Float[Tensor, "b c t"]) -> Tensor:
+    in_act = input_a + input_b
+    # use torch.split to avoid dynamic slicing
+    t_act_part, s_act_part = torch.split(in_act, DIM, dim=1)
+    t_act = torch.tanh(t_act_part)
+    s_act = torch.sigmoid(s_act_part)
+    return t_act * s_act
 
 
 class WaveNet(nn.Module):

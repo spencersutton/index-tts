@@ -1,7 +1,7 @@
 set -euo pipefail
 
 LOCAL_DIR=~/projects/index-tts/
-REMOTE_DIR='~/index-tts/'
+REMOTE_DIR=${LOCAL_DIR}
 
 REMOTE_HOST='Spencer-Desktop'
 REMOTE_TARGET=${REMOTE_HOST}:${REMOTE_DIR}

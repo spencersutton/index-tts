@@ -175,11 +175,11 @@ class AccelInferenceEngine:
                 pos_clamped = torch.clamp(positions[:bs], min=0)
                 pos_emb = unwrap(tts_text_pos_embedding).emb(pos_clamped)
                 inputs_embeds_buffer[:bs] = emb + pos_emb
-                out = unwrap(
-                    self.model(inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True).last_hidden_state
-                )
+                result = self.model(inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True)
             else:
-                out = unwrap(self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True).last_hidden_state)
+                result = self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True)
+            assert not isinstance(result, tuple)
+            out = unwrap(result.last_hidden_state)
             outputs[:bs] = out.squeeze(1) if out.dim() == 3 else out
 
             with torch.cuda.graph(graph, self.graph_pool):
@@ -188,13 +188,11 @@ class AccelInferenceEngine:
                     pos_clamped = torch.clamp(positions[:bs], min=0)
                     pos_emb = unwrap(tts_text_pos_embedding).emb(pos_clamped)
                     inputs_embeds_buffer[:bs] = emb + pos_emb
-                    out = unwrap(
-                        self.model(
-                            inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True
-                        ).last_hidden_state
-                    )
+                    model_output = self.model(inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True)
                 else:
-                    out = unwrap(self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True).last_hidden_state)
+                    model_output = self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True)
+                assert not isinstance(model_output, tuple)
+                out = unwrap(model_output.last_hidden_state)
                 outputs[:bs] = out.squeeze(1) if out.dim() == 3 else out
 
             if self.graph_pool is None:
@@ -232,9 +230,11 @@ class AccelInferenceEngine:
                 pos_clamped = torch.clamp(positions, min=0)
                 pos_emb = unwrap(tts_text_pos_embedding).emb(pos_clamped)
                 inputs_embeds += pos_emb
-                out = unwrap(self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True).last_hidden_state)
+                model_output = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True)
             else:
-                out = unwrap(self.model(input_ids=input_ids.unsqueeze(1), return_dict=True).last_hidden_state)
+                model_output = self.model(input_ids=input_ids.unsqueeze(1), return_dict=True)
+            assert not isinstance(model_output, tuple)
+            out = unwrap(model_output.last_hidden_state)
             return out.squeeze(1) if out.dim() == 3 else out
 
         graph_bs = next((x for x in self.graph_bs if x >= bs), None)
@@ -244,9 +244,11 @@ class AccelInferenceEngine:
                 pos_clamped = torch.clamp(positions, min=0)
                 pos_emb = unwrap(tts_text_pos_embedding).emb(pos_clamped)
                 inputs_embeds += pos_emb
-                out = unwrap(self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True).last_hidden_state)
+                model_output = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True)
             else:
-                out = unwrap(self.model(input_ids=input_ids.unsqueeze(1), return_dict=True).last_hidden_state)
+                model_output = self.model(input_ids=input_ids.unsqueeze(1), return_dict=True)
+            assert not isinstance(model_output, tuple)
+            out = unwrap(model_output.last_hidden_state)
             return out.squeeze(1) if out.dim() == 3 else out
 
         graph = self.graphs[graph_bs]
@@ -273,8 +275,6 @@ class AccelInferenceEngine:
         input_ids: Int[Tensor, "b t"],
         max_new_tokens: int = 100,
         temperature: float = 1.0,
-        top_k: int = 50,
-        top_p: float = 1.0,
         stop_tokens: list[int] | None = None,
         attention_mask: Int[Tensor, "b t"] | None = None,
         tts_embeddings: Float[Tensor, "b t d"]
@@ -370,19 +370,18 @@ class AccelInferenceEngine:
             if full_embeddings.dtype != model_dtype:
                 full_embeddings = full_embeddings.to(model_dtype)
 
-            hidden_states = self.model(inputs_embeds=full_embeddings, return_dict=True).last_hidden_state
-
+            model_output = self.model(inputs_embeds=full_embeddings, return_dict=True)
         else:
-            hidden_states = self.model(
-                input_ids=input_ids, attention_mask=attention_mask, return_dict=True
-            ).last_hidden_state
+            model_output = self.model(input_ids=input_ids, attention_mask=attention_mask, return_dict=True)
+        assert not isinstance(model_output, tuple)
+        hidden_states = unwrap(model_output.last_hidden_state)
 
         if is_varlen_batch:
             context = ForwardContext.get_context()
             cu_seqlens = unwrap(context.cu_seqlens_q).cpu().tolist()
-            last_hidden = torch.stack([unwrap(hidden_states)[0, cu_seqlens[i + 1] - 1] for i in range(batch_size)])
+            last_hidden = torch.stack([hidden_states[0, int(cu_seqlens[i + 1]) - 1] for i in range(batch_size)])
         else:
-            last_hidden = unwrap(hidden_states)[:, -1, :]  # [batch_size, hidden_size]
+            last_hidden = hidden_states[:, -1, :]  # [batch_size, hidden_size]
 
         ForwardContext.reset_context()
 

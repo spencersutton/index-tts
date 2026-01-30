@@ -6,8 +6,7 @@ from jaxtyping import Float, Int
 from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
-from indextts.s2mel.modules.commons import sequence_mask
-from indextts.s2mel.modules.constants import BLOCK_SIZE, DIM, IN_CHANNELS
+from indextts.s2mel.modules.constants import BLOCK_SIZE, DIM
 from indextts.s2mel.modules.gpt_fast.model import Transformer
 from indextts.s2mel.modules.wavenet import WaveNet
 from indextts.util import patch_call
@@ -98,13 +97,12 @@ class DiT(nn.Module):
     skip_linear: nn.Linear
     cond_x_merge_linear: nn.Linear
 
-    def __init__(self) -> None:
+    def __init__(self, dim: int, in_channels: int) -> None:
         super().__init__()
         self.transformer = Transformer()
 
-        self.x_embedder = weight_norm(nn.Linear(IN_CHANNELS, DIM))
-
-        self.cond_projection = nn.Linear(DIM, DIM)  # continuous content
+        self.x_embedder = weight_norm(nn.Linear(in_channels, dim))
+        self.cond_projection = nn.Linear(dim, dim)  # continuous content
 
         self.t_embedder = TimestepEmbedder()
 
@@ -112,16 +110,16 @@ class DiT(nn.Module):
         self.register_buffer("input_pos", input_pos)
 
         self.t_embedder2 = TimestepEmbedder()
-        self.conv1 = nn.Linear(DIM, DIM)
-        self.conv2 = nn.Conv1d(DIM, IN_CHANNELS, kernel_size=1)
+        self.conv1 = nn.Linear(dim, dim)
+        self.conv2 = nn.Conv1d(dim, in_channels, kernel_size=1)
         self.wavenet = WaveNet()
         self.final_layer = FinalLayer()
         # residual connection from tranformer output to final output
-        self.res_projection = nn.Linear(DIM, DIM)
+        self.res_projection = nn.Linear(dim, dim)
 
-        self.skip_linear = nn.Linear(DIM + IN_CHANNELS, DIM)
+        self.skip_linear = nn.Linear(dim + in_channels, dim)
 
-        self.cond_x_merge_linear = nn.Linear(DIM + IN_CHANNELS * 2 + STYLE_ENCODER_DIM, DIM)
+        self.cond_x_merge_linear = nn.Linear(dim + in_channels * 2 + STYLE_ENCODER_DIM, dim)
 
     @override
     def forward(
@@ -149,8 +147,8 @@ class DiT(nn.Module):
         """
         T = x.size(2)
 
-        t1 = self.t_embedder(t)  # (N, D) # t1 [2, 512]
-        cond = self.cond_projection(cond)  # cond [2,1863,512]->[2,1863,512]
+        t1 = self.t_embedder.__call__(t)  # (N, D) # t1 [2, 512]
+        cond = self.cond_projection.__call__(cond)  # cond [2,1863,512]->[2,1863,512]
 
         x = x.mT  # [2,1863,80]
         prompt_x = prompt_x.mT  # [2,1863,80]
@@ -158,23 +156,20 @@ class DiT(nn.Module):
         x_in = torch.cat([x, prompt_x, cond], dim=-1)  # 80+80+512=672 [2, 1863, 672]
         x_in = torch.cat([x_in, style[:, None, :].repeat(1, T, 1)], dim=-1)  # [2, 1863, 864]
 
-        x_in = self.cond_x_merge_linear(x_in)  # (N, T, D) [2, 1863, 512]
+        x_in = self.cond_x_merge_linear.__call__(x_in)  # (N, T, D) [2, 1863, 512]
 
-        x_mask = (
-            sequence_mask(x_lens, max_length=x_in.size(1)).to(x.device).unsqueeze(1)
-        )  # torch.Size([1, 1, 1863])True
         input_pos = self.input_pos[: x_in.size(1)]  # (T,) range（0，1863）
-        x_mask_expanded = x_mask[:, None, :].repeat(1, 1, x_in.size(1), 1)  # torch.Size([1, 1, 1863, 1863]
-        x_res = self.transformer(x_in, t1.unsqueeze(1), input_pos, x_mask_expanded)  # [2, 1863, 512]
+        x_res = self.transformer.__call__(x_in, t1.unsqueeze(1), input_pos)  # [2, 1863, 512]
 
-        x_res = self.skip_linear(torch.cat([x_res, x], dim=-1))
-        x = self.conv1(x_res)
+        x_res = self.skip_linear.__call__(torch.cat([x_res, x], dim=-1))
+        x = self.conv1.__call__(x_res)
         x = x.mT
         t2 = self.t_embedder2(t)
-        x = self.wavenet(x, x_mask, g=t2.unsqueeze(2)).mT + self.res_projection(x_res)  # long residual connection
-        x = self.final_layer(x, t1).mT
+        # long residual connection
+        x = self.wavenet.__call__(x, g=t2.unsqueeze(2)).mT + self.res_projection(x_res)
+        x = self.final_layer.__call__(x, t1).mT
         # x [2,80,1863]
-        return self.conv2(x)
+        return self.conv2.__call__(x)
 
     @patch_call(forward)
     def __call__(self) -> None: ...

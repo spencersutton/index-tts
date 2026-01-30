@@ -2,8 +2,7 @@ from typing import TYPE_CHECKING, Any, override
 
 import torch
 import torch.nn.functional as F
-from beartype import beartype as typechecker
-from jaxtyping import Float, Int, jaxtyped
+from jaxtyping import Float, Int
 from torch import Tensor, nn
 from transformers import GPT2Config, GPT2Model, LogitsProcessorList
 
@@ -195,7 +194,6 @@ class UnifiedVoice(nn.Module):
         self.gpt.wte = self.mel_embedding
 
     @override
-    @jaxtyped(typechecker=typechecker)
     def forward(
         self,
         speech_conditioning_latent: Float[Tensor, "B S D"],
@@ -378,12 +376,12 @@ class UnifiedVoice(nn.Module):
         if condition.ndim == 2:
             condition = condition.unsqueeze(0)
 
-        input, mask = self.conditioning_encoder(condition)
+        input, mask = self.conditioning_encoder.__call__(condition)
         mask = self.cond_mask_pad(mask.squeeze(1))
         return self.perceiver_encoder(input, mask)
 
     def get_emo_vec(self, latent: Float[Tensor, "B T D"]) -> Tensor:
-        input, mask = self.emo_conditioning_encoder(latent)
+        input, mask = self.emo_conditioning_encoder.__call__(latent)
         mask = self.emo_cond_mask_pad(mask.squeeze(1))
         conds = self.emo_perceiver_encoder(input, mask)
         vector = self.emovec_layer(conds.squeeze(1))

@@ -4,7 +4,6 @@ from jaxtyping import Float, Int
 from torch import Tensor, nn
 from torch.nn import functional as F
 
-from indextts.s2mel.modules.commons import sequence_mask
 from indextts.util import patch_call
 
 
@@ -30,13 +29,11 @@ class InterpolateRegulator(nn.Module):
     def forward(self, x: Float[Tensor, "b t c"], ylens: Int[Tensor, "b"]) -> Tensor:
         """Project to channels, resample in time, then refine and mask."""
         x = self.content_in_proj(x)  # (B, T, C)
-        mask = sequence_mask(ylens).unsqueeze(-1)  # (B, T, 1)
 
         x = x.mT.contiguous()  # (B, C, T)
         x = F.interpolate(x, size=int(ylens.max()))
 
-        out = self.model(x).mT.contiguous()  # (B, T, C)
-        return out * mask
+        return self.model(x).mT.contiguous()  # (B, T, C)
 
     @patch_call(forward)
     def __call__(self) -> None: ...

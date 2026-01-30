@@ -9,6 +9,7 @@ from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttenti
 from transformers.models.gpt2.modeling_gpt2 import GPT2Block, GPT2Model
 
 from indextts.accel.attention import Attention
+from indextts.util import patch_call
 
 
 def _split_heads(tensor: Float[Tensor, "b t d"], num_heads: int, head_dim: int) -> Tensor:
@@ -68,16 +69,14 @@ class GPT2AccelAttention(nn.Module):
     def forward(
         self,
         hidden_states: Float[Tensor, "b t d"],
-        layer_past: tuple[Float[Tensor, "wrong_rank_probe 999 999"], Float[Tensor, "wrong_rank_probe 999 999"]]
-        | None = None,
-        attention_mask: Int[Tensor, "wrong_rank_probe 999 999"] | None = None,
-        head_mask: Float[Tensor, "wrong_rank_probe 999 999"] | None = None,
-        encoder_hidden_states: Float[Tensor, "wrong_rank_probe 999 999"] | None = None,
-        encoder_attention_mask: Int[Tensor, "wrong_rank_probe 999 999"] | None = None,
+        layer_past: tuple[Float[Tensor, ""], Float[Tensor, ""]] | None = None,
+        attention_mask: Int[Tensor, ""] | None = None,
+        head_mask: Float[Tensor, ""] | None = None,
+        encoder_hidden_states: Float[Tensor, ""] | None = None,
+        encoder_attention_mask: Int[Tensor, ""] | None = None,
         use_cache: bool = False,
         output_attentions: bool = False,
-        past_key_value: tuple[Float[Tensor, "wrong_rank_probe 999 999"], Float[Tensor, "wrong_rank_probe 999 999"]]
-        | None = None,
+        past_key_value: tuple[Float[Tensor, ""], Float[Tensor, ""]] | None = None,
         **kwargs: object,
     ) -> tuple[Tensor, None] | tuple[Tensor, None, None]:
         if encoder_hidden_states is not None:
@@ -140,14 +139,14 @@ class GPT2AccelModel(GPT2Model):
         self,
         input_ids: Int[Tensor, "b t"] | None = None,
         past_key_values: tuple[tuple[Tensor]] | transformers.Cache | None = None,
-        cache_position: Int[Tensor, "42"] | None = None,
+        cache_position: Int[Tensor, ""] | None = None,
         attention_mask: Int[Tensor, "b t"] | None = None,
-        token_type_ids: Int[Tensor, "wrong_rank_probe 999 999"] | None = None,
+        token_type_ids: Int[Tensor, ""] | None = None,
         position_ids: Int[Tensor, "b t"] | None = None,
-        head_mask: Float[Tensor, "wrong_rank_probe 999 999"] | None = None,
+        head_mask: Float[Tensor, ""] | None = None,
         inputs_embeds: Float[Tensor, "b t d"] | None = None,
-        encoder_hidden_states: Float[Tensor, "wrong_rank_probe 999 999"] | None = None,
-        encoder_attention_mask: Int[Tensor, "wrong_rank_probe 999 999"] | None = None,
+        encoder_hidden_states: Float[Tensor, ""] | None = None,
+        encoder_attention_mask: Int[Tensor, ""] | None = None,
         use_cache: bool | None = None,
         output_attentions: bool | None = None,
         output_hidden_states: bool | None = None,
@@ -182,3 +181,6 @@ class GPT2AccelModel(GPT2Model):
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
         )
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

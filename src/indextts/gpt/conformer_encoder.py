@@ -135,7 +135,7 @@ class ConformerEncoderLayer(nn.Module):
         size: int,
         self_attn: RelPositionMultiHeadedAttention,
         feed_forward: PositionwiseFeedForward,
-        conv_module: ConvolutionModule | None = None,
+        conv_module: ConvolutionModule,
     ) -> None:
         """Construct an EncoderLayer object."""
         super().__init__()
@@ -145,9 +145,8 @@ class ConformerEncoderLayer(nn.Module):
         self.norm_ff = nn.LayerNorm(size, eps=1e-5)  # for the FNN module
         self.norm_mha = nn.LayerNorm(size, eps=1e-5)  # for the MHA module
         self.ff_scale = 1.0
-        if self.conv_module is not None:
-            self.norm_conv = nn.LayerNorm(size, eps=1e-5)  # for the CNN module
-            self.norm_final = nn.LayerNorm(size, eps=1e-5)  # for the final output of the block
+        self.norm_conv = nn.LayerNorm(size, eps=1e-5)  # for the CNN module
+        self.norm_final = nn.LayerNorm(size, eps=1e-5)  # for the final output of the block
         self.dropout = nn.Dropout(0.0)
         self.size = size
         self.concat_linear = nn.Identity()
@@ -186,28 +185,25 @@ class ConformerEncoderLayer(nn.Module):
 
         # multi-headed self-attention module
         residual = x
-        x = self.norm_mha(x)
+        x = self.norm_mha.__call__(x)
 
-        x_att, new_att_cache = self.self_attn(x, x, x, mask, pos_emb, att_cache)
-        x = residual + self.dropout(x_att)
+        x_att, new_att_cache = self.self_attn.__call__(x, x, x, mask, pos_emb, att_cache)
+        x = residual + self.dropout.__call__(x_att)
 
         # convolution module
         # Fake new cnn cache here, and then change it in conv_module
         new_cnn_cache = torch.zeros((0, 0, 0), dtype=x.dtype, device=x.device)
-        if self.conv_module is not None:
-            residual = x
-            x = self.norm_conv.__call__(x)
-            x, new_cnn_cache = self.conv_module.__call__(x, mask_pad, cnn_cache)
-            x = residual + self.dropout(x)
+        residual = x
+        x = self.norm_conv.__call__(x)
+        x, new_cnn_cache = self.conv_module.__call__(x, mask_pad, cnn_cache)
+        x = residual + self.dropout.__call__(x)
 
         # feed forward module
         residual = x
         x = self.norm_ff.__call__(x)
 
-        x = residual + self.ff_scale * self.dropout(self.feed_forward.__call__(x))
-
-        if self.conv_module is not None:
-            x = self.norm_final.__call__(x)
+        x = residual + self.ff_scale * self.dropout.__call__(self.feed_forward.__call__(x))
+        x = self.norm_final.__call__(x)
 
         return x, mask, new_att_cache, new_cnn_cache
 

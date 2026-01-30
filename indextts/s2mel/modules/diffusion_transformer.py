@@ -131,45 +131,31 @@ class DiT(nn.Module):
         style: Float[Tensor, "b c"],
         cond: Float[Tensor, "b t c"],
     ) -> Tensor:
-        """
-        x (Tensor): random noise
-        prompt_x (Tensor): reference mel + zero mel
-            shape: (batch_size, 80, 795+1068)
-        x_lens (Tensor): mel frames output
-            shape: (batch_size, mel_timesteps)
-        t (Tensor): radshape:
-            shape: (batch_size)
-        style (Tensor): reference global style
-            shape: (batch_size, 192)
-        cond (Tensor): semantic info of reference audio and altered audio
-            shape: (batch_size, mel_timesteps(795+1069), 512)
-
-        """
         T = x.size(2)
 
-        t1 = self.t_embedder.__call__(t)  # (N, D) # t1 [2, 512]
-        cond = self.cond_projection.__call__(cond)  # cond [2,1863,512]->[2,1863,512]
+        t1 = self.t_embedder.__call__(t)
+        cond = self.cond_projection(cond)
 
-        x = x.mT  # [2,1863,80]
-        prompt_x = prompt_x.mT  # [2,1863,80]
+        x = x.mT
+        prompt_x = prompt_x.mT
 
-        x_in = torch.cat([x, prompt_x, cond], dim=-1)  # 80+80+512=672 [2, 1863, 672]
-        x_in = torch.cat([x_in, style[:, None, :].repeat(1, T, 1)], dim=-1)  # [2, 1863, 864]
+        x_in = torch.cat([x, prompt_x, cond], dim=-1)
+        x_in = torch.cat([x_in, style[:, None, :].repeat(1, T, 1)], dim=-1)
 
-        x_in = self.cond_x_merge_linear.__call__(x_in)  # (N, T, D) [2, 1863, 512]
+        x_in = self.cond_x_merge_linear(x_in)
 
-        input_pos = self.input_pos[: x_in.size(1)]  # (T,) range（0，1863）
-        x_res = self.transformer.__call__(x_in, t1.unsqueeze(1), input_pos)  # [2, 1863, 512]
+        input_pos = self.input_pos[: x_in.size(1)]
+        x_res = self.transformer.__call__(x_in, t1.unsqueeze(1), input_pos)
 
-        x_res = self.skip_linear.__call__(torch.cat([x_res, x], dim=-1))
+        x_res = self.skip_linear(torch.cat([x_res, x], dim=-1))
         x = self.conv1.__call__(x_res)
         x = x.mT
         t2 = self.t_embedder2(t)
-        # long residual connection
+
         x = self.wavenet.__call__(x, g=t2.unsqueeze(2)).mT + self.res_projection(x_res)
         x = self.final_layer.__call__(x, t1).mT
-        # x [2,80,1863]
-        return self.conv2.__call__(x)
+
+        return self.conv2(x)
 
     @patch_call(forward)
     def __call__(self) -> None: ...

@@ -11,7 +11,7 @@ class InterpolateRegulator(nn.Module):
     model: nn.Sequential
     content_in_proj: nn.Linear
 
-    def __init__(self, channels: int = 512, groups: int = 1, num_samples: int = 4, in_channels: int = 1024) -> None:
+    def __init__(self, channels: int, groups: int = 1, num_samples: int = 4, in_channels: int = 1024) -> None:
         super().__init__()
 
         self.model = nn.Sequential()

@@ -111,10 +111,10 @@ class Transformer(nn.Module):
         skip_stack: list[Tensor] = []
         for i, layer in enumerate(self.layers):
             skip_in_x = skip_stack.pop() if i > mid else None
-            x = layer(x, c, input_pos, freqs_cis, mask, skip_in_x)
+            x = layer.__call__(x, c, input_pos, freqs_cis, skip_in_x)
             if i < mid:
                 skip_stack.append(x)
-        return self.norm(x, c)
+        return self.norm.__call__(x, c)
 
     @patch_call(forward)
     def __call__(self) -> None: ...

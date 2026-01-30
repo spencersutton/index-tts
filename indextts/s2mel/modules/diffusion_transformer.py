@@ -149,8 +149,8 @@ class DiT(nn.Module):
         """
         T = x.size(2)
 
-        t1 = self.t_embedder(t)  # (N, D) # t1 [2, 512]
-        cond = self.cond_projection(cond)  # cond [2,1863,512]->[2,1863,512]
+        t1 = self.t_embedder.__call__(t)  # (N, D) # t1 [2, 512]
+        cond = self.cond_projection.__call__(cond)  # cond [2,1863,512]->[2,1863,512]
 
         x = x.mT  # [2,1863,80]
         prompt_x = prompt_x.mT  # [2,1863,80]
@@ -158,23 +158,24 @@ class DiT(nn.Module):
         x_in = torch.cat([x, prompt_x, cond], dim=-1)  # 80+80+512=672 [2, 1863, 672]
         x_in = torch.cat([x_in, style[:, None, :].repeat(1, T, 1)], dim=-1)  # [2, 1863, 864]
 
-        x_in = self.cond_x_merge_linear(x_in)  # (N, T, D) [2, 1863, 512]
+        x_in = self.cond_x_merge_linear.__call__(x_in)  # (N, T, D) [2, 1863, 512]
 
         x_mask = (
             sequence_mask(x_lens, max_length=x_in.size(1)).to(x.device).unsqueeze(1)
         )  # torch.Size([1, 1, 1863])True
         input_pos = self.input_pos[: x_in.size(1)]  # (T,) range（0，1863）
         x_mask_expanded = x_mask[:, None, :].repeat(1, 1, x_in.size(1), 1)  # torch.Size([1, 1, 1863, 1863]
-        x_res = self.transformer(x_in, t1.unsqueeze(1), input_pos, x_mask_expanded)  # [2, 1863, 512]
+        x_res = self.transformer.__call__(x_in, t1.unsqueeze(1), input_pos)  # [2, 1863, 512]
 
-        x_res = self.skip_linear(torch.cat([x_res, x], dim=-1))
-        x = self.conv1(x_res)
+        x_res = self.skip_linear.__call__(torch.cat([x_res, x], dim=-1))
+        x = self.conv1.__call__(x_res)
         x = x.mT
         t2 = self.t_embedder2(t)
-        x = self.wavenet(x, x_mask, g=t2.unsqueeze(2)).mT + self.res_projection(x_res)  # long residual connection
-        x = self.final_layer(x, t1).mT
+        # long residual connection
+        x = self.wavenet.__call__(x, g=t2.unsqueeze(2)).mT + self.res_projection(x_res)
+        x = self.final_layer.__call__(x, t1).mT
         # x [2,80,1863]
-        return self.conv2(x)
+        return self.conv2.__call__(x)
 
     @patch_call(forward)
     def __call__(self) -> None: ...

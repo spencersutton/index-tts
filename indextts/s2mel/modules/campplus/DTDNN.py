@@ -56,7 +56,7 @@ class CAMPPlus(nn.Module):
         self.head = FCM()
         channels = self.head.out_channels
 
-        modules: OrderedDict[str, nn.Module] = OrderedDict({"tdnn": TDNNLayer(channels)})
+        modules = OrderedDict({"tdnn": TDNNLayer(channels)})
         self.xvector = nn.Sequential(modules)
         channels = 128
         for i, (num_layers, dilation) in enumerate(zip((12, 24, 16), (1, 2, 2))):

@@ -9,6 +9,7 @@ from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttenti
 from transformers.models.gpt2.modeling_gpt2 import GPT2Block, GPT2Model
 
 from indextts.accel.attention import Attention
+from indextts.util import patch_call
 
 
 def _split_heads(tensor: Float[Tensor, "b t d"], num_heads: int, head_dim: int) -> Tensor:
@@ -180,3 +181,6 @@ class GPT2AccelModel(GPT2Model):
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
         )
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

@@ -1,6 +1,7 @@
 import re
 
 import torch
+from jaxtyping import Bool, Int
 from torch import Tensor
 
 
@@ -60,7 +61,7 @@ def de_tokenized_by_CJK_char(line: str, do_lower_case: bool = False) -> str:
     return "".join(words)
 
 
-def make_pad_mask(lengths: Tensor, max_len: int = 0) -> Tensor:
+def make_pad_mask(lengths: Int[Tensor, "b"], max_len: int = 0) -> Bool[Tensor, "b t"]:
     """Make mask tensor containing indices of padded part.
 
     See description of make_non_pad_mask.

@@ -2,6 +2,7 @@ import math
 from typing import TYPE_CHECKING, override
 
 import torch
+from jaxtyping import Float, Int
 from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
@@ -14,7 +15,7 @@ from indextts.util import patch_call
 STYLE_ENCODER_DIM = 192
 
 
-def modulate(x: Tensor, shift: Tensor, scale: Tensor) -> Tensor:
+def modulate(x: Float[Tensor, "b t d"], shift: Float[Tensor, "b d"], scale: Float[Tensor, "b d"]) -> Tensor:
     return x * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
 
 
@@ -39,7 +40,7 @@ class TimestepEmbedder(nn.Module):
         freqs = torch.exp(-math.log(10000) * torch.arange(start=0, end=half, dtype=torch.float32) / half)
         self.register_buffer("freqs", freqs)
 
-    def timestep_embedding(self, t: Tensor) -> Tensor:
+    def timestep_embedding(self, t: Float[Tensor, "b"]) -> Tensor:
         """
         Create sinusoidal timestep embeddings.
         :param t: a 1-D Tensor of N indices, one per batch element.
@@ -52,7 +53,7 @@ class TimestepEmbedder(nn.Module):
         return torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
 
     @override
-    def forward(self, t: Tensor) -> Tensor:
+    def forward(self, t: Float[Tensor, "b"]) -> Tensor:
         t_freq = self.timestep_embedding(t)
         return self.mlp(t_freq)
 
@@ -72,7 +73,7 @@ class FinalLayer(nn.Module):
         self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(DIM, 2 * DIM))
 
     @override
-    def forward(self, x: Tensor, c: Tensor) -> Tensor:
+    def forward(self, x: Float[Tensor, "b t d"], c: Float[Tensor, "b d"]) -> Tensor:
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)
         return self.linear(x)
@@ -123,7 +124,15 @@ class DiT(nn.Module):
         self.cond_x_merge_linear = nn.Linear(DIM + IN_CHANNELS * 2 + STYLE_ENCODER_DIM, DIM)
 
     @override
-    def forward(self, x: Tensor, prompt_x: Tensor, x_lens: Tensor, t: Tensor, style: Tensor, cond: Tensor) -> Tensor:
+    def forward(
+        self,
+        x: Float[Tensor, "b c t"],
+        prompt_x: Float[Tensor, "b c t"],
+        x_lens: Int[Tensor, "b"],
+        t: Float[Tensor, "b"],
+        style: Float[Tensor, "b c"],
+        cond: Float[Tensor, "b t c"],
+    ) -> Tensor:
         """
         x (Tensor): random noise
         prompt_x (Tensor): reference mel + zero mel

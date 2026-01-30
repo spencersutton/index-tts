@@ -1,10 +1,11 @@
 import torch
 import torch.nn.functional as F
+from jaxtyping import Float
 from librosa.filters import mel as librosa_mel_fn
 from torch import Tensor
 
 
-def mel_spectrogram(y: Tensor, sample_rate: int) -> Tensor:
+def mel_spectrogram(y: Float[Tensor, "b t"], sample_rate: int) -> Tensor:
     mel = librosa_mel_fn(sr=sample_rate, n_fft=1024, n_mels=80)
 
     y = F.pad(y.unsqueeze(1), [384, 384], mode="reflect")

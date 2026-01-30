@@ -8,6 +8,7 @@
 
 from typing import override
 
+from jaxtyping import Float
 from torch import Tensor, nn
 from torch.nn import functional as F
 from torch.nn.utils.parametrizations import weight_norm
@@ -30,7 +31,7 @@ class NormConv1d(nn.Module):
         self.norm = nn.Identity()
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:
         return self.norm(self.conv(x))
 
     @patch_call(forward)
@@ -49,7 +50,7 @@ class SConv1d(nn.Module):
         self.conv = NormConv1d(in_channels, out_channels, kernel_size)
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:
         if self.kernel_size > 1:
             x = F.pad(x, [2, 2], "reflect")
         return self.conv(x)

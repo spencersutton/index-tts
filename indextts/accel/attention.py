@@ -6,6 +6,7 @@ import torch
 import triton
 import triton.language as tl
 from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache  # pyright: ignore[reportUnknownVariableType]
+from jaxtyping import Float, Int
 from torch import Tensor, nn
 
 from indextts.util import patch_call
@@ -34,13 +35,13 @@ class ForwardContext:
     def set_context(
         cls,
         is_prefill: bool,
-        cu_seqlens_q: Tensor | None = None,
-        cu_seqlens_k: Tensor | None = None,
+        cu_seqlens_q: Int[Tensor, "b"] | None = None,
+        cu_seqlens_k: Int[Tensor, "b"] | None = None,
         max_seqlen_q: int = 0,
         max_seqlen_k: int = 0,
-        slot_mapping: Tensor | None = None,
-        context_lens: Tensor | None = None,
-        block_tables: Tensor | None = None,
+        slot_mapping: Int[Tensor, "b"] | None = None,
+        context_lens: Int[Tensor, "b"] | None = None,
+        block_tables: Int[Tensor, "b"] | None = None,
     ) -> None:
         cls._instance = cls(
             is_prefill, cu_seqlens_q, cu_seqlens_k, max_seqlen_q, max_seqlen_k, slot_mapping, context_lens, block_tables
@@ -84,7 +85,13 @@ def store_kvcache_kernel(
         d_offset += BLOCK_SIZE
 
 
-def store_kvcache(key: Tensor, value: Tensor, k_cache: Tensor, v_cache: Tensor, slot_mapping: Tensor) -> None:
+def store_kvcache(
+    key: Float[Tensor, "n h d"],
+    value: Float[Tensor, "n h d"],
+    k_cache: Float[Tensor, "n d"],
+    v_cache: Float[Tensor, "n d"],
+    slot_mapping: Int[Tensor, "n"],
+) -> None:
     N, num_heads, head_dim = key.shape
     D = num_heads * head_dim
     assert key.stride(-1) == 1 and value.stride(-1) == 1
@@ -104,7 +111,7 @@ class Attention(nn.Module):
         self.k_cache = self.v_cache = torch.tensor([])
 
     @override
-    def forward(self, q: Tensor, k: Tensor, v: Tensor) -> Tensor:
+    def forward(self, q: Float[Tensor, "b h d"], k: Float[Tensor, "b h d"], v: Float[Tensor, "b h d"]) -> Tensor:
         context = ForwardContext.get_context()
         k_cache, v_cache = self.k_cache, self.v_cache
 

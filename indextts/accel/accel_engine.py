@@ -175,11 +175,11 @@ class AccelInferenceEngine:
                 pos_clamped = torch.clamp(positions[:bs], min=0)
                 pos_emb = unwrap(tts_text_pos_embedding).emb(pos_clamped)
                 inputs_embeds_buffer[:bs] = emb + pos_emb
-                out = unwrap(
-                    self.model(inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True).last_hidden_state
-                )
+                result = self.model(inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True)
             else:
-                out = unwrap(self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True).last_hidden_state)
+                result = self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True)
+            assert not isinstance(result, tuple)
+            out = unwrap(result.last_hidden_state)
             outputs[:bs] = out.squeeze(1) if out.dim() == 3 else out
 
             with torch.cuda.graph(graph, self.graph_pool):

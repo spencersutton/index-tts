@@ -196,18 +196,18 @@ class ConformerEncoderLayer(nn.Module):
         new_cnn_cache = torch.zeros((0, 0, 0), dtype=x.dtype, device=x.device)
         if self.conv_module is not None:
             residual = x
-            x = self.norm_conv(x)
-            x, new_cnn_cache = self.conv_module(x, mask_pad, cnn_cache)
+            x = self.norm_conv.__call__(x)
+            x, new_cnn_cache = self.conv_module.__call__(x, mask_pad, cnn_cache)
             x = residual + self.dropout(x)
 
         # feed forward module
         residual = x
-        x = self.norm_ff(x)
+        x = self.norm_ff.__call__(x)
 
-        x = residual + self.ff_scale * self.dropout(self.feed_forward(x))
+        x = residual + self.ff_scale * self.dropout(self.feed_forward.__call__(x))
 
         if self.conv_module is not None:
-            x = self.norm_final(x)
+            x = self.norm_final.__call__(x)
 
         return x, mask, new_att_cache, new_cnn_cache
 
@@ -269,12 +269,12 @@ class ConformerEncoder(nn.Module):
         xs_lens = torch.tensor([xs.shape[-1]], device=xs.device)
         T = xs.size(1)
         masks = ~make_pad_mask(xs_lens, T).unsqueeze(1)  # (B, 1, T)
-        xs, pos_emb, masks = self.embed(xs, masks)
+        xs, pos_emb, masks = self.embed.__call__(xs, masks)
         chunk_masks = masks
         mask_pad = masks  # (B, 1, T/subsample_rate)
         for layer in self.encoders:
-            xs, chunk_masks, _, _ = layer(xs, chunk_masks, pos_emb, mask_pad)
-        xs = self.after_norm(xs)
+            xs, chunk_masks, _, _ = layer.__call__(xs, chunk_masks, pos_emb, mask_pad)
+        xs = self.after_norm.__call__(xs)
         # Here we assume the mask is not changed in encoder layers, so just
         # return the masks before encoder layers, and the masks will be used
         # for cross attention with decoder later

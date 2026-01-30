@@ -19,8 +19,7 @@ import math
 from typing import TYPE_CHECKING, override
 
 import torch
-import torch.nn.functional as F
-from jaxtyping import Float, Int
+from jaxtyping import Float
 from torch import Tensor, nn
 
 from indextts.util import patch_call
@@ -62,11 +61,10 @@ class RelPositionalEncoding(nn.Module):
         pe = pe.unsqueeze(0)
         self.register_buffer("pe", pe)
 
-    def position_encoding(self, offset: int | Int[Tensor, "wrong_rank_probe 999 999"], size: int) -> Tensor:
+    def position_encoding(self, size: int) -> Tensor:
         """For getting encoding in a streaming fashion
 
         Args:
-            offset (int or torch.tensor): start offset
             size (int): required size of position encoding
 
         Returns:
@@ -74,23 +72,11 @@ class RelPositionalEncoding(nn.Module):
         """
         # How to subscript a Union type:
         #   https://github.com/pytorch/pytorch/issues/69434
-        if isinstance(offset, int) or offset.dim() == 0:
-            assert offset + size < MAX_LEN
-            pos_emb = self.pe[:, offset : offset + size]
-        else:  # for batched streaming decoding on GPU
-            assert torch.max(offset) + size < MAX_LEN
-            index = offset.unsqueeze(1) + torch.arange(0, size).to(offset.device)  # B X T
-            flag = index > 0
-            # remove negative offset
-            index *= flag
-            pos_emb = F.embedding(index, self.pe[0])  # B X T X d_model
-
-        return pos_emb
+        assert size < MAX_LEN
+        return self.pe[:, :size]
 
     @override
-    def forward(
-        self, x: Float[Tensor, "b t d"], offset: int | Int[Tensor, "wrong_rank_probe 999 999"] = 0
-    ) -> tuple[Tensor, Tensor]:
+    def forward(self, x: Float[Tensor, "b t d"]) -> tuple[Tensor, Tensor]:
         """Compute positional encoding.
         Args:
             x (Tensor): Input tensor (batch, time, `*`).
@@ -100,7 +86,7 @@ class RelPositionalEncoding(nn.Module):
         """
         self.pe = self.pe.to(x.device)
         x *= self.xscale
-        pos_emb = self.position_encoding(offset, x.size(1))
+        pos_emb = self.position_encoding(x.size(1))
         return self.dropout(x), self.dropout(pos_emb)
 
     @patch_call(forward)

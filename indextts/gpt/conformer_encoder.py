@@ -3,6 +3,7 @@ from typing import cast, override
 
 import torch
 import torch.nn.functional as F
+from jaxtyping import Bool, Float
 from torch import Tensor, nn
 
 from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
@@ -34,7 +35,7 @@ class PositionwiseFeedForward(nn.Module):
         self.w_2 = nn.Linear(hidden_units, idim)
 
     @override
-    def forward(self, xs: Tensor) -> Tensor:
+    def forward(self, xs: Float[Tensor, "b t d"]) -> Tensor:
         """Forward function.
 
         Args:
@@ -71,9 +72,9 @@ class ConvolutionModule(nn.Module):
     @override
     def forward(
         self,
-        x: Tensor,
-        mask_pad: Tensor = torch.ones((0, 0, 0), dtype=torch.bool),
-        cache: Tensor = torch.zeros((0, 0, 0)),
+        x: Float[Tensor, "b t c"],
+        mask_pad: Bool[Tensor, "b 1 t"] = torch.ones((0, 0, 0), dtype=torch.bool),
+        cache: Float[Tensor, "b c t"] = torch.zeros((0, 0, 0)),
     ) -> tuple[Tensor, Tensor]:
         """Compute convolution module.
         Args:
@@ -154,23 +155,23 @@ class ConformerEncoderLayer(nn.Module):
     @override
     def forward(
         self,
-        x: Tensor,
-        mask: Tensor,
-        pos_emb: Tensor,
-        mask_pad: Tensor = torch.ones((0, 0, 0), dtype=torch.bool),
-        att_cache: Tensor = torch.zeros((0, 0, 0, 0)),
-        cnn_cache: Tensor = torch.zeros((0, 0, 0, 0)),
+        x: Float[Tensor, "b t c"],
+        mask: Bool[Tensor, "b t c"],
+        pos_emb: Float[Tensor, "b t c"],
+        mask_pad: Bool[Tensor, "b 1 t"] = torch.ones((0, 0, 0), dtype=torch.bool),
+        att_cache: Float[Tensor, "b h t d"] = torch.zeros((0, 0, 0, 0)),
+        cnn_cache: Float[Tensor, "b c t"] = torch.zeros((0, 0, 0)),
     ) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         """Compute encoded features.
 
         Args:
             x (Tensor): (#batch, time, size)
-            mask (Tensor): Mask tensor for the input (#batch, time，time),
+            mask (Tensor): Mask tensor for the input (#batch, time, time),
                 (0, 0, 0) means fake mask.
             pos_emb (Tensor): positional encoding, must not be None
                 for ConformerEncoderLayer.
             mask_pad (Tensor): batch padding mask used for conv module.
-                (#batch, 1，time), (0, 0, 0) means fake mask.
+                (#batch, 1, time), (0, 0, 0) means fake mask.
             att_cache (Tensor): Cache tensor of the KEY & VALUE
                 (#batch=1, head, cache_t1, d_k * 2), head * d_k == size.
             cnn_cache (Tensor): Convolution cache in conformer layer
@@ -245,7 +246,7 @@ class ConformerEncoder(nn.Module):
         )
 
     @override
-    def forward(self, xs: Tensor) -> tuple[Tensor, Tensor]:
+    def forward(self, xs: Float[Tensor, "b t d"]) -> tuple[Tensor, Tensor]:
         """Embed positions in tensor.
 
         Args:

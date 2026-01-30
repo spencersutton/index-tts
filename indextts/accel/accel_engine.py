@@ -3,6 +3,7 @@ from collections.abc import Mapping, MutableMapping, Sequence
 from typing import ClassVar, override
 
 import torch
+from jaxtyping import Float, Int
 from torch import Tensor, nn
 
 from indextts.accel.attention import ForwardContext
@@ -18,7 +19,7 @@ class Sampler(nn.Module):
 
     @torch.compile
     @override
-    def forward(self, logits: Tensor, temperatures: Tensor) -> Tensor:
+    def forward(self, logits: Float[Tensor, "b v"], temperatures: Float[Tensor, "b"]) -> Tensor:
         temperatures = temperatures.to(logits.device).clamp(min=1e-8)
         greedy_mask = temperatures < 1e-5
         temp_for_scaling = torch.where(greedy_mask, 1.0, temperatures)
@@ -216,8 +217,8 @@ class AccelInferenceEngine:
 
     def _run_decode_with_graph(
         self,
-        input_ids: Tensor,
-        positions: Tensor,
+        input_ids: Int[Tensor, "b"],
+        positions: Int[Tensor, "b"],
         context: ForwardContext,
         tts_mel_embedding: nn.Embedding | None = None,
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,
@@ -269,14 +270,15 @@ class AccelInferenceEngine:
 
     def generate(
         self,
-        input_ids: Tensor,
+        input_ids: Int[Tensor, "b t"],
         max_new_tokens: int = 100,
         temperature: float = 1.0,
         top_k: int = 50,
         top_p: float = 1.0,
         stop_tokens: list[int] | None = None,
-        attention_mask: Tensor | None = None,
-        tts_embeddings: Tensor | None = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
+        attention_mask: Int[Tensor, "b t"] | None = None,
+        tts_embeddings: Float[Tensor, "b t d"]
+        | None = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
         tts_mel_embedding: nn.Embedding | None = None,  # TTS: mel_embedding layer
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,  # TTS: text_pos_embedding layer
     ) -> Tensor:

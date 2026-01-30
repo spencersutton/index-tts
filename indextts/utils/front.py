@@ -26,8 +26,6 @@ punctuation_marks_tokens: Final = [
 
 
 class TextNormalizer:
-    
-
     if TYPE_CHECKING:
         zh_normalizer: Normalizer | None
         en_normalizer: Normalizer | None

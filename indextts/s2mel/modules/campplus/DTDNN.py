@@ -4,6 +4,7 @@ from collections import OrderedDict
 from typing import override
 
 import torch.nn.functional as F
+from jaxtyping import Float
 from torch import Tensor, nn
 
 from indextts.s2mel.modules.campplus.layers import (
@@ -34,7 +35,7 @@ class FCM(nn.Module):
         self.out_channels = M_CHANNELS * 10
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Float[Tensor, "b f t"]) -> Tensor:
         x = x.unsqueeze(1)
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.layer1(out)
@@ -77,7 +78,7 @@ class CAMPPlus(nn.Module):
                     nn.init.zeros_(m.bias)
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Float[Tensor, "b t f"]) -> Tensor:
         x = x.permute(0, 2, 1)  # (B,T,F) => (B,F,T)
         x = self.head(x)
         return self.xvector(x)

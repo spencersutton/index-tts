@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 DIM = 1280
 
 
-def set_padding(input_tokens: Int[Tensor, "B T"], lengths: Int[Tensor, "B"], token: int) -> Tensor:
+def set_padding(input_tokens: Int[Tensor, "B _"], lengths: list[int], token: int) -> Tensor:
     """
     Given tokens that are derived from a padded audio clip and the actual lengths of each batch element in
     that audio clip, reformats the tokens with `token` in place of the zero padding. This is required
@@ -199,12 +199,12 @@ class UnifiedVoice(nn.Module):
     def forward(
         self,
         speech_conditioning_latent: Float[Tensor, "B S D"],
-        text_inputs: Int[Tensor, "B T"],
+        text_inputs: Int[Tensor, "B L"],
         mel_codes: Int[Tensor, "B M"],
         emo_speech_conditioning_latent: Float[Tensor, "B 749 1024"],
         emo_vec: Float[Tensor, "B D"],
         use_speed: int,
-        device: str,
+        device: torch.types.Device,
     ) -> Tensor:
         """
         Forward pass that uses both text and voice in either text conditioning mode or voice conditioning mode
@@ -213,19 +213,17 @@ class UnifiedVoice(nn.Module):
         If return_latent is specified, loss & logits are not computed or returned. Only the predicted latents are returned.
         """
 
-        text_lengths = torch.tensor([text_inputs.shape[-1]], device=device)
-        text_inputs = set_padding(text_inputs, text_lengths, self.cfg.stop_text_token)
+        text_inputs = set_padding(text_inputs, [text_inputs.shape[-1]], self.cfg.stop_text_token)
         text_inputs = F.pad(text_inputs, [0, 1], value=self.cfg.stop_text_token)
 
-        mel_codes_lengths = torch.tensor([mel_codes.shape[-1]], device=device)
-        mel_codes = set_padding(mel_codes, mel_codes_lengths, self.cfg.stop_mel_token)
+        mel_codes = set_padding(mel_codes, [mel_codes.shape[-1]], self.cfg.stop_mel_token)
         mel_codes = F.pad(mel_codes, [0, 1], value=self.cfg.stop_mel_token)
 
         text_inputs = F.pad(text_inputs, [1, 0], value=self.cfg.start_text_token)
         mel_codes = F.pad(mel_codes, [1, 0], value=self.cfg.start_mel_token)
 
-        mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes)
-        text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs)
+        mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes.shape[1], device=device)
+        text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs.shape[1], device=device)
 
         conds = self.combine_latents(speech_conditioning_latent, emo_vec, text_inputs)
         output = self.gpt(

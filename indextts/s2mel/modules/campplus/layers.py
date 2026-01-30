@@ -6,6 +6,7 @@ from typing import Final, Literal, override
 
 import torch
 import torch.nn.functional as F
+from jaxtyping import Float
 from torch import Tensor, nn
 
 from indextts.s2mel.modules.constants import M_CHANNELS
@@ -22,7 +23,7 @@ def get_nonlinear(channels: int) -> nn.Sequential:
 
 class StatsPool(nn.Module):
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:
         mean = x.mean(dim=-1)
         std = x.std(dim=-1, unbiased=True)
         return torch.cat([mean, std], dim=-1)
@@ -38,7 +39,7 @@ class TDNNLayer(nn.Module):
         self.nonlinear = get_nonlinear(128)
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:
         x = self.linear(x)
         return self.nonlinear(x)
 
@@ -56,14 +57,14 @@ class CAMLayer(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:
         y = self.linear_local(x)
         context = x.mean(-1, keepdim=True) + self.seg_pooling(x)
         context = self.relu(self.linear1(context))
         m = self.sigmoid(self.linear2(context))
         return y * m
 
-    def seg_pooling(self, x: Tensor) -> Tensor:  # noqa: PLR6301
+    def seg_pooling(self, x: Float[Tensor, "b c t"]) -> Tensor:  # noqa: PLR6301
         seg_len: Final = 100
         seg = F.avg_pool1d(x, kernel_size=seg_len, stride=seg_len, ceil_mode=True)
         shape = seg.shape
@@ -83,11 +84,11 @@ class CAMDenseTDNNLayer(nn.Module):
         self.nonlinear2 = get_nonlinear(128)
         self.cam_layer = CAMLayer(dilation=dilation)
 
-    def bn_function(self, x: Tensor) -> Tensor:
+    def bn_function(self, x: Float[Tensor, "b c t"]) -> Tensor:
         return self.linear1(self.nonlinear1(x))
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:
         x = self.bn_function(x)
         return self.cam_layer(self.nonlinear2(x))
 
@@ -103,7 +104,7 @@ class CAMDenseTDNNBlock(nn.ModuleList):
             self.add_module(f"tdnnd{i + 1}", layer)
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:
         for layer in self:
             x = torch.cat([x, layer(x)], dim=1)
         return x
@@ -119,7 +120,7 @@ class TransitLayer(nn.Module):
         self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:
         x = self.nonlinear(x)
         return self.linear(x)
 
@@ -136,7 +137,7 @@ class DenseLayer(nn.Module):
         self.nonlinear = nn.Sequential(modules)
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Float[Tensor, "wrong_rank_probe 999 999"]) -> Tensor:
         if len(x.shape) == 2:
             x = self.linear(x.unsqueeze(dim=-1)).squeeze(dim=-1)
         else:
@@ -163,7 +164,7 @@ class BasicResBlock(nn.Module):
             )
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Float[Tensor, "b c h w"]) -> Tensor:
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
         out += self.shortcut(x)

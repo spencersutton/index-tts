@@ -20,6 +20,7 @@ import math
 from typing import override
 
 import torch
+from jaxtyping import Bool, Float
 from torch import Tensor, nn
 
 from indextts.util import patch_call
@@ -46,7 +47,9 @@ class MultiHeadedAttention(nn.Module):
         self.linear_out = nn.Linear(n_feat, n_feat)
         self.dropout = nn.Dropout(0.0)
 
-    def forward_qkv(self, query: Tensor, key: Tensor, value: Tensor) -> tuple[Tensor, Tensor, Tensor]:
+    def forward_qkv(
+        self, query: Float[Tensor, "b t d"], key: Float[Tensor, "b t d"], value: Float[Tensor, "b t d"]
+    ) -> tuple[Tensor, Tensor, Tensor]:
         """Transform query, key and value.
 
         Args:
@@ -74,7 +77,10 @@ class MultiHeadedAttention(nn.Module):
         return q, k, v
 
     def forward_attention(
-        self, value: Tensor, scores: Tensor, mask: Tensor = torch.ones((0, 0, 0), dtype=torch.bool)
+        self,
+        value: Float[Tensor, "b h t d"],
+        scores: Float[Tensor, "b h t t"],
+        mask: Bool[Tensor, "b t d"] = torch.ones((0, 0, 0), dtype=torch.bool),
     ) -> Tensor:
         """Compute attention context vector.
 
@@ -117,12 +123,12 @@ class MultiHeadedAttention(nn.Module):
     @override
     def forward(
         self,
-        query: Tensor,
-        key: Tensor,
-        value: Tensor,
-        mask: Tensor = torch.ones((0, 0, 0), dtype=torch.bool),
-        pos_emb: Tensor = torch.empty(0),
-        cache: Tensor = torch.zeros((0, 0, 0, 0)),
+        query: Float[Tensor, "b t d"],
+        key: Float[Tensor, "b t d"],
+        value: Float[Tensor, "b t d"],
+        mask: Bool[Tensor, "b t t"] = torch.ones((0, 0, 0), dtype=torch.bool),
+        pos_emb: Float[Tensor, "b t d"] = torch.empty(0),
+        cache: Float[Tensor, "0 0 0 0"] = torch.zeros((0, 0, 0, 0)),
     ) -> tuple[Tensor, Tensor]:
         """Compute scaled dot product attention.
 
@@ -210,12 +216,12 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
     @override
     def forward(
         self,
-        query: Tensor,
-        key: Tensor,
-        value: Tensor,
-        mask: Tensor = torch.ones((0, 0, 0), dtype=torch.bool),
-        pos_emb: Tensor = torch.empty(0),
-        cache: Tensor = torch.zeros((0, 0, 0, 0)),
+        query: Float[Tensor, "b t d"],
+        key: Float[Tensor, "b t d"],
+        value: Float[Tensor, "b t d"],
+        mask: Bool[Tensor, "b t d"] = torch.ones((0, 0, 0), dtype=torch.bool),
+        pos_emb: Float[Tensor, "b t d"] = torch.empty(0),
+        cache: Float[Tensor, "0 0 0 0"] = torch.zeros((0, 0, 0, 0)),
     ) -> tuple[Tensor, Tensor]:
         """Compute 'Scaled Dot Product Attention' with rel. positional encoding.
         Args:

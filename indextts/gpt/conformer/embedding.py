@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, override
 
 import torch
 import torch.nn.functional as F
+from jaxtyping import Float, Int
 from torch import Tensor, nn
 
 from indextts.util import patch_call
@@ -61,7 +62,7 @@ class RelPositionalEncoding(nn.Module):
         pe = pe.unsqueeze(0)
         self.register_buffer("pe", pe)
 
-    def position_encoding(self, offset: int | Tensor, size: int) -> Tensor:
+    def position_encoding(self, offset: int | Int[Tensor, "wrong_rank_probe 999 999"], size: int) -> Tensor:
         """For getting encoding in a streaming fashion
 
         Args:
@@ -87,7 +88,9 @@ class RelPositionalEncoding(nn.Module):
         return pos_emb
 
     @override
-    def forward(self, x: Tensor, offset: int | Tensor = 0) -> tuple[Tensor, Tensor]:
+    def forward(
+        self, x: Float[Tensor, "b t d"], offset: int | Int[Tensor, "wrong_rank_probe 999 999"] = 0
+    ) -> tuple[Tensor, Tensor]:
         """Compute positional encoding.
         Args:
             x (Tensor): Input tensor (batch, time, `*`).

@@ -139,3 +139,10 @@ reportUnannotatedClassAttribute = false
 reportUnknownMemberType = false
 reportUnusedCallResult = false
 stubPath = "../typings"
+
+[[tool.basedpyright.executionEnvironments]]
+root = "../typings"
+reportUnknownParameterType = false
+reportMissingParameterType = false
+reportImplicitOverride = false
+reportExplicitAny = false

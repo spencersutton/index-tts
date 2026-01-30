@@ -10,12 +10,10 @@ from typing import TYPE_CHECKING, Final, cast
 import yaml
 from sentencepiece import SentencePieceProcessor
 
-from indextts.utils.common import de_tokenized_by_CJK_char, tokenize_by_CJK_char
-
 if TYPE_CHECKING:
     from wetext import Normalizer
 
-punctuation_marks_tokens: Final = [
+_punctuation_marks_tokens: Final = [
     ".",
     "!",
     "?",
@@ -23,6 +21,62 @@ punctuation_marks_tokens: Final = [
     "▁?",
     "▁...",  # ellipsis
 ]
+
+
+def de_tokenized_by_CJK_char(line: str, do_lower_case: bool = False) -> str:
+    """
+    Example:
+      input = "你 好 世 界 是 HELLO WORLD 的 中 文"
+      output = "你好世界是 hello world 的中文"
+
+    do_lower_case:
+      input = "SEE YOU!"
+      output = "see you!"
+    """
+    # replace english words in the line with placeholders
+    english_word_pattern = re.compile(r"([A-Z]+(?:[\s'-][A-Z-]+)*)", re.IGNORECASE)
+    english_sents = english_word_pattern.findall(line)
+    for i, sent in enumerate(english_sents):
+        line = line.replace(sent, f"<sent_{i}>")
+
+    words = line.split()
+    # restore english sentences
+    sent_placeholder_pattern = re.compile(r"(<sent_(\d+)>)")
+    for i in range(len(words)):
+        all_matches = sent_placeholder_pattern.findall(words[i])
+        if len(all_matches) > 1:
+            # restore the english word
+            for h, j in all_matches:
+                placeholder_index = int(j)
+                words[i] = words[i].replace(h, english_sents[placeholder_index])
+                if do_lower_case:
+                    words[i] = words[i].lower()
+    return "".join(words)
+
+
+def tokenize_by_CJK_char(line: str, do_upper_case: bool = True) -> str:
+    """
+    Tokenize a line of text with CJK char.
+
+    Note: All return charaters will be upper case.
+
+    Example:
+      input = "你好世界是 hello world 的中文"
+      output = "你 好 世 界 是 HELLO WORLD 的 中 文"
+
+    Args:
+      line:
+        The input text.
+
+    Return:
+      A new string tokenize by CJK char.
+    """
+    # The CJK ranges is from https://github.com/alvations/nltk/blob/79eed6ddea0d0a2c212c1060b477fc268fec4d4b/nltk/tokenize/util.py
+    CJK_RANGE_PATTERN = (
+        r"([\u1100-\u11ff\u2e80-\ua4cf\ua840-\uD7AF\uF900-\uFAFF\uFE30-\uFE4F\uFF65-\uFFDC\U00020000-\U0002FFFF])"
+    )
+    chars = re.split(CJK_RANGE_PATTERN, line.strip())
+    return " ".join([w.strip().upper() if do_upper_case else w.strip() for w in chars if w.strip()])
 
 
 class TextNormalizer:
@@ -607,7 +661,7 @@ class TextTokenizer:
     ) -> list[list[str]]:
         return TextTokenizer.split_segments_by_token(
             tokenized,
-            punctuation_marks_tokens,
+            _punctuation_marks_tokens,
             max_text_tokens_per_segment=max_text_tokens_per_segment,
             quick_streaming_tokens=quick_streaming_tokens,
         )

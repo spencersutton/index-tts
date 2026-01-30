@@ -1,20 +1,23 @@
+from typing import Final
+
 import torch
 from jaxtyping import Float
 from torch import Tensor, nn
 from tqdm import tqdm
 
-from indextts.s2mel.modules.constants import IN_CHANNELS
 from indextts.s2mel.modules.diffusion_transformer import DiT
-
-INFERENCE_CFG_RATE = 0.7
 
 
 class CFM(nn.Module):
-    def __init__(self) -> None:
+    cfg_rate: Final = 0.7
+
+    def __init__(self, dim: int, in_channels: int = 80) -> None:
         super().__init__()
 
+        self.in_channels = in_channels
+
         self.criterion = nn.L1Loss()
-        self.estimator = DiT(dim=512, in_channels=IN_CHANNELS)
+        self.estimator = DiT(dim=dim, in_channels=in_channels)
 
     @torch.inference_mode()
     def inference(
@@ -35,7 +38,7 @@ class CFM(nn.Module):
                 shape: (batch_size, 80, mel_timesteps)
         """
         B, T, _ = mu.shape
-        z = torch.randn([B, IN_CHANNELS, T], device=mu.device)
+        z = torch.randn([B, self.in_channels, T], device=mu.device)
         t_span = torch.linspace(0, 1, 26, device=mu.device)
         return self.solve_euler(z, prompt, mu, style, t_span)
 
@@ -85,7 +88,7 @@ class CFM(nn.Module):
             dphi_dt, cfg_dphi_dt = stacked_dphi_dt.chunk(2)
 
             # Apply CFG formula
-            dphi_dt = (1.0 + INFERENCE_CFG_RATE) * dphi_dt - INFERENCE_CFG_RATE * cfg_dphi_dt
+            dphi_dt = (1.0 + self.cfg_rate) * dphi_dt - self.cfg_rate * cfg_dphi_dt
 
             dt = t_span[step] - t_span[step - 1]
             x += dt * dphi_dt

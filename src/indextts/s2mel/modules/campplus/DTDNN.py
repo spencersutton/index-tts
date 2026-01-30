@@ -16,23 +16,21 @@ from indextts.s2mel.modules.campplus.layers import (
     TransitLayer,
     get_nonlinear,
 )
-from indextts.s2mel.modules.constants import M_CHANNELS
 from indextts.util import patch_call
 
 
-class FCM(nn.Module):
-    def __init__(self) -> None:
+class _FCM(nn.Module):
+    def __init__(self, m_channels: int = 32) -> None:
         super().__init__()
-        self.in_planes = M_CHANNELS
-        self.conv1 = nn.Conv2d(1, M_CHANNELS, kernel_size=3, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(M_CHANNELS)
-
+        self.in_planes = m_channels
+        self.conv1 = nn.Conv2d(1, m_channels, kernel_size=3, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(m_channels)
         self.layer1 = nn.Sequential(*[BasicResBlock(x) for x in (2, 1)])
         self.layer2 = nn.Sequential(*[BasicResBlock(x) for x in (2, 1)])
 
-        self.conv2 = nn.Conv2d(M_CHANNELS, M_CHANNELS, kernel_size=3, stride=(2, 1), padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(M_CHANNELS)
-        self.out_channels = M_CHANNELS * 10
+        self.conv2 = nn.Conv2d(m_channels, m_channels, kernel_size=3, stride=(2, 1), padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(m_channels)
+        self.out_channels = m_channels * 10
 
     @override
     def forward(self, x: Float[Tensor, "b f t"]) -> Tensor:
@@ -53,10 +51,10 @@ class CAMPPlus(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        self.head = FCM()
+        self.head = _FCM()
         channels = self.head.out_channels
 
-        modules: OrderedDict[str, nn.Module] = OrderedDict({"tdnn": TDNNLayer(channels)})
+        modules = OrderedDict({"tdnn": TDNNLayer(channels)})
         self.xvector = nn.Sequential(modules)
         channels = 128
         for i, (num_layers, dilation) in enumerate(zip((12, 24, 16), (1, 2, 2))):

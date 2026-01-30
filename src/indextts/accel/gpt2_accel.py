@@ -24,7 +24,7 @@ def _merge_heads(tensor: Float[Tensor, "b h t d"], num_heads: int, head_dim: int
     return tensor.view(new_shape)
 
 
-class GPT2AccelAttention(nn.Module):
+class _GPT2AccelAttention(nn.Module):
     c_attn: Conv1D
     c_proj: Conv1D
 
@@ -123,16 +123,16 @@ class GPT2AccelAttention(nn.Module):
         return (attn_output, None)
 
 
-class GPT2AccelBlock(GPT2Block):
+class _GPT2AccelBlock(GPT2Block):
     def __init__(self, config: transformers.PretrainedConfig, layer_idx: int | None = None) -> None:
         super().__init__(config, layer_idx)
-        self.attn = GPT2AccelAttention(config, layer_idx)
+        self.attn = _GPT2AccelAttention(config, layer_idx)
 
 
 class GPT2AccelModel(GPT2Model):
     def __init__(self, config: transformers.PretrainedConfig) -> None:
         super().__init__(config)
-        self.h = nn.ModuleList([GPT2AccelBlock(config, layer_idx=i) for i in range(config.num_hidden_layers)])
+        self.h = nn.ModuleList([_GPT2AccelBlock(config, layer_idx=i) for i in range(config.num_hidden_layers)])
 
     @override
     def forward(

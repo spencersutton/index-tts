@@ -3,18 +3,40 @@ from typing import cast, override
 
 import torch
 import torch.nn.functional as F
-from jaxtyping import Bool, Float
+from jaxtyping import Bool, Float, Int
 from torch import Tensor, nn
 
 from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
 from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
 from indextts.util import patch_call
-from indextts.utils.common import make_pad_mask
-
-OUTPUT_DIM = 512
 
 
-class PositionwiseFeedForward(nn.Module):
+def make_pad_mask(lengths: Int[Tensor, "b"], max_len: int = 0) -> Bool[Tensor, "b t"]:
+    """Make mask tensor containing indices of padded part.
+
+    See description of make_non_pad_mask.
+
+    Args:
+        lengths (Tensor): Batch of lengths (B,).
+    Returns:
+        Tensor: Mask tensor containing indices of padded part.
+
+    Examples:
+        >>> lengths = [5, 3, 2]
+        >>> make_pad_mask(lengths)
+        masks = [[0, 0, 0, 0 ,0],
+                 [0, 0, 0, 1, 1],
+                 [0, 0, 1, 1, 1]]
+    """
+    batch_size = lengths.size(0)
+    max_len = max_len if max_len > 0 else int(lengths.max().item())
+    seq_range = torch.arange(0, max_len, dtype=torch.int64, device=lengths.device)
+    seq_range_expand = seq_range.unsqueeze(0).expand(batch_size, max_len)
+    seq_length_expand = lengths.unsqueeze(-1)
+    return seq_range_expand >= seq_length_expand
+
+
+class _PositionwiseFeedForward(nn.Module):
     """Positionwise feed forward layer.
 
     FeedForward are appied on each position of the sequence.
@@ -49,10 +71,10 @@ class PositionwiseFeedForward(nn.Module):
     def __call__(self) -> None: ...
 
 
-class ConvolutionModule(nn.Module):
+class _ConvolutionModule(nn.Module):
     """ConvolutionModule in Conformer model."""
 
-    def __init__(self, activation: nn.SiLU) -> None:
+    def __init__(self, dim: int, activation: nn.SiLU) -> None:
         """Construct an ConvolutionModule object.
         Args:
             channels (int): The number of channels of conv layers.
@@ -61,12 +83,12 @@ class ConvolutionModule(nn.Module):
         """
         super().__init__()
 
-        self.pointwise_conv1 = nn.Conv1d(OUTPUT_DIM, 2 * OUTPUT_DIM, kernel_size=1)
-        self.depthwise_conv = nn.Conv1d(OUTPUT_DIM, OUTPUT_DIM, kernel_size=15, padding=7, groups=OUTPUT_DIM)
+        self.pointwise_conv1 = nn.Conv1d(dim, 2 * dim, kernel_size=1)
+        self.depthwise_conv = nn.Conv1d(dim, dim, kernel_size=15, padding=7, groups=dim)
 
-        self.norm = nn.LayerNorm(OUTPUT_DIM)
+        self.norm = nn.LayerNorm(dim)
 
-        self.pointwise_conv2 = nn.Conv1d(OUTPUT_DIM, OUTPUT_DIM, kernel_size=1)
+        self.pointwise_conv2 = nn.Conv1d(dim, dim, kernel_size=1)
         self.activation = activation
 
     @override
@@ -117,7 +139,7 @@ class ConvolutionModule(nn.Module):
     def __call__(self) -> None: ...
 
 
-class ConformerEncoderLayer(nn.Module):
+class _ConformerEncoderLayer(nn.Module):
     """Encoder layer module.
     Args:
         size (int): Input dimension.
@@ -134,8 +156,8 @@ class ConformerEncoderLayer(nn.Module):
         self,
         size: int,
         self_attn: RelPositionMultiHeadedAttention,
-        feed_forward: PositionwiseFeedForward,
-        conv_module: ConvolutionModule,
+        feed_forward: _PositionwiseFeedForward,
+        conv_module: _ConvolutionModule,
     ) -> None:
         """Construct an EncoderLayer object."""
         super().__init__()
@@ -214,7 +236,7 @@ class ConformerEncoderLayer(nn.Module):
 class ConformerEncoder(nn.Module):
     """Conformer encoder module."""
 
-    def __init__(self, attention_heads: int = 4, linear_units: int = 2048, num_blocks: int = 6) -> None:
+    def __init__(self, dim: int, attention_heads: int = 4, linear_units: int = 2048, num_blocks: int = 6) -> None:
         """
         Args:
             attention_heads (int): the number of heads of multi head attention
@@ -224,18 +246,18 @@ class ConformerEncoder(nn.Module):
         """
         super().__init__()
 
-        self.embed = Conv2dSubsampling2()
-        self.after_norm = nn.LayerNorm(OUTPUT_DIM, eps=1e-5)
+        self.embed = Conv2dSubsampling2(input_dim=1024, output_dim=dim)
+        self.after_norm = nn.LayerNorm(dim, eps=1e-5)
         activation = nn.SiLU()
 
         self.encoders = cast(  # pyright: ignore[reportInvalidCast]
-            Sequence[ConformerEncoderLayer],
+            Sequence[_ConformerEncoderLayer],
             nn.ModuleList([
-                ConformerEncoderLayer(
-                    OUTPUT_DIM,
-                    RelPositionMultiHeadedAttention(attention_heads, OUTPUT_DIM),
-                    PositionwiseFeedForward(OUTPUT_DIM, linear_units, activation=activation),
-                    ConvolutionModule(activation),
+                _ConformerEncoderLayer(
+                    dim,
+                    RelPositionMultiHeadedAttention(attention_heads, dim),
+                    _PositionwiseFeedForward(dim, linear_units, activation=activation),
+                    _ConvolutionModule(dim, activation),
                 )
                 for _ in range(num_blocks)
             ]),

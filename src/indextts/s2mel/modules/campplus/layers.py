@@ -9,7 +9,6 @@ import torch.nn.functional as F
 from jaxtyping import Float
 from torch import Tensor, nn
 
-from indextts.s2mel.modules.constants import M_CHANNELS
 from indextts.util import patch_call
 
 
@@ -47,7 +46,7 @@ class TDNNLayer(nn.Module):
     def __call__(self) -> None: ...
 
 
-class CAMLayer(nn.Module):
+class _CAMLayer(nn.Module):
     def __init__(self, dilation: int) -> None:
         super().__init__()
         self.linear_local = nn.Conv1d(128, 32, 3, padding=dilation, dilation=dilation, bias=False)
@@ -75,14 +74,14 @@ class CAMLayer(nn.Module):
     def __call__(self) -> None: ...
 
 
-class CAMDenseTDNNLayer(nn.Module):
+class _CAMDenseTDNNLayer(nn.Module):
     def __init__(self, in_channels: int, dilation: int) -> None:
         super().__init__()
         self.memory_efficient = False
         self.nonlinear1 = get_nonlinear(in_channels)
         self.linear1 = nn.Conv1d(in_channels, 128, 1, bias=False)
         self.nonlinear2 = get_nonlinear(128)
-        self.cam_layer = CAMLayer(dilation=dilation)
+        self.cam_layer = _CAMLayer(dilation=dilation)
 
     def bn_function(self, x: Float[Tensor, "b c t"]) -> Tensor:
         return self.linear1(self.nonlinear1(x))
@@ -100,7 +99,7 @@ class CAMDenseTDNNBlock(nn.ModuleList):
     def __init__(self, num_layers: int, in_channels: int, dilation: int) -> None:
         super().__init__()
         for i in range(num_layers):
-            layer = CAMDenseTDNNLayer(in_channels=in_channels + i * 32, dilation=dilation)
+            layer = _CAMDenseTDNNLayer(in_channels=in_channels + i * 32, dilation=dilation)
             self.add_module(f"tdnnd{i + 1}", layer)
 
     @override
@@ -149,18 +148,18 @@ class DenseLayer(nn.Module):
 
 
 class BasicResBlock(nn.Module):
-    def __init__(self, stride: Literal[1, 2] = 1) -> None:
+    def __init__(self, stride: Literal[1, 2] = 1, m_channels: int = 32) -> None:
         super().__init__()
-        self.conv1 = nn.Conv2d(M_CHANNELS, M_CHANNELS, kernel_size=3, stride=(stride, 1), padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(M_CHANNELS)
-        self.conv2 = nn.Conv2d(M_CHANNELS, M_CHANNELS, kernel_size=3, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(M_CHANNELS)
+        self.conv1 = nn.Conv2d(m_channels, m_channels, kernel_size=3, stride=(stride, 1), padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(m_channels)
+        self.conv2 = nn.Conv2d(m_channels, m_channels, kernel_size=3, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(m_channels)
 
         self.shortcut = nn.Sequential()
         if stride != 1:
             self.shortcut = nn.Sequential(
-                nn.Conv2d(M_CHANNELS, M_CHANNELS, kernel_size=1, stride=(stride, 1), bias=False),
-                nn.BatchNorm2d(M_CHANNELS),
+                nn.Conv2d(m_channels, m_channels, kernel_size=1, stride=(stride, 1), bias=False),
+                nn.BatchNorm2d(m_channels),
             )
 
     @override

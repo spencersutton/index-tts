@@ -33,37 +33,66 @@ def set_padding(input_tokens: Int[Tensor, "B _"], lengths: list[int], token: int
 
 
 class UnifiedVoice(nn.Module):
+    """Unified voice/text GPT model.
+
+    Attribute descriptions are documented inline (directly beneath each annotated attribute).
+    """
+
     if TYPE_CHECKING:
         accel_engine: AccelInferenceEngine | None
+        """Optional accelerated generation engine (CUDA/flash-attn path, initialized lazily)."""
     ds_engine: Any  # pyright: ignore[reportExplicitAny, reportUninitializedInstanceVariable]
+    """Optional DeepSpeed inference wrapper, created in `post_init_gpt2_config` when enabled."""
 
     emo_layer: nn.Linear
+    """Final projection applied to the emotion vector in the GPT embedding space (dim -> dim)."""
     emovec_layer: nn.Linear
+    """Projects the emotion-conditioning latent (1024-d) into the GPT embedding space (1024 -> dim)."""
     final_norm: nn.LayerNorm
+    """LayerNorm applied to transformer hidden states before projecting to logits."""
     gpt: GPT2Model
+    """Core GPT-2 transformer backbone that consumes concatenated conditioning/text/mel embeddings."""
     inference_model: GPT2InferenceModel  # pyright: ignore[reportUninitializedInstanceVariable]
+    """Generation-oriented wrapper around the transformer (caching/positioning + `generate`)."""
     mel_head: nn.Linear
+    """Output projection from hidden size (dim) to the mel-code vocabulary size."""
     speed_emb: nn.Embedding
+    """Embeddings for speed/control tokens that are appended to the conditioning prefix."""
 
     mel_embedding: nn.Embedding
+    """Token embedding table for mel-code ids."""
     text_embedding: nn.Embedding
+    """Token embedding table for text token ids."""
 
     mel_pos_embedding: LearnedPositionEmbeddings
+    """Learned positional embeddings for the mel-code segment."""
     text_pos_embedding: LearnedPositionEmbeddings
+    """Learned positional embeddings for the text segment."""
 
     heads: int
+    """Number of attention heads in the GPT transformer."""
     layers: int
+    """Number of transformer layers in the GPT stack."""
     max_mel_tokens: int
+    """Maximum mel-code tokens supported (used to size positional embeddings / generation limits)."""
     max_text_tokens: int
+    """Maximum text tokens supported (used to size positional embeddings / padding logic)."""
 
     cond_mask_pad: nn.ConstantPad1d
+    """Pads the conditioning attention mask to account for inserted conditioning latents."""
     conditioning_encoder: ConformerEncoder
+    """Conformer encoder that processes speech conditioning features before Perceiver resampling."""
     emo_cond_mask_pad: nn.ConstantPad1d
+    """Pads the emotion-conditioning attention mask (single-latent Perceiver)."""
     emo_conditioning_encoder: ConformerEncoder
+    """Conformer encoder for emotion-specific conditioning features."""
     emo_perceiver_encoder: PerceiverResampler
+    """Perceiver resampler that reduces emotion conditioning to a single latent token."""
     perceiver_encoder: PerceiverResampler
+    """Perceiver resampler that reduces speech conditioning to `condition_num_latent` latent tokens."""
 
     cfg: UnifiedVoiceConfig
+    """Model configuration (token ids, vocab sizes, architecture hyperparameters, limits)."""
 
     def __init__(
         self, cfg: UnifiedVoiceConfig, condition_num_latent: int = 32, use_accel: bool = False, dim: int = 1280

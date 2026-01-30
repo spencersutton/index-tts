@@ -378,12 +378,12 @@ class UnifiedVoice(nn.Module):
         if condition.ndim == 2:
             condition = condition.unsqueeze(0)
 
-        input, mask = self.conditioning_encoder(condition)
+        input, mask = self.conditioning_encoder.__call__(condition)
         mask = self.cond_mask_pad(mask.squeeze(1))
         return self.perceiver_encoder(input, mask)
 
     def get_emo_vec(self, latent: Float[Tensor, "B T D"]) -> Tensor:
-        input, mask = self.emo_conditioning_encoder(latent)
+        input, mask = self.emo_conditioning_encoder.__call__(latent)
         mask = self.emo_cond_mask_pad(mask.squeeze(1))
         conds = self.emo_perceiver_encoder(input, mask)
         vector = self.emovec_layer(conds.squeeze(1))

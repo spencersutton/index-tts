@@ -51,11 +51,11 @@ class WaveNet(nn.Module):
             offset = i * 2 * DIM
             g_l = g[:, offset : offset + 2 * DIM, :]
 
-            x_in = self.in_layers[i](x)
+            x_in = self.in_layers[i].__call__(x)
             acts = fused_add_tanh_sigmoid_multiply(x_in, g_l)
             acts = self.drop(acts)
 
-            res_skip_acts = self.res_skip_layers[i](acts)
+            res_skip_acts = self.res_skip_layers[i].__call__(acts)
             if i < NUM_LAYERS - 1:
                 res_acts = res_skip_acts[:, :DIM, :]
                 x = (x + res_acts) * x_mask

@@ -116,7 +116,7 @@ class IndexTTS2:
         semantic_inference = semantic_inference.mT + self.s2mel.gpt_layer(latent)
         target_lengths = (torch.tensor(code_lens, device=self.device) * 1.72).long()
 
-        cond = self.s2mel.length_regulator(semantic_inference, ylens=target_lengths)
+        cond = self.s2mel.length_regulator.__call__(semantic_inference, ylens=target_lengths)
         cond = torch.cat([prompt_condition, cond], dim=1)
         target = self.s2mel.cfm.inference(cond, ref_mel, style)
         return target[:, :, ref_mel.size(-1) :]
@@ -457,7 +457,7 @@ class IndexTTS2:
         )
 
         embedding = self.get_emb(inputs["input_features"], inputs["attention_mask"])
-        prompt_condition = self.s2mel.length_regulator(
+        prompt_condition = self.s2mel.length_regulator.__call__(
             self.semantic_codec.quantize(embedding), ylens=torch.tensor([mel.size(2)], device=self.device)
         )
         return prompt_condition, style, mel, embedding

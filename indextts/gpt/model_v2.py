@@ -16,8 +16,6 @@ from indextts.util import patch_call, unwrap
 if TYPE_CHECKING:
     from indextts.accel import AccelInferenceEngine
 
-DIM = 1280
-
 
 def set_padding(input_tokens: Int[Tensor, "B _"], lengths: list[int], token: int) -> Tensor:
     """
@@ -67,15 +65,18 @@ class UnifiedVoice(nn.Module):
 
     cfg: UnifiedVoiceConfig
 
-    def __init__(self, cfg: UnifiedVoiceConfig, condition_num_latent: int = 32, use_accel: bool = False) -> None:
+    def __init__(
+        self, cfg: UnifiedVoiceConfig, condition_num_latent: int = 32, use_accel: bool = False, dim: int = 1280
+    ) -> None:
         """
         Args:
             layers: Number of layers in transformer stack.
-            heads: Number of transformer heads. Must be divisible by DIM. Recommend DIM//64
+            heads: Number of transformer heads. Must be divisible by 1280. Recommend 1280//64
             max_text_tokens: Maximum number of text tokens that will be encountered by model.
             max_mel_tokens: Maximum number of MEL tokens that will be encountered by model.
         """
         super().__init__()
+        self.dim = dim
         self.cfg = cfg
         self.layers = cfg.layers
         self.heads = cfg.heads
@@ -83,17 +84,17 @@ class UnifiedVoice(nn.Module):
         self.max_text_tokens = cfg.max_text_tokens
         self.cond_mask_pad = nn.ConstantPad1d((condition_num_latent, 0), True)
         self.emo_cond_mask_pad = nn.ConstantPad1d((1, 0), True)
-        self.conditioning_encoder = ConformerEncoder(linear_units=2048, attention_heads=8, num_blocks=6)
-        self.perceiver_encoder = PerceiverResampler(DIM, heads=8, num_latents=condition_num_latent)
+        self.conditioning_encoder = ConformerEncoder(dim=512, linear_units=2048, attention_heads=8, num_blocks=6)
+        self.perceiver_encoder = PerceiverResampler(dim, heads=8, num_latents=condition_num_latent)
 
-        self.emo_conditioning_encoder = ConformerEncoder(linear_units=1024, attention_heads=4, num_blocks=4)
+        self.emo_conditioning_encoder = ConformerEncoder(dim=512, linear_units=1024, attention_heads=4, num_blocks=4)
         self.emo_perceiver_encoder = PerceiverResampler(1024, heads=4, num_latents=1)
 
-        self.emo_layer = nn.Linear(DIM, DIM)
-        self.emovec_layer = nn.Linear(1024, DIM)
+        self.emo_layer = nn.Linear(dim, dim)
+        self.emovec_layer = nn.Linear(1024, dim)
 
-        self.text_embedding = nn.Embedding(cfg.number_text_tokens + 1, DIM)
-        self.mel_embedding = nn.Embedding(cfg.number_mel_codes, DIM)
+        self.text_embedding = nn.Embedding(cfg.number_text_tokens + 1, dim)
+        self.mel_embedding = nn.Embedding(cfg.number_mel_codes, dim)
         max_mel_seq_len = self.max_mel_tokens + 3
         max_text_seq_len = self.max_text_tokens + 2
 
@@ -102,24 +103,24 @@ class UnifiedVoice(nn.Module):
                 vocab_size=256,  # Unused.
                 n_positions=max_mel_seq_len + max_text_seq_len,
                 n_ctx=max_mel_seq_len + max_text_seq_len,
-                n_embd=DIM,
+                n_embd=dim,
                 n_layer=cfg.layers,
                 n_head=cfg.heads,
             )
         )
         # Override the built in positional embeddings
         del self.gpt.wpe
-        self.gpt.wpe = lambda x: torch.zeros((x.shape[0], x.shape[1], DIM), device=x.device)  # type: ignore
+        self.gpt.wpe = lambda x: torch.zeros((x.shape[0], x.shape[1], dim), device=x.device)  # type: ignore
         # Built-in token embeddings are unused.
         del self.gpt.wte
         self.mel_pos_embedding = LearnedPositionEmbeddings(max_mel_seq_len)
         self.text_pos_embedding = LearnedPositionEmbeddings(max_text_seq_len)
 
-        self.final_norm = nn.LayerNorm(DIM)
-        self.text_head = nn.Linear(DIM, cfg.number_text_tokens + 1)
-        self.mel_head = nn.Linear(DIM, cfg.number_mel_codes)
+        self.final_norm = nn.LayerNorm(dim)
+        self.text_head = nn.Linear(dim, cfg.number_text_tokens + 1)
+        self.mel_head = nn.Linear(dim, cfg.number_mel_codes)
 
-        self.speed_emb = nn.Embedding(2, DIM)
+        self.speed_emb = nn.Embedding(2, dim)
         self.speed_emb.weight.data.normal_(std=0.0)
 
         # Initialize the embeddings per the GPT-2 scheme
@@ -136,7 +137,7 @@ class UnifiedVoice(nn.Module):
             vocab_size=self.cfg.number_mel_codes,
             n_positions=seq_length,
             n_ctx=seq_length,
-            n_embd=DIM,
+            n_embd=self.dim,
             n_layer=self.layers,
             n_head=self.heads,
         )
@@ -165,7 +166,7 @@ class UnifiedVoice(nn.Module):
                 lm_head=lm_head_with_norm,
                 num_layers=self.layers,
                 num_heads=self.heads,
-                head_dim=DIM // self.heads,
+                head_dim=self.dim // self.heads,
                 block_size=256,
                 num_blocks=16,  # Reduce to save memory (16*256 = 4096 tokens capacity)
                 use_cuda_graph=True,

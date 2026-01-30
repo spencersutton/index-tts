@@ -6,12 +6,9 @@ from jaxtyping import Float, Int
 from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
-from indextts.s2mel.modules.constants import BLOCK_SIZE, DIM
 from indextts.s2mel.modules.gpt_fast.model import Transformer
 from indextts.s2mel.modules.wavenet import WaveNet
 from indextts.util import patch_call
-
-STYLE_ENCODER_DIM = 192
 
 
 def modulate(x: Float[Tensor, "b t d"], shift: Float[Tensor, "b d"], scale: Float[Tensor, "b d"]) -> Tensor:
@@ -31,11 +28,11 @@ class TimestepEmbedder(nn.Module):
     if TYPE_CHECKING:
         freqs: Tensor = torch.empty(0)
 
-    def __init__(self) -> None:
+    def __init__(self, dim: int) -> None:
         super().__init__()
-        self.mlp = nn.Sequential(nn.Linear(DIM // 2, DIM), nn.SiLU(), nn.Linear(DIM, DIM))
+        self.mlp = nn.Sequential(nn.Linear(dim // 2, dim), nn.SiLU(), nn.Linear(dim, dim))
 
-        half = DIM // 4
+        half = dim // 4
         freqs = torch.exp(-math.log(10000) * torch.arange(start=0, end=half, dtype=torch.float32) / half)
         self.register_buffer("freqs", freqs)
 
@@ -65,11 +62,11 @@ class FinalLayer(nn.Module):
     The final layer of DiT.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, dim: int) -> None:
         super().__init__()
-        self.norm_final = nn.LayerNorm(DIM, elementwise_affine=False, eps=1e-6)
-        self.linear = weight_norm(nn.Linear(DIM, DIM))
-        self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(DIM, 2 * DIM))
+        self.norm_final = nn.LayerNorm(dim, elementwise_affine=False, eps=1e-6)
+        self.linear = weight_norm(nn.Linear(dim, dim))
+        self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(dim, 2 * dim))
 
     @override
     def forward(self, x: Float[Tensor, "b t d"], c: Float[Tensor, "b d"]) -> Tensor:
@@ -97,29 +94,29 @@ class DiT(nn.Module):
     skip_linear: nn.Linear
     cond_x_merge_linear: nn.Linear
 
-    def __init__(self, dim: int, in_channels: int) -> None:
+    def __init__(self, dim: int, in_channels: int, block_size: int = 16384, style_encoder_dim: int = 192) -> None:
         super().__init__()
-        self.transformer = Transformer()
+        self.transformer = Transformer(dim=512, block_size=block_size)
 
         self.x_embedder = weight_norm(nn.Linear(in_channels, dim))
         self.cond_projection = nn.Linear(dim, dim)  # continuous content
 
-        self.t_embedder = TimestepEmbedder()
+        self.t_embedder = TimestepEmbedder(dim=dim)
 
-        input_pos = torch.arange(BLOCK_SIZE)
+        input_pos = torch.arange(block_size)
         self.register_buffer("input_pos", input_pos)
 
-        self.t_embedder2 = TimestepEmbedder()
+        self.t_embedder2 = TimestepEmbedder(dim=dim)
         self.conv1 = nn.Linear(dim, dim)
         self.conv2 = nn.Conv1d(dim, in_channels, kernel_size=1)
-        self.wavenet = WaveNet()
-        self.final_layer = FinalLayer()
+        self.wavenet = WaveNet(dim)
+        self.final_layer = FinalLayer(dim=dim)
         # residual connection from tranformer output to final output
         self.res_projection = nn.Linear(dim, dim)
 
         self.skip_linear = nn.Linear(dim + in_channels, dim)
 
-        self.cond_x_merge_linear = nn.Linear(dim + in_channels * 2 + STYLE_ENCODER_DIM, dim)
+        self.cond_x_merge_linear = nn.Linear(dim + in_channels * 2 + style_encoder_dim, dim)
 
     @override
     def forward(

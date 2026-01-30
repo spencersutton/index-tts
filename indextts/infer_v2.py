@@ -31,9 +31,7 @@ from indextts.utils.repcodec_model import RepCodec
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
-CHECKPOINT_DIR = Path("checkpoints")
 MAX_AUDIO_LENGTH_SECONDS = 15
-SR_16K = 16000
 EMO_NUM = [3, 17, 2, 8, 4, 5, 10, 24]
 
 
@@ -124,8 +122,8 @@ class IndexTTS2:
     @lru_cache(5)  # noqa: B019
     def extract_emotion_features(self, prompt: Path) -> Tensor:
         print(">> extracting emotion features from prompt:", prompt)
-        audio, _ = _load_and_cut_audio(prompt, sample_rate=SR_16K)
-        inputs = self.extract_features(audio.numpy(), sampling_rate=SR_16K, return_tensors="pt")
+        audio, _ = _load_and_cut_audio(prompt, sample_rate=16000)
+        inputs = self.extract_features(audio.numpy(), sampling_rate=16000, return_tensors="pt")
         inputs = inputs.to(self.device)
         return self.get_emb(inputs["input_features"], inputs["attention_mask"])
 
@@ -288,7 +286,7 @@ class IndexTTS2:
 
     def __init__(
         self,
-        model_dir: Path = CHECKPOINT_DIR,
+        model_dir: Path = Path("checkpoints"),
         use_fp16: bool = False,
         device: str | None = None,
         use_cuda_kernel: bool = False,
@@ -441,19 +439,19 @@ class IndexTTS2:
     def extract_audio_features(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         print(">> extracting audio features from prompt:", prompt)
         audio, sr = _load_and_cut_audio(prompt)
-        audio_16k = torchaudio.functional.resample(audio, sr, SR_16K)
+        audio_16k = torchaudio.functional.resample(audio, sr, 16000)
         audio_22k = torchaudio.functional.resample(audio, sr, 22050)
 
         mel = mel_spectrogram(audio_22k, sample_rate=22050)
         feat = torchaudio.compliance.kaldi.fbank(
-            audio_16k.to(self.device), num_mel_bins=80, dither=0, sample_frequency=SR_16K
+            audio_16k.to(self.device), num_mel_bins=80, dither=0, sample_frequency=16000
         )
         feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
         style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
 
         inputs = cast(
             Mapping[str, Tensor],
-            self.extract_features(audio_16k, sampling_rate=SR_16K, return_tensors="pt").to(self.device),
+            self.extract_features(audio_16k, sampling_rate=16000, return_tensors="pt").to(self.device),
         )
 
         embedding = self.get_emb(inputs["input_features"], inputs["attention_mask"])

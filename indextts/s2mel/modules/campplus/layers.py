@@ -9,7 +9,6 @@ import torch.nn.functional as F
 from jaxtyping import Float
 from torch import Tensor, nn
 
-from indextts.s2mel.modules.constants import M_CHANNELS
 from indextts.util import patch_call
 
 
@@ -149,18 +148,18 @@ class DenseLayer(nn.Module):
 
 
 class BasicResBlock(nn.Module):
-    def __init__(self, stride: Literal[1, 2] = 1) -> None:
+    def __init__(self, stride: Literal[1, 2] = 1, m_channels: int = 32) -> None:
         super().__init__()
-        self.conv1 = nn.Conv2d(M_CHANNELS, M_CHANNELS, kernel_size=3, stride=(stride, 1), padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(M_CHANNELS)
-        self.conv2 = nn.Conv2d(M_CHANNELS, M_CHANNELS, kernel_size=3, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(M_CHANNELS)
+        self.conv1 = nn.Conv2d(m_channels, m_channels, kernel_size=3, stride=(stride, 1), padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(m_channels)
+        self.conv2 = nn.Conv2d(m_channels, m_channels, kernel_size=3, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(m_channels)
 
         self.shortcut = nn.Sequential()
         if stride != 1:
             self.shortcut = nn.Sequential(
-                nn.Conv2d(M_CHANNELS, M_CHANNELS, kernel_size=1, stride=(stride, 1), bias=False),
-                nn.BatchNorm2d(M_CHANNELS),
+                nn.Conv2d(m_channels, m_channels, kernel_size=1, stride=(stride, 1), bias=False),
+                nn.BatchNorm2d(m_channels),
             )
 
     @override

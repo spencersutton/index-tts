@@ -24,9 +24,6 @@ from torch import Tensor, nn
 
 from indextts.util import patch_call
 
-MAX_LEN = 5000
-DIM = 512
-
 
 class RelPositionalEncoding(nn.Module):
     """Positional encoding.
@@ -47,15 +44,15 @@ class RelPositionalEncoding(nn.Module):
     if TYPE_CHECKING:
         pe: Tensor = torch.empty(0)
 
-    def __init__(self, d_model: int) -> None:
+    def __init__(self, dim: int, max_len: int = 5000) -> None:
         """Construct an PositionalEncoding object."""
         super().__init__()
-        self.xscale = math.sqrt(DIM)
+        self.xscale = math.sqrt(dim)
         self.dropout = nn.Dropout(0.0)
 
-        pe = torch.zeros(MAX_LEN, DIM)
-        position = torch.arange(0, MAX_LEN).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, DIM, 2) * -(math.log(10000.0) / DIM))
+        pe = torch.zeros(max_len, dim)
+        position = torch.arange(0, max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, dim, 2) * -(math.log(10000.0) / dim))
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0)
@@ -70,9 +67,6 @@ class RelPositionalEncoding(nn.Module):
         Returns:
             Tensor: Corresponding encoding
         """
-        # How to subscript a Union type:
-        #   https://github.com/pytorch/pytorch/issues/69434
-        assert size < MAX_LEN
         return self.pe[:, :size]
 
     @override

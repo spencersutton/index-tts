@@ -310,7 +310,7 @@ class IndexTTS2:
         self.device = (
             torch.device(device) if device else torch.accelerator.current_accelerator() or torch.get_default_device()
         )
-        self.use_cuda_kernel = use_cuda_kernel and self.device.startswith("cuda")
+        self.use_cuda_kernel = use_cuda_kernel and str(self.device).startswith("cuda")
         self.use_fp16 = use_fp16 and self.device not in ["cpu", "mps"]
         self.cfg = IndexTTSConfig()
         self.dtype = torch.float16 if self.use_fp16 else torch.get_default_dtype()
@@ -360,7 +360,7 @@ class IndexTTS2:
         vq_emb = self.semantic_model(
             input_features=input_features, attention_mask=attention_mask, output_hidden_states=True
         )
-        assert vq_emb.hidden_states is not None
+        assert not isinstance(vq_emb, tuple) and vq_emb.hidden_states is not None
         feat = vq_emb.hidden_states[17]  # (B, T, C)
         return (feat - self.semantic_mean) / self.semantic_std
 

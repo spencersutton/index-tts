@@ -137,7 +137,7 @@ class DenseLayer(nn.Module):
         self.nonlinear = nn.Sequential(modules)
 
     @override
-    def forward(self, x: Float[Tensor, "wrong_rank_probe 999 999"]) -> Tensor:
+    def forward(self, x: Float[Tensor, ""]) -> Tensor:
         if len(x.shape) == 2:
             x = self.linear(x.unsqueeze(dim=-1)).squeeze(dim=-1)
         else:

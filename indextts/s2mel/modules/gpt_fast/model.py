@@ -100,11 +100,7 @@ class Transformer(nn.Module):
 
     @override
     def forward(
-        self,
-        x: Float[Tensor, "b t d"],
-        c: Float[Tensor, "b d"],
-        input_pos: Int[Tensor, "t"],
-        mask: Bool[Tensor, "wrong_rank_probe 999 999"],
+        self, x: Float[Tensor, "b t d"], c: Float[Tensor, "b d"], input_pos: Int[Tensor, "t"], mask: Bool[Tensor, ""]
     ) -> Tensor:
         freqs_cis = self.freqs_cis[input_pos]
         mid = N_LAYER // 2
@@ -142,8 +138,8 @@ class TransformerBlock(nn.Module):
         x: Float[Tensor, "b t d"],
         c: Float[Tensor, "b d"],
         input_pos: Int[Tensor, "t"],
-        freqs_cis: Float[Tensor, "wrong_rank_probe 999 999"],
-        mask: Bool[Tensor, "wrong_rank_probe 999 999"],
+        freqs_cis: Float[Tensor, ""],
+        mask: Bool[Tensor, ""],
         skip_in_x: Float[Tensor, "b t d"] | None = None,
     ) -> Tensor:
         if skip_in_x is not None:
@@ -167,12 +163,7 @@ class Attention(nn.Module):
         self.wo = nn.Linear(DIM, DIM, bias=False)
 
     @override
-    def forward(
-        self,
-        x: Float[Tensor, "b t d"],
-        freqs_cis: Float[Tensor, "wrong_rank_probe 999 999"],
-        mask: Bool[Tensor, "wrong_rank_probe 999 999"],
-    ) -> Tensor:
+    def forward(self, x: Float[Tensor, "b t d"], freqs_cis: Float[Tensor, ""], mask: Bool[Tensor, ""]) -> Tensor:
         bsz, seqlen, _ = x.shape
 
         query_key_value = self.wqkv(x)
@@ -230,7 +221,7 @@ class RMSNorm(nn.Module):
     def __call__(self) -> None: ...
 
 
-def apply_rotary_emb(x: Float[Tensor, "b t h d"], freqs_cis: Float[Tensor, "wrong_rank_probe 999 999"]) -> Tensor:
+def apply_rotary_emb(x: Float[Tensor, "b t h d"], freqs_cis: Float[Tensor, ""]) -> Tensor:
     xshaped = x.float().reshape(*x.shape[:-1], -1, 2)
     freqs_cis = freqs_cis.view(1, xshaped.size(1), 1, xshaped.size(3), 2)
     x_out2 = torch.stack(

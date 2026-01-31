@@ -9,7 +9,7 @@ from transformers.generation.utils import GenerationMixin
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
-from indextts.util import patch_call, unwrap
+from indextts.util import patch_call
 
 
 class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
@@ -96,7 +96,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         # Create embedding
         mel_len = self.cached_mel_emb.shape[1]
         if input_ids.shape[1] != 1:
-            text_inputs = unwrap(input_ids)[:, mel_len:]
+            text_inputs = input_ids[:, mel_len:]
             text_emb = self.embeddings(text_inputs)
             text_emb += self.text_pos_embedding.__call__(text_emb.shape[1], device=text_emb.device)
             if self.cached_mel_emb.shape[0] != text_emb.shape[0]:
@@ -106,7 +106,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             emb = torch.cat([mel_emb, text_emb], dim=1)
         else:
             assert attention_mask is not None
-            emb = self.embeddings(unwrap(input_ids))
+            emb = self.embeddings(input_ids)
             emb += self.text_pos_embedding.get_fixed_embedding(attention_mask.shape[1] - mel_len, attention_mask.device)
         transformer_outputs = self.transformer(
             inputs_embeds=emb,

@@ -8,7 +8,7 @@ import torch
 from torch import nn
 
 
-class KVCacheBlock:
+class _KVCacheBlock:
     def __init__(self, block_id: int) -> None:
         self.block_id = block_id
         self.ref_cnt = 0
@@ -80,7 +80,7 @@ class KVCacheManager:
         self.num_blocks = num_blocks
         self.dtype = dtype
 
-        self.blocks = [KVCacheBlock(i) for i in range(num_blocks)]
+        self.blocks = [_KVCacheBlock(i) for i in range(num_blocks)]
         self.block_hash_to_id: dict[bytes, int] = {}
         self.free_block_ids = deque(range(num_blocks))
         self.used_block_ids: set[int] = set()
@@ -100,7 +100,7 @@ class KVCacheManager:
         input_bytes = pickle.dumps(tuple(hash_input), protocol=pickle.HIGHEST_PROTOCOL)
         return hashlib.sha256(input_bytes).digest()
 
-    def _allocate_block(self, block_id: int) -> KVCacheBlock:
+    def _allocate_block(self, block_id: int) -> _KVCacheBlock:
         block = self.blocks[block_id]
         assert block.ref_cnt == 0
         block.reset()

@@ -20,7 +20,7 @@ def modulate(x: Float[Tensor, "b t d"], shift: Float[Tensor, "b d"], scale: Floa
 #################################################################################
 
 
-class TimestepEmbedder(nn.Module):
+class _TimestepEmbedder(nn.Module):
     """
     Embeds scalar timesteps into vector representations.
     """
@@ -57,7 +57,7 @@ class TimestepEmbedder(nn.Module):
     def __call__(self) -> None: ...
 
 
-class FinalLayer(nn.Module):
+class _FinalLayer(nn.Module):
     """
     The final layer of DiT.
     """
@@ -84,12 +84,12 @@ class DiT(nn.Module):
     transformer: Transformer
     x_embedder: nn.Linear
     cond_projection: nn.Linear
-    t_embedder: TimestepEmbedder
-    t_embedder2: TimestepEmbedder
+    t_embedder: _TimestepEmbedder
+    t_embedder2: _TimestepEmbedder
     conv1: nn.Linear
     conv2: nn.Conv1d
     wavenet: WaveNet
-    final_layer: FinalLayer
+    final_layer: _FinalLayer
     res_projection: nn.Linear
     skip_linear: nn.Linear
     cond_x_merge_linear: nn.Linear
@@ -101,16 +101,16 @@ class DiT(nn.Module):
         self.x_embedder = weight_norm(nn.Linear(in_channels, dim))
         self.cond_projection = nn.Linear(dim, dim)  # continuous content
 
-        self.t_embedder = TimestepEmbedder(dim=dim)
+        self.t_embedder = _TimestepEmbedder(dim=dim)
 
         input_pos = torch.arange(block_size)
         self.register_buffer("input_pos", input_pos)
 
-        self.t_embedder2 = TimestepEmbedder(dim=dim)
+        self.t_embedder2 = _TimestepEmbedder(dim=dim)
         self.conv1 = nn.Linear(dim, dim)
         self.conv2 = nn.Conv1d(dim, in_channels, kernel_size=1)
         self.wavenet = WaveNet(dim)
-        self.final_layer = FinalLayer(dim=dim)
+        self.final_layer = _FinalLayer(dim=dim)
         # residual connection from tranformer output to final output
         self.res_projection = nn.Linear(dim, dim)
 

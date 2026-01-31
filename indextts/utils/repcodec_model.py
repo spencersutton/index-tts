@@ -21,7 +21,7 @@ def _init_weights(m: nn.Module) -> None:
         nn.init.constant_(unwrap(m.bias), 0)
 
 
-class ConvNeXtBlock(nn.Module):
+class _ConvNeXtBlock(nn.Module):
     """ConvNeXt Block adapted from https://github.com/facebookresearch/ConvNeXt to 1D audio signal.
 
     Args:
@@ -65,21 +65,21 @@ class ConvNeXtBlock(nn.Module):
     def __call__(self) -> None: ...
 
 
-class VocosBackbone(nn.Module):
+class _VocosBackbone(nn.Module):
     """
     Vocos backbone module built with ConvNeXt blocks. Supports additional conditioning with Adaptive Layer Normalization
     """
 
     embed: nn.Conv1d
     norm: nn.LayerNorm
-    convnext: Sequence[ConvNeXtBlock]
+    convnext: Sequence[_ConvNeXtBlock]
     final_layer_norm: nn.LayerNorm
 
     def __init__(self, in_channels: int, out_channels: int, n_layers: int = 12) -> None:
         super().__init__()
         self.embed = nn.Conv1d(in_channels, out_channels, kernel_size=7, padding=3)
         self.norm = nn.LayerNorm(out_channels, eps=1e-6)
-        self.convnext = nn.ModuleList([ConvNeXtBlock() for _ in range(n_layers)])  # pyright: ignore[reportAttributeAccessIssue]
+        self.convnext = nn.ModuleList([_ConvNeXtBlock() for _ in range(n_layers)])  # pyright: ignore[reportAttributeAccessIssue]
         self.final_layer_norm = nn.LayerNorm(out_channels, eps=1e-6)
         self.apply(_init_weights)
 
@@ -96,7 +96,7 @@ class VocosBackbone(nn.Module):
     def __call__(self) -> None: ...
 
 
-class FactorizedVectorQuantize(nn.Module):
+class _FactorizedVectorQuantize(nn.Module):
     in_project: nn.Conv1d
     out_project: nn.Conv1d
     codebook: nn.Embedding
@@ -158,18 +158,18 @@ class FactorizedVectorQuantize(nn.Module):
     def __call__(self) -> None: ...
 
 
-class ResidualVQ(nn.Module):
+class _ResidualVQ(nn.Module):
     """
     Introduced in SoundStream: An end2end neural audio codec
     https://arxiv.org/abs/2107.03312
     """
 
-    quantizers: Sequence[FactorizedVectorQuantize]
+    quantizers: Sequence[_FactorizedVectorQuantize]
 
     def __init__(self) -> None:
         super().__init__()
 
-        quantizers = [FactorizedVectorQuantize()]
+        quantizers = [_FactorizedVectorQuantize()]
         self.quantizers = nn.ModuleList(quantizers)  # pyright: ignore[reportAttributeAccessIssue]
 
     @override
@@ -199,13 +199,13 @@ class ResidualVQ(nn.Module):
 
 
 class RepCodec(nn.Module):
-    quantizer: ResidualVQ
+    quantizer: _ResidualVQ
 
     def __init__(self, in_features: int = 384, out_features: int = 1024) -> None:
         super().__init__()
 
-        self.encoder = nn.Sequential(VocosBackbone(out_features, in_features), nn.Linear(in_features, out_features))
-        self.quantizer = ResidualVQ()
+        self.encoder = nn.Sequential(_VocosBackbone(out_features, in_features), nn.Linear(in_features, out_features))
+        self.quantizer = _ResidualVQ()
 
         self.apply(_init_weights)
 

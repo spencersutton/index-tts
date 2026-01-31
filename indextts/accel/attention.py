@@ -54,7 +54,7 @@ class ForwardContext:
 
 @triton.jit  # pyright: ignore[reportUntypedFunctionDecorator]
 @no_type_check
-def store_kvcache_kernel(
+def _store_kvcache_kernel(
     key_ptr: torch.Tensor,
     key_stride: int,
     value_ptr: torch.Tensor,
@@ -85,7 +85,7 @@ def store_kvcache_kernel(
         d_offset += BLOCK_SIZE
 
 
-def store_kvcache(
+def _store_kvcache(
     key: Float[Tensor, "n h d"],
     value: Float[Tensor, "n h d"],
     k_cache: Float[Tensor, "n d"],
@@ -98,7 +98,7 @@ def store_kvcache(
     assert key.stride(1) == head_dim and value.stride(1) == head_dim
     assert k_cache.stride(1) == D and v_cache.stride(1) == D
     assert slot_mapping.numel() == N
-    store_kvcache_kernel[N,](key, key.stride(0), value, value.stride(0), k_cache, v_cache, slot_mapping, D)  # pyright: ignore[reportIndexIssue]
+    _store_kvcache_kernel[N,](key, key.stride(0), value, value.stride(0), k_cache, v_cache, slot_mapping, D)  # pyright: ignore[reportIndexIssue]
 
 
 class Attention(nn.Module):
@@ -116,7 +116,7 @@ class Attention(nn.Module):
         k_cache, v_cache = self.k_cache, self.v_cache
 
         if k_cache.numel() and v_cache.numel() and context.slot_mapping is not None:
-            store_kvcache(k, v, k_cache, v_cache, context.slot_mapping)
+            _store_kvcache(k, v, k_cache, v_cache, context.slot_mapping)
 
         if context.is_prefill:
             if context.block_tables is not None:

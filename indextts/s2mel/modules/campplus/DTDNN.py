@@ -19,7 +19,7 @@ from indextts.s2mel.modules.campplus.layers import (
 from indextts.util import patch_call
 
 
-class FCM(nn.Module):
+class _FCM(nn.Module):
     def __init__(self, m_channels: int = 32) -> None:
         super().__init__()
         self.in_planes = m_channels
@@ -51,7 +51,7 @@ class CAMPPlus(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        self.head = FCM()
+        self.head = _FCM()
         channels = self.head.out_channels
 
         modules = OrderedDict({"tdnn": TDNNLayer(channels)})

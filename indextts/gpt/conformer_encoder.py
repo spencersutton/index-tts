@@ -12,7 +12,7 @@ from indextts.util import patch_call
 from indextts.utils.common import make_pad_mask
 
 
-class PositionwiseFeedForward(nn.Module):
+class _PositionwiseFeedForward(nn.Module):
     """Positionwise feed forward layer.
 
     FeedForward are appied on each position of the sequence.
@@ -47,7 +47,7 @@ class PositionwiseFeedForward(nn.Module):
     def __call__(self) -> None: ...
 
 
-class ConvolutionModule(nn.Module):
+class _ConvolutionModule(nn.Module):
     """ConvolutionModule in Conformer model."""
 
     def __init__(self, dim: int, activation: nn.SiLU) -> None:
@@ -115,7 +115,7 @@ class ConvolutionModule(nn.Module):
     def __call__(self) -> None: ...
 
 
-class ConformerEncoderLayer(nn.Module):
+class _ConformerEncoderLayer(nn.Module):
     """Encoder layer module.
     Args:
         size (int): Input dimension.
@@ -132,8 +132,8 @@ class ConformerEncoderLayer(nn.Module):
         self,
         size: int,
         self_attn: RelPositionMultiHeadedAttention,
-        feed_forward: PositionwiseFeedForward,
-        conv_module: ConvolutionModule,
+        feed_forward: _PositionwiseFeedForward,
+        conv_module: _ConvolutionModule,
     ) -> None:
         """Construct an EncoderLayer object."""
         super().__init__()
@@ -227,13 +227,13 @@ class ConformerEncoder(nn.Module):
         activation = nn.SiLU()
 
         self.encoders = cast(  # pyright: ignore[reportInvalidCast]
-            Sequence[ConformerEncoderLayer],
+            Sequence[_ConformerEncoderLayer],
             nn.ModuleList([
-                ConformerEncoderLayer(
+                _ConformerEncoderLayer(
                     dim,
                     RelPositionMultiHeadedAttention(attention_heads, dim),
-                    PositionwiseFeedForward(dim, linear_units, activation=activation),
-                    ConvolutionModule(dim, activation),
+                    _PositionwiseFeedForward(dim, linear_units, activation=activation),
+                    _ConvolutionModule(dim, activation),
                 )
                 for _ in range(num_blocks)
             ]),

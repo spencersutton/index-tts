@@ -124,7 +124,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
         )
-        assert isinstance(transformer_outputs, tuple)
+        assert not isinstance(transformer_outputs, tuple)
         hidden_states = transformer_outputs[0]
 
         lm_logits: Tensor = self.lm_head(hidden_states)

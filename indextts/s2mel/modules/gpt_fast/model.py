@@ -26,7 +26,7 @@ class _AdaptiveLayerNorm(nn.Module):
         self.norm = _RMSNorm(dim=dim)
 
     @override
-    def forward(self, input: Float[Tensor, "b t d"], embedding: Float[Tensor, "b d"] | None = None) -> Tensor:
+    def forward(self, input: Float[Tensor, "b t d"], embedding: Float[Tensor, "b t d"] | None = None) -> Tensor:
         if embedding is None:
             return self.norm(input)
         weight, bias = torch.split(self.project_layer(embedding), self.dim, dim=-1)
@@ -63,7 +63,7 @@ class Transformer(nn.Module):
         return torch.stack([freqs_cis.real, freqs_cis.imag], dim=-1)
 
     @override
-    def forward(self, x: Float[Tensor, "b t d"], c: Float[Tensor, "b d"], input_pos: Int[Tensor, "t"]) -> Tensor:
+    def forward(self, x: Float[Tensor, "b t d"], c: Float[Tensor, "b t d"], input_pos: Int[Tensor, "t"]) -> Tensor:
         freqs_cis = self.freqs_cis[input_pos]
         mid = self.n_layer // 2
         skip_stack: list[Tensor] = []
@@ -99,9 +99,9 @@ class _TransformerBlock(nn.Module):
     def forward(
         self,
         x: Float[Tensor, "b t d"],
-        c: Float[Tensor, "b d"],
+        c: Float[Tensor, "b t d"],
         input_pos: Int[Tensor, "t"],
-        freqs_cis: Float[Tensor, ""],
+        freqs_cis: Float[Tensor, "b t d"],
         skip_in_x: Float[Tensor, "b t d"] | None = None,
     ) -> Tensor:
         if skip_in_x is not None:
@@ -129,7 +129,7 @@ class _Attention(nn.Module):
         self.wo = nn.Linear(self.dim, self.dim, bias=False)
 
     @override
-    def forward(self, x: Float[Tensor, "b t d"], freqs_cis: Float[Tensor, ""]) -> Tensor:
+    def forward(self, x: Float[Tensor, "b t d"], freqs_cis: Float[Tensor, "b t d"]) -> Tensor:
         bsz, seqlen, _ = x.shape
 
         query_key_value = self.wqkv(x)
@@ -188,7 +188,7 @@ class _RMSNorm(nn.Module):
     def __call__(self) -> None: ...
 
 
-def _apply_rotary_emb(x: Float[Tensor, "b t h d"], freqs_cis: Float[Tensor, ""]) -> Tensor:
+def _apply_rotary_emb(x: Float[Tensor, "b t h d"], freqs_cis: Float[Tensor, "b t d"]) -> Tensor:
     xshaped = x.float().reshape(*x.shape[:-1], -1, 2)
     freqs_cis = freqs_cis.view(1, xshaped.size(1), 1, xshaped.size(3), 2)
     x_out2 = torch.stack(

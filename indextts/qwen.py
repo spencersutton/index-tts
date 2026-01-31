@@ -7,7 +7,7 @@ import torch
 from transformers import BatchEncoding, Qwen2Tokenizer, Qwen3ForCausalLM
 
 
-def clamp(value: float, min_val: float, max_val: float) -> float:
+def _clamp(value: float, min_val: float, max_val: float) -> float:
     return max(min(value, max_val), min_val)
 
 
@@ -58,7 +58,7 @@ class QwenEmotion:
         # - clamp all values to the allowed min/max range
         # - use 0.0 for any values that were missing in `content`
         emotion_dict = {
-            self.cn_key_to_en[cn_key]: clamp(content.get(cn_key, 0.0), self.min_score, self.max_score)
+            self.cn_key_to_en[cn_key]: _clamp(content.get(cn_key, 0.0), self.min_score, self.max_score)
             for cn_key in self.desired_vector_order
         }
 

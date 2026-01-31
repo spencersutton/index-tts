@@ -16,7 +16,7 @@ from torch.nn.utils.parametrizations import weight_norm
 from indextts.util import patch_call
 
 
-class NormConv1d(nn.Module):
+class _NormConv1d(nn.Module):
     """Wrapper around Conv1d and normalization applied to this conv
     to provide a uniform interface across normalization approaches.
     """
@@ -47,7 +47,7 @@ class SConv1d(nn.Module):
         super().__init__()
 
         self.kernel_size = kernel_size
-        self.conv = NormConv1d(in_channels, out_channels, kernel_size)
+        self.conv = _NormConv1d(in_channels, out_channels, kernel_size)
 
     @override
     def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:

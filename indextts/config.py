@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 
 @dataclass
-class HFModelReference:
+class _HFModelReference:
     repo_id: str
     filename: str
 
@@ -28,14 +28,14 @@ class IndexTTSConfig:
     sample_rate: int = 22050
     spk_matrix: str = "feat1.pt"
     emo_matrix: str = "feat2.pt"
-    dataset: HFModelReference = field(default_factory=lambda: HFModelReference("IndexTeam/IndexTTS-2", "bpe.model"))
+    dataset: _HFModelReference = field(default_factory=lambda: _HFModelReference("IndexTeam/IndexTTS-2", "bpe.model"))
     gpt: UnifiedVoiceConfig = field(default_factory=UnifiedVoiceConfig)
     gpt_checkpoint: str = "checkpoints/gpt.pth"
     qwen_emo_path: str = "dsinghvi/qwen0.6bemo4-merge"
     version: float = 2.0
-    vocoder: HFModelReference = field(
-        default_factory=lambda: HFModelReference("nvidia/bigvgan_v2_22khz_80band_256x", "bigvgan_generator.pt")
+    vocoder: _HFModelReference = field(
+        default_factory=lambda: _HFModelReference("nvidia/bigvgan_v2_22khz_80band_256x", "bigvgan_generator.pt")
     )
-    w2v_stat: HFModelReference = field(
-        default_factory=lambda: HFModelReference("amphion/dualcodec", "w2vbert2_mean_var_stats_emilia.pt")
+    w2v_stat: _HFModelReference = field(
+        default_factory=lambda: _HFModelReference("amphion/dualcodec", "w2vbert2_mean_var_stats_emilia.pt")
     )

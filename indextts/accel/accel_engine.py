@@ -13,7 +13,7 @@ from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.util import patch_call, unwrap
 
 
-class Sampler(nn.Module):
+class _Sampler(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
@@ -39,7 +39,7 @@ class AccelInferenceEngine:
     model: GPT2AccelModel
     lm_head: nn.Sequential
     kv_manager: KVCacheManager
-    sampler: Sampler
+    sampler: _Sampler
     current_sequences: list[Seq]
     graphs: MutableMapping[int, torch.cuda.CUDAGraph]
     graph_vars: Mapping[str, Tensor] | None = None
@@ -86,7 +86,7 @@ class AccelInferenceEngine:
             dtype=torch.float16,  # Force fp16 for FlashAttention
         )
         self.kv_manager.wire_kv_cache_to_model(model)
-        self.sampler = Sampler()
+        self.sampler = _Sampler()
         self.current_sequences = []
         self.graphs = {}
         self.graph_captured = False

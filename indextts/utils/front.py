@@ -15,7 +15,7 @@ from indextts.utils.common import de_tokenized_by_CJK_char, tokenize_by_CJK_char
 if TYPE_CHECKING:
     from wetext import Normalizer
 
-punctuation_marks_tokens: Final = [
+_punctuation_marks_tokens: Final = [
     ".",
     "!",
     "?",
@@ -607,7 +607,7 @@ class TextTokenizer:
     ) -> list[list[str]]:
         return TextTokenizer.split_segments_by_token(
             tokenized,
-            punctuation_marks_tokens,
+            _punctuation_marks_tokens,
             max_text_tokens_per_segment=max_text_tokens_per_segment,
             quick_streaming_tokens=quick_streaming_tokens,
         )

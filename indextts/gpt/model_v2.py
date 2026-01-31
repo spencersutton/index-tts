@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from indextts.accel import AccelInferenceEngine
 
 
-def set_padding(input_tokens: Int[Tensor, "B _"], lengths: list[int], token: int) -> Tensor:
+def _set_padding(input_tokens: Int[Tensor, "B _"], lengths: list[int], token: int) -> Tensor:
     """
     Given tokens that are derived from a padded audio clip and the actual lengths of each batch element in
     that audio clip, reformats the tokens with `token` in place of the zero padding. This is required
@@ -241,10 +241,10 @@ class UnifiedVoice(nn.Module):
         If return_latent is specified, loss & logits are not computed or returned. Only the predicted latents are returned.
         """
 
-        text_inputs = set_padding(text_inputs, [text_inputs.shape[-1]], self.cfg.stop_text_token)
+        text_inputs = _set_padding(text_inputs, [text_inputs.shape[-1]], self.cfg.stop_text_token)
         text_inputs = F.pad(text_inputs, [0, 1], value=self.cfg.stop_text_token)
 
-        mel_codes = set_padding(mel_codes, [mel_codes.shape[-1]], self.cfg.stop_mel_token)
+        mel_codes = _set_padding(mel_codes, [mel_codes.shape[-1]], self.cfg.stop_mel_token)
         mel_codes = F.pad(mel_codes, [0, 1], value=self.cfg.stop_mel_token)
 
         text_inputs = F.pad(text_inputs, [1, 0], value=self.cfg.start_text_token)

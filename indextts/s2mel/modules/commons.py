@@ -1,14 +1,4 @@
-import torch
-from jaxtyping import Int
-from torch import Tensor, nn
-
-
-def sequence_mask(length: Int[Tensor, "b"] | int, max_length: int | None = None) -> Tensor:
-    length = torch.as_tensor(length)
-    if max_length is None:
-        max_length = int(length.max())
-    x = torch.arange(max_length, dtype=length.dtype, device=length.device)
-    return x.unsqueeze(0) < length.unsqueeze(1)
+from torch import nn
 
 
 class MyModel(nn.Module):

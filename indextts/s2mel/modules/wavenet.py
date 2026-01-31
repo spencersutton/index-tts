@@ -10,7 +10,7 @@ from indextts.util import patch_call
 
 
 @torch.compile
-def fused_add_tanh_sigmoid_multiply(
+def _fused_add_tanh_sigmoid_multiply(
     dim: int, input_a: Float[Tensor, "b c t"], input_b: Float[Tensor, "b c t"]
 ) -> Tensor:
     in_act = input_a + input_b
@@ -52,7 +52,7 @@ class WaveNet(nn.Module):
             g_l = g[:, offset : offset + 2 * self.dim, :]
 
             x_in = self.in_layers[i].__call__(x)
-            acts = fused_add_tanh_sigmoid_multiply(self.dim, x_in, g_l)
+            acts = _fused_add_tanh_sigmoid_multiply(self.dim, x_in, g_l)
             acts = self.drop(acts)
 
             res_skip_acts = self.res_skip_layers[i].__call__(acts)

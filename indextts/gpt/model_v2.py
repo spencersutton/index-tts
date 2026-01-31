@@ -399,7 +399,7 @@ class UnifiedVoice(nn.Module):
                 num_return_sequences=1,
                 **hf_generate_kwargs,
             )
-        return output[:, trunc_index:]  # pyright: ignore[reportUnknownVariableType]
+        return output[:, trunc_index:]
 
     def process_speech_condition(self, condition: Float[Tensor, "B T D"]) -> Tensor:
         if condition.ndim == 2:

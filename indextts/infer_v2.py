@@ -425,7 +425,6 @@ class IndexTTS2:
             )
             print("     Consider updating the BPE model or modifying the text to avoid unknown tokens.")
 
-        autoregressive_batch_size = 1
         do_sample = generation_kwargs.pop("do_sample", True)
         length_penalty = generation_kwargs.pop("length_penalty", 0.0)
         max_mel_tokens = generation_kwargs.pop("max_mel_tokens", 1500)
@@ -470,7 +469,6 @@ class IndexTTS2:
                         top_p=top_p,
                         top_k=top_k,
                         temperature=temperature,
-                        num_return_sequences=autoregressive_batch_size,
                         length_penalty=length_penalty,
                         num_beams=num_beams,
                         repetition_penalty=repetition_penalty,

@@ -3,13 +3,37 @@ from typing import cast, override
 
 import torch
 import torch.nn.functional as F
-from jaxtyping import Bool, Float
+from jaxtyping import Bool, Float, Int
 from torch import Tensor, nn
 
 from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
 from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
 from indextts.util import patch_call
-from indextts.utils.common import make_pad_mask
+
+
+def make_pad_mask(lengths: Int[Tensor, "b"], max_len: int = 0) -> Bool[Tensor, "b t"]:
+    """Make mask tensor containing indices of padded part.
+
+    See description of make_non_pad_mask.
+
+    Args:
+        lengths (Tensor): Batch of lengths (B,).
+    Returns:
+        Tensor: Mask tensor containing indices of padded part.
+
+    Examples:
+        >>> lengths = [5, 3, 2]
+        >>> make_pad_mask(lengths)
+        masks = [[0, 0, 0, 0 ,0],
+                 [0, 0, 0, 1, 1],
+                 [0, 0, 1, 1, 1]]
+    """
+    batch_size = lengths.size(0)
+    max_len = max_len if max_len > 0 else int(lengths.max().item())
+    seq_range = torch.arange(0, max_len, dtype=torch.int64, device=lengths.device)
+    seq_range_expand = seq_range.unsqueeze(0).expand(batch_size, max_len)
+    seq_length_expand = lengths.unsqueeze(-1)
+    return seq_range_expand >= seq_length_expand
 
 
 class _PositionwiseFeedForward(nn.Module):

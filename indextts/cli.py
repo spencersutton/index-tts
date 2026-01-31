@@ -26,6 +26,9 @@ def main() -> None:
     parser.add_argument(
         "-d", "--device", type=str, default=None, help="Device to run the model on (cpu, cuda, mps, xpu)."
     )
+    parser.add_argument(
+        "--use_accel", action="store_true", default=False, help="Enable acceleration engine for GPT2 (experimental)."
+    )
     args = parser.parse_args()
     voice_file = Path(args.voice)
     output_path = Path(args.output_path)
@@ -70,7 +73,7 @@ def main() -> None:
     from indextts.infer_v2 import IndexTTS2
 
     print("Initializing IndexTTS2...")
-    tts = IndexTTS2(model_dir=model_dir, use_fp16=args.fp16, device=args.device)
+    tts = IndexTTS2(model_dir=model_dir, use_fp16=args.fp16, device=args.device, use_accel=args.use_accel)
     print("Start inference...")
     tts.infer(output_path=output_path, spk_audio_prompt=voice_file, text=args.text.strip())
 

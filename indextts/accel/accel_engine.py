@@ -139,6 +139,37 @@ class AccelInferenceEngine:
         temperatures = [temperature] * len(requests)
         return torch.tensor(temperatures, dtype=torch.float32, pin_memory=True).cuda(non_blocking=True)
 
+    def _forward_decode(
+        self,
+        input_ids: Tensor,
+        positions: Tensor,
+        tts_mel_embedding: nn.Embedding | None,
+        tts_text_pos_embedding: LearnedPositionEmbeddings | None,
+        *,
+        inputs_embeds_buffer: Tensor | None = None,
+        use_tts: bool | None = None,
+    ) -> Tensor:
+        use_tts_embedding = self._tts_mode if use_tts is None else use_tts
+
+        if use_tts_embedding:
+            if tts_mel_embedding is None or tts_text_pos_embedding is None:
+                raise RuntimeError("TTS embeddings required for TTS decode")
+            emb = unwrap(tts_mel_embedding)(input_ids)
+            pos_clamped = torch.clamp(positions, min=0)
+            pos_emb = unwrap(tts_text_pos_embedding).emb(pos_clamped)
+            if inputs_embeds_buffer is None:
+                inputs_embeds = emb + pos_emb
+            else:
+                inputs_embeds_buffer[: input_ids.size(0)] = emb + pos_emb
+                inputs_embeds = inputs_embeds_buffer[: input_ids.size(0)]
+            model_output = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True)
+        else:
+            model_output = self.model(input_ids=input_ids.unsqueeze(1), return_dict=True)
+
+        assert not isinstance(model_output, tuple)
+        out = unwrap(model_output.last_hidden_state)
+        return out.squeeze(1) if out.dim() == 3 else out
+
     def _capture_cuda_graphs(
         self,
         tts_mel_embedding: nn.Embedding | None = None,
@@ -170,30 +201,24 @@ class AccelInferenceEngine:
             )
 
             # warmup
-            if use_tts:
-                emb = unwrap(tts_mel_embedding)(input_ids[:bs])
-                pos_clamped = torch.clamp(positions[:bs], min=0)
-                pos_emb = unwrap(tts_text_pos_embedding).emb(pos_clamped)
-                inputs_embeds_buffer[:bs] = emb + pos_emb
-                result = self.model(inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True)
-            else:
-                result = self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True)
-            assert not isinstance(result, tuple)
-            out = unwrap(result.last_hidden_state)
-            outputs[:bs] = out.squeeze(1) if out.dim() == 3 else out
+            outputs[:bs] = self._forward_decode(
+                input_ids[:bs],
+                positions[:bs],
+                tts_mel_embedding,
+                tts_text_pos_embedding,
+                inputs_embeds_buffer=inputs_embeds_buffer,
+                use_tts=use_tts,
+            )
 
             with torch.cuda.graph(graph, self.graph_pool):
-                if use_tts:
-                    emb = unwrap(tts_mel_embedding)(input_ids[:bs])
-                    pos_clamped = torch.clamp(positions[:bs], min=0)
-                    pos_emb = unwrap(tts_text_pos_embedding).emb(pos_clamped)
-                    inputs_embeds_buffer[:bs] = emb + pos_emb
-                    model_output = self.model(inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True)
-                else:
-                    model_output = self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True)
-                assert not isinstance(model_output, tuple)
-                out = unwrap(model_output.last_hidden_state)
-                outputs[:bs] = out.squeeze(1) if out.dim() == 3 else out
+                outputs[:bs] = self._forward_decode(
+                    input_ids[:bs],
+                    positions[:bs],
+                    tts_mel_embedding,
+                    tts_text_pos_embedding,
+                    inputs_embeds_buffer=inputs_embeds_buffer,
+                    use_tts=use_tts,
+                )
 
             if self.graph_pool is None:
                 self.graph_pool = graph.pool()
@@ -225,31 +250,15 @@ class AccelInferenceEngine:
         use_tts_embedding = self._tts_mode
 
         if not self.use_cuda_graph or not self.graphs:
-            if use_tts_embedding:
-                inputs_embeds = unwrap(tts_mel_embedding)(input_ids)
-                pos_clamped = torch.clamp(positions, min=0)
-                pos_emb = unwrap(tts_text_pos_embedding).emb(pos_clamped)
-                inputs_embeds += pos_emb
-                model_output = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True)
-            else:
-                model_output = self.model(input_ids=input_ids.unsqueeze(1), return_dict=True)
-            assert not isinstance(model_output, tuple)
-            out = unwrap(model_output.last_hidden_state)
-            return out.squeeze(1) if out.dim() == 3 else out
+            return self._forward_decode(
+                input_ids, positions, tts_mel_embedding, tts_text_pos_embedding, use_tts=use_tts_embedding
+            )
 
         graph_bs = next((x for x in self.graph_bs if x >= bs), None)
         if graph_bs is None:
-            if use_tts_embedding:
-                inputs_embeds = unwrap(tts_mel_embedding)(input_ids)
-                pos_clamped = torch.clamp(positions, min=0)
-                pos_emb = unwrap(tts_text_pos_embedding).emb(pos_clamped)
-                inputs_embeds += pos_emb
-                model_output = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True)
-            else:
-                model_output = self.model(input_ids=input_ids.unsqueeze(1), return_dict=True)
-            assert not isinstance(model_output, tuple)
-            out = unwrap(model_output.last_hidden_state)
-            return out.squeeze(1) if out.dim() == 3 else out
+            return self._forward_decode(
+                input_ids, positions, tts_mel_embedding, tts_text_pos_embedding, use_tts=use_tts_embedding
+            )
 
         graph = self.graphs[graph_bs]
         graph_vars = self.graph_vars

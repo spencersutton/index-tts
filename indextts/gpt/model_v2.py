@@ -354,7 +354,6 @@ class UnifiedVoice(nn.Module):
         text_inputs: Int[Tensor, "B T"],
         *,
         emo_vec: Float[Tensor, "B D"],
-        num_return_sequences: int = 1,
         max_generate_length: int | None = None,
         **hf_generate_kwargs: Any,  # pyright: ignore[reportExplicitAny]
     ) -> Tensor:
@@ -377,7 +376,7 @@ class UnifiedVoice(nn.Module):
         )
 
         # Use accel engine if available (single sequence only)
-        if self.accel_engine is not None and num_return_sequences == 1:
+        if self.accel_engine is not None:
             output = self.accel_engine.generate(
                 inputs_ids,  # fake input_ids (all 1s + start_mel_token)
                 max_new_tokens=max_length - trunc_index,
@@ -397,7 +396,7 @@ class UnifiedVoice(nn.Module):
                 attention_mask=attention_mask,
                 max_length=max_length,
                 logits_processor=LogitsProcessorList(),
-                num_return_sequences=num_return_sequences,
+                num_return_sequences=1,
                 **hf_generate_kwargs,
             )
         return output[:, trunc_index:]  # pyright: ignore[reportUnknownVariableType]

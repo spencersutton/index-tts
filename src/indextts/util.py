@@ -1,4 +1,3 @@
-import functools
 import time
 from collections.abc import Callable
 from typing import Self, override
@@ -7,7 +6,6 @@ from torch import nn
 
 
 def patch_call[**P, R](_src_func: Callable[P, R]) -> Callable[..., Callable[P, R]]:
-    @functools.wraps(_src_func)
     def _returns_nn_module_call(*_args: object) -> Callable[P, R]:
         return nn.Module.__call__
 

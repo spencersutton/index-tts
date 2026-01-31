@@ -198,7 +198,6 @@ class UnifiedVoice(nn.Module):
                 head_dim=self.dim // self.heads,
                 block_size=256,
                 num_blocks=16,  # Reduce to save memory (16*256 = 4096 tokens capacity)
-                use_cuda_graph=True,
             )
             print("acceleration engine initialized")
         self.inference_model = GPT2InferenceModel(
@@ -399,7 +398,7 @@ class UnifiedVoice(nn.Module):
                 num_return_sequences=1,
                 **hf_generate_kwargs,
             )
-        return output[:, trunc_index:]  # pyright: ignore[reportUnknownVariableType]
+        return output[:, trunc_index:]
 
     def process_speech_condition(self, condition: Float[Tensor, "B T D"]) -> Tensor:
         if condition.ndim == 2:

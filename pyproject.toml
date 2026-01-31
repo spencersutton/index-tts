@@ -100,7 +100,6 @@ extend-select = [
   "FURB",
   "I",
   "PLR1711",
-  "PLR6301",
   "PTH",
   "PYI",
   "RET",
@@ -121,6 +120,7 @@ ignore = [
   "RUF002",
   "RUF003",
   "SIM108",
+  "PYI041",
 ]
 isort.split-on-trailing-comma = false
 

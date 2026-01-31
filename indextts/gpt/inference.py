@@ -98,13 +98,11 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         if input_ids.shape[1] != 1:
             text_inputs = unwrap(input_ids)[:, mel_len:]
             text_emb = self.embeddings(text_inputs)
-            text_emb += self.text_pos_embedding(text_emb.shape[1], device=text_emb.device)
-            if unwrap(self.cached_mel_emb).shape[0] != text_emb.shape[0]:
-                mel_emb = unwrap(self.cached_mel_emb).repeat_interleave(
-                    text_emb.shape[0] // unwrap(self.cached_mel_emb).shape[0], 0
-                )
+            text_emb += self.text_pos_embedding.__call__(text_emb.shape[1], device=text_emb.device)
+            if self.cached_mel_emb.shape[0] != text_emb.shape[0]:
+                mel_emb = self.cached_mel_emb.repeat_interleave(text_emb.shape[0] // self.cached_mel_emb.shape[0], 0)
             else:  # this outcome only occurs once per loop in most cases
-                mel_emb = unwrap(self.cached_mel_emb)
+                mel_emb = self.cached_mel_emb
             emb = torch.cat([mel_emb, text_emb], dim=1)
         else:
             assert attention_mask is not None

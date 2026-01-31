@@ -67,7 +67,7 @@ def find_most_similar_cosine(query_vector: Float[Tensor, "1 C"], matrix: Float[T
     return int(torch.argmax(similarities))
 
 
-def _load_and_cut_audio(audio_path: Path, sample_rate: float | None = None) -> tuple[Tensor, int]:
+def _load_and_cut_audio(audio_path: Path, sample_rate: int | float | None = None) -> tuple[Tensor, int]:
     if not sample_rate:
         audio, sample_rate = librosa.load(audio_path)
     else:
@@ -394,7 +394,7 @@ class IndexTTS2:
         **generation_kwargs: Any,  # pyright: ignore[reportExplicitAny]
     ) -> Generator[Tensor]:
         print(">> starting inference...")
-        self._set_gr_progress(0, "starting inference...")
+        self._set_gr_progress(0.0, "starting inference...")
         inference_timer = Timer()
         inference_timer.start()
 

@@ -11,8 +11,48 @@ from torch import Tensor, nn
 from indextts.util import patch_call
 
 
-# main class
-class Attend(nn.Module):
+class _Attention(nn.Module):
+    to_kv: nn.Linear
+    heads: int
+    to_out: nn.Linear
+    to_q: nn.Linear
+
+    def __init__(self, dim: int, heads: int = 8) -> None:
+        super().__init__()
+        self.heads = heads
+
+        dim_inner = 64 * heads
+
+        self.attend = _Attend()
+        self.to_q = nn.Linear(dim, dim_inner, bias=False)
+        self.to_kv = nn.Linear(dim, dim_inner * 2, bias=False)
+        self.to_out = nn.Linear(dim_inner, dim, bias=False)
+
+    @override
+    def forward(
+        self,
+        x: Float[Tensor, "b n d"],
+        context: Float[Tensor, "b n d"] | None = None,
+        mask: Bool[Tensor, "b n"] | None = None,
+    ) -> Tensor:
+        h = self.heads
+
+        context = context if context is not None else x
+        context = torch.cat((x, context), dim=-2)
+
+        q, k, v = (self.to_q(x), *self.to_kv(context).chunk(2, dim=-1))
+        q, k, v = (rearrange(t, "b n (h d) -> b h n d", h=h) for t in (q, k, v))
+
+        out = self.attend(q, k, v, mask=mask)
+
+        out = rearrange(out, "b h n d -> b n (h d)")
+        return self.to_out(out)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
+
+class _Attend(nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.attn_dropout = nn.Dropout(0.0)
@@ -56,7 +96,7 @@ class Attend(nn.Module):
     def __call__(self) -> None: ...
 
 
-class RMSNorm(nn.Module):
+class _RMSNorm(nn.Module):
     def __init__(self, dim: int) -> None:
         super().__init__()
 
@@ -71,7 +111,7 @@ class RMSNorm(nn.Module):
     def __call__(self) -> None: ...
 
 
-class GEGLU(nn.Module):
+class _GEGLU(nn.Module):
     @override
     def forward(self, x: Float[Tensor, "b n d"]) -> Tensor:
         x, gate = x.chunk(2, dim=-1)
@@ -84,8 +124,8 @@ class GEGLU(nn.Module):
 class PerceiverResampler(nn.Module):
     proj_context: nn.Linear
     latents: nn.Parameter
-    layers: MutableSequence[tuple["Attention", nn.Sequential]]
-    norm: RMSNorm
+    layers: MutableSequence[tuple[_Attention, nn.Sequential]]
+    norm: _RMSNorm
 
     def __init__(self, dim: int, num_latents: int = 32, heads: int = 8, depth: int = 2, dim_context: int = 512) -> None:
         super().__init__()
@@ -100,12 +140,12 @@ class PerceiverResampler(nn.Module):
         for _ in range(depth):
             self.layers.append(
                 nn.ModuleList((  # pyright: ignore[reportArgumentType]
-                    Attention(dim=dim, heads=heads),
-                    nn.Sequential(nn.Linear(dim, dim_inner * 2), GEGLU(), nn.Linear(dim_inner, dim)),
+                    _Attention(dim=dim, heads=heads),
+                    nn.Sequential(nn.Linear(dim, dim_inner * 2), _GEGLU(), nn.Linear(dim_inner, dim)),
                 ))
             )
 
-        self.norm = RMSNorm(dim)
+        self.norm = _RMSNorm(dim)
 
     @override
     def forward(self, x: Float[Tensor, "b n d"], mask: Bool[Tensor, "b n"] | None = None) -> Tensor:
@@ -118,47 +158,6 @@ class PerceiverResampler(nn.Module):
             latents = ff(latents) + latents
 
         return self.norm(latents)
-
-    @patch_call(forward)
-    def __call__(self) -> None: ...
-
-
-class Attention(nn.Module):
-    to_kv: nn.Linear
-    heads: int
-    to_out: nn.Linear
-    to_q: nn.Linear
-
-    def __init__(self, dim: int, heads: int = 8) -> None:
-        super().__init__()
-        self.heads = heads
-
-        dim_inner = 64 * heads
-
-        self.attend = Attend()
-        self.to_q = nn.Linear(dim, dim_inner, bias=False)
-        self.to_kv = nn.Linear(dim, dim_inner * 2, bias=False)
-        self.to_out = nn.Linear(dim_inner, dim, bias=False)
-
-    @override
-    def forward(
-        self,
-        x: Float[Tensor, "b n d"],
-        context: Float[Tensor, "b n d"] | None = None,
-        mask: Bool[Tensor, "b n"] | None = None,
-    ) -> Tensor:
-        h = self.heads
-
-        context = context if context is not None else x
-        context = torch.cat((x, context), dim=-2)
-
-        q, k, v = (self.to_q(x), *self.to_kv(context).chunk(2, dim=-1))
-        q, k, v = (rearrange(t, "b n (h d) -> b h n d", h=h) for t in (q, k, v))
-
-        out = self.attend(q, k, v, mask=mask)
-
-        out = rearrange(out, "b h n d -> b n (h d)")
-        return self.to_out(out)
 
     @patch_call(forward)
     def __call__(self) -> None: ...

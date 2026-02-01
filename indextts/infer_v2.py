@@ -552,9 +552,9 @@ class IndexTTS2:
     ) -> Tensor:
         semantic_inference = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
         semantic_inference = semantic_inference.mT + self.s2mel.gpt_layer(latent)
-        target_lengths = (torch.tensor(code_lens, device=self.device) * 1.72).long()
+        target_lengths = (torch.tensor(code_lens, device=self.device) * 1.72).long().max().item()
 
-        cond = self.s2mel.length_regulator.__call__(semantic_inference, ylens=target_lengths)
+        cond = self.s2mel.length_regulator.__call__(semantic_inference, ylens=int(target_lengths))
         cond = torch.cat([prompt_condition, cond], dim=1)
         target = self.s2mel.cfm.inference(cond, ref_mel, style)
         return target[:, :, ref_mel.size(-1) :]
@@ -607,9 +607,7 @@ class IndexTTS2:
         audio_22k = torchaudio.functional.resample(audio, sr, 22050)
 
         mel = mel_spectrogram(audio_22k, sample_rate=22050)
-        feat = torchaudio.compliance.kaldi.fbank(
-            audio_16k.to(self.device), num_mel_bins=80, dither=0, sample_frequency=16000
-        )
+        feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(self.device), num_mel_bins=80, sample_frequency=16000)
         feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
         style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
 
@@ -620,6 +618,6 @@ class IndexTTS2:
 
         embedding = self.get_emb(inputs["input_features"], inputs["attention_mask"])
         prompt_condition = self.s2mel.length_regulator.__call__(
-            self.semantic_codec.quantize(embedding), ylens=torch.tensor([mel.size(2)], device=self.device)
+            self.semantic_codec.quantize(embedding), ylens=mel.size(2)
         )
         return prompt_condition, style, mel, embedding

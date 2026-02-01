@@ -309,6 +309,18 @@ class IndexTTS2:
 
         self.model_version = int(self.cfg.version)
 
+        if os.environ.get("INDEXTTS_DEBUG_MODE", "0") != "0":
+            _ = self.bigvgan
+            _ = self.semantic_codec
+            _ = self.gpt
+            _ = self.s2mel
+            _ = self.tokenizer
+            _ = self.campplus_model
+            _ = self.semantic_model
+            _ = self.semantic_mean
+            _ = self.semantic_std
+            _ = self.extract_features
+
     # 原始推理模式
     def infer(
         self,

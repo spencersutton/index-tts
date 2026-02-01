@@ -189,15 +189,28 @@ class _RMSNorm(nn.Module):
 
 
 def _apply_rotary_emb(x: Float[Tensor, "b t h d"], freqs_cis: Float[Tensor, "b t d"]) -> Tensor:
-    xshaped = x.float().reshape(*x.shape[:-1], -1, 2)
-    freqs_cis = freqs_cis.view(1, xshaped.size(1), 1, xshaped.size(3), 2)
-    x_out2 = torch.stack(
-        [
-            xshaped[..., 0] * freqs_cis[..., 0] - xshaped[..., 1] * freqs_cis[..., 1],
-            xshaped[..., 1] * freqs_cis[..., 0] + xshaped[..., 0] * freqs_cis[..., 1],
-        ],
-        -1,
-    )
+    """Apply rotary embeddings to a (B, T, H, D) tensor.
 
-    x_out2 = x_out2.flatten(3)
-    return x_out2.type_as(x)
+    This implementation is intentionally allocation-light:
+    - avoids `torch.stack(...).flatten(...)` (extra intermediate)
+    - uses fused `addcmul_` where possible
+
+    `freqs_cis` is expected to contain real/imag parts in the final dimension (size 2),
+    and is reshaped for broadcasting over batch and heads.
+    """
+
+    # Reshape to pairs so we can apply complex rotation on the last dimension.
+    # Shape: (B, T, H, D/2, 2)
+    xshaped = x.reshape(*x.shape[:-1], -1, 2)
+    freqs_cis = freqs_cis.view(1, xshaped.size(1), 1, xshaped.size(3), 2)
+
+    # out[..., 0] = x0 * f0 - x1 * f1
+    # out[..., 1] = x1 * f0 + x0 * f1
+    out = torch.empty_like(xshaped)
+    torch.mul(xshaped[..., 0], freqs_cis[..., 0], out=out[..., 0])
+    out[..., 0].addcmul_(xshaped[..., 1], freqs_cis[..., 1], value=-1.0)
+    torch.mul(xshaped[..., 1], freqs_cis[..., 0], out=out[..., 1])
+    out[..., 1].addcmul_(xshaped[..., 0], freqs_cis[..., 1], value=1.0)
+
+    out = out.flatten(3)
+    return out.type_as(x)

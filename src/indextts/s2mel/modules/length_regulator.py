@@ -1,6 +1,6 @@
 from typing import override
 
-from jaxtyping import Float, Int
+from jaxtyping import Float
 from torch import Tensor, nn
 from torch.nn import functional as F
 
@@ -26,12 +26,12 @@ class InterpolateRegulator(nn.Module):
         self.content_in_proj = nn.Linear(in_channels, channels)
 
     @override
-    def forward(self, x: Float[Tensor, "b t c"], ylens: Int[Tensor, "b"]) -> Tensor:
+    def forward(self, x: Float[Tensor, "b t c"], ylens: int) -> Tensor:
         """Project to channels, resample in time, then refine and mask."""
         x = self.content_in_proj(x)  # (B, T, C)
 
         x = x.mT.contiguous()  # (B, C, T)
-        x = F.interpolate(x, size=int(ylens.max()))
+        x = F.interpolate(x, size=ylens)
 
         return self.model(x).mT.contiguous()  # (B, T, C)
 

@@ -8,7 +8,6 @@ from subprocess import CalledProcessError
 from typing import Any, cast
 
 import huggingface_hub as hf
-import librosa
 import safetensors.torch
 import torch
 import torch.nn.functional as F
@@ -17,6 +16,7 @@ import transformers
 from bigvganinference import bigvgan
 from jaxtyping import Float, Int
 from torch import Tensor
+from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
 
 from indextts.config import IndexTTSConfig
@@ -67,13 +67,14 @@ def find_most_similar_cosine(query_vector: Float[Tensor, "1 C"], matrix: Float[T
     return int(torch.argmax(similarities))
 
 
-def _load_and_cut_audio(audio_path: Path, sample_rate: int | float | None = None) -> tuple[Tensor, int]:
-    if not sample_rate:
-        audio, sample_rate = librosa.load(audio_path)
-    else:
-        audio, _ = librosa.load(audio_path, sr=sample_rate)
-    audio = torch.tensor(audio).unsqueeze(0)
-    assert audio.dim() == 2 and audio.size(0) == 1, "Only mono audio is supported."
+def _load_and_cut_audio(audio_path: Path, sample_rate: int | None = None) -> tuple[Tensor, int]:
+    samples = AudioDecoder(audio_path, num_channels=1, sample_rate=sample_rate).get_samples_played_in_range(
+        0, MAX_AUDIO_LENGTH_SECONDS
+    )
+    audio = samples.data
+    sample_rate = samples.sample_rate
+
+    assert audio.dim() == 2 and audio.size(0) == 1, f"Only mono audio is supported. Got shape: {audio.shape}"
     max_audio_samples = int(MAX_AUDIO_LENGTH_SECONDS * sample_rate)
 
     if audio.shape[1] > max_audio_samples:
@@ -434,6 +435,14 @@ class IndexTTS2:
         top_k = generation_kwargs.pop("top_k", 30)
         top_p = generation_kwargs.pop("top_p", 0.8)
 
+        emotion_vector = self.gpt.get_emo_vec(emotion_conditioning_embedding)
+        base_vector = self.gpt.get_emo_vec(speaker_conditioning_embedding)
+
+        emotion_vector = base_vector + emo_alpha * (emotion_vector - base_vector)
+
+        if weight_vector is not None and emotion_matrix is not None:
+            emotion_vector = torch.as_tensor(emotion_matrix + (1 - torch.sum(weight_vector)) * emotion_vector)
+
         wavs: list[Tensor] = []
         gpt_gen_time = Timer()
         gpt_forward_time = Timer()
@@ -450,16 +459,6 @@ class IndexTTS2:
 
             with torch.inference_mode():
                 with torch.autocast(self.device.type, dtype=self.dtype), gpt_gen_time:
-                    emotion_vector = self.gpt.get_emo_vec(emotion_conditioning_embedding)
-                    base_vector = self.gpt.get_emo_vec(speaker_conditioning_embedding)
-
-                    emotion_vector = base_vector + emo_alpha * (emotion_vector - base_vector)
-
-                    if weight_vector is not None and emotion_matrix is not None:
-                        emotion_vector = torch.as_tensor(
-                            emotion_matrix + (1 - torch.sum(weight_vector)) * emotion_vector
-                        )
-
                     speech_conditioning_latent = self.gpt.process_speech_condition(speaker_conditioning_embedding)
                     codes = self.gpt.inference_speech(
                         speech_conditioning_latent,
@@ -552,9 +551,9 @@ class IndexTTS2:
     ) -> Tensor:
         semantic_inference = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
         semantic_inference = semantic_inference.mT + self.s2mel.gpt_layer(latent)
-        target_lengths = (torch.tensor(code_lens, device=self.device) * 1.72).long()
+        target_lengths = (torch.tensor(code_lens, device=self.device) * 1.72).long().max().item()
 
-        cond = self.s2mel.length_regulator.__call__(semantic_inference, ylens=target_lengths)
+        cond = self.s2mel.length_regulator.__call__(semantic_inference, ylens=int(target_lengths))
         cond = torch.cat([prompt_condition, cond], dim=1)
         target = self.s2mel.cfm.inference(cond, ref_mel, style)
         return target[:, :, ref_mel.size(-1) :]
@@ -607,9 +606,7 @@ class IndexTTS2:
         audio_22k = torchaudio.functional.resample(audio, sr, 22050)
 
         mel = mel_spectrogram(audio_22k, sample_rate=22050)
-        feat = torchaudio.compliance.kaldi.fbank(
-            audio_16k.to(self.device), num_mel_bins=80, dither=0, sample_frequency=16000
-        )
+        feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(self.device), num_mel_bins=80, sample_frequency=16000)
         feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
         style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
 
@@ -620,6 +617,6 @@ class IndexTTS2:
 
         embedding = self.get_emb(inputs["input_features"], inputs["attention_mask"])
         prompt_condition = self.s2mel.length_regulator.__call__(
-            self.semantic_codec.quantize(embedding), ylens=torch.tensor([mel.size(2)], device=self.device)
+            self.semantic_codec.quantize(embedding), ylens=mel.size(2)
         )
         return prompt_condition, style, mel, embedding

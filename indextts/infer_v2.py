@@ -8,7 +8,6 @@ from subprocess import CalledProcessError
 from typing import Any, cast
 
 import huggingface_hub as hf
-import librosa
 import safetensors.torch
 import torch
 import torch.nn.functional as F
@@ -17,6 +16,7 @@ import transformers
 from bigvganinference import bigvgan
 from jaxtyping import Float, Int
 from torch import Tensor
+from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
 
 from indextts.config import IndexTTSConfig
@@ -67,13 +67,14 @@ def find_most_similar_cosine(query_vector: Float[Tensor, "1 C"], matrix: Float[T
     return int(torch.argmax(similarities))
 
 
-def _load_and_cut_audio(audio_path: Path, sample_rate: int | float | None = None) -> tuple[Tensor, int]:
-    if not sample_rate:
-        audio, sample_rate = librosa.load(audio_path)
-    else:
-        audio, _ = librosa.load(audio_path, sr=sample_rate)
-    audio = torch.tensor(audio).unsqueeze(0)
-    assert audio.dim() == 2 and audio.size(0) == 1, "Only mono audio is supported."
+def _load_and_cut_audio(audio_path: Path, sample_rate: int | None = None) -> tuple[Tensor, int]:
+    samples = AudioDecoder(audio_path, num_channels=1, sample_rate=sample_rate).get_samples_played_in_range(
+        0, MAX_AUDIO_LENGTH_SECONDS
+    )
+    audio = samples.data
+    sample_rate = samples.sample_rate
+
+    assert audio.dim() == 2 and audio.size(0) == 1, f"Only mono audio is supported. Got shape: {audio.shape}"
     max_audio_samples = int(MAX_AUDIO_LENGTH_SECONDS * sample_rate)
 
     if audio.shape[1] > max_audio_samples:

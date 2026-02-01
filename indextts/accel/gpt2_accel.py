@@ -1,10 +1,8 @@
-from typing import cast, override
+from typing import override
 
 import torch
 import transformers
-from jaxtyping import Float, Int
 from torch import Tensor, nn
-from transformers import Conv1D
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 from transformers.models.gpt2.modeling_gpt2 import GPT2Block, GPT2Model
 
@@ -12,23 +10,8 @@ from indextts.accel.attention import Attention
 from indextts.util import patch_call
 
 
-def _split_heads(tensor: Float[Tensor, "b t d"], num_heads: int, head_dim: int) -> Tensor:
-    new_shape = (*tensor.size()[:-1], num_heads, head_dim)
-    tensor = tensor.view(new_shape)
-    return tensor.permute(0, 2, 1, 3)  # (batch, head, seq_length, head_features)
-
-
-def _merge_heads(tensor: Float[Tensor, "b h t d"], num_heads: int, head_dim: int) -> Tensor:
-    tensor = tensor.permute(0, 2, 1, 3).contiguous()
-    new_shape = (*tensor.size()[:-2], num_heads * head_dim)
-    return tensor.view(new_shape)
-
-
 class _GPT2AccelAttention(nn.Module):
-    c_attn: Conv1D
-    c_proj: Conv1D
-
-    def __init__(self, config: transformers.PretrainedConfig, layer_idx: int | None = None) -> None:
+    def __init__(self, config: transformers.GPT2Config, layer_idx: int | None = None) -> None:
         super().__init__()
         self.config = config
         self.layer_idx = layer_idx
@@ -56,39 +39,39 @@ class _GPT2AccelAttention(nn.Module):
 
         self.scale_attn_weights = config.scale_attn_weights
 
-        self.c_attn = Conv1D(3 * self.embed_dim, self.embed_dim)
-        self.c_proj = Conv1D(self.embed_dim, self.embed_dim)
+        self.c_attn = transformers.Conv1D(3 * self.embed_dim, self.embed_dim)
+        self.c_proj = transformers.Conv1D(self.embed_dim, self.embed_dim)
 
         self.attn_dropout = nn.Dropout(config.attn_pdrop)
         self.resid_dropout = nn.Dropout(config.resid_pdrop)
 
         scale = (self.head_dim**-0.5) if self.scale_attn_weights else 1.0
-        self.accel_attn: Attention = Attention(self.num_heads, self.head_dim, scale, self.num_heads)
+        self.accel_attn = Attention(self.num_heads, self.head_dim, scale, self.num_heads)
 
     @override
     def forward(
         self,
-        hidden_states: Float[Tensor, "b t d"],
-        layer_past: tuple[Float[Tensor, ""], Float[Tensor, ""]] | None = None,
-        attention_mask: Int[Tensor, ""] | None = None,
-        head_mask: Float[Tensor, ""] | None = None,
-        encoder_hidden_states: Float[Tensor, ""] | None = None,
-        encoder_attention_mask: Int[Tensor, ""] | None = None,
+        hidden_states: Tensor,
+        layer_past: tuple[Tensor, Tensor] | None = None,
+        attention_mask: Tensor | None = None,
+        head_mask: Tensor | None = None,
+        encoder_hidden_states: Tensor | None = None,
+        encoder_attention_mask: Tensor | None = None,
         use_cache: bool = False,
         output_attentions: bool = False,
-        past_key_value: tuple[Float[Tensor, ""], Float[Tensor, ""]] | None = None,
+        past_key_value: tuple[Tensor, Tensor] | None = None,
         **kwargs: object,
-    ) -> tuple[Tensor, None] | tuple[Tensor, None, None]:
+    ) -> tuple[Tensor, None, None] | tuple[Tensor, None]:
         if encoder_hidden_states is not None:
             raise NotImplementedError("Cross attention not supported in accel mode")
 
-        qkv = cast(Tensor, self.c_attn(hidden_states))
+        qkv = self.c_attn(hidden_states)
         query, key, value = qkv.split(self.split_size, dim=2)
 
         # [B, T, H*D] -> [B, H, T, D]
-        query = _split_heads(query, self.num_heads, self.head_dim)
-        key = _split_heads(key, self.num_heads, self.head_dim)
-        value = _split_heads(value, self.num_heads, self.head_dim)
+        query = self._split_heads(query, self.num_heads, self.head_dim)
+        key = self._split_heads(key, self.num_heads, self.head_dim)
+        value = self._split_heads(value, self.num_heads, self.head_dim)
 
         # flatten to [B*T, H, D]
         bsz, num_heads, seq_len, head_dim = query.shape
@@ -113,40 +96,52 @@ class _GPT2AccelAttention(nn.Module):
         # Reshape back: [B*T, H, D] -> [B, H, T, D]
         attn_output = o_flat.view(bsz, seq_len, num_heads, head_dim).transpose(1, 2)
 
-        attn_output = _merge_heads(attn_output, self.num_heads, self.head_dim)
+        attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
 
         attn_output = self.c_proj(attn_output)
-        attn_output = cast(Tensor, self.resid_dropout(attn_output))
+        attn_output = self.resid_dropout(attn_output)
 
+        outputs = (attn_output, None)
         if output_attentions:
-            return (attn_output, None, None)
-        return (attn_output, None)
+            outputs += (None,)
+
+        return outputs
+
+    def _split_heads(self, tensor: Tensor, num_heads: int, head_dim: int) -> Tensor:
+        new_shape = (*tensor.size()[:-1], num_heads, head_dim)
+        tensor = tensor.view(new_shape)
+        return tensor.permute(0, 2, 1, 3)  # (batch, head, seq_length, head_features)
+
+    def _merge_heads(self, tensor: Tensor, num_heads: int, head_dim: int) -> Tensor:
+        tensor = tensor.permute(0, 2, 1, 3).contiguous()
+        new_shape = (*tensor.size()[:-2], num_heads * head_dim)
+        return tensor.view(new_shape)
 
 
 class _GPT2AccelBlock(GPT2Block):
-    def __init__(self, config: transformers.PretrainedConfig, layer_idx: int | None = None) -> None:
+    def __init__(self, config: transformers.GPT2Config, layer_idx: int | None = None) -> None:
         super().__init__(config, layer_idx)
         self.attn = _GPT2AccelAttention(config, layer_idx)
 
 
 class GPT2AccelModel(GPT2Model):
-    def __init__(self, config: transformers.PretrainedConfig) -> None:
+    def __init__(self, config: transformers.GPT2Config) -> None:
         super().__init__(config)
         self.h = nn.ModuleList([_GPT2AccelBlock(config, layer_idx=i) for i in range(config.num_hidden_layers)])
 
     @override
     def forward(
         self,
-        input_ids: Int[Tensor, "b t"] | None = None,
+        input_ids: Tensor | None = None,
         past_key_values: tuple[tuple[Tensor]] | transformers.Cache | None = None,
-        cache_position: Int[Tensor, ""] | None = None,
-        attention_mask: Int[Tensor, "b t"] | None = None,
-        token_type_ids: Int[Tensor, ""] | None = None,
-        position_ids: Int[Tensor, "b t"] | None = None,
-        head_mask: Float[Tensor, ""] | None = None,
-        inputs_embeds: Float[Tensor, "b t d"] | None = None,
-        encoder_hidden_states: Float[Tensor, ""] | None = None,
-        encoder_attention_mask: Int[Tensor, ""] | None = None,
+        cache_position: Tensor | None = None,
+        attention_mask: Tensor | None = None,
+        token_type_ids: Tensor | None = None,
+        position_ids: Tensor | None = None,
+        head_mask: Tensor | None = None,
+        inputs_embeds: Tensor | None = None,
+        encoder_hidden_states: Tensor | None = None,
+        encoder_attention_mask: Tensor | None = None,
         use_cache: bool | None = None,
         output_attentions: bool | None = None,
         output_hidden_states: bool | None = None,

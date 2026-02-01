@@ -100,7 +100,6 @@ extend-select = [
   "FURB",
   "I",
   "PLR1711",
-  "PLR6301",
   "PTH",
   "PYI",
   "RET",

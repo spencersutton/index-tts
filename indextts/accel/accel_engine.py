@@ -1,58 +1,27 @@
 import sys
-from collections.abc import Mapping, MutableMapping, Sequence
-from typing import ClassVar, override
+from collections.abc import Sequence
+from typing import Final, cast
 
 import torch
-from jaxtyping import Float, Int
 from torch import Tensor, nn
 
-from indextts.accel.attention import ForwardContext
+from indextts.accel.attention import ForwardContext, get_forward_context, reset_forward_context, set_forward_context
 from indextts.accel.gpt2_accel import GPT2AccelModel
 from indextts.accel.kv_manager import KVCacheManager, Seq
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
-from indextts.util import patch_call, unwrap
+from indextts.util import unwrap
 
-
-class _Sampler(nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-
-    @torch.compile
-    @override
-    def forward(self, logits: Float[Tensor, "b v"], temperatures: Float[Tensor, "b"]) -> Tensor:
-        temperatures = temperatures.to(logits.device).clamp(min=1e-8)
-        greedy_mask = temperatures < 1e-5
-        temp_for_scaling = torch.where(greedy_mask, 1.0, temperatures)
-        scaled_logits = logits / temp_for_scaling.unsqueeze(-1)
-        probs = torch.softmax(scaled_logits, dim=-1, dtype=torch.float32)
-        q = torch.empty_like(probs)
-        q.exponential_()
-        sampled_tokens = probs.div_(q).argmax(dim=-1)
-        greedy_tokens = logits.argmax(dim=-1)
-        return torch.where(greedy_mask, greedy_tokens, sampled_tokens)
-
-    @patch_call(forward)
-    def __call__(self) -> None: ...
+GRAPH_BS: Final[Sequence[int]] = [1, 2, 4, 8]
 
 
 class AccelInferenceEngine:
-    model: GPT2AccelModel
-    lm_head: nn.Sequential
-    kv_manager: KVCacheManager
-    sampler: _Sampler
-    current_sequences: list[Seq]
-    graphs: MutableMapping[int, torch.cuda.CUDAGraph]
-    graph_vars: Mapping[str, Tensor] | None = None
-    graph_pool: Sequence[int] | None = None
-    graph_captured: bool
-    graph_bs: ClassVar[list[int]] = [1, 2, 4, 8]
     _tts_mode: bool = False
     _tts_prompt_len: int = 0
 
     def __init__(
         self,
         model: GPT2AccelModel,
-        lm_head: nn.Sequential,
+        lm_head: nn.Sequential | None,
         num_layers: int,
         num_heads: int,
         head_dim: int,
@@ -88,8 +57,63 @@ class AccelInferenceEngine:
         self.kv_manager.wire_kv_cache_to_model(model)
         self.sampler = _Sampler()
         self.current_sequences = []
-        self.graphs = {}
+        self.graphs: dict[int, torch.cuda.CUDAGraph] = {}
+        self.graph_vars: dict[str, Tensor] | None = None
+        # torch.cuda graph pool types are inconsistently stubbed across versions
+        self.graph_pool: object | None = None
         self.graph_captured = False
+
+    def _prepare_prefill(self, requests: Sequence[Seq]) -> tuple[Tensor, Tensor]:
+        input_ids_list: list[int] = []
+        positions_list: list[int] = []
+        cu_seqlens_q_list = [0]
+        cu_seqlens_k_list = [0]
+        max_seqlen_q = 0
+        max_seqlen_k = 0
+        slot_mapping_list: list[int] = []
+
+        for req in requests:
+            seqlen = len(req)
+            input_ids_list.extend(req.token_ids[req.num_cached_tokens :])
+            positions_list.extend(list(range(req.num_cached_tokens, seqlen)))
+            seqlen_q = seqlen - req.num_cached_tokens
+            seqlen_k = seqlen
+            cu_seqlens_q_list.append(cu_seqlens_q_list[-1] + seqlen_q)
+            cu_seqlens_k_list.append(cu_seqlens_k_list[-1] + seqlen_k)
+            max_seqlen_q = max(seqlen_q, max_seqlen_q)
+            max_seqlen_k = max(seqlen_k, max_seqlen_k)
+
+            if req.block_table:
+                num_cached = req.num_cached_tokens
+                num_total = len(req)
+
+                for token_idx in range(num_cached, num_total):
+                    block_idx = token_idx // self.block_size
+                    block_offset = token_idx % self.block_size
+                    block_id = req.block_table[block_idx]
+                    slot_idx = block_id * self.block_size + block_offset
+                    slot_mapping_list.append(slot_idx)
+
+        input_ids = torch.tensor(input_ids_list, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+        positions = torch.tensor(positions_list, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+        cu_seqlens_q = torch.tensor(cu_seqlens_q_list, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+        cu_seqlens_k = torch.tensor(cu_seqlens_k_list, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+        slot_mapping = torch.tensor(slot_mapping_list, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+
+        block_tables = None
+        if cu_seqlens_k[-1] > cu_seqlens_q[-1]:
+            max_len = max(len(req.block_table) for req in requests)
+            block_tables_list = []
+            for req in requests:
+                table = req.block_table + [-1] * (max_len - len(req.block_table))
+                block_tables_list.append(table)
+            block_tables = torch.tensor(block_tables_list, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+
+        set_forward_context(
+            True, cu_seqlens_q, cu_seqlens_k, max_seqlen_q, max_seqlen_k, slot_mapping, None, block_tables
+        )
+
+        return input_ids, positions
 
     def _prepare_decode(self, requests: Sequence[Seq]) -> tuple[Tensor, Tensor]:
         if not requests:
@@ -105,7 +129,7 @@ class AccelInferenceEngine:
 
             pos = len(req) - 1
             if self._tts_mode:
-                pos -= self._tts_prompt_len - 1
+                pos = pos - (self._tts_prompt_len - 1)
             positions.append(pos)
 
             context_lens.append(len(req))
@@ -128,47 +152,13 @@ class AccelInferenceEngine:
             f"block_tables batch size mismatch: {block_tables.size(0)} vs {len(requests)}"
         )
 
-        ForwardContext.set_context(
-            False, slot_mapping=slot_mapping, context_lens=context_lens, block_tables=block_tables
-        )
+        set_forward_context(False, slot_mapping=slot_mapping, context_lens=context_lens, block_tables=block_tables)
 
         return input_ids, positions
 
-    @staticmethod
-    def _prepare_sample(requests: list[Seq], temperature: float) -> Tensor:
+    def _prepare_sample(self, requests: list[Seq], temperature: float) -> Tensor:
         temperatures = [temperature] * len(requests)
         return torch.tensor(temperatures, dtype=torch.float32, pin_memory=True).cuda(non_blocking=True)
-
-    def _forward_decode(
-        self,
-        input_ids: Tensor,
-        positions: Tensor,
-        tts_mel_embedding: nn.Embedding | None,
-        tts_text_pos_embedding: LearnedPositionEmbeddings | None,
-        *,
-        inputs_embeds_buffer: Tensor | None = None,
-        use_tts: bool | None = None,
-    ) -> Tensor:
-        use_tts_embedding = self._tts_mode if use_tts is None else use_tts
-
-        if use_tts_embedding:
-            if tts_mel_embedding is None or tts_text_pos_embedding is None:
-                raise RuntimeError("TTS embeddings required for TTS decode")
-            emb = unwrap(tts_mel_embedding)(input_ids)
-            pos_clamped = torch.clamp(positions, min=0)
-            pos_emb = unwrap(tts_text_pos_embedding).emb(pos_clamped)
-            if inputs_embeds_buffer is None:
-                inputs_embeds = emb + pos_emb
-            else:
-                inputs_embeds_buffer[: input_ids.size(0)] = emb + pos_emb
-                inputs_embeds = inputs_embeds_buffer[: input_ids.size(0)]
-            model_output = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True)
-        else:
-            model_output = self.model(input_ids=input_ids.unsqueeze(1), return_dict=True)
-
-        assert not isinstance(model_output, tuple)
-        out = unwrap(model_output.last_hidden_state)
-        return out.squeeze(1) if out.dim() == 3 else out
 
     def _capture_cuda_graphs(
         self,
@@ -189,43 +179,53 @@ class AccelInferenceEngine:
 
         use_tts = tts_mel_embedding is not None and tts_text_pos_embedding is not None
 
-        for bs in reversed(self.graph_bs):
+        for bs in reversed(GRAPH_BS):
             graph = torch.cuda.CUDAGraph()
 
             slot_mapping[:bs] = torch.arange(bs, dtype=torch.int32, device="cuda")
             context_lens[:bs] = bs + 1
             block_tables[:bs, :] = 0
 
-            ForwardContext.set_context(
+            set_forward_context(
                 False, slot_mapping=slot_mapping[:bs], context_lens=context_lens[:bs], block_tables=block_tables[:bs]
             )
 
             # warmup
-            outputs[:bs] = self._forward_decode(
-                input_ids[:bs],
-                positions[:bs],
-                tts_mel_embedding,
-                tts_text_pos_embedding,
-                inputs_embeds_buffer=inputs_embeds_buffer,
-                use_tts=use_tts,
-            )
+            if use_tts:
+                assert tts_mel_embedding is not None
+                assert tts_text_pos_embedding is not None
+                emb = tts_mel_embedding(input_ids[:bs])
+                pos_clamped = torch.clamp(positions[:bs], min=0)
+                pos_emb = tts_text_pos_embedding.emb(pos_clamped)
+                inputs_embeds_buffer[:bs] = emb + pos_emb
+                model_output = self.model(inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True)
+            else:
+                model_output = self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True)
+            assert not isinstance(model_output, tuple)
+            hidden_state = unwrap(model_output.last_hidden_state)
+            outputs[:bs] = hidden_state.squeeze(1) if hidden_state.dim() == 3 else hidden_state
 
             with torch.cuda.graph(graph, self.graph_pool):
-                outputs[:bs] = self._forward_decode(
-                    input_ids[:bs],
-                    positions[:bs],
-                    tts_mel_embedding,
-                    tts_text_pos_embedding,
-                    inputs_embeds_buffer=inputs_embeds_buffer,
-                    use_tts=use_tts,
-                )
+                if use_tts:
+                    assert tts_mel_embedding is not None
+                    assert tts_text_pos_embedding is not None
+                    emb = tts_mel_embedding(input_ids[:bs])
+                    pos_clamped = torch.clamp(positions[:bs], min=0)
+                    pos_emb = tts_text_pos_embedding.emb(pos_clamped)
+                    inputs_embeds_buffer[:bs] = emb + pos_emb
+                    model_output = self.model(inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True)
+                else:
+                    model_output = self.model(input_ids=input_ids[:bs].unsqueeze(1), return_dict=True)
+                assert not isinstance(model_output, tuple)
+                hidden_state = unwrap(model_output.last_hidden_state)
+                outputs[:bs] = hidden_state.squeeze(1) if hidden_state.dim() == 3 else hidden_state
 
             if self.graph_pool is None:
                 self.graph_pool = graph.pool()
 
             self.graphs[bs] = graph
             torch.cuda.synchronize()
-            ForwardContext.reset_context()
+            reset_forward_context()
 
         self.graph_vars = {
             "input_ids": input_ids,
@@ -236,12 +236,12 @@ class AccelInferenceEngine:
             "outputs": outputs,
             "inputs_embeds": inputs_embeds_buffer,
         }
-        print(f"CUDA graphs captured for batch sizes: {self.graph_bs}")
+        print(f"CUDA graphs captured for batch sizes: {GRAPH_BS}")
 
     def _run_decode_with_graph(
         self,
-        input_ids: Int[Tensor, "b"],
-        positions: Int[Tensor, "b"],
+        input_ids: Tensor,
+        positions: Tensor,
         context: ForwardContext,
         tts_mel_embedding: nn.Embedding | None = None,
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,
@@ -250,15 +250,35 @@ class AccelInferenceEngine:
         use_tts_embedding = self._tts_mode
 
         if not self.use_cuda_graph or not self.graphs:
-            return self._forward_decode(
-                input_ids, positions, tts_mel_embedding, tts_text_pos_embedding, use_tts=use_tts_embedding
-            )
+            if use_tts_embedding:
+                assert tts_mel_embedding is not None
+                assert tts_text_pos_embedding is not None
+                inputs_embeds = tts_mel_embedding(input_ids)
+                pos_clamped = torch.clamp(positions, min=0)
+                pos_emb = tts_text_pos_embedding.emb(pos_clamped)
+                inputs_embeds = inputs_embeds + pos_emb
+                model_output = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True)
+            else:
+                model_output = self.model(input_ids=input_ids.unsqueeze(1), return_dict=True)
+            assert not isinstance(model_output, tuple)
+            out = unwrap(model_output.last_hidden_state)
+            return out.squeeze(1) if out.dim() == 3 else out
 
-        graph_bs = next((x for x in self.graph_bs if x >= bs), None)
+        graph_bs = next((x for x in GRAPH_BS if x >= bs), None)
         if graph_bs is None:
-            return self._forward_decode(
-                input_ids, positions, tts_mel_embedding, tts_text_pos_embedding, use_tts=use_tts_embedding
-            )
+            if use_tts_embedding:
+                assert tts_mel_embedding is not None
+                assert tts_text_pos_embedding is not None
+                inputs_embeds = tts_mel_embedding(input_ids)
+                pos_clamped = torch.clamp(positions, min=0)
+                pos_emb = tts_text_pos_embedding.emb(pos_clamped)
+                inputs_embeds = inputs_embeds + pos_emb
+                model_output = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True)
+            else:
+                model_output = self.model(input_ids=input_ids.unsqueeze(1), return_dict=True)
+            assert not isinstance(model_output, tuple)
+            out = unwrap(model_output.last_hidden_state)
+            return out.squeeze(1) if out.dim() == 3 else out
 
         graph = self.graphs[graph_bs]
         graph_vars = self.graph_vars
@@ -269,11 +289,13 @@ class AccelInferenceEngine:
         graph_vars["input_ids"][:bs] = input_ids
         graph_vars["positions"][:bs] = positions
         graph_vars["slot_mapping"].fill_(-1)
-        graph_vars["slot_mapping"][:bs] = torch.as_tensor(context.slot_mapping)
+        assert context.slot_mapping is not None
+        graph_vars["slot_mapping"][:bs] = context.slot_mapping
         graph_vars["context_lens"].zero_()
-        graph_vars["context_lens"][:bs] = torch.as_tensor(context.context_lens)
+        assert context.context_lens is not None
+        graph_vars["context_lens"][:bs] = context.context_lens
         graph_vars["block_tables"][:bs, :].fill_(-1)
-        context.block_tables = unwrap(context.block_tables)
+        assert context.block_tables is not None
         graph_vars["block_tables"][:bs, : context.block_tables.size(1)] = context.block_tables
         graph.replay()
 
@@ -281,13 +303,14 @@ class AccelInferenceEngine:
 
     def generate(
         self,
-        input_ids: Int[Tensor, "b t"],
+        input_ids: Tensor,
         max_new_tokens: int = 100,
         temperature: float = 1.0,
+        top_k: int = 50,  # pyright: ignore[reportUnusedParameter]
+        top_p: float = 1.0,  # pyright: ignore[reportUnusedParameter]
         stop_tokens: list[int] | None = None,
-        attention_mask: Int[Tensor, "b t"] | None = None,
-        tts_embeddings: Float[Tensor, "b t d"]
-        | None = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
+        attention_mask: Tensor | None = None,
+        tts_embeddings: Tensor | None = None,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
         tts_mel_embedding: nn.Embedding | None = None,  # TTS: mel_embedding layer
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,  # TTS: text_pos_embedding layer
     ) -> Tensor:
@@ -335,8 +358,9 @@ class AccelInferenceEngine:
             and (attention_mask.sum(dim=1) != attention_mask.size(1)).any()
         )
 
-        if is_varlen_batch and attention_mask is not None:
-            seq_lens = [int(attention_mask[i].sum().item()) for i in range(batch_size)]
+        if is_varlen_batch:
+            assert attention_mask is not None
+            seq_lens: list[int] = [int(attention_mask[i].sum().item()) for i in range(batch_size)]
         else:
             seq_lens = [actual_seq_len] * batch_size
 
@@ -347,12 +371,14 @@ class AccelInferenceEngine:
             if tts_embeddings is not None and seq_len > 0:
                 token_ids[-1] = int(input_ids[i, -1].item()) if input_ids.size(1) > 0 else 1
             else:
-                token_ids = [int(x) for x in input_ids[i]]
+                token_ids = [int(x) for x in input_ids[i].tolist()]
             req = Seq(token_ids)
             self.kv_manager.allocate(req)
             sequences.append(req)
 
         self.current_sequences = sequences
+
+        _prefill_ids, _prefill_pos = self._prepare_prefill(sequences)
 
         if tts_embeddings is not None and tts_mel_embedding is not None and tts_text_pos_embedding is not None:
             start_token_id = input_ids[0, -1] if input_ids.size(1) > 0 else 8192
@@ -361,7 +387,7 @@ class AccelInferenceEngine:
 
             start_pos = torch.tensor([[tts_embeddings.size(1)]], device="cuda", dtype=torch.long)
             pos_emb = tts_text_pos_embedding.emb(start_pos)
-            start_emb += pos_emb
+            start_emb = start_emb + pos_emb
             start_emb = start_emb.repeat(batch_size, 1, 1)
 
             if is_varlen_batch:
@@ -386,17 +412,24 @@ class AccelInferenceEngine:
         hidden_states = unwrap(model_output.last_hidden_state)
 
         if is_varlen_batch:
-            context = ForwardContext.get_context()
-            cu_seqlens = unwrap(context.cu_seqlens_q).cpu().tolist()
+            context = get_forward_context()
+            assert context.cu_seqlens_q is not None
+            cu_seqlens = cast(list[int], context.cu_seqlens_q.cpu().tolist())
             last_hidden = torch.stack([hidden_states[0, int(cu_seqlens[i + 1]) - 1] for i in range(batch_size)])
         else:
             last_hidden = hidden_states[:, -1, :]  # [batch_size, hidden_size]
 
-        ForwardContext.reset_context()
+        reset_forward_context()
 
-        if last_hidden.dtype != next(self.lm_head.parameters()).dtype:
-            last_hidden = last_hidden.to(next(self.lm_head.parameters()).dtype)
-        logits = self.lm_head(last_hidden)  # [batch_size, vocab_size]
+        if self.lm_head is not None:
+            if last_hidden.dtype != next(self.lm_head.parameters()).dtype:
+                last_hidden = last_hidden.to(next(self.lm_head.parameters()).dtype)
+            logits = self.lm_head(last_hidden)  # [batch_size, vocab_size]
+        else:
+            compute_logits = getattr(self.model, "compute_logits", None)
+            if not callable(compute_logits):
+                raise AttributeError("Model does not provide compute_logits and lm_head is None")
+            logits = cast(Tensor, compute_logits(last_hidden))  # [batch_size, vocab_size]
 
         temperatures = self._prepare_sample(sequences, temperature)
         if temperature > 0:
@@ -404,14 +437,16 @@ class AccelInferenceEngine:
         else:
             first_token = torch.argmax(logits, dim=-1)
 
-        generated_tokens: list[list[float]] = [[] for _ in range(batch_size)]
+        first_token_list = first_token.tolist()
+
+        generated_tokens: list[list[int]] = [[] for _ in range(batch_size)]
         is_finished = [False] * batch_size
 
-        for i, token_id in enumerate(first_token):
+        for i, token_id in enumerate(first_token_list):
+            token_id = int(token_id)
             if stop_tokens and token_id in stop_tokens:
                 is_finished[i] = True
             else:
-                token_id = int(token_id)
                 generated_tokens[i].append(token_id)
                 sequences[i].append_token(token_id)
                 self.kv_manager.append_to_seq(sequences[i])
@@ -421,19 +456,20 @@ class AccelInferenceEngine:
                 self.kv_manager.remove_seq(req)
             self.current_sequences = []
 
-            output_ids = []
+            output_ids: list[list[int]] = []
             for i in range(batch_size):
-                full_sequence = input_ids[i].tolist() + generated_tokens[i]
+                prompt_tokens = [int(x) for x in input_ids[i].tolist()]
+                full_sequence = prompt_tokens + generated_tokens[i]
                 output_ids.append(full_sequence)
 
             return torch.tensor(output_ids, dtype=torch.long, device=device)
 
         remaining_tokens = max_new_tokens - 1
 
-        for _ in range(remaining_tokens):
+        for _step in range(remaining_tokens):
             decode_ids, decode_pos = self._prepare_decode(sequences)
 
-            context = ForwardContext.get_context()
+            context = get_forward_context()
             hidden_states = self._run_decode_with_graph(
                 decode_ids,
                 decode_pos,
@@ -443,18 +479,25 @@ class AccelInferenceEngine:
             )
 
             # Get logits
-            logits = self.lm_head(hidden_states)  # [batch_size, vocab_size]
+            if self.lm_head is not None:
+                logits: Tensor = self.lm_head(hidden_states)  # [batch_size, vocab_size]
+            else:
+                compute_logits = getattr(self.model, "compute_logits", None)
+                if not callable(compute_logits):
+                    raise AttributeError("Model does not provide compute_logits and lm_head is None")
+                logits = cast(Tensor, compute_logits(hidden_states))  # [batch_size, vocab_size]
 
-            ForwardContext.reset_context()
+            reset_forward_context()
 
             temperatures = self._prepare_sample(sequences, temperature)
             if temperature > 0:
                 next_token = self.sampler(logits, temperatures)
             else:
                 next_token = torch.argmax(logits, dim=-1)
-            next_token_list = [int(x) for x in next_token]
+            next_token_list = next_token.tolist()
 
             for i, token_id in enumerate(next_token_list):
+                token_id = int(token_id)
                 if is_finished[i]:
                     continue
                 if stop_tokens and token_id in stop_tokens:
@@ -474,7 +517,8 @@ class AccelInferenceEngine:
         pad_token = stop_tokens[0] if stop_tokens else 0
 
         if is_varlen_batch:
-            max_prompt_len = unwrap(attention_mask).size(1)
+            assert attention_mask is not None
+            max_prompt_len = attention_mask.size(1)
             output_ids = []
 
             for i in range(batch_size):
@@ -497,3 +541,14 @@ class AccelInferenceEngine:
         assert output.size(0) == batch_size, f"Output batch size mismatch: {output.size(0)} != {batch_size}"
 
         return output
+
+
+class _Sampler(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+
+    @torch.compile
+    def forward(self, logits: Tensor, temperatures: Tensor) -> Tensor:
+        logits = logits.float().div_(temperatures.unsqueeze(dim=1))
+        probs = torch.softmax(logits, dim=-1)
+        return probs.div_(torch.empty_like(probs).exponential_(1).clamp_min_(1e-10)).argmax(dim=-1)

@@ -1,12 +1,11 @@
 # pyright: reportMissingImports=false
 from dataclasses import dataclass
-from typing import ClassVar, no_type_check, override
+from typing import no_type_check, override
 
 import torch
 import triton
 import triton.language as tl
 from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache  # pyright: ignore[reportUnknownVariableType]
-from jaxtyping import Float, Int
 from torch import Tensor, nn
 
 from indextts.util import patch_call
@@ -23,45 +22,45 @@ class ForwardContext:
     context_lens: Tensor | None = None
     block_tables: Tensor | None = None
 
-    _instance: ClassVar["ForwardContext"]
 
-    @classmethod
-    def get_context(cls) -> "ForwardContext":
-        if not hasattr(cls, "_instance"):
-            cls._instance = cls()
-        return cls._instance
-
-    @classmethod
-    def set_context(
-        cls,
-        is_prefill: bool,
-        cu_seqlens_q: Int[Tensor, "b"] | None = None,
-        cu_seqlens_k: Int[Tensor, "b"] | None = None,
-        max_seqlen_q: int = 0,
-        max_seqlen_k: int = 0,
-        slot_mapping: Int[Tensor, "b"] | None = None,
-        context_lens: Int[Tensor, "b"] | None = None,
-        block_tables: Int[Tensor, "b"] | None = None,
-    ) -> None:
-        cls._instance = cls(
-            is_prefill, cu_seqlens_q, cu_seqlens_k, max_seqlen_q, max_seqlen_k, slot_mapping, context_lens, block_tables
-        )
-
-    @classmethod
-    def reset_context(cls) -> None:
-        cls._instance = cls()
+_forward_context = ForwardContext()
 
 
-@triton.jit  # pyright: ignore[reportUntypedFunctionDecorator]
+def get_forward_context() -> ForwardContext:
+    return _forward_context
+
+
+def set_forward_context(
+    is_prefill: bool,
+    cu_seqlens_q: Tensor | None = None,
+    cu_seqlens_k: Tensor | None = None,
+    max_seqlen_q: int = 0,
+    max_seqlen_k: int = 0,
+    slot_mapping: Tensor | None = None,
+    context_lens: Tensor | None = None,
+    block_tables: Tensor | None = None,
+) -> None:
+    global _forward_context
+    _forward_context = ForwardContext(
+        is_prefill, cu_seqlens_q, cu_seqlens_k, max_seqlen_q, max_seqlen_k, slot_mapping, context_lens, block_tables
+    )
+
+
+def reset_forward_context() -> None:
+    global _forward_context
+    _forward_context = ForwardContext()
+
+
+@triton.jit  # pyright: ignore
 @no_type_check
-def _store_kvcache_kernel(
-    key_ptr: torch.Tensor,
-    key_stride: int,
-    value_ptr: torch.Tensor,
-    value_stride: int,
-    k_cache_ptr: torch.Tensor,
-    v_cache_ptr: torch.Tensor,
-    slot_mapping_ptr: torch.Tensor,
+def store_kvcache_kernel(
+    key_ptr,  # noqa
+    key_stride,  # noqa
+    value_ptr,  # noqa
+    value_stride,  # noqa
+    k_cache_ptr,  # noqa
+    v_cache_ptr,  # noqa
+    slot_mapping_ptr,  # noqa
     D: tl.constexpr,
 ) -> None:
     BLOCK_SIZE: tl.constexpr = 2048
@@ -85,20 +84,14 @@ def _store_kvcache_kernel(
         d_offset += BLOCK_SIZE
 
 
-def _store_kvcache(
-    key: Float[Tensor, "n h d"],
-    value: Float[Tensor, "n h d"],
-    k_cache: Float[Tensor, "n d"],
-    v_cache: Float[Tensor, "n d"],
-    slot_mapping: Int[Tensor, "n"],
-) -> None:
+def store_kvcache(key: Tensor, value: Tensor, k_cache: Tensor, v_cache: Tensor, slot_mapping: Tensor) -> None:
     N, num_heads, head_dim = key.shape
     D = num_heads * head_dim
     assert key.stride(-1) == 1 and value.stride(-1) == 1
     assert key.stride(1) == head_dim and value.stride(1) == head_dim
     assert k_cache.stride(1) == D and v_cache.stride(1) == D
     assert slot_mapping.numel() == N
-    _store_kvcache_kernel[N,](key, key.stride(0), value, value.stride(0), k_cache, v_cache, slot_mapping, D)  # pyright: ignore[reportIndexIssue]
+    store_kvcache_kernel[N,](key, key.stride(0), value, value.stride(0), k_cache, v_cache, slot_mapping, D)  # pyright: ignore
 
 
 class Attention(nn.Module):
@@ -111,17 +104,17 @@ class Attention(nn.Module):
         self.k_cache = self.v_cache = torch.tensor([])
 
     @override
-    def forward(self, q: Float[Tensor, "b h d"], k: Float[Tensor, "b h d"], v: Float[Tensor, "b h d"]) -> Tensor:
-        context = ForwardContext.get_context()
+    def forward(self, q: Tensor, k: Tensor, v: Tensor) -> Tensor:
+        context = get_forward_context()
         k_cache, v_cache = self.k_cache, self.v_cache
 
         if k_cache.numel() and v_cache.numel() and context.slot_mapping is not None:
-            _store_kvcache(k, v, k_cache, v_cache, context.slot_mapping)
+            store_kvcache(k, v, k_cache, v_cache, context.slot_mapping)
 
         if context.is_prefill:
             if context.block_tables is not None:
                 k, v = k_cache, v_cache
-            o = flash_attn_varlen_func(  # pyright: ignore[reportUnknownVariableType]
+            o: Tensor = flash_attn_varlen_func(  # pyright: ignore
                 q,
                 k,
                 v,
@@ -134,7 +127,7 @@ class Attention(nn.Module):
                 block_table=context.block_tables,
             )
         else:
-            o = flash_attn_with_kvcache(  # pyright: ignore[reportUnknownVariableType]
+            o: Tensor = flash_attn_with_kvcache(  # pyright: ignore
                 q.unsqueeze(1),
                 k_cache,
                 v_cache,
@@ -143,7 +136,7 @@ class Attention(nn.Module):
                 softmax_scale=self.scale,
                 causal=True,
             )
-        return o  # pyright: ignore[reportUnknownVariableType]
+        return o  # pyright: ignore
 
     @patch_call(forward)
     def __call__(self) -> None: ...

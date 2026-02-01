@@ -143,6 +143,7 @@ class TextNormalizer:
         #     "CMake": "C Make",
         # }
         self.term_glossary: dict[str, dict[str, str] | str] = {}
+        self.load()
 
     @staticmethod
     def match_email(email: str) -> bool:

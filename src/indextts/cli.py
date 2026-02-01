@@ -1,6 +1,10 @@
 import sys
 from pathlib import Path
 
+import pyinstrument
+
+from indextts.profiling import generate_profile_report
+
 
 def main() -> None:
     import argparse
@@ -29,6 +33,8 @@ def main() -> None:
     parser.add_argument(
         "--use_accel", action="store_true", default=False, help="Enable acceleration engine for GPT2 (experimental)."
     )
+    parser.add_argument("--profile", action="store_true", default=False, help="Enable profiling")
+
     args = parser.parse_args()
     voice_file = Path(args.voice)
     output_path = Path(args.output_path)
@@ -72,10 +78,18 @@ def main() -> None:
     print("Importing IndexTTS2...")
     from indextts.infer_v2 import IndexTTS2
 
+    profiler = pyinstrument.Profiler()
+    if args.profile:
+        profiler.start()
+
     print("Initializing IndexTTS2...")
     tts = IndexTTS2(model_dir=model_dir, use_fp16=args.fp16, device=args.device, use_accel=args.use_accel)
     print("Start inference...")
     tts.infer(output_path=output_path, spk_audio_prompt=voice_file, text=args.text.strip())
+
+    if args.profile:
+        profiler.stop()
+        generate_profile_report(profiler)
 
 
 if __name__ == "__main__":

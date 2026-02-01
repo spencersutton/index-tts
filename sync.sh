@@ -1,4 +1,5 @@
-set -euo pipefail
+#!/bin/zsh
+setopt errexit nounset pipefail
 
 LOCAL_DIR=~/projects/index-tts/
 REMOTE_DIR=${LOCAL_DIR}
@@ -12,6 +13,8 @@ VOICE_FILE='outputs/mizora.ogg'
 OUTPUT_FILE='outputs/gen.wav'
 
 rsync --info=NAME -rc -C --exclude='.serena' -f ':- .gitignore' ${LOCAL_DIR} ${REMOTE_TARGET}
-ssh -t ${REMOTE_HOST} "time ${UV_CMD} run --directory ${REMOTE_DIR} indextts/cli.py -v ${VOICE_FILE} '${TEXT}' --force -o ${OUTPUT_FILE}"
+ssh -t ${REMOTE_HOST} "INDEXTTS_DEBUG_MODE=1 time ${UV_CMD} run --directory ${REMOTE_DIR} indextts/cli.py -v ${VOICE_FILE} '${TEXT}' --force -o ${OUTPUT_FILE} --profile"
 mkdir -p ${LOCAL_DIR}/outputs
 rsync --info=NAME -a ${REMOTE_TARGET}/outputs/gen.wav ${LOCAL_DIR}/outputs/gen.wav
+rsync --info=NAME -az "${REMOTE_TARGET}/outputs/profile_*.html" ${LOCAL_DIR}/outputs/
+ls -d outputs/profile_*.html(om[1]) | xargs open

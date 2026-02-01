@@ -2,7 +2,7 @@ import math
 from typing import TYPE_CHECKING, override
 
 import torch
-from jaxtyping import Float, Int
+from jaxtyping import Float
 from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
@@ -123,7 +123,6 @@ class DiT(nn.Module):
         self,
         x: Float[Tensor, "b c t"],
         prompt_x: Float[Tensor, "b c t"],
-        x_lens: Int[Tensor, "b"],
         t: Float[Tensor, "b"],
         style: Float[Tensor, "b c"],
         cond: Float[Tensor, "b t c"],

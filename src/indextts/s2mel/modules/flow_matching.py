@@ -65,7 +65,6 @@ class CFM(nn.Module):
             style (Tensor): reference global style
                 shape: (batch_size, 192)
         """
-        x_lens = torch.tensor([mu.size(1)]).long().to(mu.device)
         t = t_span[0]
 
         prompt_len = prompt.size(-1)
@@ -80,8 +79,8 @@ class CFM(nn.Module):
 
         for step in tqdm(range(1, len(t_span))):
             # Perform a single forward pass for both original and CFG inputs
-            stacked_dphi_dt = self.estimator(
-                torch.cat([x, x]), stacked_prompt_x, x_lens, torch.stack([t, t]), stacked_style, stacked_mu
+            stacked_dphi_dt = self.estimator.__call__(
+                torch.cat([x, x]), stacked_prompt_x, torch.stack([t, t]), stacked_style, stacked_mu
             )
 
             # Split the output back into the original and CFG components

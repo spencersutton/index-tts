@@ -105,19 +105,18 @@ class IndexTTS2:
     @cached_property[UnifiedVoice]
     def gpt(self) -> UnifiedVoice:
         with Timer() as T:
-            path = hf.hf_hub_download("IndexTeam/IndexTTS-2", filename="gpt.pth")
-            data = torch.load(path, map_location=self.device, mmap=True)
+            path = "./checkpoints/gpt.safetensors"
+            data = safetensors.torch.load_file(path, device=str(self.device))
 
             with torch.device("meta"):
                 model = UnifiedVoice(cfg=self.cfg.gpt, use_accel=self.use_accel)
             model.load_state_dict(data, assign=True)
-            model = model.eval()
 
             if self.use_fp16:
                 model = model.half()
 
         print(f">> GPT weights restored in {T:.2f} seconds from: {path}")
-        return model
+        return model.eval()
 
     @cached_property[QwenEmotion]
     def qwen_emo(self) -> QwenEmotion:
@@ -144,8 +143,9 @@ class IndexTTS2:
             path = hf.hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
             data = torch.load(path, map_location=self.device)
 
-            model = CAMPPlus()
-            model.load_state_dict(data)
+            with torch.device("meta"):
+                model = CAMPPlus()
+            model.load_state_dict(data, assign=True)
             model = model.eval().to(self.device)
 
         print(f">> campplus_model weights restored in {T:.2f} seconds from: {path}")
@@ -172,26 +172,22 @@ class IndexTTS2:
                 model = bigvgan.BigVGAN(h=hparams)
             model.load_state_dict(data["generator"], assign=True)
 
-            model = model.eval()
             model.remove_weight_norm()
 
         print(f">> bigvgan weights restored in {T:.2f} seconds from: {path}")
-        return model
+        return model.eval()
 
     @cached_property[RepCodec]
     def semantic_codec(self) -> RepCodec:
         with Timer() as T:
-            path = hf.hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
+            path = "checkpoints/semantic_codec.safetensors"
 
-            model = RepCodec()
-            missing, unexpected = safetensors.torch.load_model(model, path, strict=False)
-            if missing:
-                print(f">> semantic_codec missing keys: {missing}")
-            if unexpected:
-                print(f">> semantic_codec unexpected keys: {unexpected}")
-            model = model.eval().to(self.device)
+            with torch.device("meta"):
+                model = RepCodec()
+            data = safetensors.torch.load_file(path, device=str(self.device))
+            model.load_state_dict(data, assign=True)
         print(f">> semantic_codec weights restored from: {path} in {T:.2f} seconds")
-        return model
+        return model.eval()
 
     @cached_property[transformers.Wav2Vec2BertModel]
     def semantic_model(self) -> transformers.Wav2Vec2BertModel:
@@ -231,14 +227,16 @@ class IndexTTS2:
             model.cfm.load_state_dict(params["cfm"], strict=False, assign=True)
             model.length_regulator.load_state_dict(params["length_regulator"], strict=False, assign=True)
             model.gpt_layer.load_state_dict(params["gpt_layer"], assign=True)
-            model = model.eval()
 
         print(f">> s2mel weights restored in {T:.2f} seconds: {path}")
-        return model
+        return model.eval()
 
     @cached_property[transformers.SeamlessM4TFeatureExtractor]
     def extract_features(self) -> transformers.SeamlessM4TFeatureExtractor:
-        return transformers.SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
+        with Timer() as t:
+            model = transformers.SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
+        print(f">> feature extractor restored in {t:.2f} seconds")
+        return model
 
     def __init__(
         self,

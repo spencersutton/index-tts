@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pyinstrument
 
-from indextts.profile import generate_profile_report
+from indextts.profiling import generate_profile_report
 
 
 def main() -> None:

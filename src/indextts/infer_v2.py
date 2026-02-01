@@ -8,26 +8,21 @@ from subprocess import CalledProcessError
 from typing import Any, cast
 
 import huggingface_hub as hf
-import safetensors.torch
 import torch
 import torch.nn.functional as F
 import torchaudio
-import transformers
-from bigvganinference import bigvgan
 from jaxtyping import Float, Int
 from torch import Tensor
 from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
 
+import indextts.load as load
 from indextts.config import IndexTTSConfig
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.qwen import QwenEmotion
 from indextts.s2mel.modules.audio import mel_spectrogram
-from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
-from indextts.s2mel.modules.commons import MyModel
 from indextts.util import Timer
-from indextts.utils.front import TextNormalizer, TextTokenizer
-from indextts.utils.repcodec_model import RepCodec
+from indextts.utils.front import TextNormalizer
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
@@ -102,143 +97,13 @@ class IndexTTS2:
 
     has_warned: bool = False
 
-    @cached_property[UnifiedVoice]
-    def gpt(self) -> UnifiedVoice:
-        with Timer() as T:
-            path = hf.hf_hub_download("IndexTeam/IndexTTS-2", filename="gpt.pth")
-            data = torch.load(path, map_location=self.device, mmap=True)
-
-            with torch.device("meta"):
-                model = UnifiedVoice(cfg=self.cfg.gpt, use_accel=self.use_accel)
-            model.load_state_dict(data, assign=True)
-            model = model.eval()
-
-            if self.use_fp16:
-                model = model.half()
-
-        print(f">> GPT weights restored in {T:.2f} seconds from: {path}")
-        return model
+    extract_features = load.extract_features()
+    gpt: UnifiedVoice
+    normalizer = TextNormalizer()
 
     @cached_property[QwenEmotion]
     def qwen_emo(self) -> QwenEmotion:
         return QwenEmotion(self.cfg.qwen_emo_path)
-
-    @cached_property[TextNormalizer]
-    def normalizer(self) -> TextNormalizer:
-        normalizer = TextNormalizer()
-        normalizer.load()
-        return normalizer
-
-    @cached_property[TextTokenizer]
-    def tokenizer(self) -> TextTokenizer:
-        with Timer() as T:
-            path = Path(hf.hf_hub_download(repo_id=self.cfg.dataset.repo_id, filename=self.cfg.dataset.filename))
-            tokenizer = TextTokenizer(path, self.normalizer)
-
-        print(f">> bpe model restored in {T:.2f} seconds from: {path}")
-        return tokenizer
-
-    @cached_property[CAMPPlus]
-    def campplus_model(self) -> CAMPPlus:
-        with Timer() as T:
-            path = hf.hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
-            data = torch.load(path, map_location=self.device)
-
-            model = CAMPPlus()
-            model.load_state_dict(data)
-            model = model.eval().to(self.device)
-
-        print(f">> campplus_model weights restored in {T:.2f} seconds from: {path}")
-        return model
-
-    @cached_property[bigvgan.BigVGAN]
-    def bigvgan(self) -> bigvgan.BigVGAN:
-        with Timer() as T:
-            # Simpler but slower version
-            if False:
-                model = bigvgan.BigVGAN.from_pretrained(  # pyright: ignore[reportUnreachable]
-                    "nvidia/bigvgan_v2_22khz_80band_256x", use_cuda_kernel=self.use_cuda_kernel
-                )
-                model.remove_weight_norm()
-                model = model.eval().to(self.device)
-
-            path = hf.hf_hub_download(repo_id=self.cfg.vocoder.repo_id, filename=self.cfg.vocoder.filename)
-            data = torch.load(path, map_location=self.device, mmap=True)
-
-            json_path = hf.hf_hub_download(self.cfg.vocoder.repo_id, filename="config.json")
-            hparams = bigvgan.load_hparams_from_json(json_path)
-
-            with torch.device("meta"):
-                model = bigvgan.BigVGAN(h=hparams)
-            model.load_state_dict(data["generator"], assign=True)
-
-            model = model.eval()
-            model.remove_weight_norm()
-
-        print(f">> bigvgan weights restored in {T:.2f} seconds from: {path}")
-        return model
-
-    @cached_property[RepCodec]
-    def semantic_codec(self) -> RepCodec:
-        with Timer() as T:
-            path = hf.hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
-
-            model = RepCodec()
-            missing, unexpected = safetensors.torch.load_model(model, path, strict=False)
-            if missing:
-                print(f">> semantic_codec missing keys: {missing}")
-            if unexpected:
-                print(f">> semantic_codec unexpected keys: {unexpected}")
-            model = model.eval().to(self.device)
-        print(f">> semantic_codec weights restored from: {path} in {T:.2f} seconds")
-        return model
-
-    @cached_property[transformers.Wav2Vec2BertModel]
-    def semantic_model(self) -> transformers.Wav2Vec2BertModel:
-        with Timer() as T:
-            model = transformers.Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0")
-            model = model.eval().to(self.device)
-        print(f">> semantic_model weights restored in {T:.2f} seconds")
-        return model
-
-    @cached_property[Tensor]
-    def semantic_mean(self) -> Tensor:
-        with Timer() as T:
-            path = hf.hf_hub_download(repo_id=self.cfg.w2v_stat.repo_id, filename=self.cfg.w2v_stat.filename)
-            data = torch.load(path)
-            data = data["mean"].to(self.device)
-        print(f">> semantic_mean weights restored in {T:.2f} seconds from: {path}")
-        return data
-
-    @cached_property[Tensor]
-    def semantic_std(self) -> Tensor:
-        with Timer() as T:
-            path = hf.hf_hub_download(repo_id=self.cfg.w2v_stat.repo_id, filename=self.cfg.w2v_stat.filename)
-            data = torch.load(path)
-            data = torch.sqrt(data["var"]).to(self.device)
-        print(f">> semantic_std weights restored in {T:.2f} seconds from: {path}")
-        return data
-
-    @cached_property[MyModel]
-    def s2mel(self) -> MyModel:
-        with Timer() as T:
-            path = hf.hf_hub_download("IndexTeam/IndexTTS-2", filename="s2mel.pth")
-            data = torch.load(path, map_location=self.device, mmap=True)
-            params = data["net"]
-
-            with torch.device("meta"):
-                model = MyModel()
-            model.cfm.load_state_dict(params["cfm"], strict=False, assign=True)
-            model.length_regulator.load_state_dict(params["length_regulator"], strict=False, assign=True)
-            model.gpt_layer.load_state_dict(params["gpt_layer"], assign=True)
-            model = model.eval()
-
-        print(f">> s2mel weights restored in {T:.2f} seconds: {path}")
-        return model
-
-    @cached_property[transformers.SeamlessM4TFeatureExtractor]
-    def extract_features(self) -> transformers.SeamlessM4TFeatureExtractor:
-        return transformers.SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
 
     def __init__(
         self,
@@ -270,6 +135,17 @@ class IndexTTS2:
         self.dtype = torch.float16 if self.use_fp16 else torch.get_default_dtype()
         self.use_accel = use_accel
 
+        self.gpt = load.gpt(self.device, self.cfg.gpt, self.use_accel, self.use_fp16)
+        self.semantic_model = load.semantic_model(self.device)
+        self.semantic_mean, self.semantic_std = load.semantic_stats(self.device)
+        self.semantic_codec = load.semantic_codec(self.device)
+        self.bigvgan = load.bigvgan(self.device, self.use_cuda_kernel)
+        self.campplus_model = load.campplus_model(self.device)
+        self.tokenizer = load.tokenizer(self.normalizer)
+        self.cfm = load.cfm(self.device)
+        self.length_regulator = load.length_regulator(self.device)
+        self.gpt_layer = load.gpt_layer(self.device)
+
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
 
         if use_deepspeed:
@@ -295,7 +171,7 @@ class IndexTTS2:
         # Enable torch.compile optimization if requested
         if use_torch_compile:
             print(">> Enabling torch.compile optimization")
-            self.s2mel.enable_torch_compile()
+            self.cfm.enable_torch_compile()
             print(">> torch.compile optimization enabled successfully")
 
         self.emo_matrix = self.get_matrix(self.cfg.emo_matrix)
@@ -308,18 +184,6 @@ class IndexTTS2:
             print(">> Glossary loaded from:", self.glossary_path)
 
         self.model_version = int(self.cfg.version)
-
-        if os.environ.get("INDEXTTS_DEBUG_MODE", "0") != "0":
-            _ = self.bigvgan
-            _ = self.semantic_codec
-            _ = self.gpt
-            _ = self.s2mel
-            _ = self.tokenizer
-            _ = self.campplus_model
-            _ = self.semantic_model
-            _ = self.semantic_mean
-            _ = self.semantic_std
-            _ = self.extract_features
 
     # 原始推理模式
     def infer(
@@ -562,12 +426,12 @@ class IndexTTS2:
         latent: Float[Tensor, "B T C"],
     ) -> Tensor:
         semantic_inference = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
-        semantic_inference = semantic_inference.mT + self.s2mel.gpt_layer(latent)
+        semantic_inference = semantic_inference.mT + self.gpt_layer.__call__(latent)
         target_lengths = (torch.tensor(code_lens, device=self.device) * 1.72).long().max().item()
 
-        cond = self.s2mel.length_regulator.__call__(semantic_inference, ylens=int(target_lengths))
+        cond = self.length_regulator.__call__(semantic_inference, ylens=int(target_lengths))
         cond = torch.cat([prompt_condition, cond], dim=1)
-        target = self.s2mel.cfm.inference(cond, ref_mel, style)
+        target = self.cfm.inference(cond, ref_mel, style)
         return target[:, :, ref_mel.size(-1) :]
 
     @lru_cache(5)  # noqa: B019
@@ -617,7 +481,7 @@ class IndexTTS2:
         audio_16k = torchaudio.functional.resample(audio, sr, 16000)
         audio_22k = torchaudio.functional.resample(audio, sr, 22050)
 
-        mel = mel_spectrogram(audio_22k, sample_rate=22050)
+        mel = mel_spectrogram(audio_22k)
         feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(self.device), num_mel_bins=80, sample_frequency=16000)
         feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
         style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
@@ -628,7 +492,5 @@ class IndexTTS2:
         )
 
         embedding = self.get_emb(inputs["input_features"], inputs["attention_mask"])
-        prompt_condition = self.s2mel.length_regulator.__call__(
-            self.semantic_codec.quantize(embedding), ylens=mel.size(2)
-        )
+        prompt_condition = self.length_regulator.__call__(self.semantic_codec.quantize(embedding), ylens=mel.size(2))
         return prompt_condition, style, mel, embedding

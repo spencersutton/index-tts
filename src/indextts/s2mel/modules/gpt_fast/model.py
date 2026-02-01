@@ -26,11 +26,9 @@ class _AdaptiveLayerNorm(nn.Module):
         self.norm = _RMSNorm(dim=dim)
 
     @override
-    def forward(self, input: Float[Tensor, "b t d"], embedding: Float[Tensor, "b t d"] | None = None) -> Tensor:
-        if embedding is None:
-            return self.norm(input)
+    def forward(self, input: Float[Tensor, "b t d"], embedding: Float[Tensor, "b t d"]) -> Tensor:
         weight, bias = torch.split(self.project_layer(embedding), self.dim, dim=-1)
-        return weight * self.norm(input) + bias
+        return weight * self.norm.__call__(input) + bias
 
     @patch_call(forward)
     def __call__(self) -> None: ...
@@ -106,8 +104,10 @@ class _TransformerBlock(nn.Module):
     ) -> Tensor:
         if skip_in_x is not None:
             x = self.skip_in_linear(torch.cat([x, skip_in_x], dim=-1))
-        h = x + self.attention.__call__(self.attention_norm(x, c), freqs_cis)
-        return h + self.feed_forward.__call__(self.ffn_norm(h, c))
+        norm = self.attention_norm.__call__(x, c)
+        h = x + self.attention.__call__(norm, freqs_cis)
+        ffm_norm = self.ffn_norm.__call__(h, c)
+        return h + self.feed_forward.__call__(ffm_norm)
 
     @patch_call(forward)
     def __call__(self) -> None: ...
@@ -178,11 +178,11 @@ class _RMSNorm(nn.Module):
 
     @staticmethod
     def _norm(x: Float[Tensor, "b t d"]) -> Tensor:
-        return x * torch.rsqrt(torch.mean(x * x, dim=-1, keepdim=True) + 1e-5)
+        return x * (x.square().mean(dim=-1, keepdim=True) + 1e-5).rsqrt()
 
     @override
     def forward(self, x: Float[Tensor, "b t d"]) -> Tensor:
-        return self._norm(x.float()).type_as(x) * self.weight
+        return self._norm(x) * self.weight
 
     @patch_call(forward)
     def __call__(self) -> None: ...

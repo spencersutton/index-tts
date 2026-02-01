@@ -115,7 +115,7 @@ class MultiHeadedAttention(nn.Module):
             attn = torch.softmax(scores, dim=-1)  # (batch, head, time1, time2)
 
         p_attn = self.dropout(attn)
-        x = torch.matmul(p_attn, value)  # (batch, head, time1, d_k)
+        x = p_attn @ value  # (batch, head, time1, d_k)
         x = x.transpose(1, 2).contiguous().view(n_batch, -1, self.h * self.d_k)  # (batch, time1, d_model)
 
         return self.linear_out(x)  # (batch, time1, d_model)
@@ -186,7 +186,7 @@ class MultiHeadedAttention(nn.Module):
         #   non-trivial to calculate `next_cache_start` here.
         new_cache = torch.cat((k, v), dim=-1)
 
-        scores = torch.matmul(q, k.mT) / math.sqrt(self.d_k)
+        scores = (q @ k.mT) / math.sqrt(self.d_k)
         return self.forward_attention(v, scores, mask), new_cache
 
     @patch_call(forward)
@@ -281,12 +281,11 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
         # first compute matrix a and matrix c
         # as described in https://arxiv.org/abs/1901.02860 Section 3.3
         # (batch, head, time1, time2)
-        matrix_ac = torch.matmul(q_with_bias_u, k.mT)
+        matrix_ac = q_with_bias_u @ k.mT
 
         # compute matrix b and matrix d
         # (batch, head, time1, time2)
-        matrix_bd = torch.matmul(q_with_bias_v, p.mT)
-
+        matrix_bd = q_with_bias_v @ p.mT
         scores = (matrix_ac + matrix_bd) / math.sqrt(self.d_k)  # (batch, head, time1, time2)
 
         return self.forward_attention(v, scores, mask), new_cache

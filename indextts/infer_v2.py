@@ -434,6 +434,14 @@ class IndexTTS2:
         top_k = generation_kwargs.pop("top_k", 30)
         top_p = generation_kwargs.pop("top_p", 0.8)
 
+        emotion_vector = self.gpt.get_emo_vec(emotion_conditioning_embedding)
+        base_vector = self.gpt.get_emo_vec(speaker_conditioning_embedding)
+
+        emotion_vector = base_vector + emo_alpha * (emotion_vector - base_vector)
+
+        if weight_vector is not None and emotion_matrix is not None:
+            emotion_vector = torch.as_tensor(emotion_matrix + (1 - torch.sum(weight_vector)) * emotion_vector)
+
         wavs: list[Tensor] = []
         gpt_gen_time = Timer()
         gpt_forward_time = Timer()
@@ -450,16 +458,6 @@ class IndexTTS2:
 
             with torch.inference_mode():
                 with torch.autocast(self.device.type, dtype=self.dtype), gpt_gen_time:
-                    emotion_vector = self.gpt.get_emo_vec(emotion_conditioning_embedding)
-                    base_vector = self.gpt.get_emo_vec(speaker_conditioning_embedding)
-
-                    emotion_vector = base_vector + emo_alpha * (emotion_vector - base_vector)
-
-                    if weight_vector is not None and emotion_matrix is not None:
-                        emotion_vector = torch.as_tensor(
-                            emotion_matrix + (1 - torch.sum(weight_vector)) * emotion_vector
-                        )
-
                     speech_conditioning_latent = self.gpt.process_speech_condition(speaker_conditioning_embedding)
                     codes = self.gpt.inference_speech(
                         speech_conditioning_latent,

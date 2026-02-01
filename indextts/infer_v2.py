@@ -123,7 +123,7 @@ class IndexTTS2:
         return QwenEmotion(self.cfg.qwen_emo_path)
 
     @cached_property[TextNormalizer]
-    def normalizer(self) -> TextNormalizer:  # noqa: PLR6301
+    def normalizer(self) -> TextNormalizer:
         normalizer = TextNormalizer()
         normalizer.load()
         return normalizer
@@ -236,7 +236,7 @@ class IndexTTS2:
         return model
 
     @cached_property[transformers.SeamlessM4TFeatureExtractor]
-    def extract_features(self) -> transformers.SeamlessM4TFeatureExtractor:  # noqa: PLR6301
+    def extract_features(self) -> transformers.SeamlessM4TFeatureExtractor:
         return transformers.SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
 
     def __init__(
@@ -491,11 +491,6 @@ class IndexTTS2:
                 codes = codes[:, : max(code_lens)]
 
                 with torch.autocast(self.device.type, dtype=self.dtype), gpt_forward_time:
-                    assert speech_conditioning_latent.shape == torch.Size([1, 32, 1280])
-                    assert text_tokens.shape[0] == 1
-                    assert codes.shape[0] == 1
-                    assert emotion_conditioning_embedding.shape == torch.Size([1, 749, 1024])
-                    assert emotion_vector.shape == torch.Size([1, 1280])
                     latent = self.gpt(
                         speech_conditioning_latent,
                         text_tokens,

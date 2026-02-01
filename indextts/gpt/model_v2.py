@@ -198,7 +198,6 @@ class UnifiedVoice(nn.Module):
                 head_dim=self.dim // self.heads,
                 block_size=256,
                 num_blocks=16,  # Reduce to save memory (16*256 = 4096 tokens capacity)
-                use_cuda_graph=True,
             )
             print("acceleration engine initialized")
         self.inference_model = GPT2InferenceModel(

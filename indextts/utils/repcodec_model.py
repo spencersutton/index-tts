@@ -150,62 +150,30 @@ class _FactorizedVectorQuantize(nn.Module):
         indices = rearrange((-dist).max(1)[1], "(b t) -> b t", b=latents.size(0))
         return self.decode_code(indices)
 
-    def vq2emb(self, vq: Int[Tensor, "b t"]) -> Tensor:
-        emb = self.decode_code(vq)
+    def vq2emb(self, vq: Int[Tensor, "b d t"]) -> Tensor:
+        emb = self.decode_code(vq[0])
         return self.out_project(emb)
 
     @patch_call(forward)
     def __call__(self) -> None: ...
 
 
-class _ResidualVQ(nn.Module):
-    """
-    Introduced in SoundStream: An end2end neural audio codec
-    https://arxiv.org/abs/2107.03312
-    """
-
-    quantizers: Sequence[_FactorizedVectorQuantize]
-
-    def __init__(self) -> None:
-        super().__init__()
-
-        self.quantizers = nn.ModuleList([_FactorizedVectorQuantize()])  # pyright: ignore[reportAttributeAccessIssue]
-
-    @override
-    def forward(self, z: Float[Tensor, "b d t"]) -> Tensor:
-        """
-        Parameters
-        ----------
-        z : Tensor[B x D x T]
-        Returns
-        -------
-        "quantized_out" : Tensor[B x D x T]
-            Quantized continuous representation of input
-        """
-
-        z_q_i = self.quantizers[0](z)
-
-        # Create mask to apply quantizer dropout
-        mask = torch.full((z.shape[0],), fill_value=0, device=z.device) < 1
-
-        return z_q_i * mask[:, None, None]
-
-    def vq2emb(self, vq: Int[Tensor, "q b t"]) -> Tensor:
-        return self.quantizers[0].vq2emb(vq[0])
-
-    @patch_call(forward)
-    def __call__(self) -> None: ...
-
-
 class RepCodec(nn.Module):
-    quantizer: _ResidualVQ
+    quantizer: _FactorizedVectorQuantize
     encoder: nn.Sequential
+
+    @staticmethod
+    def _remap_weights(_module: object, state_dict: dict[str, object], *_args: object) -> None:
+        for k in list(state_dict.keys()):
+            new_k = k.replace("quantizer.quantizers.0", "quantizer")
+            state_dict[new_k] = state_dict.pop(k)
 
     def __init__(self, in_features: int = 384, out_features: int = 1024) -> None:
         super().__init__()
+        self.register_load_state_dict_pre_hook(self._remap_weights)
 
         self.encoder = nn.Sequential(_VocosBackbone(out_features, in_features), nn.Linear(in_features, out_features))
-        self.quantizer = _ResidualVQ()
+        self.quantizer = _FactorizedVectorQuantize()
 
         self.apply(_init_weights)
 

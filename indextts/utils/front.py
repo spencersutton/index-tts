@@ -23,7 +23,7 @@ _PUNCTUATION_MARKS_TOKENS: Final[Sequence[str]] = [
 ]
 
 
-def de_tokenized_by_CJK_char(line: str, do_lower_case: bool = False) -> str:
+def _de_tokenized_by_CJK_char(line: str, do_lower_case: bool = False) -> str:
     """
     Example:
       input = "你 好 世 界 是 HELLO WORLD 的 中 文"
@@ -59,7 +59,7 @@ CJK_RANGE_PATTERN: Final = (
 )
 
 
-def tokenize_by_CJK_char(line: str, do_upper_case: bool = True) -> str:
+def _tokenize_by_CJK_char(line: str, do_upper_case: bool = True) -> str:
     """
     Tokenize a line of text with CJK char.
 
@@ -159,8 +159,8 @@ class TextNormalizer:
         self.en_normalizer = None
         self.zh_char_rep_map = {"$": ".", **self.char_rep_map}
         self.enable_glossary = enable_glossary
-        # 术语词汇表：用户可自定义专业术语的读法
-        # 格式: {"原始术语": {"en": "英文读法", "zh": "中文读法"}}
+        # Terminology glossary: users can customize how domain/technical terms are read.
+        # Format: {"original_term": {"en": "English pronunciation", "zh": "Chinese pronunciation"}}
         # "M.2": {"en": "M dot two", "zh": "M 二"},
         # "PCIe 5.0": {"en": "PCIE five", "zh": "PCIE 五点零"},
         # "PCIe 4.0": {"en": "PCIE four", "zh": "PCIE 四点零"},
@@ -180,7 +180,7 @@ class TextNormalizer:
 
     @staticmethod
     def match_email(email: str) -> bool:
-        # 正则表达式匹配邮箱格式：数字英文@数字英文.英文
+        # Regex for basic email matching: alphanumerics@alphanumerics.alphas
         pattern = r"^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]+$"
         return re.match(pattern, email) is not None
 
@@ -221,10 +221,10 @@ class TextNormalizer:
             return ""
         if self.use_chinese(text):
             text = re.sub(ENGLISH_CONTRACTION_PATTERN, r"\1 is", text, flags=re.IGNORECASE)
-            # 应用术语词汇表（优先级最高，在所有保护之前）
+            # Apply glossary terms (highest priority, before all protections)
             if self.enable_glossary:
                 text = self.apply_glossary_terms(text, lang="zh")
-            # 保护技术术语（如 GPT-5-nano）避免被中文normalizer错误处理
+            # Protect technical terms (e.g., GPT-5-nano) to prevent incorrect processing by the Chinese normalizer
             replaced_text, tech_list = self.save_tech_terms(text.rstrip())
             replaced_text, pinyin_list = self.save_pinyin_tones(replaced_text)
 
@@ -234,24 +234,26 @@ class TextNormalizer:
             except Exception:
                 result = ""
                 print(traceback.format_exc())
-            # 恢复人名
+            # Restore names
             result = self.restore_names(result, original_name_list)
-            # 恢复拼音声调
+            # Restore pinyin tones
             result = self.restore_pinyin_tones(result, pinyin_list)
-            # 恢复技术术语
+            # Restore technical terms
             result = self.restore_tech_terms(result, tech_list)
             pattern = re.compile("|".join(re.escape(p) for p in self.zh_char_rep_map))
             result = pattern.sub(lambda x: self.zh_char_rep_map[x.group()], result)
         else:
             try:
                 text = re.sub(ENGLISH_CONTRACTION_PATTERN, r"\1 is", text, flags=re.IGNORECASE)
-                # 应用术语词汇表（优先级最高，在所有保护之前）
+                # Apply glossary terms (highest priority, before all protections)
                 if self.enable_glossary:
                     text = self.apply_glossary_terms(text, lang="en")
-                # 保护技术术语（如 GPT-5-Nano）避免被英文normalizer错误处理
+                if self.enable_glossary:
+                    text = self.apply_glossary_terms(text, lang="en")
+                # Protect technical terms (e.g., GPT-5-Nano) to prevent incorrect processing by the English normalizer
                 replaced_text, tech_list = self.save_tech_terms(text)
                 result = self.en_normalizer.normalize(replaced_text)
-                # 恢复技术术语
+                # Restore technical terms
                 result = self.restore_tech_terms(result, tech_list)
             except Exception:
                 result = text
@@ -263,12 +265,12 @@ class TextNormalizer:
     @staticmethod
     def correct_pinyin(pinyin: str) -> str:
         """
-        将 jqx 的韵母为 u/ü 的拼音转换为 v
-        如：ju -> jv , que -> qve, xün -> xvn
+        Convert the finals 'u'/'ü' in pinyin starting with j/q/x to 'v'.
+        Example: ju -> jv, que -> qve, xün -> xvn
         """
         if pinyin[0] not in "jqxJQX":
             return pinyin
-        # 匹配 jqx 的韵母为 u/ü 的拼音
+        # Match pinyin starting with j/q/x where the finals are u/ü
         pattern = r"([jqx])[uü](n|e|an)*(\d)"
         repl = r"\g<1>v\g<2>\g<3>"
         pinyin = re.sub(pattern, repl, pinyin, flags=re.IGNORECASE)
@@ -277,16 +279,16 @@ class TextNormalizer:
     @staticmethod
     def save_names(original_text: str) -> tuple[str, Sequence[str] | None]:
         """
-        替换人名为占位符 <n_a>、 <n_b>, ...
-        例如：克里斯托弗·诺兰 -> <n_a>
+        Replace names with placeholders <n_a>, <n_b>, ...
+        Example: 克里斯托弗·诺兰 -> <n_a>
         """
-        # 人名
+        # Names
         original_name_list = cast(list[str], NAME_PATTERN.findall(original_text))
         if len(original_name_list) == 0:
             return (original_text, None)
         original_name_list = list({"".join(n) for n in original_name_list})
         transformed_text = original_text
-        # 替换占位符 <n_a>、 <n_b>, ...
+        # Replace placeholders <n_a>, <n_b>, ...
         for i, name in enumerate(original_name_list):
             number = chr(ord("a") + i)
             transformed_text = transformed_text.replace(name, f"<n_{number}>")
@@ -296,14 +298,14 @@ class TextNormalizer:
     @staticmethod
     def restore_names(normalized_text: str, original_name_list: Sequence[str] | None) -> str:
         """
-        恢复人名为原来的文字
-        例如：<n_a> -> original_name_list[0]
+        Restore person names back to the original text.
+        Example: <n_a> -> original_name_list[0]
         """
         if not original_name_list or len(original_name_list) == 0:
             return normalized_text
 
         transformed_text = normalized_text
-        # 替换为占位符 <n_a>、 <n_b>, ...
+        # Replace placeholders <n_a>, <n_b>, ...
         for i, name in enumerate(original_name_list):
             number = chr(ord("a") + i)
             transformed_text = transformed_text.replace(f"<n_{number}>", name)
@@ -312,22 +314,22 @@ class TextNormalizer:
     @staticmethod
     def save_tech_terms(original_text: str) -> tuple[str, Sequence[str] | None]:
         """
-        保护技术术语中的连字符，防止被中文normalizer解析为减号
-        策略：将术语中的连字符替换为特殊占位符<H>，数字仍可被正常处理
-        例如：GPT-5-nano -> GPT<H>5<H>nano，然后 5 被转换为 五
-        最终恢复为：GPT-五-nano
+        Protect hyphens in technical terms to prevent them from being parsed as minus signs by the Chinese normalizer.
+        Strategy: Replace hyphens in terms with a special placeholder <H>, while numbers can still be processed normally.
+        Example: GPT-5-nano -> GPT<H>5<H>nano, then 5 is converted to 五
+        Finally restored to: GPT-五-nano
         """
         original_tech_list = cast(list[str], TECH_TERM_PATTERN.findall(original_text))
         if len(original_tech_list) == 0:
             return (original_text, None)
 
-        # 去重并按长度降序排列（避免短匹配先替换导致问题）
+        # Remove duplicates and sort by length in descending order (to avoid issues caused by replacing shorter matches first)
         original_tech_list = sorted(set(original_tech_list), key=len, reverse=True)
         transformed_text = original_text
 
-        # 将术语中的连字符替换为占位符 <H>
+        # Replace hyphens in terms with the placeholder <H>
         for term in original_tech_list:
-            # 将 GPT-5-nano 替换为 GPT<H>5<H>nano
+            # Convert GPT-5-nano -> GPT<H>5<H>nano
             protected_term = term.replace("-", "<H>")
             transformed_text = transformed_text.replace(term, protected_term)
 
@@ -336,27 +338,27 @@ class TextNormalizer:
     @staticmethod
     def restore_tech_terms(normalized_text: str, original_tech_list: Sequence[str] | None) -> str:
         """
-        恢复技术术语中的连字符
-        将占位符 <H> 恢复为连字符 -
-        同时清理 normalizer 可能在占位符周围添加的多余空格
+        Restore hyphens in technical terms.
+        Replace placeholder <H> back to hyphen '-'.
+        Also remove any extra whitespace the normalizer may have added around the placeholder.
         """
         if not original_tech_list or len(original_tech_list) == 0:
             return normalized_text
 
-        # 清理 <H> 周围可能的空格，然后恢复为连字符
-        # 处理模式: " <H> " -> "-", " <H>" -> "-", "<H> " -> "-", "<H>" -> "-"
+        # Remove optional whitespace around <H>, then restore to '-'.
+        # Patterns handled: " <H> " -> "-", " <H>" -> "-", "<H> " -> "-", "<H>" -> "-"
         return re.sub(r"\s*<H>\s*", "-", normalized_text)
 
     def apply_glossary_terms(self, text: str, lang: str = "zh") -> str:
         """
-        应用术语词汇表，将专业术语替换为对应语言的读法
+        Apply glossary terms, replacing technical terms with their pronunciation in the specified language.
 
         Args:
-            text: 待处理文本
-            lang: 语言类型 "zh" 或 "en"
+            text: Text to process.
+            lang: Language type, "zh" or "en".
 
         Returns:
-            处理后的文本
+            Processed text.
 
         Example:
             "M.2 NVMe SSD" -> (zh) "M 二 NVMe SSD"
@@ -365,8 +367,8 @@ class TextNormalizer:
         if not self.term_glossary:
             return text
 
-        # 按术语长度降序排列，避免短术语先匹配导致长术语无法匹配
-        # 例如："PCIe 5.0" 应该在 "PCIe" 之前匹配
+        # Sort terms by length in descending order to avoid shorter terms matching before longer ones.
+        # For example: "PCIe 5.0" should match before "PCIe".
         sorted_terms = sorted(self.term_glossary.keys(), key=len, reverse=True)
 
         @lru_cache(maxsize=42)
@@ -380,7 +382,7 @@ class TextNormalizer:
                 replacement = term_value.get(lang, term_value.get(lang, term))
             else:
                 replacement = term_value
-            # 使用正则进行大小写不敏感的替换
+            # Case-insensitive replacement via regex.
             pattern = get_term_pattern(term)
             transformed_text = pattern.sub(replacement, transformed_text)
 
@@ -388,10 +390,10 @@ class TextNormalizer:
 
     def load_glossary(self, glossary_dict: dict[str, dict[str, str] | str]) -> None:
         """
-        加载外部术语词汇表
+        Load external glossary terms.
 
         Args:
-            glossary_dict: 术语词典，格式为 {"术语": {"en": "英文读法", "zh": "中文读法"}}
+            glossary_dict: Glossary dictionary, format {"term": {"en": "English pronunciation", "zh": "Chinese pronunciation"}}
 
         Example:
             normalizer.load_glossary({
@@ -404,19 +406,19 @@ class TextNormalizer:
 
     def load_glossary_from_yaml(self, glossary_path: Path) -> bool:
         """
-        从 YAML 文件加载术语词汇表
+        Load glossary terms from a YAML file.
 
         Args:
-            glossary_path: YAML 文件路径
+            glossary_path: Path to the YAML file.
 
         Example:
             normalizer.load_glossary_from_yaml("checkpoints/glossary.yaml")
 
-        YAML 文件格式:
+        YAML file format:
             M.2:
               en: M dot two
               zh: M 二
-            NVMe: N-V-M-E  # 中英文相同读法
+            NVMe: N-V-M-E  # Same pronunciation for both Chinese and English
         """
         if glossary_path and Path(glossary_path).exists():
             with glossary_path.open(encoding="utf-8") as f:
@@ -428,10 +430,10 @@ class TextNormalizer:
 
     def save_glossary_to_yaml(self, glossary_path: Path) -> None:
         """
-        保存术语词汇表到 YAML 文件
+        Save the terminology glossary to a YAML file.
 
         Args:
-            glossary_path: YAML 文件路径
+            glossary_path: Path to the YAML file.
         """
         with glossary_path.open("w", encoding="utf-8") as f:
             yaml.dump(self.term_glossary, f, allow_unicode=True, default_flow_style=False)
@@ -439,17 +441,17 @@ class TextNormalizer:
     @staticmethod
     def save_pinyin_tones(original_text: str) -> tuple[str, Sequence[str] | None]:
         """
-        替换拼音声调为占位符 <pinyin_a>, <pinyin_b>, ...
-        例如：xuan4 -> <pinyin_a>
+        Replace pinyin tone forms with placeholders: <pinyin_a>, <pinyin_b>, ...
+        Example: xuan4 -> <pinyin_a>
         """
-        # 声母韵母+声调数字
+        # Initial+final + tone digit.
         origin_pinyin_pattern = re.compile(PINYIN_TONE_PATTERN, re.IGNORECASE)
         original_pinyin_list = re.findall(origin_pinyin_pattern, original_text)
         if len(original_pinyin_list) == 0:
             return (original_text, None)
         original_pinyin_list = list({"".join(p) for p in original_pinyin_list})  # pyright: ignore
         transformed_text = original_text
-        # 替换为占位符 <pinyin_a>, <pinyin_b>, ...
+        # Replace with placeholders <pinyin_a>, <pinyin_b>, ...
         for i, pinyin in enumerate(original_pinyin_list):
             number = chr(ord("a") + i)
             transformed_text = transformed_text.replace(pinyin, f"<pinyin_{number}>")
@@ -458,14 +460,14 @@ class TextNormalizer:
 
     def restore_pinyin_tones(self, normalized_text: str, original_pinyin_list: Sequence[str] | None) -> str:
         """
-        恢复拼音中的音调数字（1-5）为原来的拼音
-        例如：<pinyin_a> -> original_pinyin_list[0]
+        Restore pinyin tone digits (1-5) back to the original pinyin.
+        Example: <pinyin_a> -> original_pinyin_list[0]
         """
         if not original_pinyin_list or len(original_pinyin_list) == 0:
             return normalized_text
 
         transformed_text = normalized_text
-        # 替换占位符 <pinyin_a>, <pinyin_b>, ...
+        # Replace placeholders <pinyin_a>, <pinyin_b>, ...
         for i, pinyin in enumerate(original_pinyin_list):
             number = chr(ord("a") + i)
             pinyin = self.correct_pinyin(pinyin)
@@ -487,64 +489,17 @@ class TextTokenizer:
             raise ValueError(f"vocab_file {self.vocab_file} does not exist")
         if self.normalizer:
             self.normalizer.load()
-        # 加载词表
+        # Load vocabulary/model.
         self.sp_model = SentencePieceProcessor(model_file=str(self.vocab_file))
 
         self.pre_tokenizers = [
-            # 预处理器
-            tokenize_by_CJK_char
+            # Pre-tokenizers
+            _tokenize_by_CJK_char
         ]
-
-    @property
-    def vocab_size(self) -> int:
-        return self.sp_model.GetPieceSize()
-
-    @property
-    def unk_token(self) -> str:
-        return "<unk>"
-
-    @property
-    def pad_token(self) -> None:
-        return None
-
-    @property
-    def bos_token(self) -> str:
-        return "<s>"
-
-    @property
-    def eos_token(self) -> str:
-        return "</s>"
-
-    @property
-    def pad_token_id(self) -> int:
-        return -1
-
-    @property
-    def bos_token_id(self) -> int:
-        return 0
-
-    @property
-    def eos_token_id(self) -> int:
-        return 1
 
     @property
     def unk_token_id(self) -> int:
         return self.sp_model.unk_id()
-
-    @property
-    def special_tokens_map(self) -> dict[str, str | None]:
-        return {
-            "unk_token": self.unk_token,
-            "pad_token": self.pad_token,
-            "bos_token": self.bos_token,
-            "eos_token": self.eos_token,
-        }
-
-    def get_vocab(self) -> dict[str, int]:
-        return {self.convert_ids_to_tokens(i): i for i in range(self.vocab_size)}
-
-    def convert_ids_to_tokens(self, ids: int) -> str:
-        return self.sp_model.IdToPiece(ids)
 
     def convert_tokens_to_ids(self, tokens: Sequence[str] | str) -> list[int]:
         if isinstance(tokens, str):
@@ -559,7 +514,7 @@ class TextTokenizer:
             return []
         if len(text.strip()) == 1:
             return self.sp_model.Encode(text, out_type=str)
-        # 预处理
+        # Preprocess
         if self.normalizer:
             text = self.normalizer.normalize(text)
         if len(self.pre_tokenizers) > 0:
@@ -568,7 +523,7 @@ class TextTokenizer:
         return self.sp_model.Encode(text, out_type=str)
 
     def batch_encode(self, texts: list[str]) -> list[list[str]] | list[str]:
-        # 预处理
+        # Preprocess
         if self.normalizer:
             texts = [self.normalizer.normalize(text) for text in texts]
         if len(self.pre_tokenizers) > 0:
@@ -580,7 +535,7 @@ class TextTokenizer:
         if isinstance(ids, int):
             ids = [ids]
         decoded = self.sp_model.Decode(ids, out_type=str)
-        return de_tokenized_by_CJK_char(decoded, do_lower_case=do_lower_case)
+        return _de_tokenized_by_CJK_char(decoded, do_lower_case=do_lower_case)
 
     @staticmethod
     def split_segments_by_token(
@@ -590,9 +545,9 @@ class TextTokenizer:
         quick_streaming_tokens: int = 0,
     ) -> list[list[str]]:
         """
-        将tokenize后的结果按特定token进一步分割
+        Further split the tokenized result by specific tokens.
         """
-        # 处理特殊情况
+        # Handle special cases
         if len(tokenized_str) == 0:
             return []
         segments: list[list[str]] = []
@@ -605,7 +560,7 @@ class TextTokenizer:
             if not ("," in split_tokens or "▁," in split_tokens) and (
                 "," in current_segment or "▁," in current_segment
             ):
-                # 如果当前tokens中有,，则按,分割
+                # If the current tokens contain ',', split by ','
                 sub_segments = TextTokenizer.split_segments_by_token(
                     current_segment,
                     [",", "▁,"],
@@ -613,7 +568,7 @@ class TextTokenizer:
                     quick_streaming_tokens=quick_streaming_tokens,
                 )
             elif "-" not in split_tokens and "-" in current_segment:
-                # 没有,，则按-分割
+                # If there is no ',', split by '-'
                 sub_segments = TextTokenizer.split_segments_by_token(
                     current_segment,
                     ["-"],
@@ -623,16 +578,16 @@ class TextTokenizer:
             elif current_segment_tokens_len <= max_text_tokens_per_segment:
                 if token in split_tokens and current_segment_tokens_len > 2:
                     if i < len(tokenized_str) - 1 and tokenized_str[i + 1] in {"'", "▁'"}:
-                        # 后续token是'，则不切分
+                        # If the next token is ''', do not split
                         current_segment.append(tokenized_str[i + 1])
                         i += 1
                     segments.append(current_segment)
                     current_segment = []
                     current_segment_tokens_len = 0
                 continue
-            # 如果当前tokens的长度超过最大限制
+            # If the current tokens length exceeds the maximum limit
             else:
-                # 按照长度分割
+                # Split by length
                 sub_segments: list[list[str]] = []
                 for j in range(0, len(current_segment), max_text_tokens_per_segment):
                     if j + max_text_tokens_per_segment < len(current_segment):
@@ -651,7 +606,8 @@ class TextTokenizer:
         if current_segment_tokens_len > 0:
             assert current_segment_tokens_len <= max_text_tokens_per_segment
             segments.append(current_segment)
-        # 如果相邻的句子加起来长度小于最大限制，且此前token总数超过quick_streaming_tokens，则合并
+        # If adjacent segments together are shorter than the max limit,
+        # and total tokens so far exceed quick_streaming_tokens, merge them.
         merged_segments: list[list[str]] = []
         total_token = 0
         for segment in segments:

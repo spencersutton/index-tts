@@ -22,7 +22,7 @@ window = torch.hann_window(1024)
 
 def mel_spectrogram(y: Tensor) -> Tensor:
     padding = (N_FFT - 256) // 2
-    y = F.pad(y.unsqueeze(1), [padding, padding], mode="reflect").squeeze(1)
+    y = F.pad(y.unsqueeze(1), (padding, padding), mode="reflect").squeeze(1)
 
     spec = torch.view_as_real(y.stft(N_FFT, window=window, center=False, onesided=True, return_complex=True))
     spec = (spec.square().sum(-1) + 1e-9).sqrt()

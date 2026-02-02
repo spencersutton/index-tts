@@ -35,7 +35,7 @@ class _GPT2AccelAttention(nn.Module):
         if self.head_dim * self.num_heads != self.embed_dim:
             raise ValueError(
                 f"`embed_dim` must be divisible by num_heads (got `embed_dim`: {self.embed_dim} and `num_heads`:"
-                f" {self.num_heads})."
+                + f" {self.num_heads})."
             )
 
         self.scale_attn_weights = config.scale_attn_weights

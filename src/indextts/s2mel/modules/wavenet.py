@@ -11,16 +11,16 @@ from indextts.util import patch_call
 
 class WaveNet(nn.Module):
     cond_layer: SConv1d
-    drop: nn.Dropout
     in_layers: Sequence[SConv1d]
     res_skip_layers: Sequence[SConv1d]
+    n_layers: int
+    dim: int
 
     def __init__(self, dim: int, n_layers: int = 8, kernel_size: int = 5) -> None:
         super().__init__()
         self.n_layers = n_layers
         self.dim = dim
 
-        self.drop = nn.Dropout(0.2)
         self.cond_layer = SConv1d(dim, 2 * dim * n_layers, 1)
         layers = [SConv1d(dim, 2 * dim, kernel_size) for _ in range(n_layers)]
         self.in_layers = nn.ModuleList(layers)  # pyright: ignore[reportAttributeAccessIssue]
@@ -42,7 +42,6 @@ class WaveNet(nn.Module):
             x_in = self.in_layers[i].__call__(x)
             t_act_part, s_act_part = (x_in + g_l).split(self.dim, dim=1)
             acts = t_act_part.tanh() * s_act_part.sigmoid()
-            acts = self.drop(acts)
 
             res_skip_acts = self.res_skip_layers[i].__call__(acts)
             if i < self.n_layers - 1:

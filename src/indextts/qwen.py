@@ -1,14 +1,45 @@
 import json
 import re
-from collections.abc import Mapping
-from typing import Any, cast
+from collections.abc import Collection, Mapping, Sequence
+from typing import Final, cast
 
 import torch
+from torch import Tensor
 from transformers import BatchEncoding, Qwen2Tokenizer, Qwen3ForCausalLM
 
 
 def _clamp(value: float, min_val: float, max_val: float) -> float:
     return max(min(value, max_val), min_val)
+
+
+prompt: Final = "文本情感分类"
+cn_key_to_en: Final[Mapping[str, str]] = {
+    "高兴": "happy",
+    "愤怒": "angry",
+    "悲伤": "sad",
+    "恐惧": "afraid",
+    "反感": "disgusted",
+    # TODO: the "低落" (melancholic) emotion will always be mapped to
+    # "悲伤" (sad) by QwenEmotion's text analysis. it doesn't know the
+    # difference between those emotions even if user writes exact words.
+    # SEE: `self.melancholic_words` for current workaround.
+    "低落": "melancholic",
+    "惊讶": "surprised",
+    "自然": "calm",
+}
+desired_vector_order: Final[Sequence[str]] = ["高兴", "愤怒", "悲伤", "恐惧", "反感", "低落", "惊讶", "自然"]
+melancholic_words: Final[Collection[str]] = {
+    # emotion text phrases that will force QwenEmotion's "悲伤" (sad) detection
+    # to become "低落" (melancholic) instead, to fix limitations mentioned above.
+    "低落",
+    "melancholy",
+    "melancholic",
+    "depression",
+    "depressed",
+    "gloomy",
+}
+max_score: Final = 1.2
+min_score: Final = 0.0
 
 
 class QwenEmotion:
@@ -22,34 +53,6 @@ class QwenEmotion:
             torch_dtype="float16",  # "auto"
             device_map="auto",
         )
-        self.prompt = "文本情感分类"
-        self.cn_key_to_en = {
-            "高兴": "happy",
-            "愤怒": "angry",
-            "悲伤": "sad",
-            "恐惧": "afraid",
-            "反感": "disgusted",
-            # TODO: the "低落" (melancholic) emotion will always be mapped to
-            # "悲伤" (sad) by QwenEmotion's text analysis. it doesn't know the
-            # difference between those emotions even if user writes exact words.
-            # SEE: `self.melancholic_words` for current workaround.
-            "低落": "melancholic",
-            "惊讶": "surprised",
-            "自然": "calm",
-        }
-        self.desired_vector_order = ["高兴", "愤怒", "悲伤", "恐惧", "反感", "低落", "惊讶", "自然"]
-        self.melancholic_words = {
-            # emotion text phrases that will force QwenEmotion's "悲伤" (sad) detection
-            # to become "低落" (melancholic) instead, to fix limitations mentioned above.
-            "低落",
-            "melancholy",
-            "melancholic",
-            "depression",
-            "depressed",
-            "gloomy",
-        }
-        self.max_score = 1.2
-        self.min_score = 0.0
 
     def convert(self, content: dict[str, float]) -> dict[str, float]:
         # generate emotion vector dictionary:
@@ -58,8 +61,8 @@ class QwenEmotion:
         # - clamp all values to the allowed min/max range
         # - use 0.0 for any values that were missing in `content`
         emotion_dict = {
-            self.cn_key_to_en[cn_key]: _clamp(content.get(cn_key, 0.0), self.min_score, self.max_score)
-            for cn_key in self.desired_vector_order
+            cn_key_to_en[cn_key]: _clamp(content.get(cn_key, 0.0), min_score, max_score)
+            for cn_key in desired_vector_order
         }
 
         # default to a calm/neutral voice if all emotion vectors were empty
@@ -70,16 +73,18 @@ class QwenEmotion:
         return emotion_dict
 
     def inference(self, text_input: str) -> dict[str, float]:
-        messages = [{"role": "system", "content": f"{self.prompt}"}, {"role": "user", "content": f"{text_input}"}]
+        messages = [{"role": "system", "content": f"{prompt}"}, {"role": "user", "content": f"{text_input}"}]
         text = self.tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True, enable_thinking=False
         )
         assert not isinstance(text, (BatchEncoding, list))
-        model_inputs = cast(Mapping[str, Any], self.tokenizer([text], return_tensors="pt").to(self.model.device))  # pyright: ignore[reportExplicitAny]
+        model_inputs = cast(Mapping[str, Tensor], self.tokenizer([text], return_tensors="pt").to(self.model.device))
 
         # conduct text completion
         generated_ids = self.model.generate(
-            **model_inputs, max_new_tokens=2**15, pad_token_id=self.tokenizer.eos_token_id
+            **model_inputs,  # pyright: ignore
+            max_new_tokens=2**15,
+            pad_token_id=self.tokenizer.eos_token_id,
         )
         assert isinstance(generated_ids, torch.Tensor)
         output_ids = generated_ids[0][len(model_inputs["input_ids"][0]) :].tolist()
@@ -91,11 +96,11 @@ class QwenEmotion:
         except ValueError:
             index = 0
 
-        content = self.tokenizer.decode(output_ids[index:], skip_special_tokens=True)
+        content = self.tokenizer.decode(cast(list[int], output_ids[index:]), skip_special_tokens=True)
 
         # decode the JSON emotion detections as a dictionary
         try:
-            content = json.loads(content)
+            content = json.loads(content)  # pyright: ignore
         except json.decoder.JSONDecodeError:
             # invalid JSON; fallback to manual string parsing
             content = {m.group(1): float(m.group(2)) for m in re.finditer(r'([^\s":.,]+?)"?\s*:\s*([\d.]+)', content)}
@@ -104,7 +109,7 @@ class QwenEmotion:
         # if we detect any of the IndexTTS "melancholic" words, we swap those vectors
         # to encode the "sad" emotion as "melancholic" (instead of sadness).
         text_input_lower = text_input.lower()
-        if any(word in text_input_lower for word in self.melancholic_words):
+        if any(word in text_input_lower for word in melancholic_words):
             content["悲伤"], content["低落"] = content.get("低落", 0.0), content.get("悲伤", 0.0)
 
         return self.convert(content)

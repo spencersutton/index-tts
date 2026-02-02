@@ -5,14 +5,17 @@ from collections.abc import Sequence
 from copy import copy
 
 import torch
-from torch import nn
+from torch import Tensor, nn
 
 
 class _KVCacheBlock:
+    block_id: int
+    ref_cnt: int = 0
+    _block_hash: bytes | None = None
+    token_ids: list[int]
+
     def __init__(self, block_id: int) -> None:
         self.block_id = block_id
-        self.ref_cnt = 0
-        self._block_hash = None
         self.token_ids = []
 
     @property
@@ -30,13 +33,20 @@ class _KVCacheBlock:
 
 
 class Seq:
+    token_ids: list[int]
+    last_token: int
+    num_tokens: int
+    num_prompt_tokens: int
+    num_cached_tokens: int = 0
+    block_table: list[int]
+    block_size: int
+
     def __init__(self, token_ids: Sequence[int], block_size: int = 256) -> None:
         self.token_ids = list(copy(token_ids))
         self.last_token = token_ids[-1] if token_ids else 0
         self.num_tokens = len(self.token_ids)
         self.num_prompt_tokens = len(token_ids)
-        self.num_cached_tokens = 0
-        self.block_table: list[int] = []
+        self.block_table = []
         self.block_size = block_size
 
     def __len__(self) -> int:
@@ -70,6 +80,18 @@ class Seq:
 
 
 class KVCacheManager:
+    num_layers: int
+    num_heads: int
+    head_dim: int
+    block_size: int
+    num_blocks: int
+    dtype: torch.dtype
+    blocks: list[_KVCacheBlock]
+    block_hash_to_id: dict[bytes, int]
+    free_block_ids: deque[int]
+    used_block_ids: set[int]
+    kv_cache: Tensor
+
     def __init__(
         self, num_layers: int, num_heads: int, head_dim: int, block_size: int, num_blocks: int, dtype: torch.dtype
     ) -> None:
@@ -81,9 +103,9 @@ class KVCacheManager:
         self.dtype = dtype
 
         self.blocks = [_KVCacheBlock(i) for i in range(num_blocks)]
-        self.block_hash_to_id: dict[bytes, int] = {}
+        self.block_hash_to_id = {}
         self.free_block_ids = deque(range(num_blocks))
-        self.used_block_ids: set[int] = set()
+        self.used_block_ids = set()
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
         cache_dtype = torch.float16 if device == "cuda" else dtype

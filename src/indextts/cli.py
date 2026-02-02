@@ -36,10 +36,11 @@ def main() -> None:
     parser.add_argument("--profile", action="store_true", default=False, help="Enable profiling")
 
     args = parser.parse_args()
-    voice_file = Path(args.voice)
-    output_path = Path(args.output_path)
-    model_dir = Path(args.model_dir)
+    voice_file = Path(args.voice)  # pyright: ignore
+    output_path = Path(args.output_path)  # pyright: ignore
+    model_dir = Path(args.model_dir)  # pyright: ignore
 
+    assert isinstance(args.text, str)  # pyright: ignore
     if len(args.text.strip()) == 0:
         print("ERROR: Text is empty.")
         parser.print_help()
@@ -50,7 +51,7 @@ def main() -> None:
         sys.exit(1)
 
     if output_path.exists():
-        if not args.force:
+        if not args.force:  # pyright: ignore
             print(f"ERROR: Output file {output_path} already exists. Use --force to overwrite.")
             parser.print_help()
             sys.exit(1)
@@ -63,12 +64,12 @@ def main() -> None:
         print("ERROR: PyTorch is not installed. Please install it first.")
         sys.exit(1)
 
-    if args.device is None:
+    if args.device is None:  # pyright: ignore
         if torch.cuda.is_available():
             args.device = "cuda:0"
-        elif hasattr(torch, "xpu") and torch.xpu.is_available():  # pyright: ignore[reportAttributeAccessIssue]
+        elif hasattr(torch, "xpu") and torch.xpu.is_available():
             args.device = "xpu"
-        elif hasattr(torch, "mps") and torch.mps.is_available():  # pyright: ignore[reportAttributeAccessIssue]
+        elif hasattr(torch, "mps") and torch.mps.is_available():
             args.device = "mps"
         else:
             args.device = "cpu"
@@ -79,15 +80,15 @@ def main() -> None:
     from indextts.infer_v2 import IndexTTS2
 
     profiler = pyinstrument.Profiler()
-    if args.profile:
+    if args.profile:  # pyright: ignore
         profiler.start()
 
     print("Initializing IndexTTS2...")
-    tts = IndexTTS2(model_dir=model_dir, use_fp16=args.fp16, device=args.device, use_accel=args.use_accel)
+    tts = IndexTTS2(model_dir=model_dir, use_fp16=args.fp16, device=args.device, use_accel=args.use_accel)  # pyright: ignore
     print("Start inference...")
     tts.infer(output_path=output_path, spk_audio_prompt=voice_file, text=args.text.strip())
 
-    if args.profile:
+    if args.profile:  # pyright: ignore
         profiler.stop()
         generate_profile_report(profiler)
 

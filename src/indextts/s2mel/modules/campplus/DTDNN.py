@@ -20,6 +20,15 @@ from indextts.util import patch_call
 
 
 class _FCM(nn.Module):
+    in_planes: int
+    conv1: nn.Conv2d
+    bn1: nn.BatchNorm2d
+    layer1: nn.Sequential
+    layer2: nn.Sequential
+    conv2: nn.Conv2d
+    bn2: nn.BatchNorm2d
+    out_channels: int
+
     def __init__(self, m_channels: int = 32) -> None:
         super().__init__()
         self.in_planes = m_channels
@@ -48,6 +57,9 @@ class _FCM(nn.Module):
 
 
 class CAMPPlus(nn.Module):
+    head: _FCM
+    xvector: nn.Sequential
+
     def __init__(self) -> None:
         super().__init__()
 

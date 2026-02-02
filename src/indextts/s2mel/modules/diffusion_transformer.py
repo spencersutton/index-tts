@@ -27,6 +27,7 @@ class _TimestepEmbedder(nn.Module):
 
     if TYPE_CHECKING:
         freqs: Tensor = torch.empty(0)
+    mlp: nn.Sequential
 
     def __init__(self, dim: int) -> None:
         super().__init__()
@@ -36,7 +37,7 @@ class _TimestepEmbedder(nn.Module):
         freqs = (-math.log(10000) * torch.arange(half).float() / half).exp()
         self.register_buffer("freqs", freqs)
 
-    def timestep_embedding(self, t: Float[Tensor, "b"]) -> Tensor:
+    def timestep_embedding(self, t: Float[Tensor, "b"]) -> Tensor:  # noqa: UP037
         """
         Create sinusoidal timestep embeddings.
         :param t: a 1-D Tensor of N indices, one per batch element.
@@ -49,7 +50,7 @@ class _TimestepEmbedder(nn.Module):
         return torch.cat([args.cos(), args.sin()], dim=-1)
 
     @override
-    def forward(self, t: Float[Tensor, "b"]) -> Tensor:
+    def forward(self, t: Float[Tensor, b]) -> Tensor:  # pyright: ignore[reportUndefinedVariable]
         t_freq = self.timestep_embedding(t)
         return self.mlp(t_freq)
 
@@ -61,6 +62,10 @@ class _FinalLayer(nn.Module):
     """
     The final layer of DiT.
     """
+
+    norm_final: nn.LayerNorm
+    linear: nn.Linear
+    adaLN_modulation: nn.Sequential
 
     def __init__(self, dim: int) -> None:
         super().__init__()
@@ -82,7 +87,6 @@ class DiT(nn.Module):
     if TYPE_CHECKING:
         input_pos: Tensor = torch.empty(0)
     transformer: Transformer
-    x_embedder: nn.Linear
     cond_projection: nn.Linear
     t_embedder: _TimestepEmbedder
     t_embedder2: _TimestepEmbedder
@@ -98,7 +102,6 @@ class DiT(nn.Module):
         super().__init__()
         self.transformer = Transformer(dim=512, block_size=block_size)
 
-        self.x_embedder = weight_norm(nn.Linear(in_channels, dim))
         self.cond_projection = nn.Linear(dim, dim)  # continuous content
 
         self.t_embedder = _TimestepEmbedder(dim=dim)
@@ -123,7 +126,7 @@ class DiT(nn.Module):
         self,
         x: Float[Tensor, "b c t"],
         prompt_x: Float[Tensor, "b c t"],
-        t: Float[Tensor, "b"],
+        t: Float[Tensor, "b"],  # noqa: UP037
         style: Float[Tensor, "b c"],
         cond: Float[Tensor, "b t c"],
     ) -> Tensor:

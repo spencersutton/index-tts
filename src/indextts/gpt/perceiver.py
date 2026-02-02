@@ -1,6 +1,6 @@
 # Adapted from https://github.com/lucidrains/naturalspeech2-pytorch/blob/659bec7f7543e7747e809e950cc2f84242fbeec7/naturalspeech2_pytorch/naturalspeech2_pytorch.py#L532
 from collections.abc import MutableSequence
-from typing import override
+from typing import cast, override
 
 import torch
 import torch.nn.functional as F
@@ -16,6 +16,7 @@ class _Attention(nn.Module):
     heads: int
     to_out: nn.Linear
     to_q: nn.Linear
+    attend: _Attend
 
     def __init__(self, dim: int, heads: int = 8) -> None:
         super().__init__()
@@ -53,10 +54,6 @@ class _Attention(nn.Module):
 
 
 class _Attend(nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        self.attn_dropout = nn.Dropout(0.0)
-
     @override
     def forward(
         self,
@@ -73,7 +70,7 @@ class _Attend(nn.Module):
         d - feature dimension
         """
 
-        scale: float = q.shape[-1] ** -0.5
+        scale = cast(float, q.shape[-1] ** -0.5)
 
         kv_einsum_eq = "b j d" if k.ndim == 3 else "b h j d"
 
@@ -87,7 +84,6 @@ class _Attend(nn.Module):
 
         # attention
         attn = sim.softmax(dim=-1)
-        attn = self.attn_dropout(attn)
 
         # aggregate values
         return torch.einsum(f"b h i j, {kv_einsum_eq} -> b h i d", attn, v)
@@ -97,10 +93,13 @@ class _Attend(nn.Module):
 
 
 class _RMSNorm(nn.Module):
+    scale: float
+    gamma: nn.Parameter
+
     def __init__(self, dim: int) -> None:
         super().__init__()
 
-        self.scale = dim**0.5
+        self.scale = cast(float, dim**0.5)
         self.gamma = nn.Parameter(torch.ones(dim))
 
     @override

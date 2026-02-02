@@ -41,19 +41,18 @@ class UnifiedVoice(nn.Module):
     """Generation-oriented wrapper around the transformer (caching/positioning + `generate`)."""
     mel_head: nn.Linear
     """Output projection from hidden size (dim) to the mel-code vocabulary size."""
+    text_head: nn.Linear
+    """Output projection from hidden size (dim) to the text vocabulary size."""
     speed_emb: nn.Embedding
     """Embeddings for speed/control tokens that are appended to the conditioning prefix."""
-
     mel_embedding: nn.Embedding
     """Token embedding table for mel-code ids."""
     text_embedding: nn.Embedding
     """Token embedding table for text token ids."""
-
     mel_pos_embedding: LearnedPositionEmbeddings
     """Learned positional embeddings for the mel-code segment."""
     text_pos_embedding: LearnedPositionEmbeddings
     """Learned positional embeddings for the text segment."""
-
     heads: int
     """Number of attention heads in the GPT transformer."""
     layers: int
@@ -62,7 +61,6 @@ class UnifiedVoice(nn.Module):
     """Maximum mel-code tokens supported (used to size positional embeddings / generation limits)."""
     max_text_tokens: int
     """Maximum text tokens supported (used to size positional embeddings / padding logic)."""
-
     cond_mask_pad: nn.ConstantPad1d
     """Pads the conditioning attention mask to account for inserted conditioning latents."""
     conditioning_encoder: ConformerEncoder
@@ -75,9 +73,12 @@ class UnifiedVoice(nn.Module):
     """Perceiver resampler that reduces emotion conditioning to a single latent token."""
     perceiver_encoder: PerceiverResampler
     """Perceiver resampler that reduces speech conditioning to `condition_num_latent` latent tokens."""
-
     cfg: UnifiedVoiceConfig
     """Model configuration (token ids, vocab sizes, architecture hyperparameters, limits)."""
+    dim: int
+    """Model hidden dimension (GPT embedding size)."""
+    use_accel: bool
+    """Whether to use the acceleration engine (if available)."""
 
     def __init__(
         self, cfg: UnifiedVoiceConfig, condition_num_latent: int = 32, use_accel: bool = False, dim: int = 1280
@@ -191,17 +192,17 @@ class UnifiedVoice(nn.Module):
         if use_deepspeed and half and torch.cuda.is_available():
             import deepspeed  # type: ignore
 
-            self.ds_engine = deepspeed.init_inference(
+            self.ds_engine = deepspeed.init_inference(  # pyright: ignore[reportUnknownMemberType]
                 model=self.inference_model, mp_size=1, replace_with_kernel_inject=True, dtype=torch.float16
             )
-            self.inference_model = self.ds_engine.module.eval()
+            self.inference_model = self.ds_engine.module.eval()  # pyright: ignore[reportUnknownMemberType]
         elif use_deepspeed and torch.cuda.is_available():
             import deepspeed  # type: ignore
 
-            self.ds_engine = deepspeed.init_inference(
+            self.ds_engine = deepspeed.init_inference(  # pyright: ignore[reportUnknownMemberType]
                 model=self.inference_model, mp_size=1, replace_with_kernel_inject=True, dtype=torch.float32
             )
-            self.inference_model = self.ds_engine.module.eval()
+            self.inference_model = self.ds_engine.module.eval()  # pyright: ignore[reportUnknownMemberType]
         else:
             self.inference_model = self.inference_model.eval()
 
@@ -334,7 +335,7 @@ class UnifiedVoice(nn.Module):
         *,
         emo_vec: Float[Tensor, "B D"],
         max_generate_length: int | None = None,
-        **hf_generate_kwargs: Any,  # pyright: ignore[reportExplicitAny]
+        **hf_generate_kwargs: Any,  # pyright: ignore[reportExplicitAny, reportAny]
     ) -> Tensor:
         """
         Args:
@@ -360,7 +361,7 @@ class UnifiedVoice(nn.Module):
                 inputs_ids,  # fake input_ids (all 1s + start_mel_token)
                 max_new_tokens=max_length - trunc_index,
                 attention_mask=attention_mask,
-                temperature=float(hf_generate_kwargs.get("temperature", 1)),
+                temperature=float(hf_generate_kwargs.get("temperature", 1)),  # pyright: ignore
                 stop_tokens=[self.cfg.stop_mel_token],
                 tts_embeddings=inputs_embeds,  # [pad][cond][text] embeddings (87 tokens, NO start_mel_token)
                 tts_mel_embedding=self.inference_model.embeddings,  # mel_embedding layer
@@ -376,7 +377,7 @@ class UnifiedVoice(nn.Module):
                 max_length=max_length,
                 logits_processor=LogitsProcessorList(),
                 num_return_sequences=1,
-                **hf_generate_kwargs,
+                **hf_generate_kwargs,  # pyright: ignore
             )
         return output[:, trunc_index:]
 

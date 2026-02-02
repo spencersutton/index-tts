@@ -1,4 +1,4 @@
-from typing import Any, override
+from typing import Any, cast, override
 
 import torch
 import transformers
@@ -14,6 +14,10 @@ from indextts.util import patch_call
 
 class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     embeddings: nn.Embedding
+    text_pos_embedding: LearnedPositionEmbeddings
+    transformer: GPT2Model
+    final_norm: nn.Module
+    lm_head: nn.Sequential
 
     def __init__(
         self,
@@ -40,11 +44,11 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         input_ids: Int[Tensor, "b t"],
         past_key_values: transformers.Cache | None = None,
         attention_mask: Int[Tensor, "b t"] | None = None,
-        inputs_embeds: Float[Tensor, "b t d"] | None = None,
-        cache_position: Int[Tensor, "b"] | None = None,
-        **kwargs: Any,  # pyright: ignore[reportExplicitAny]
+        inputs_embeds: Tensor | None = None,
+        cache_position: Tensor | None = None,
+        **kwargs: Any,  # pyright: ignore[reportExplicitAny, reportAny]
     ) -> dict[str, transformers.Cache | Tensor | bool | None]:
-        token_type_ids = kwargs.get("token_type_ids")  # usually None
+        token_type_ids = cast(Tensor | None, kwargs.get("token_type_ids"))  # usually None
         position_ids = kwargs.get("position_ids")
         # only last token for inputs_ids if past is defined in kwargs
         if past_key_values:
@@ -123,7 +127,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             return_dict=return_dict,
         )
         assert not isinstance(transformer_outputs, tuple)
-        hidden_states: Tensor = transformer_outputs[0]
+        hidden_states: Tensor = transformer_outputs[0]  # pyright: ignore
 
         lm_logits = self.lm_head(hidden_states)
 

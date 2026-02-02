@@ -9,13 +9,25 @@ from indextts.accel.attention import ForwardContext, get_forward_context, reset_
 from indextts.accel.gpt2_accel import GPT2AccelModel
 from indextts.accel.kv_manager import KVCacheManager, Seq
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
-from indextts.util import unwrap
+from indextts.util import patch_call, unwrap
 
 GRAPH_BS: Final[Sequence[int]] = [1, 2, 4, 8]
 
 
 class AccelInferenceEngine:
     _tts_prompt_len: int = 0
+    graph_pool: object | None = None
+    model: GPT2AccelModel
+    lm_head: nn.Sequential | None
+    block_size: int
+    num_blocks: int
+    hidden_size: int
+    kv_manager: KVCacheManager
+    sampler: _Sampler
+    current_sequences: list[Seq]
+    graphs: dict[int, torch.cuda.CUDAGraph]
+    graph_vars: dict[str, Tensor] | None = None
+    graph_captured: bool = False
 
     def __init__(
         self,
@@ -53,11 +65,7 @@ class AccelInferenceEngine:
         self.kv_manager.wire_kv_cache_to_model(model)
         self.sampler = _Sampler()
         self.current_sequences = []
-        self.graphs: dict[int, torch.cuda.CUDAGraph] = {}
-        self.graph_vars: dict[str, Tensor] | None = None
-        # torch.cuda graph pool types are inconsistently stubbed across versions
-        self.graph_pool: object | None = None
-        self.graph_captured = False
+        self.graphs = {}
 
     def _prepare_prefill(self, requests: Sequence[Seq]) -> tuple[Tensor, Tensor]:
         input_ids_list: list[int] = []
@@ -99,7 +107,7 @@ class AccelInferenceEngine:
         block_tables = None
         if cu_seqlens_k[-1] > cu_seqlens_q[-1]:
             max_len = max(len(req.block_table) for req in requests)
-            block_tables_list = []
+            block_tables_list: list[list[int]] = []
             for req in requests:
                 table = req.block_table + [-1] * (max_len - len(req.block_table))
                 block_tables_list.append(table)
@@ -115,27 +123,27 @@ class AccelInferenceEngine:
         if not requests:
             raise RuntimeError("FATAL: No requests provided to _prepare_decode!")
 
-        input_ids = []
-        positions = []
-        slot_mapping = []
-        context_lens = []
+        input_ids_list: list[int] = []
+        positions_list: list[int] = []
+        slot_mapping_list: list[int] = []
+        context_lens_list: list[int] = []
 
         for req in requests:
-            input_ids.append(req.last_token)
+            input_ids_list.append(req.last_token)
 
             pos = len(req) - 1 - (self._tts_prompt_len - 1)
-            positions.append(pos)
+            positions_list.append(pos)
 
-            context_lens.append(len(req))
-            slot_mapping.append(req.block_table[-1] * self.block_size + req.last_block_num_tokens - 1)
+            context_lens_list.append(len(req))
+            slot_mapping_list.append(req.block_table[-1] * self.block_size + req.last_block_num_tokens - 1)
 
-        input_ids = torch.tensor(input_ids, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
-        positions = torch.tensor(positions, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
-        slot_mapping = torch.tensor(slot_mapping, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
-        context_lens = torch.tensor(context_lens, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+        input_ids = torch.tensor(input_ids_list, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+        positions = torch.tensor(positions_list, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+        slot_mapping = torch.tensor(slot_mapping_list, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+        context_lens = torch.tensor(context_lens_list, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
 
         max_len = max(len(req.block_table) for req in requests)
-        block_tables_list = []
+        block_tables_list: list[list[int]] = []
         for req in requests:
             table = req.block_table + [-1] * (max_len - len(req.block_table))
             block_tables_list.append(table)
@@ -511,3 +519,6 @@ class _Sampler(nn.Module):
         logits = logits.float().div_(temperatures.unsqueeze(dim=1))
         probs = logits.softmax(dim=-1)
         return probs.div_(torch.empty_like(probs).exponential_(1).clamp_min_(1e-10)).argmax(dim=-1)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

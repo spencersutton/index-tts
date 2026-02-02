@@ -1,4 +1,4 @@
-from typing import override
+from typing import cast, override
 
 import torch
 import transformers
@@ -11,6 +11,17 @@ from indextts.util import patch_call
 
 
 class _GPT2AccelAttention(nn.Module):
+    config: transformers.GPT2Config
+    layer_idx: int | None
+    embed_dim: int
+    num_heads: int
+    head_dim: int
+    split_size: int
+    scale_attn_weights: bool
+    c_attn: transformers.Conv1D
+    c_proj: transformers.Conv1D
+    accel_attn: Attention
+
     def __init__(self, config: transformers.GPT2Config, layer_idx: int | None = None) -> None:
         super().__init__()
         self.config = config
@@ -35,16 +46,13 @@ class _GPT2AccelAttention(nn.Module):
         if self.head_dim * self.num_heads != self.embed_dim:
             raise ValueError(
                 f"`embed_dim` must be divisible by num_heads (got `embed_dim`: {self.embed_dim} and `num_heads`:"
-                f" {self.num_heads})."
+                + f" {self.num_heads})."
             )
 
         self.scale_attn_weights = config.scale_attn_weights
 
         self.c_attn = transformers.Conv1D(3 * self.embed_dim, self.embed_dim)
         self.c_proj = transformers.Conv1D(self.embed_dim, self.embed_dim)
-
-        self.attn_dropout = nn.Dropout(config.attn_pdrop)
-        self.resid_dropout = nn.Dropout(config.resid_pdrop)
 
         scale = (self.head_dim**-0.5) if self.scale_attn_weights else 1.0
         self.accel_attn = Attention(self.num_heads, self.head_dim, scale, self.num_heads)
@@ -100,7 +108,6 @@ class _GPT2AccelAttention(nn.Module):
         attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
 
         attn_output = self.c_proj(attn_output)
-        attn_output = self.resid_dropout(attn_output)
 
         outputs = (attn_output, None)
         if output_attentions:
@@ -120,12 +127,16 @@ class _GPT2AccelAttention(nn.Module):
 
 
 class _GPT2AccelBlock(GPT2Block):
+    attn: _GPT2AccelAttention
+
     def __init__(self, config: transformers.GPT2Config, layer_idx: int | None = None) -> None:
         super().__init__(config, layer_idx)
         self.attn = _GPT2AccelAttention(config, layer_idx)
 
 
 class GPT2AccelModel(GPT2Model):
+    h: nn.ModuleList
+
     def __init__(self, config: transformers.GPT2Config) -> None:
         super().__init__(config)
         self.h = nn.ModuleList([_GPT2AccelBlock(config, layer_idx=i) for i in range(config.num_hidden_layers)])
@@ -153,7 +164,7 @@ class GPT2AccelModel(GPT2Model):
             hidden_states = inputs_embeds
 
             for block in self.h:
-                hidden_states = block(hidden_states)[0]
+                hidden_states = cast(Tensor, block(hidden_states)[0])
 
             hidden_states = self.ln_f(hidden_states)
 

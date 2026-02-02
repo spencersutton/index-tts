@@ -43,12 +43,12 @@ class RelPositionalEncoding(nn.Module):
 
     if TYPE_CHECKING:
         pe: Tensor = torch.empty(0)
+    xscale: float
 
     def __init__(self, dim: int, max_len: int = 5000) -> None:
         """Construct an PositionalEncoding object."""
         super().__init__()
         self.xscale = math.sqrt(dim)
-        self.dropout = nn.Dropout(0.0)
 
         pe = torch.zeros(max_len, dim)
         position = torch.arange(0, max_len).unsqueeze(1)
@@ -57,17 +57,6 @@ class RelPositionalEncoding(nn.Module):
         pe[:, 1::2] = (position * div_term).cos()
         pe = pe.unsqueeze(0)
         self.register_buffer("pe", pe)
-
-    def position_encoding(self, size: int) -> Tensor:
-        """For getting encoding in a streaming fashion
-
-        Args:
-            size (int): required size of position encoding
-
-        Returns:
-            Tensor: Corresponding encoding
-        """
-        return self.pe[:, :size]
 
     @override
     def forward(self, x: Float[Tensor, "b t d"]) -> tuple[Tensor, Tensor]:
@@ -78,10 +67,8 @@ class RelPositionalEncoding(nn.Module):
             Tensor: Encoded tensor (batch, time, `*`).
             Tensor: Positional embedding tensor (1, time, `*`).
         """
-        self.pe = self.pe.to(x.device)
         x *= self.xscale
-        pos_emb = self.position_encoding(x.size(1))
-        return self.dropout(x), self.dropout(pos_emb)
+        return x, self.pe[:, : x.size(1)]
 
     @patch_call(forward)
     def __call__(self) -> None: ...

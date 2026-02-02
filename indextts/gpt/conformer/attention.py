@@ -131,7 +131,7 @@ class MultiHeadedAttention(nn.Module):
         mask: Bool[Tensor, "b t t"],
         pos_emb: Float[Tensor, "b t d"],
         cache: Float[Tensor, "0 0 0 0"],
-    ) -> tuple[Tensor, Tensor]:
+    ) -> Tensor:
         """Compute scaled dot product attention.
 
         Args:
@@ -184,12 +184,9 @@ class MultiHeadedAttention(nn.Module):
             key_cache, value_cache = cache.split(cache.size(-1) // 2, dim=-1)
             k = torch.cat([key_cache, k], dim=2)
             v = torch.cat([value_cache, v], dim=2)
-        # NOTE(xcsong): We do cache slicing in encoder.forward_chunk, since it's
-        #   non-trivial to calculate `next_cache_start` here.
-        new_cache = torch.cat((k, v), dim=-1)
 
         scores = (q @ k.mT) / math.sqrt(self.d_k)
-        return self.forward_attention(v, scores, mask), new_cache
+        return self.forward_attention(v, scores, mask)
 
     @patch_call(forward)
     def __call__(self) -> None: ...
@@ -228,7 +225,7 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
         mask: Bool[Tensor, "b t d"],
         pos_emb: Float[Tensor, "b t d"],
         cache: Float[Tensor, "0 0 0 0"],
-    ) -> tuple[Tensor, Tensor]:
+    ) -> Tensor:
         """Compute 'Scaled Dot Product Attention' with rel. positional encoding.
         Args:
             query (Tensor): Query tensor (#batch, time1, size).
@@ -293,7 +290,7 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
         matrix_bd = q_with_bias_v @ p.mT
         scores = (matrix_ac + matrix_bd) / math.sqrt(self.d_k)  # (batch, head, time1, time2)
 
-        return self.forward_attention(v, scores, mask), torch.empty(0)
+        return self.forward_attention(v, scores, mask)
 
     @patch_call(forward)
     def __call__(self) -> None: ...

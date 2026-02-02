@@ -238,7 +238,7 @@ class AccelInferenceEngine:
             inputs_embeds = tts_mel_embedding(input_ids)
             pos_clamped = positions.clamp(min=0)
             pos_emb = tts_text_pos_embedding.emb(pos_clamped)
-            inputs_embeds = inputs_embeds + pos_emb
+            inputs_embeds += pos_emb
             model_output = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True)
             assert not isinstance(model_output, tuple)
             out = unwrap(model_output.last_hidden_state)
@@ -251,7 +251,7 @@ class AccelInferenceEngine:
             inputs_embeds = tts_mel_embedding(input_ids)
             pos_clamped = positions.clamp(min=0)
             pos_emb = tts_text_pos_embedding.emb(pos_clamped)
-            inputs_embeds = inputs_embeds + pos_emb
+            inputs_embeds += pos_emb
             model_output = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True)
             assert not isinstance(model_output, tuple)
             out = unwrap(model_output.last_hidden_state)
@@ -348,7 +348,7 @@ class AccelInferenceEngine:
 
         start_pos = torch.tensor([[tts_embeddings.size(1)]], device="cuda", dtype=torch.long)
         pos_emb = tts_text_pos_embedding.emb(start_pos)
-        start_emb = start_emb + pos_emb
+        start_emb += pos_emb
         start_emb = start_emb.repeat(batch_size, 1, 1)
 
         if is_varlen_batch:

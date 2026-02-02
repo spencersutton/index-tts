@@ -59,7 +59,7 @@ build-backend = "hatchling.build"
 
 [tool.uv]
 no-build-isolation-package = ["deepspeed"]
-override-dependencies = ["huggingface-hub>=0.34.0,<1.0", "pynini==2.1.7"]
+override-dependencies = ["pynini>=2.1.7"]
 
 [tool.uv.sources]
 torch = [

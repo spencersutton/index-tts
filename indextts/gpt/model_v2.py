@@ -231,7 +231,7 @@ class UnifiedVoice(nn.Module):
         emo_speech_conditioning_latent: Float[Tensor, "B 749 1024"],
         emo_vec: Float[Tensor, "B D"],
         use_speed: int,
-        device: torch.types.Device,
+        device: torch.device,
     ) -> Tensor:
         """
         Forward pass that uses both text and voice in either text conditioning mode or voice conditioning mode

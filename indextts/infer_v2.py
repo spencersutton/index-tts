@@ -363,7 +363,7 @@ class IndexTTS2:
                 codes = codes[:, : max(code_lens)]
 
                 with torch.autocast(self.device.type, dtype=self.dtype), gpt_forward_time:
-                    latent = self.gpt(
+                    latent = self.gpt.__call__(
                         speech_conditioning_latent,
                         text_tokens,
                         codes,

@@ -13,10 +13,10 @@ class LearnedPositionEmbeddings(nn.Module):
         super().__init__()
         self.emb = nn.Embedding(seq_len, dim)
         # Initializing this way is standard for GPT-2
-        self.emb.weight.data.normal_(mean=0.0, std=0.02)
+        self.emb.weight.data.normal_(std=0.02)
 
     @override
-    def forward(self, x: int, device: torch.types.Device) -> Tensor:
+    def forward(self, x: int, device: torch.device) -> Tensor:
         return self.emb(torch.arange(x, device=device))
 
     def get_fixed_embedding(self, index: int, device: torch.device) -> Tensor:

@@ -481,7 +481,7 @@ class IndexTTS2:
         audio_16k = torchaudio.functional.resample(audio, sr, 16000)
         audio_22k = torchaudio.functional.resample(audio, sr, 22050)
 
-        mel = mel_spectrogram(audio_22k, sample_rate=22050)
+        mel = mel_spectrogram(audio_22k)
         feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(self.device), num_mel_bins=80, sample_frequency=16000)
         feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
         style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]

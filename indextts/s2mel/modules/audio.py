@@ -1,30 +1,30 @@
 import torch
 import torch.nn.functional as F
-from jaxtyping import Float
-from librosa.filters import mel as librosa_mel_fn
+import torchaudio.functional as AF
 from torch import Tensor
 
+N_FFT = 1024
+SAMPLING_RATE = 22050
 
-def mel_spectrogram(y: Float[Tensor, "b t"], sample_rate: int) -> Tensor:
-    mel = librosa_mel_fn(sr=sample_rate, n_fft=1024, n_mels=80)
 
-    y = F.pad(y.unsqueeze(1), [384, 384], mode="reflect")
-    y = y.squeeze(1)
+mel = AF.melscale_fbanks(
+    n_freqs=N_FFT // 2 + 1,
+    f_min=0.0,
+    f_max=SAMPLING_RATE / 2.0,
+    n_mels=80,
+    sample_rate=SAMPLING_RATE,
+    norm="slaney",
+    mel_scale="slaney",
+).mT
 
-    spec = torch.view_as_real(
-        torch.stft(
-            y,
-            1024,
-            hop_length=256,
-            win_length=1024,
-            window=torch.hann_window(1024).to(y.device),
-            center=False,
-            onesided=True,
-            return_complex=True,
-        )
-    )
+window = torch.hann_window(1024)
 
-    spec = torch.sqrt(spec.pow(2).sum(-1) + 1e-9)
 
-    spec = torch.matmul(torch.from_numpy(mel).float().to(y.device), spec)
-    return torch.log(torch.clamp(spec, min=1e-5))
+def mel_spectrogram(y: Tensor) -> Tensor:
+    padding = (N_FFT - 256) // 2
+    y = F.pad(y.unsqueeze(1), [padding, padding], mode="reflect").squeeze(1)
+
+    spec = torch.view_as_real(y.stft(N_FFT, window=window, center=False, onesided=True, return_complex=True))
+    spec = (spec.square().sum(-1) + 1e-9).sqrt()
+    spec = mel @ spec
+    return spec.clamp(min=1e-5).log()

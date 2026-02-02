@@ -266,7 +266,6 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
             v = torch.cat([value_cache, v], dim=2)
         # NOTE(xcsong): We do cache slicing in encoder.forward_chunk, since it's
         #   non-trivial to calculate `next_cache_start` here.
-        new_cache = torch.cat((k, v), dim=-1)
 
         n_batch_pos = pos_emb.size(0)
         p = self.linear_pos(pos_emb).view(n_batch_pos, -1, self.h, self.d_k)
@@ -288,7 +287,7 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
         matrix_bd = q_with_bias_v @ p.mT
         scores = (matrix_ac + matrix_bd) / math.sqrt(self.d_k)  # (batch, head, time1, time2)
 
-        return self.forward_attention(v, scores, mask), new_cache
+        return self.forward_attention(v, scores, mask), torch.empty(0)
 
     @patch_call(forward)
     def __call__(self) -> None: ...

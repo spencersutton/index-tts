@@ -143,9 +143,9 @@ class _FactorizedVectorQuantize(nn.Module):
         # Compute euclidean distance between encodings and codebook,
         # the distance is equal to cosine distance
         dist = (
-            encodings.pow(2).sum(1, keepdim=True)
-            - 2 * encodings @ codebook.t()
-            + codebook.pow(2).sum(1, keepdim=True).t()
+            encodings.square().sum(1, keepdim=True)
+            - 2 * encodings @ codebook.mT
+            + codebook.square().sum(1, keepdim=True).mT
         )
         indices = rearrange((-dist).max(1)[1], "(b t) -> b t", b=latents.size(0))
         return self.decode_code(indices)
@@ -169,8 +169,7 @@ class _ResidualVQ(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        quantizers = [_FactorizedVectorQuantize()]
-        self.quantizers = nn.ModuleList(quantizers)  # pyright: ignore[reportAttributeAccessIssue]
+        self.quantizers = nn.ModuleList([_FactorizedVectorQuantize()])  # pyright: ignore[reportAttributeAccessIssue]
 
     @override
     def forward(self, z: Float[Tensor, "b d t"]) -> Tensor:

@@ -33,6 +33,10 @@ class Conv2dSubsampling2(nn.Module):
         output_dim (int): Output dimension.
     """
 
+    conv: nn.Sequential
+    out: nn.Sequential
+    pos_enc: RelPositionalEncoding
+
     def __init__(self, input_dim: int, output_dim: int) -> None:
         super().__init__()
 

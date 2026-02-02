@@ -5,24 +5,27 @@ from collections.abc import Callable, Generator, Mapping, Sequence
 from functools import cache, cached_property, lru_cache
 from pathlib import Path
 from subprocess import CalledProcessError
-from typing import Any, cast
+from typing import Any, Final, cast
 
 import huggingface_hub as hf
 import torch
 import torch.nn.functional as F
 import torchaudio
+import transformers
 from jaxtyping import Float, Int
-from torch import Tensor
+from torch import Tensor, nn
 from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
 
 import indextts.load as load
+from BigVGANInference.bigvganinference.inference import BigVGANInference
 from indextts.config import IndexTTSConfig
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.qwen import QwenEmotion
-from indextts.s2mel.modules.audio import mel_spectrogram
+from indextts.s2mel.modules import CFM, CAMPPlus, InterpolateRegulator, mel_spectrogram
 from indextts.util import Timer
-from indextts.utils.front import TextNormalizer
+from indextts.utils.front import TextNormalizer, TextTokenizer
+from indextts.utils.repcodec_model import RepCodec
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
@@ -75,7 +78,7 @@ def _load_and_cut_audio(audio_path: Path, sample_rate: int | None = None) -> tup
 
 
 class IndexTTS2:
-    cfg: IndexTTSConfig
+    cfg: Final = IndexTTSConfig()
     dtype: torch.dtype
     device: torch.device
     use_fp16: bool
@@ -88,15 +91,25 @@ class IndexTTS2:
 
     glossary_path: Path
 
-    # 进度引用显示（可选）
+    # Progress reference display (optional)
     gr_progress: Callable[..., None] | None = None
     model_version: int | None
 
     has_warned: bool = False
 
-    extract_features = load.extract_features()
+    bigvgan: BigVGANInference
+    campplus_model: CAMPPlus
+    cfm: CFM
+    extract_features: Final = load.extract_features()
+    gpt_layer: nn.Sequential
     gpt: UnifiedVoice
-    normalizer = TextNormalizer()
+    length_regulator: InterpolateRegulator
+    normalizer: Final = TextNormalizer()
+    semantic_codec: RepCodec
+    semantic_mean: Tensor
+    semantic_model: transformers.Wav2Vec2BertModel
+    semantic_std: Tensor
+    tokenizer: TextTokenizer
 
     @cached_property[QwenEmotion]
     def qwen_emo(self) -> QwenEmotion:
@@ -128,7 +141,6 @@ class IndexTTS2:
         )
         self.use_cuda_kernel = use_cuda_kernel and str(self.device).startswith("cuda")
         self.use_fp16 = use_fp16 and self.device not in ["cpu", "mps"]
-        self.cfg = IndexTTSConfig()
         self.dtype = torch.float16 if self.use_fp16 else torch.get_default_dtype()
         self.use_accel = use_accel
 

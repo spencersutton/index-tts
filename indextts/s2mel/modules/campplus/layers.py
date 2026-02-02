@@ -32,6 +32,9 @@ class StatsPool(nn.Module):
 
 
 class TDNNLayer(nn.Module):
+    linear: nn.Conv1d
+    nonlinear: nn.Sequential
+
     def __init__(self, in_channels: int) -> None:
         super().__init__()
         self.linear = nn.Conv1d(in_channels, 128, 5, stride=2, padding=2, bias=False)
@@ -47,6 +50,12 @@ class TDNNLayer(nn.Module):
 
 
 class _CAMLayer(nn.Module):
+    linear_local: nn.Conv1d
+    linear1: nn.Conv1d
+    relu: nn.ReLU
+    linear2: nn.Conv1d
+    sigmoid: nn.Sigmoid
+
     def __init__(self, dilation: int) -> None:
         super().__init__()
         self.linear_local = nn.Conv1d(128, 32, 3, padding=dilation, dilation=dilation, bias=False)
@@ -75,9 +84,13 @@ class _CAMLayer(nn.Module):
 
 
 class _CAMDenseTDNNLayer(nn.Module):
+    nonlinear1: nn.Sequential
+    linear1: nn.Conv1d
+    nonlinear2: nn.Sequential
+    cam_layer: _CAMLayer
+
     def __init__(self, in_channels: int, dilation: int) -> None:
         super().__init__()
-        self.memory_efficient = False
         self.nonlinear1 = get_nonlinear(in_channels)
         self.linear1 = nn.Conv1d(in_channels, 128, 1, bias=False)
         self.nonlinear2 = get_nonlinear(128)
@@ -113,6 +126,9 @@ class CAMDenseTDNNBlock(nn.ModuleList):
 
 
 class TransitLayer(nn.Module):
+    nonlinear: nn.Sequential
+    linear: nn.Conv1d
+
     def __init__(self, in_channels: int, out_channels: int, bias: bool = True) -> None:
         super().__init__()
         self.nonlinear = get_nonlinear(in_channels)
@@ -128,6 +144,9 @@ class TransitLayer(nn.Module):
 
 
 class DenseLayer(nn.Module):
+    linear: nn.Conv1d
+    nonlinear: nn.Sequential
+
     def __init__(self, in_channels: int, out_channels: int, bias: bool = False) -> None:
         super().__init__()
         self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
@@ -148,6 +167,12 @@ class DenseLayer(nn.Module):
 
 
 class BasicResBlock(nn.Module):
+    conv1: nn.Conv2d
+    bn1: nn.BatchNorm2d
+    conv2: nn.Conv2d
+    bn2: nn.BatchNorm2d
+    shortcut: nn.Sequential
+
     def __init__(self, stride: Literal[1, 2] = 1, m_channels: int = 32) -> None:
         super().__init__()
         self.conv1 = nn.Conv2d(m_channels, m_channels, kernel_size=3, stride=(stride, 1), padding=1, bias=False)

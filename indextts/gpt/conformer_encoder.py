@@ -48,6 +48,11 @@ class _PositionwiseFeedForward(nn.Module):
         activation (nn.Module): Activation function
     """
 
+    w_1: nn.Linear
+    activation: nn.SiLU
+    dropout: nn.Dropout
+    w_2: nn.Linear
+
     def __init__(self, idim: int, hidden_units: int, activation: nn.SiLU) -> None:
         """Construct a PositionwiseFeedForward object."""
         super().__init__()
@@ -73,6 +78,12 @@ class _PositionwiseFeedForward(nn.Module):
 
 class _ConvolutionModule(nn.Module):
     """ConvolutionModule in Conformer model."""
+
+    pointwise_conv1: nn.Conv1d
+    depthwise_conv: nn.Conv1d
+    norm: nn.LayerNorm
+    pointwise_conv2: nn.Conv1d
+    activation: nn.SiLU
 
     def __init__(self, dim: int, activation: nn.SiLU) -> None:
         """Construct an ConvolutionModule object.
@@ -139,6 +150,17 @@ class _ConformerEncoderLayer(nn.Module):
         conv_module (nn.Module): Convolution module instance.
             `ConvlutionModule` instance can be used as the argument.
     """
+
+    self_attn: RelPositionMultiHeadedAttention
+    feed_forward: _PositionwiseFeedForward
+    conv_module: _ConvolutionModule
+    norm_ff: nn.LayerNorm
+    norm_mha: nn.LayerNorm
+    norm_conv: nn.LayerNorm
+    norm_final: nn.LayerNorm
+    dropout: nn.Dropout
+    size: int
+    concat_linear: nn.Identity
 
     def __init__(
         self,
@@ -213,6 +235,10 @@ class _ConformerEncoderLayer(nn.Module):
 
 class ConformerEncoder(nn.Module):
     """Conformer encoder module."""
+
+    embed: Conv2dSubsampling2
+    after_norm: nn.LayerNorm
+    encoders: Sequence[_ConformerEncoderLayer]
 
     def __init__(self, dim: int, attention_heads: int = 4, linear_units: int = 2048, num_blocks: int = 6) -> None:
         """

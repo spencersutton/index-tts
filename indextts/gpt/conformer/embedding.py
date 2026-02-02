@@ -43,6 +43,8 @@ class RelPositionalEncoding(nn.Module):
 
     if TYPE_CHECKING:
         pe: Tensor = torch.empty(0)
+    xscale: float
+    dropout: nn.Dropout
 
     def __init__(self, dim: int, max_len: int = 5000) -> None:
         """Construct an PositionalEncoding object."""

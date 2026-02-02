@@ -41,19 +41,18 @@ class UnifiedVoice(nn.Module):
     """Generation-oriented wrapper around the transformer (caching/positioning + `generate`)."""
     mel_head: nn.Linear
     """Output projection from hidden size (dim) to the mel-code vocabulary size."""
+    text_head: nn.Linear
+    """Output projection from hidden size (dim) to the text vocabulary size."""
     speed_emb: nn.Embedding
     """Embeddings for speed/control tokens that are appended to the conditioning prefix."""
-
     mel_embedding: nn.Embedding
     """Token embedding table for mel-code ids."""
     text_embedding: nn.Embedding
     """Token embedding table for text token ids."""
-
     mel_pos_embedding: LearnedPositionEmbeddings
     """Learned positional embeddings for the mel-code segment."""
     text_pos_embedding: LearnedPositionEmbeddings
     """Learned positional embeddings for the text segment."""
-
     heads: int
     """Number of attention heads in the GPT transformer."""
     layers: int
@@ -62,7 +61,6 @@ class UnifiedVoice(nn.Module):
     """Maximum mel-code tokens supported (used to size positional embeddings / generation limits)."""
     max_text_tokens: int
     """Maximum text tokens supported (used to size positional embeddings / padding logic)."""
-
     cond_mask_pad: nn.ConstantPad1d
     """Pads the conditioning attention mask to account for inserted conditioning latents."""
     conditioning_encoder: ConformerEncoder
@@ -75,9 +73,12 @@ class UnifiedVoice(nn.Module):
     """Perceiver resampler that reduces emotion conditioning to a single latent token."""
     perceiver_encoder: PerceiverResampler
     """Perceiver resampler that reduces speech conditioning to `condition_num_latent` latent tokens."""
-
     cfg: UnifiedVoiceConfig
     """Model configuration (token ids, vocab sizes, architecture hyperparameters, limits)."""
+    dim: int
+    """Model hidden dimension (GPT embedding size)."""
+    use_accel: bool
+    """Whether to use the acceleration engine (if available)."""
 
     def __init__(
         self, cfg: UnifiedVoiceConfig, condition_num_latent: int = 32, use_accel: bool = False, dim: int = 1280

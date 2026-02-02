@@ -95,6 +95,13 @@ def store_kvcache(key: Tensor, value: Tensor, k_cache: Tensor, v_cache: Tensor, 
 
 
 class Attention(nn.Module):
+    num_heads: int
+    head_dim: int
+    scale: float
+    num_kv_heads: int
+    k_cache: Tensor
+    v_cache: Tensor
+
     def __init__(self, num_heads: int, head_dim: int, scale: float, num_kv_heads: int) -> None:
         super().__init__()
         self.num_heads = num_heads

@@ -199,6 +199,7 @@ class _ResidualVQ(nn.Module):
 
 class RepCodec(nn.Module):
     quantizer: _ResidualVQ
+    encoder: nn.Sequential
 
     def __init__(self, in_features: int = 384, out_features: int = 1024) -> None:
         super().__init__()

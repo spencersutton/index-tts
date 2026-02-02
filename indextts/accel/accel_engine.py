@@ -17,6 +17,17 @@ GRAPH_BS: Final[Sequence[int]] = [1, 2, 4, 8]
 class AccelInferenceEngine:
     _tts_prompt_len: int = 0
     graph_pool: object | None = None
+    model: GPT2AccelModel
+    lm_head: nn.Sequential | None
+    block_size: int
+    num_blocks: int
+    hidden_size: int
+    kv_manager: KVCacheManager
+    sampler: _Sampler
+    current_sequences: list[Seq]
+    graphs: dict[int, torch.cuda.CUDAGraph]
+    graph_vars: dict[str, Tensor] | None = None
+    graph_captured: bool = False
 
     def __init__(
         self,
@@ -54,10 +65,7 @@ class AccelInferenceEngine:
         self.kv_manager.wire_kv_cache_to_model(model)
         self.sampler = _Sampler()
         self.current_sequences = []
-        self.graphs: dict[int, torch.cuda.CUDAGraph] = {}
-        self.graph_vars: dict[str, Tensor] | None = None
-        # torch.cuda graph pool types are inconsistently stubbed across versions
-        self.graph_captured = False
+        self.graphs = {}
 
     def _prepare_prefill(self, requests: Sequence[Seq]) -> tuple[Tensor, Tensor]:
         input_ids_list: list[int] = []

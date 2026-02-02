@@ -66,9 +66,9 @@ def main() -> None:
     if args.device is None:
         if torch.cuda.is_available():
             args.device = "cuda:0"
-        elif hasattr(torch, "xpu") and torch.xpu.is_available():  # pyright: ignore[reportAttributeAccessIssue]
+        elif hasattr(torch, "xpu") and torch.xpu.is_available():
             args.device = "xpu"
-        elif hasattr(torch, "mps") and torch.mps.is_available():  # pyright: ignore[reportAttributeAccessIssue]
+        elif hasattr(torch, "mps") and torch.mps.is_available():
             args.device = "mps"
         else:
             args.device = "cpu"

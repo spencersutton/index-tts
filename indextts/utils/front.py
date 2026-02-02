@@ -554,14 +554,14 @@ class TextTokenizer:
                 text = pre_tokenizer(text)
         return self.sp_model.Encode(text, out_type=str)
 
-    def batch_encode(self, texts: list[str]) -> list[list[int]] | list[int]:
+    def batch_encode(self, texts: list[str]) -> list[list[str]] | list[str]:
         # 预处理
         if self.normalizer:
             texts = [self.normalizer.normalize(text) for text in texts]
         if len(self.pre_tokenizers) > 0:
             for pre_tokenizer in self.pre_tokenizers:
                 texts = [pre_tokenizer(text) for text in texts]
-        return self.sp_model.Encode(texts)
+        return self.sp_model.Encode(texts, out_type=str)
 
     def decode(self, ids: list[int] | int, do_lower_case: bool = False) -> str:
         if isinstance(ids, int):
@@ -620,7 +620,7 @@ class TextTokenizer:
             # 如果当前tokens的长度超过最大限制
             else:
                 # 按照长度分割
-                sub_segments = []
+                sub_segments: list[list[str]] = []
                 for j in range(0, len(current_segment), max_text_tokens_per_segment):
                     if j + max_text_tokens_per_segment < len(current_segment):
                         sub_segments.append(current_segment[j : j + max_text_tokens_per_segment])

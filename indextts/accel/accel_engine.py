@@ -16,6 +16,7 @@ GRAPH_BS: Final[Sequence[int]] = [1, 2, 4, 8]
 
 class AccelInferenceEngine:
     _tts_prompt_len: int = 0
+    graph_pool: object | None = None
 
     def __init__(
         self,
@@ -56,7 +57,6 @@ class AccelInferenceEngine:
         self.graphs: dict[int, torch.cuda.CUDAGraph] = {}
         self.graph_vars: dict[str, Tensor] | None = None
         # torch.cuda graph pool types are inconsistently stubbed across versions
-        self.graph_pool: object | None = None
         self.graph_captured = False
 
     def _prepare_prefill(self, requests: Sequence[Seq]) -> tuple[Tensor, Tensor]:
@@ -99,7 +99,7 @@ class AccelInferenceEngine:
         block_tables = None
         if cu_seqlens_k[-1] > cu_seqlens_q[-1]:
             max_len = max(len(req.block_table) for req in requests)
-            block_tables_list = []
+            block_tables_list: list[list[int]] = []
             for req in requests:
                 table = req.block_table + [-1] * (max_len - len(req.block_table))
                 block_tables_list.append(table)
@@ -115,27 +115,27 @@ class AccelInferenceEngine:
         if not requests:
             raise RuntimeError("FATAL: No requests provided to _prepare_decode!")
 
-        input_ids = []
-        positions = []
-        slot_mapping = []
-        context_lens = []
+        input_ids_list: list[int] = []
+        positions_list: list[int] = []
+        slot_mapping_list: list[int] = []
+        context_lens_list: list[int] = []
 
         for req in requests:
-            input_ids.append(req.last_token)
+            input_ids_list.append(req.last_token)
 
             pos = len(req) - 1 - (self._tts_prompt_len - 1)
-            positions.append(pos)
+            positions_list.append(pos)
 
-            context_lens.append(len(req))
-            slot_mapping.append(req.block_table[-1] * self.block_size + req.last_block_num_tokens - 1)
+            context_lens_list.append(len(req))
+            slot_mapping_list.append(req.block_table[-1] * self.block_size + req.last_block_num_tokens - 1)
 
-        input_ids = torch.tensor(input_ids, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
-        positions = torch.tensor(positions, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
-        slot_mapping = torch.tensor(slot_mapping, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
-        context_lens = torch.tensor(context_lens, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+        input_ids = torch.tensor(input_ids_list, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+        positions = torch.tensor(positions_list, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
+        slot_mapping = torch.tensor(slot_mapping_list, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
+        context_lens = torch.tensor(context_lens_list, dtype=torch.int32, pin_memory=True).cuda(non_blocking=True)
 
         max_len = max(len(req.block_table) for req in requests)
-        block_tables_list = []
+        block_tables_list: list[list[int]] = []
         for req in requests:
             table = req.block_table + [-1] * (max_len - len(req.block_table))
             block_tables_list.append(table)

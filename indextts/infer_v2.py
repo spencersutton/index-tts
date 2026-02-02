@@ -294,7 +294,7 @@ class IndexTTS2:
                 f"  >> Warning: input text contains {text_token_ids.count(self.tokenizer.unk_token_id)} unknown tokens (id={self.tokenizer.unk_token_id}):"
             )
             print(
-                "     Tokens which can'T be encoded: ",
+                "     Tokens which can't be encoded: ",
                 [T for T, id in zip(text_tokens_list, text_token_ids) if id == self.tokenizer.unk_token_id],
             )
             print("     Consider updating the BPE model or modifying the text to avoid unknown tokens.")

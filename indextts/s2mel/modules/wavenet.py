@@ -13,12 +13,8 @@ from indextts.util import patch_call
 def _fused_add_tanh_sigmoid_multiply(
     dim: int, input_a: Float[Tensor, "b c t"], input_b: Float[Tensor, "b c t"]
 ) -> Tensor:
-    in_act = input_a + input_b
-    # use torch.split to avoid dynamic slicing
-    t_act_part, s_act_part = in_act.split(dim, dim=1)
-    t_act = t_act_part.tanh()
-    s_act = s_act_part.sigmoid()
-    return t_act * s_act
+    t_act_part, s_act_part = (input_a + input_b).split(dim, dim=1)
+    return t_act_part.tanh() * s_act_part.sigmoid()
 
 
 class WaveNet(nn.Module):

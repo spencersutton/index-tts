@@ -445,7 +445,7 @@ class IndexTTS2:
         if use_random:
             index = [random.randint(0, x - 1) for x in EMO_NUM]
         else:
-            index = [find_most_similar_cosine(style, tmp) for tmp in self.spk_matrix]
+            index = [find_most_similar_cosine(style, x) for x in self.spk_matrix]
 
         matrix = [x[index].unsqueeze(0) for index, x in zip(index, self.emo_matrix)]
         matrix = torch.cat(matrix, 0)

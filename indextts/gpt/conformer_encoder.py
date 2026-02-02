@@ -50,7 +50,6 @@ class _PositionwiseFeedForward(nn.Module):
 
     w_1: nn.Linear
     activation: nn.SiLU
-    dropout: nn.Dropout
     w_2: nn.Linear
 
     def __init__(self, idim: int, hidden_units: int, activation: nn.SiLU) -> None:
@@ -58,7 +57,6 @@ class _PositionwiseFeedForward(nn.Module):
         super().__init__()
         self.w_1 = nn.Linear(idim, hidden_units)
         self.activation = activation
-        self.dropout = nn.Dropout(0.0)
         self.w_2 = nn.Linear(hidden_units, idim)
 
     @override
@@ -70,7 +68,7 @@ class _PositionwiseFeedForward(nn.Module):
         Returns:
             output tensor, (B, L, D)
         """
-        return self.w_2(self.dropout(self.activation(self.w_1(xs))))
+        return self.w_2(self.activation(self.w_1(xs)))
 
     @patch_call(forward)
     def __call__(self) -> None: ...
@@ -158,7 +156,6 @@ class _ConformerEncoderLayer(nn.Module):
     norm_mha: nn.LayerNorm
     norm_conv: nn.LayerNorm
     norm_final: nn.LayerNorm
-    dropout: nn.Dropout
     size: int
     concat_linear: nn.Identity
 
@@ -178,7 +175,6 @@ class _ConformerEncoderLayer(nn.Module):
         self.norm_mha = nn.LayerNorm(size)  # for the MHA module
         self.norm_conv = nn.LayerNorm(size)  # for the CNN module
         self.norm_final = nn.LayerNorm(size)  # for the final output of the block
-        self.dropout = nn.Dropout(0.0)
         self.size = size
         self.concat_linear = nn.Identity()
 
@@ -213,18 +209,18 @@ class _ConformerEncoderLayer(nn.Module):
         x = self.norm_mha.__call__(x)
 
         x_att, _ = self.self_attn.__call__(x, x, x, mask, pos_emb, att_cache)
-        x = residual + self.dropout.__call__(x_att)
+        x = residual + x_att
 
         residual = x
         x = self.norm_conv.__call__(x)
         x = self.conv_module.__call__(x, mask_pad)
-        x = residual + self.dropout.__call__(x)
+        x = residual + x
 
         # feed forward module
         residual = x
         x = self.norm_ff.__call__(x)
 
-        x = residual + self.dropout.__call__(self.feed_forward.__call__(x))
+        x = residual + self.feed_forward.__call__(x)
         x = self.norm_final.__call__(x)
 
         return x, mask

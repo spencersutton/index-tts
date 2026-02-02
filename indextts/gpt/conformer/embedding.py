@@ -44,13 +44,11 @@ class RelPositionalEncoding(nn.Module):
     if TYPE_CHECKING:
         pe: Tensor = torch.empty(0)
     xscale: float
-    dropout: nn.Dropout
 
     def __init__(self, dim: int, max_len: int = 5000) -> None:
         """Construct an PositionalEncoding object."""
         super().__init__()
         self.xscale = math.sqrt(dim)
-        self.dropout = nn.Dropout(0.0)
 
         pe = torch.zeros(max_len, dim)
         position = torch.arange(0, max_len).unsqueeze(1)
@@ -83,7 +81,7 @@ class RelPositionalEncoding(nn.Module):
         self.pe = self.pe.to(x.device)
         x *= self.xscale
         pos_emb = self.position_encoding(x.size(1))
-        return self.dropout(x), self.dropout(pos_emb)
+        return x, pos_emb
 
     @patch_call(forward)
     def __call__(self) -> None: ...

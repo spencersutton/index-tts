@@ -54,12 +54,6 @@ class _Attention(nn.Module):
 
 
 class _Attend(nn.Module):
-    attn_dropout: nn.Dropout
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.attn_dropout = nn.Dropout(0.0)
-
     @override
     def forward(
         self,
@@ -90,7 +84,6 @@ class _Attend(nn.Module):
 
         # attention
         attn = sim.softmax(dim=-1)
-        attn = self.attn_dropout(attn)
 
         # aggregate values
         return torch.einsum(f"b h i j, {kv_einsum_eq} -> b h i d", attn, v)

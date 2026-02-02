@@ -40,7 +40,6 @@ class MultiHeadedAttention(nn.Module):
     linear_k: nn.Linear
     linear_v: nn.Linear
     linear_out: nn.Linear
-    dropout: nn.Dropout
 
     def __init__(self, n_head: int, n_feat: int) -> None:
         """Construct an MultiHeadedAttention object."""
@@ -53,7 +52,6 @@ class MultiHeadedAttention(nn.Module):
         self.linear_k = nn.Linear(n_feat, n_feat)
         self.linear_v = nn.Linear(n_feat, n_feat)
         self.linear_out = nn.Linear(n_feat, n_feat)
-        self.dropout = nn.Dropout(0.0)
 
     def forward_qkv(
         self, query: Float[Tensor, "b t d"], key: Float[Tensor, "b t d"], value: Float[Tensor, "b t d"]
@@ -119,8 +117,7 @@ class MultiHeadedAttention(nn.Module):
         else:
             attn = scores.softmax(dim=-1)  # (batch, head, time1, time2)
 
-        p_attn = self.dropout(attn)
-        x = p_attn @ value  # (batch, head, time1, d_k)
+        x = attn @ value  # (batch, head, time1, d_k)
         x = x.transpose(1, 2).contiguous().view(n_batch, -1, self.h * self.d_k)  # (batch, time1, d_model)
 
         return self.linear_out(x)  # (batch, time1, d_model)

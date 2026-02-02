@@ -20,8 +20,6 @@ class _GPT2AccelAttention(nn.Module):
     scale_attn_weights: bool
     c_attn: transformers.Conv1D
     c_proj: transformers.Conv1D
-    attn_dropout: nn.Dropout
-    resid_dropout: nn.Dropout
     accel_attn: Attention
 
     def __init__(self, config: transformers.GPT2Config, layer_idx: int | None = None) -> None:
@@ -55,9 +53,6 @@ class _GPT2AccelAttention(nn.Module):
 
         self.c_attn = transformers.Conv1D(3 * self.embed_dim, self.embed_dim)
         self.c_proj = transformers.Conv1D(self.embed_dim, self.embed_dim)
-
-        self.attn_dropout = nn.Dropout(config.attn_pdrop)
-        self.resid_dropout = nn.Dropout(config.resid_pdrop)
 
         scale = (self.head_dim**-0.5) if self.scale_attn_weights else 1.0
         self.accel_attn = Attention(self.num_heads, self.head_dim, scale, self.num_heads)
@@ -113,7 +108,6 @@ class _GPT2AccelAttention(nn.Module):
         attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
 
         attn_output = self.c_proj(attn_output)
-        attn_output = self.resid_dropout(attn_output)
 
         outputs = (attn_output, None)
         if output_attentions:

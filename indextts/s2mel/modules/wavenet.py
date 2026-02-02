@@ -15,9 +15,9 @@ def _fused_add_tanh_sigmoid_multiply(
 ) -> Tensor:
     in_act = input_a + input_b
     # use torch.split to avoid dynamic slicing
-    t_act_part, s_act_part = torch.split(in_act, dim, dim=1)
-    t_act = torch.tanh(t_act_part)
-    s_act = torch.sigmoid(s_act_part)
+    t_act_part, s_act_part = in_act.split(dim, dim=1)
+    t_act = t_act_part.tanh()
+    s_act = s_act_part.sigmoid()
     return t_act * s_act
 
 

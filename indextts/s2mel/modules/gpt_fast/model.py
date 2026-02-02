@@ -35,8 +35,8 @@ class _AdaptiveLayerNorm(nn.Module):
 
 
 class Transformer(nn.Module):
-    layers: Sequence["_TransformerBlock"]
-    norm: "_AdaptiveLayerNorm"
+    layers: Sequence[_TransformerBlock]
+    norm: _AdaptiveLayerNorm
 
     def __init__(self, block_size: int, dim: int, n_head: int = 8, n_layer: int = 13) -> None:
         super().__init__()
@@ -61,7 +61,7 @@ class Transformer(nn.Module):
         return torch.view_as_real(freqs_cis)
 
     @override
-    def forward(self, x: Float[Tensor, "b t d"], c: Float[Tensor, "b t d"], input_pos: Int[Tensor, "t"]) -> Tensor:
+    def forward(self, x: Float[Tensor, "b t d"], c: Float[Tensor, "b t d"], input_pos: Int[Tensor, "t"]) -> Tensor:  # noqa: UP037
         freqs_cis = self.freqs_cis[input_pos]
         mid = self.n_layer // 2
         skip_stack: list[Tensor] = []
@@ -77,10 +77,10 @@ class Transformer(nn.Module):
 
 
 class _TransformerBlock(nn.Module):
-    attention: "_Attention"
-    feed_forward: "_FeedForward"
-    ffn_norm: "_AdaptiveLayerNorm"
-    attention_norm: "_AdaptiveLayerNorm"
+    attention: _Attention
+    feed_forward: _FeedForward
+    ffn_norm: _AdaptiveLayerNorm
+    attention_norm: _AdaptiveLayerNorm
     skip_in_linear: nn.Linear
 
     def __init__(self, dim: int) -> None:

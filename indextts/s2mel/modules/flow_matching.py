@@ -48,7 +48,7 @@ class CFM(nn.Module):
         prompt: Float[Tensor, "b c t"],
         mu: Float[Tensor, "b t c"],
         style: Float[Tensor, "b c"],
-        t_span: Float[Tensor, "t"],
+        t_span: Float[Tensor, "t"],  # noqa: UP037
     ) -> Tensor:
         """
         Fixed euler solver for ODEs.

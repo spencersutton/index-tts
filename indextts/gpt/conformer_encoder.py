@@ -11,7 +11,7 @@ from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
 from indextts.util import patch_call
 
 
-def make_pad_mask(lengths: Int[Tensor, "b"], max_len: int = 0) -> Bool[Tensor, "b t"]:
+def make_pad_mask(lengths: Int[Tensor, "b"], max_len: int = 0) -> Bool[Tensor, "b t"]:  # noqa: UP037
     """Make mask tensor containing indices of padded part.
 
     See description of make_non_pad_mask.

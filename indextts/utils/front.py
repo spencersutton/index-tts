@@ -628,8 +628,8 @@ class TextTokenizer:
                         sub_segments.append(current_segment[j:])
                 warnings.warn(
                     f"The tokens length of segment exceeds limit: {max_text_tokens_per_segment}, "
-                    f"Tokens in segment: {current_segment}."
-                    "Maybe unexpected behavior",
+                    + f"Tokens in segment: {current_segment}."
+                    + "Maybe unexpected behavior",
                     RuntimeWarning,
                 )
             segments.extend(sub_segments)

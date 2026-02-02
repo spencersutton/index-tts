@@ -229,8 +229,8 @@ class UnifiedVoice(nn.Module):
         mel_codes = F.pad(mel_codes, (1, 0), value=self.cfg.start_mel_token)
         mel_codes = F.pad(mel_codes, (0, 1), value=self.cfg.stop_mel_token)
 
-        mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes.shape[1], )
-        text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs.shape[1], )
+        mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes.shape[1])
+        text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs.shape[1])
 
         conds = self.combine_latents(speech_conditioning_latent, emo_vec, text_inputs)
         output = self.gpt(

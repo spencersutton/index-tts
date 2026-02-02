@@ -4,9 +4,9 @@ import huggingface_hub as hf
 import safetensors.torch
 import torch
 import transformers
-from bigvganinference.bigvgan import BigVGAN
 from torch import Tensor, nn
 
+from BigVGANInference.bigvganinference import BigVGANInference as BigVGAN
 from indextts.config import UnifiedVoiceConfig
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus

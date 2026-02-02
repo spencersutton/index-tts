@@ -159,7 +159,7 @@ class IndexTTS2:
             try:
                 from BigVGANInference.bigvganinference.alias_free_activation.cuda import activation1d
 
-                print(">> Preload custom CUDA kernel for BigVGAN", activation1d.anti_alias_activation_cuda)
+                print(">> Preload custom CUDA kernel for BigVGAN", activation1d.anti_alias_activation_cuda)  # pyright: ignore
             except Exception as e:
                 print(">> Failed to load custom CUDA kernel for BigVGAN. Falling back to torch.")
                 print(f"{e!r}")
@@ -198,7 +198,7 @@ class IndexTTS2:
         stream_return: bool = False,
         use_emo_text: bool = False,
         use_random: bool = False,
-        **generation_kwargs: Any,  # pyright: ignore[reportExplicitAny]
+        **generation_kwargs: Any,  # pyright: ignore[reportExplicitAny, reportAny]
     ) -> Path | Generator[Tensor] | None:
         if use_emo_text or emo_vector is not None:
             # we're using a text or emotion vector guidance; so we must remove
@@ -265,7 +265,7 @@ class IndexTTS2:
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
         quick_streaming_tokens: int = 0,
-        **generation_kwargs: Any,  # pyright: ignore[reportExplicitAny]
+        **generation_kwargs: Any,  # pyright: ignore[reportExplicitAny, reportAny]
     ) -> Generator[Tensor]:
         print(">> starting inference...")
         self._set_gr_progress(0.0, "starting inference...")
@@ -299,14 +299,14 @@ class IndexTTS2:
             )
             print("     Consider updating the BPE model or modifying the text to avoid unknown tokens.")
 
-        do_sample = generation_kwargs.pop("do_sample", True)
-        length_penalty = generation_kwargs.pop("length_penalty", 0.0)
-        max_mel_tokens = generation_kwargs.pop("max_mel_tokens", 1500)
-        num_beams = generation_kwargs.pop("num_beams", 3)
-        repetition_penalty = generation_kwargs.pop("repetition_penalty", 10.0)
-        temperature = generation_kwargs.pop("temperature", 0.8)
-        top_k = generation_kwargs.pop("top_k", 30)
-        top_p = generation_kwargs.pop("top_p", 0.8)
+        do_sample = cast(bool, generation_kwargs.pop("do_sample", True))
+        length_penalty = cast(float, generation_kwargs.pop("length_penalty", 0.0))
+        max_mel_tokens = cast(int, generation_kwargs.pop("max_mel_tokens", 1500))
+        num_beams = cast(int, generation_kwargs.pop("num_beams", 3))
+        repetition_penalty = cast(float, generation_kwargs.pop("repetition_penalty", 10.0))
+        temperature = cast(float, generation_kwargs.pop("temperature", 0.8))
+        top_k = cast(int, generation_kwargs.pop("top_k", 30))
+        top_p = cast(float, generation_kwargs.pop("top_p", 0.8))
 
         emotion_vector = self.gpt.get_emo_vec(emotion_conditioning_embedding)
         base_vector = self.gpt.get_emo_vec(speaker_conditioning_embedding)
@@ -373,7 +373,7 @@ class IndexTTS2:
                     )
 
                 with bigvgan_time:
-                    wav: Tensor = self.bigvgan(voice_conversion_target.float()).squeeze().unsqueeze(0).squeeze(1)
+                    wav = self.bigvgan(voice_conversion_target.float()).squeeze().unsqueeze(0).squeeze(1)
 
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
@@ -430,7 +430,7 @@ class IndexTTS2:
         print(">> extracting emotion features from prompt:", prompt)
         audio, _ = _load_and_cut_audio(prompt, sample_rate=16000)
         inputs = self.extract_features(audio.numpy(), sampling_rate=16000, return_tensors="pt")
-        inputs = inputs.to(self.device)
+        inputs = cast(Mapping[str, Tensor], inputs.to(self.device))
         return self.get_emb(inputs["input_features"], inputs["attention_mask"])
 
     def generate_emotion_matrix(
@@ -452,7 +452,7 @@ class IndexTTS2:
 
     def get_matrix(self, filename: str) -> tuple[Tensor, ...]:
         path = hf.hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=filename)
-        data: Tensor = torch.load(path, map_location=self.device)
+        data = cast(Tensor, torch.load(path, map_location=self.device))
         return data.split(EMO_NUM)
 
     @torch.inference_mode()

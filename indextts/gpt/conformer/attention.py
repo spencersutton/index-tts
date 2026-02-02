@@ -261,7 +261,7 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
         # >>> d = torch.split(a, 2, dim=-1)
         # >>> torch.equal(d[0], d[1])  # True
         if cache.size(0) > 0:
-            key_cache, value_cache = torch.split(cache, cache.size(-1) // 2, dim=-1)
+            key_cache, value_cache = cache.split(cache.size(-1) // 2, dim=-1)
             k = torch.cat([key_cache, k], dim=2)
             v = torch.cat([value_cache, v], dim=2)
         # NOTE(xcsong): We do cache slicing in encoder.forward_chunk, since it's

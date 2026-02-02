@@ -27,7 +27,7 @@ class _AdaptiveLayerNorm(nn.Module):
 
     @override
     def forward(self, input: Float[Tensor, "b t d"], embedding: Float[Tensor, "b t d"]) -> Tensor:
-        weight, bias = torch.split(self.project_layer(embedding), self.dim, dim=-1)
+        weight, bias = self.project_layer(embedding).split(self.dim, dim=-1)
         return weight * self.norm.__call__(input) + bias
 
     @patch_call(forward)
@@ -56,7 +56,7 @@ class Transformer(nn.Module):
         freq_seq = torch.arange(0, self.head_dim, 2, device=device)
         inv_freq = (10000 ** (freq_seq / self.head_dim)).reciprocal()
         t = torch.arange(self.block_size, device=device, dtype=dtype)
-        angles = torch.outer(t, inv_freq)
+        angles = t.outer(inv_freq)
         freqs_cis = torch.polar(torch.ones_like(angles), angles)
         return torch.stack([freqs_cis.real, freqs_cis.imag], dim=-1)
 

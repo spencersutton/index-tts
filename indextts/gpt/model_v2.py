@@ -293,7 +293,7 @@ class UnifiedVoice(nn.Module):
             text_input = inputs[i][valid_mask]
             text_input = F.pad(text_input, [1, 0], value=self.cfg.start_text_token)
             text_input = F.pad(text_input, [0, 1], value=self.cfg.stop_text_token)
-            text_input_pos = torch.arange(0, text_input.size(-1), device=device)
+            text_input_pos = torch.arange(text_input.size(-1), device=device)
 
             text_emb = self.text_embedding(text_input) + self.text_pos_embedding.emb(text_input_pos)
 

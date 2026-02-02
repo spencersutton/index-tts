@@ -184,7 +184,7 @@ class AccelInferenceEngine:
             assert tts_mel_embedding is not None
             assert tts_text_pos_embedding is not None
             emb = tts_mel_embedding(input_ids[:bs])
-            pos_clamped = torch.clamp(positions[:bs], min=0)
+            pos_clamped = positions[:bs].clamp(min=0)
             pos_emb = tts_text_pos_embedding.emb(pos_clamped)
             inputs_embeds_buffer[:bs] = emb + pos_emb
             model_output = self.model(inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True)
@@ -196,7 +196,7 @@ class AccelInferenceEngine:
                 assert tts_mel_embedding is not None
                 assert tts_text_pos_embedding is not None
                 emb = tts_mel_embedding(input_ids[:bs])
-                pos_clamped = torch.clamp(positions[:bs], min=0)
+                pos_clamped = positions[:bs].clamp(min=0)
                 pos_emb = tts_text_pos_embedding.emb(pos_clamped)
                 inputs_embeds_buffer[:bs] = emb + pos_emb
                 model_output = self.model(inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True)
@@ -236,9 +236,9 @@ class AccelInferenceEngine:
             assert tts_mel_embedding is not None
             assert tts_text_pos_embedding is not None
             inputs_embeds = tts_mel_embedding(input_ids)
-            pos_clamped = torch.clamp(positions, min=0)
+            pos_clamped = positions.clamp(min=0)
             pos_emb = tts_text_pos_embedding.emb(pos_clamped)
-            inputs_embeds = inputs_embeds + pos_emb
+            inputs_embeds += pos_emb
             model_output = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True)
             assert not isinstance(model_output, tuple)
             out = unwrap(model_output.last_hidden_state)
@@ -249,9 +249,9 @@ class AccelInferenceEngine:
             assert tts_mel_embedding is not None
             assert tts_text_pos_embedding is not None
             inputs_embeds = tts_mel_embedding(input_ids)
-            pos_clamped = torch.clamp(positions, min=0)
+            pos_clamped = positions.clamp(min=0)
             pos_emb = tts_text_pos_embedding.emb(pos_clamped)
-            inputs_embeds = inputs_embeds + pos_emb
+            inputs_embeds += pos_emb
             model_output = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True)
             assert not isinstance(model_output, tuple)
             out = unwrap(model_output.last_hidden_state)
@@ -348,7 +348,7 @@ class AccelInferenceEngine:
 
         start_pos = torch.tensor([[tts_embeddings.size(1)]], device="cuda", dtype=torch.long)
         pos_emb = tts_text_pos_embedding.emb(start_pos)
-        start_emb = start_emb + pos_emb
+        start_emb += pos_emb
         start_emb = start_emb.repeat(batch_size, 1, 1)
 
         if is_varlen_batch:
@@ -394,7 +394,7 @@ class AccelInferenceEngine:
         if temperature > 0:
             first_token = self.sampler(logits, temperatures)
         else:
-            first_token = torch.argmax(logits, dim=-1)
+            first_token = logits.argmax(dim=-1)
 
         first_token_list = first_token.tolist()
 
@@ -452,7 +452,7 @@ class AccelInferenceEngine:
             if temperature > 0:
                 next_token = self.sampler(logits, temperatures)
             else:
-                next_token = torch.argmax(logits, dim=-1)
+                next_token = logits.argmax(dim=-1)
             next_token_list = next_token.tolist()
 
             for i, token_id in enumerate(next_token_list):
@@ -509,5 +509,5 @@ class _Sampler(nn.Module):
     @torch.compile
     def forward(self, logits: Tensor, temperatures: Tensor) -> Tensor:
         logits = logits.float().div_(temperatures.unsqueeze(dim=1))
-        probs = torch.softmax(logits, dim=-1)
+        probs = logits.softmax(dim=-1)
         return probs.div_(torch.empty_like(probs).exponential_(1).clamp_min_(1e-10)).argmax(dim=-1)

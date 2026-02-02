@@ -9,18 +9,6 @@ from indextts.s2mel.modules.encodec import SConv1d
 from indextts.util import patch_call
 
 
-@torch.compile
-def _fused_add_tanh_sigmoid_multiply(
-    dim: int, input_a: Float[Tensor, "b c t"], input_b: Float[Tensor, "b c t"]
-) -> Tensor:
-    in_act = input_a + input_b
-    # use torch.split to avoid dynamic slicing
-    t_act_part, s_act_part = torch.split(in_act, dim, dim=1)
-    t_act = torch.tanh(t_act_part)
-    s_act = torch.sigmoid(s_act_part)
-    return t_act * s_act
-
-
 class WaveNet(nn.Module):
     cond_layer: SConv1d
     drop: nn.Dropout
@@ -52,7 +40,8 @@ class WaveNet(nn.Module):
             g_l = g[:, offset : offset + 2 * self.dim, :]
 
             x_in = self.in_layers[i].__call__(x)
-            acts = _fused_add_tanh_sigmoid_multiply(self.dim, x_in, g_l)
+            t_act_part, s_act_part = (x_in + g_l).split(self.dim, dim=1)
+            acts = t_act_part.tanh() * s_act_part.sigmoid()
             acts = self.drop(acts)
 
             res_skip_acts = self.res_skip_layers[i].__call__(acts)

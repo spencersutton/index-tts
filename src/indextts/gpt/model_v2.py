@@ -17,21 +17,6 @@ if TYPE_CHECKING:
     from indextts.accel import AccelInferenceEngine
 
 
-def _set_padding(input_tokens: Int[Tensor, "B _"], lengths: list[int], token: int) -> Tensor:
-    """
-    Given tokens that are derived from a padded audio clip and the actual lengths of each batch element in
-    that audio clip, reformats the tokens with `token` in place of the zero padding. This is required
-    preformatting to create a working TTS model.
-    """
-    for b in range(len(lengths)):
-        # Due to the convolutional nature of how these tokens are generated,
-        # it would be best if the model predicts a token past the actual last token.
-        actual_end = lengths[b]
-        if actual_end < input_tokens.shape[-1]:
-            input_tokens[b, actual_end:] = token
-    return input_tokens
-
-
 class UnifiedVoice(nn.Module):
     """Unified voice/text GPT model.
 
@@ -153,7 +138,7 @@ class UnifiedVoice(nn.Module):
         self.speed_emb.weight.data.normal_(std=0.0)
 
         # Initialize the embeddings per the GPT-2 scheme
-        embeddings: list[nn.Embedding] = [self.text_embedding, self.mel_embedding]
+        embeddings = [self.text_embedding, self.mel_embedding]
         for module in embeddings:
             module.weight.data.normal_(std=0.02)
 
@@ -228,10 +213,8 @@ class UnifiedVoice(nn.Module):
         speech_conditioning_latent: Float[Tensor, "B S D"],
         text_inputs: Int[Tensor, "B L"],
         mel_codes: Int[Tensor, "B M"],
-        emo_speech_conditioning_latent: Float[Tensor, "B 749 1024"],
         emo_vec: Float[Tensor, "B D"],
-        use_speed: int,
-        device: torch.types.Device,
+        device: torch.device,
     ) -> Tensor:
         """
         Forward pass that uses both text and voice in either text conditioning mode or voice conditioning mode
@@ -240,17 +223,14 @@ class UnifiedVoice(nn.Module):
         If return_latent is specified, loss & logits are not computed or returned. Only the predicted latents are returned.
         """
 
-        text_inputs = _set_padding(text_inputs, [text_inputs.shape[-1]], self.cfg.stop_text_token)
-        text_inputs = F.pad(text_inputs, [0, 1], value=self.cfg.stop_text_token)
+        text_inputs = F.pad(text_inputs, (1, 0), value=self.cfg.start_text_token)
+        text_inputs = F.pad(text_inputs, (0, 1), value=self.cfg.stop_text_token)
 
-        mel_codes = _set_padding(mel_codes, [mel_codes.shape[-1]], self.cfg.stop_mel_token)
-        mel_codes = F.pad(mel_codes, [0, 1], value=self.cfg.stop_mel_token)
+        mel_codes = F.pad(mel_codes, (1, 0), value=self.cfg.start_mel_token)
+        mel_codes = F.pad(mel_codes, (0, 1), value=self.cfg.stop_mel_token)
 
-        text_inputs = F.pad(text_inputs, [1, 0], value=self.cfg.start_text_token)
-        mel_codes = F.pad(mel_codes, [1, 0], value=self.cfg.start_mel_token)
-
-        mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes.shape[1], device=device)
-        text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs.shape[1], device=device)
+        mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes.shape[1], )
+        text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs.shape[1], )
 
         conds = self.combine_latents(speech_conditioning_latent, emo_vec, text_inputs)
         output = self.gpt(
@@ -291,9 +271,9 @@ class UnifiedVoice(nn.Module):
             valid_mask = (inputs[i] != self.cfg.stop_text_token) & (inputs[i] != self.cfg.start_text_token)
 
             text_input = inputs[i][valid_mask]
-            text_input = F.pad(text_input, [1, 0], value=self.cfg.start_text_token)
-            text_input = F.pad(text_input, [0, 1], value=self.cfg.stop_text_token)
-            text_input_pos = torch.arange(0, text_input.size(-1), device=device)
+            text_input = F.pad(text_input, (1, 0), value=self.cfg.start_text_token)
+            text_input = F.pad(text_input, (0, 1), value=self.cfg.stop_text_token)
+            text_input_pos = torch.arange(text_input.size(-1), device=device)
 
             text_emb = self.text_embedding(text_input) + self.text_pos_embedding.emb(text_input_pos)
 

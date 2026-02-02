@@ -107,12 +107,12 @@ class MultiHeadedAttention(nn.Module):
             # For last chunk, time2 might be larger than scores.size(-1)
             mask = mask[:, :, :, : scores.size(-1)]  # (batch, 1, *, time2)
             scores = scores.masked_fill(mask, -float("inf"))
-            attn = torch.softmax(scores, dim=-1).masked_fill(mask, 0.0)  # (batch, head, time1, time2)
+            attn = scores.softmax(dim=-1).masked_fill(mask, 0.0)  # (batch, head, time1, time2)
         # NOTE(xcsong): When will `if mask.size(2) > 0` be False?
         #   1. onnx(16/-1, -1/-1, 16/0)
         #   2. jit (16/-1, -1/-1, 16/0, 16/4)
         else:
-            attn = torch.softmax(scores, dim=-1)  # (batch, head, time1, time2)
+            attn = scores.softmax(dim=-1)  # (batch, head, time1, time2)
 
         p_attn = self.dropout(attn)
         x = p_attn @ value  # (batch, head, time1, d_k)
@@ -179,7 +179,7 @@ class MultiHeadedAttention(nn.Module):
         # >>> d = torch.split(a, 2, dim=-1)
         # >>> torch.equal(d[0], d[1])  # True
         if cache.size(0) > 0:
-            key_cache, value_cache = torch.split(cache, cache.size(-1) // 2, dim=-1)
+            key_cache, value_cache = cache.split(cache.size(-1) // 2, dim=-1)
             k = torch.cat([key_cache, k], dim=2)
             v = torch.cat([value_cache, v], dim=2)
         # NOTE(xcsong): We do cache slicing in encoder.forward_chunk, since it's
@@ -261,12 +261,11 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
         # >>> d = torch.split(a, 2, dim=-1)
         # >>> torch.equal(d[0], d[1])  # True
         if cache.size(0) > 0:
-            key_cache, value_cache = torch.split(cache, cache.size(-1) // 2, dim=-1)
+            key_cache, value_cache = cache.split(cache.size(-1) // 2, dim=-1)
             k = torch.cat([key_cache, k], dim=2)
             v = torch.cat([value_cache, v], dim=2)
         # NOTE(xcsong): We do cache slicing in encoder.forward_chunk, since it's
         #   non-trivial to calculate `next_cache_start` here.
-        new_cache = torch.cat((k, v), dim=-1)
 
         n_batch_pos = pos_emb.size(0)
         p = self.linear_pos(pos_emb).view(n_batch_pos, -1, self.h, self.d_k)
@@ -288,7 +287,7 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
         matrix_bd = q_with_bias_v @ p.mT
         scores = (matrix_ac + matrix_bd) / math.sqrt(self.d_k)  # (batch, head, time1, time2)
 
-        return self.forward_attention(v, scores, mask), new_cache
+        return self.forward_attention(v, scores, mask), torch.empty(0)
 
     @patch_call(forward)
     def __call__(self) -> None: ...

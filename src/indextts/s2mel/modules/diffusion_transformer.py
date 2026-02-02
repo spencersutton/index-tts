@@ -33,7 +33,7 @@ class _TimestepEmbedder(nn.Module):
         self.mlp = nn.Sequential(nn.Linear(dim // 2, dim), nn.SiLU(), nn.Linear(dim, dim))
 
         half = dim // 4
-        freqs = torch.exp(-math.log(10000) * torch.arange(start=0, end=half, dtype=torch.float32) / half)
+        freqs = (-math.log(10000) * torch.arange(half).float() / half).exp()
         self.register_buffer("freqs", freqs)
 
     def timestep_embedding(self, t: Float[Tensor, "b"]) -> Tensor:
@@ -45,8 +45,8 @@ class _TimestepEmbedder(nn.Module):
         """
         # https://github.com/openai/glide-text2im/blob/main/glide_text2im/nn.py
 
-        args = 1000 * t[:, None].float() * self.freqs[None]
-        return torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
+        args = 1000 * t[:, None] * self.freqs[None]
+        return torch.cat([args.cos(), args.sin()], dim=-1)
 
     @override
     def forward(self, t: Float[Tensor, "b"]) -> Tensor:
@@ -144,9 +144,8 @@ class DiT(nn.Module):
         x_res = self.transformer.__call__(x_in, t1.unsqueeze(1), input_pos)
 
         x_res = self.skip_linear(torch.cat([x_res, x], dim=-1))
-        x = self.conv1.__call__(x_res)
-        x = x.mT
-        t2 = self.t_embedder2(t)
+        x = self.conv1.__call__(x_res).mT
+        t2 = self.t_embedder2.__call__(t)
 
         x = self.wavenet.__call__(x, g=t2.unsqueeze(2)).mT + self.res_projection(x_res)
         x = self.final_layer.__call__(x, t1).mT

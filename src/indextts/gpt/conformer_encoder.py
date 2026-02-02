@@ -30,7 +30,7 @@ def make_pad_mask(lengths: Int[Tensor, "b"], max_len: int = 0) -> Bool[Tensor, "
     """
     batch_size = lengths.size(0)
     max_len = max_len if max_len > 0 else int(lengths.max().item())
-    seq_range = torch.arange(0, max_len, dtype=torch.int64, device=lengths.device)
+    seq_range = torch.arange(max_len, dtype=torch.int64, device=lengths.device)
     seq_range_expand = seq_range.unsqueeze(0).expand(batch_size, max_len)
     seq_length_expand = lengths.unsqueeze(-1)
     return seq_range_expand >= seq_length_expand
@@ -93,19 +93,13 @@ class _ConvolutionModule(nn.Module):
 
     @override
     def forward(
-        self,
-        x: Float[Tensor, "b t c"],
-        mask_pad: Bool[Tensor, "b 1 t"] = torch.ones((0, 0, 0), dtype=torch.bool),
-        cache: Float[Tensor, "b c t"] = torch.zeros((0, 0, 0)),
-    ) -> tuple[Tensor, Tensor]:
+        self, x: Float[Tensor, "b t c"], mask_pad: Bool[Tensor, "b 1 t"] = torch.ones((0, 0, 0), dtype=torch.bool)
+    ) -> Tensor:
         """Compute convolution module.
         Args:
             x (Tensor): Input tensor (#batch, time, channels).
             mask_pad (Tensor): used for batch padding (#batch, 1, time),
                 (0, 0, 0) means fake mask.
-            cache (Tensor): left context cache, it is only
-                used in causal convolution (#batch, channels, cache_t),
-                (0, 0, 0) meas fake cache.
         Returns:
             Tensor: Output tensor (#batch, time, channels).
         """
@@ -116,24 +110,20 @@ class _ConvolutionModule(nn.Module):
         if mask_pad.size(2) > 0:  # time > 0
             x.masked_fill_(~mask_pad, 0.0)
 
-        # It's better we just return None if no cache is required,
-        # However, for JIT export, here we just fake one tensor instead of
-        # None.
-        new_cache = torch.zeros((0, 0, 0), dtype=x.dtype, device=x.device)
-
         # GLU mechanism
         x = self.pointwise_conv1(x)  # (batch, 2*channel, dim)
         x = F.glu(x, dim=1)  # (batch, channel, dim)
 
         # 1D Depthwise Conv
         x = self.depthwise_conv(x).mT
-        x = self.activation(self.norm(x)).mT
+        x = self.norm(x)
+        x = self.activation(x).mT
         x = self.pointwise_conv2(x)
         # mask batch padding
         if mask_pad.size(2) > 0:  # time > 0
             x.masked_fill_(~mask_pad, 0.0)
 
-        return x.mT, new_cache
+        return x.mT
 
     @patch_call(forward)
     def __call__(self) -> None: ...
@@ -164,11 +154,10 @@ class _ConformerEncoderLayer(nn.Module):
         self.self_attn = self_attn
         self.feed_forward = feed_forward
         self.conv_module = conv_module
-        self.norm_ff = nn.LayerNorm(size, eps=1e-5)  # for the FNN module
-        self.norm_mha = nn.LayerNorm(size, eps=1e-5)  # for the MHA module
-        self.ff_scale = 1.0
-        self.norm_conv = nn.LayerNorm(size, eps=1e-5)  # for the CNN module
-        self.norm_final = nn.LayerNorm(size, eps=1e-5)  # for the final output of the block
+        self.norm_ff = nn.LayerNorm(size)  # for the FNN module
+        self.norm_mha = nn.LayerNorm(size)  # for the MHA module
+        self.norm_conv = nn.LayerNorm(size)  # for the CNN module
+        self.norm_final = nn.LayerNorm(size)  # for the final output of the block
         self.dropout = nn.Dropout(0.0)
         self.size = size
         self.concat_linear = nn.Identity()
@@ -181,8 +170,7 @@ class _ConformerEncoderLayer(nn.Module):
         pos_emb: Float[Tensor, "b t c"],
         mask_pad: Bool[Tensor, "b 1 t"] = torch.ones((0, 0, 0), dtype=torch.bool),
         att_cache: Float[Tensor, "b h t d"] = torch.zeros((0, 0, 0, 0)),
-        cnn_cache: Float[Tensor, "b c t"] = torch.zeros((0, 0, 0)),
-    ) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+    ) -> tuple[Tensor, Tensor]:
         """Compute encoded features.
 
         Args:
@@ -195,39 +183,31 @@ class _ConformerEncoderLayer(nn.Module):
                 (#batch, 1, time), (0, 0, 0) means fake mask.
             att_cache (Tensor): Cache tensor of the KEY & VALUE
                 (#batch=1, head, cache_t1, d_k * 2), head * d_k == size.
-            cnn_cache (Tensor): Convolution cache in conformer layer
-                (#batch=1, size, cache_t2)
         Returns:
             Tensor: Output tensor (#batch, time, size).
             Tensor: Mask tensor (#batch, time, time).
-            Tensor: att_cache tensor,
-                (#batch=1, head, cache_t1 + time, d_k * 2).
-            Tensor: cnn_cache tensor (#batch, size, cache_t2).
         """
 
         # multi-headed self-attention module
         residual = x
         x = self.norm_mha.__call__(x)
 
-        x_att, new_att_cache = self.self_attn.__call__(x, x, x, mask, pos_emb, att_cache)
+        x_att, _ = self.self_attn.__call__(x, x, x, mask, pos_emb, att_cache)
         x = residual + self.dropout.__call__(x_att)
 
-        # convolution module
-        # Fake new cnn cache here, and then change it in conv_module
-        new_cnn_cache = torch.zeros((0, 0, 0), dtype=x.dtype, device=x.device)
         residual = x
         x = self.norm_conv.__call__(x)
-        x, new_cnn_cache = self.conv_module.__call__(x, mask_pad, cnn_cache)
+        x = self.conv_module.__call__(x, mask_pad)
         x = residual + self.dropout.__call__(x)
 
         # feed forward module
         residual = x
         x = self.norm_ff.__call__(x)
 
-        x = residual + self.ff_scale * self.dropout.__call__(self.feed_forward.__call__(x))
+        x = residual + self.dropout.__call__(self.feed_forward.__call__(x))
         x = self.norm_final.__call__(x)
 
-        return x, mask, new_att_cache, new_cnn_cache
+        return x, mask
 
     @patch_call(forward)
     def __call__(self) -> None: ...
@@ -247,7 +227,7 @@ class ConformerEncoder(nn.Module):
         super().__init__()
 
         self.embed = Conv2dSubsampling2(input_dim=1024, output_dim=dim)
-        self.after_norm = nn.LayerNorm(dim, eps=1e-5)
+        self.after_norm = nn.LayerNorm(dim)
         activation = nn.SiLU()
 
         self.encoders = cast(  # pyright: ignore[reportInvalidCast]
@@ -269,17 +249,7 @@ class ConformerEncoder(nn.Module):
 
         Args:
             xs: padded input tensor (B, T, D)
-            xs_lens: input length (B)
-            decoding_chunk_size: decoding chunk size for dynamic chunk
-                0: default for training, use random dynamic chunk.
-                <0: for decoding, use full chunk.
-                >0: for decoding, use fixed chunk size as set.
-            num_decoding_left_chunks: number of left chunks, this is for decoding,
-            the chunk size is decoding_chunk_size.
-                >=0: use num_decoding_left_chunks
-                <0: use all left chunks
         Returns:
-            encoder output tensor xs, and subsampled masks
             xs: padded output tensor (B, T' ~= T/subsample_rate, D)
             masks: Tensor batch padding mask after subsample
                 (B, 1, T' ~= T/subsample_rate)
@@ -291,7 +261,7 @@ class ConformerEncoder(nn.Module):
         chunk_masks = masks
         mask_pad = masks  # (B, 1, T/subsample_rate)
         for layer in self.encoders:
-            xs, chunk_masks, _, _ = layer.__call__(xs, chunk_masks, pos_emb, mask_pad)
+            xs, chunk_masks = layer.__call__(xs, chunk_masks, pos_emb, mask_pad)
         xs = self.after_norm.__call__(xs)
         # Here we assume the mask is not changed in encoder layers, so just
         # return the masks before encoder layers, and the masks will be used

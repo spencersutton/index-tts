@@ -88,7 +88,7 @@ def semantic_stats(device: torch.device) -> tuple[Tensor, Tensor]:
         path = hf.hf_hub_download("amphion/dualcodec", "w2vbert2_mean_var_stats_emilia.pt")
         data: dict[str, Tensor] = torch.load(path)
         mean = data["mean"].to(device)
-        std = torch.sqrt(data["var"]).to(device)
+        std = data["var"].sqrt().to(device)
 
     print(f">> semantic_mean and semantic_var weights restored in {t:.2f} seconds from: {path}")
     return mean, std

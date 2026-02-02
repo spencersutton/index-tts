@@ -27,7 +27,7 @@ class _AdaptiveLayerNorm(nn.Module):
 
     @override
     def forward(self, input: Float[Tensor, "b t d"], embedding: Float[Tensor, "b t d"]) -> Tensor:
-        weight, bias = torch.split(self.project_layer(embedding), self.dim, dim=-1)
+        weight, bias = self.project_layer(embedding).split(self.dim, dim=-1)
         return weight * self.norm.__call__(input) + bias
 
     @patch_call(forward)
@@ -56,9 +56,9 @@ class Transformer(nn.Module):
         freq_seq = torch.arange(0, self.head_dim, 2, device=device)
         inv_freq = (10000 ** (freq_seq / self.head_dim)).reciprocal()
         t = torch.arange(self.block_size, device=device, dtype=dtype)
-        angles = torch.outer(t, inv_freq)
+        angles = t.outer(inv_freq)
         freqs_cis = torch.polar(torch.ones_like(angles), angles)
-        return torch.stack([freqs_cis.real, freqs_cis.imag], dim=-1)
+        return torch.view_as_real(freqs_cis)
 
     @override
     def forward(self, x: Float[Tensor, "b t d"], c: Float[Tensor, "b t d"], input_pos: Int[Tensor, "t"]) -> Tensor:
@@ -67,7 +67,7 @@ class Transformer(nn.Module):
         skip_stack: list[Tensor] = []
         for i, layer in enumerate(self.layers):
             skip_in_x = skip_stack.pop() if i > mid else None
-            x = layer.__call__(x, c, input_pos, freqs_cis, skip_in_x)
+            x = layer.__call__(x, c, freqs_cis, skip_in_x)
             if i < mid:
                 skip_stack.append(x)
         return self.norm.__call__(x, c)
@@ -98,7 +98,6 @@ class _TransformerBlock(nn.Module):
         self,
         x: Float[Tensor, "b t d"],
         c: Float[Tensor, "b t d"],
-        input_pos: Int[Tensor, "t"],
         freqs_cis: Float[Tensor, "b t d"],
         skip_in_x: Float[Tensor, "b t d"] | None = None,
     ) -> Tensor:

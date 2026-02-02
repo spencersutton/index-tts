@@ -2,7 +2,7 @@ import re
 import sys
 import traceback
 import warnings
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, cast
@@ -13,7 +13,7 @@ from sentencepiece import SentencePieceProcessor
 if TYPE_CHECKING:
     from wetext import Normalizer
 
-_punctuation_marks_tokens: Final = [
+_PUNCTUATION_MARKS_TOKENS: Final[Sequence[str]] = [
     ".",
     "!",
     "?",
@@ -54,6 +54,11 @@ def de_tokenized_by_CJK_char(line: str, do_lower_case: bool = False) -> str:
     return "".join(words)
 
 
+CJK_RANGE_PATTERN: Final = (
+    r"([\u1100-\u11ff\u2e80-\ua4cf\ua840-\uD7AF\uF900-\uFAFF\uFE30-\uFE4F\uFF65-\uFFDC\U00020000-\U0002FFFF])"
+)
+
+
 def tokenize_by_CJK_char(line: str, do_upper_case: bool = True) -> str:
     """
     Tokenize a line of text with CJK char.
@@ -69,61 +74,89 @@ def tokenize_by_CJK_char(line: str, do_upper_case: bool = True) -> str:
         The input text.
 
     Return:
+
       A new string tokenize by CJK char.
     """
     # The CJK ranges is from https://github.com/alvations/nltk/blob/79eed6ddea0d0a2c212c1060b477fc268fec4d4b/nltk/tokenize/util.py
-    CJK_RANGE_PATTERN = (
-        r"([\u1100-\u11ff\u2e80-\ua4cf\ua840-\uD7AF\uF900-\uFAFF\uFE30-\uFE4F\uFF65-\uFFDC\U00020000-\U0002FFFF])"
-    )
     chars = re.split(CJK_RANGE_PATTERN, line.strip())
     return " ".join([w.strip().upper() if do_upper_case else w.strip() for w in chars if w.strip()])
+
+
+PINYIN_TONE_PATTERN: Final = r"(?<![a-z])((?:[bpmfdtnlgkhjqxzcsryw]|[zcs]h)?(?:[aeiouüv]|[ae]i|u[aio]|ao|ou|i[aue]|[uüv]e|[uvü]ang?|uai|[aeiuv]n|[aeio]ng|ia[no]|i[ao]ng)|ng|er)([1-5])"
+"""
+Matches Pinyin tone formats: pinyin + digit (tones 1-5, where 5 represents the neutral tone).
+Examples: xuan4, jve2, ying1, zhong4, shang5
+Non-matches: beta1, voice2
+"""
+
+NAME_PATTERN: Final = re.compile(r"[\u4e00-\u9fff]+(?:[-·—][\u4e00-\u9fff]+){1,2}", re.IGNORECASE)
+"""
+Matches person names in formats: Chinese·Chinese or Chinese·Chinese-Chinese.
+Examples: 克里斯托弗·诺兰 (Christopher Nolan), 约瑟夫·高登-莱维特 (Joseph Gordon-Levitt).
+"""
+
+TECH_TERM_PATTERN: Final = re.compile(r"[A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)+")
+"""
+Matches technical terms. Format: Starts with a letter + (letters or digits)* + (-letters or digits)+
+Examples: GPT-5-nano, F5-TTS, Fish-Speech, GPT-5, CosyVoice-2
+Must start with a letter to avoid matching pure numbers (e.g., phone numbers like 135-4567-8900).
+Used to protect hyphenated structures, preventing Chinese normalizers from parsing hyphens as minus signs (e.g., "minus five").
+"""
+
+ENGLISH_CONTRACTION_PATTERN: Final = r"(what|where|who|which|how|t?here|it|s?he|that|this)'s"
+"""
+Matches common English 's contractions, intended only for replacement with "is".
+Does not match all instances of 's (e.g., possessives).
+"""
 
 
 class TextNormalizer:
     if TYPE_CHECKING:
         zh_normalizer: Normalizer | None
         en_normalizer: Normalizer | None
+    zh_char_rep_map: Mapping[str, str]
+    enable_glossary: bool
+    char_rep_map: Mapping[str, str] = {
+        "：": ",",
+        "；": ",",
+        ";": ",",
+        "，": ",",
+        "。": ".",
+        "！": "!",
+        "？": "?",
+        "\n": " ",
+        "·": "-",
+        "、": ",",
+        "...": "…",
+        ",,,": "…",
+        "，，，": "…",
+        "……": "…",
+        "“": "'",
+        "”": "'",
+        '"': "'",
+        "‘": "'",
+        "’": "'",
+        "（": "'",
+        "）": "'",
+        "(": "'",
+        ")": "'",
+        "《": "'",
+        "》": "'",
+        "【": "'",
+        "】": "'",
+        "[": "'",
+        "]": "'",
+        "—": "-",
+        "～": "-",
+        "~": "-",
+        "「": "'",
+        "」": "'",
+        ":": ",",
+    }
 
     def __init__(self, enable_glossary: bool = False) -> None:
         self.zh_normalizer = None
         self.en_normalizer = None
-        self.char_rep_map = {
-            "：": ",",
-            "；": ",",
-            ";": ",",
-            "，": ",",
-            "。": ".",
-            "！": "!",
-            "？": "?",
-            "\n": " ",
-            "·": "-",
-            "、": ",",
-            "...": "…",
-            ",,,": "…",
-            "，，，": "…",
-            "……": "…",
-            "“": "'",
-            "”": "'",
-            '"': "'",
-            "‘": "'",
-            "’": "'",
-            "（": "'",
-            "）": "'",
-            "(": "'",
-            ")": "'",
-            "《": "'",
-            "》": "'",
-            "【": "'",
-            "】": "'",
-            "[": "'",
-            "]": "'",
-            "—": "-",
-            "～": "-",
-            "~": "-",
-            "「": "'",
-            "」": "'",
-            ":": ",",
-        }
         self.zh_char_rep_map = {"$": ".", **self.char_rep_map}
         self.enable_glossary = enable_glossary
         # 术语词汇表：用户可自定义专业术语的读法
@@ -151,29 +184,6 @@ class TextNormalizer:
         pattern = r"^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]+$"
         return re.match(pattern, email) is not None
 
-    PINYIN_TONE_PATTERN: Final = r"(?<![a-z])((?:[bpmfdtnlgkhjqxzcsryw]|[zcs]h)?(?:[aeiouüv]|[ae]i|u[aio]|ao|ou|i[aue]|[uüv]e|[uvü]ang?|uai|[aeiuv]n|[aeio]ng|ia[no]|i[ao]ng)|ng|er)([1-5])"
-    """
-    匹配拼音声调格式：pinyin+数字，声调1-5，5表示轻声
-    例如：xuan4, jve2, ying1, zhong4, shang5
-    不匹配：beta1, voice2
-    """
-    NAME_PATTERN: Final = r"[\u4e00-\u9fff]+(?:[-·—][\u4e00-\u9fff]+){1,2}"
-    """
-    匹配人名，格式：中文·中文，中文·中文-中文
-    例如：克里斯托弗·诺兰，约瑟夫·高登-莱维特
-    """
-
-    TECH_TERM_PATTERN: Final = r"[A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)+"
-    """
-    匹配技术术语，格式：字母开头+(字母或数字)*+(-字母或数字)+
-    例如：GPT-5-nano, F5-TTS, Fish-Speech, GPT-5, CosyVoice-2
-    必须以字母开头，避免匹配纯数字（如电话号码 135-4567-8900）
-    用于保护连字符结构，防止中文normalizer将连字符解析为减号（如"负五减"）
-    """
-
-    # 匹配常见英语缩写 's，仅用于替换为 is，不匹配所有 's
-    ENGLISH_CONTRACTION_PATTERN: Final = r"(what|where|who|which|how|t?here|it|s?he|that|this)'s"
-
     def use_chinese(self, s: str) -> bool:
         has_chinese = bool(re.search(r"[\u4e00-\u9fff]", s))
         has_alpha = bool(re.search(r"[a-zA-Z]", s))
@@ -181,7 +191,7 @@ class TextNormalizer:
         if has_chinese or not has_alpha or is_email:
             return True
 
-        return bool(re.search(TextNormalizer.PINYIN_TONE_PATTERN, s, re.IGNORECASE))
+        return bool(re.search(PINYIN_TONE_PATTERN, s, re.IGNORECASE))
 
     def load(self) -> None:
         if self.zh_normalizer is not None and self.en_normalizer is not None:
@@ -210,7 +220,7 @@ class TextNormalizer:
             print("Error, text normalizer is not initialized !!!")
             return ""
         if self.use_chinese(text):
-            text = re.sub(TextNormalizer.ENGLISH_CONTRACTION_PATTERN, r"\1 is", text, flags=re.IGNORECASE)
+            text = re.sub(ENGLISH_CONTRACTION_PATTERN, r"\1 is", text, flags=re.IGNORECASE)
             # 应用术语词汇表（优先级最高，在所有保护之前）
             if self.enable_glossary:
                 text = self.apply_glossary_terms(text, lang="zh")
@@ -234,7 +244,7 @@ class TextNormalizer:
             result = pattern.sub(lambda x: self.zh_char_rep_map[x.group()], result)
         else:
             try:
-                text = re.sub(TextNormalizer.ENGLISH_CONTRACTION_PATTERN, r"\1 is", text, flags=re.IGNORECASE)
+                text = re.sub(ENGLISH_CONTRACTION_PATTERN, r"\1 is", text, flags=re.IGNORECASE)
                 # 应用术语词汇表（优先级最高，在所有保护之前）
                 if self.enable_glossary:
                     text = self.apply_glossary_terms(text, lang="en")
@@ -271,8 +281,7 @@ class TextNormalizer:
         例如：克里斯托弗·诺兰 -> <n_a>
         """
         # 人名
-        name_pattern = re.compile(TextNormalizer.NAME_PATTERN, re.IGNORECASE)
-        original_name_list: list[str] = re.findall(name_pattern, original_text)
+        original_name_list = cast(list[str], NAME_PATTERN.findall(original_text))
         if len(original_name_list) == 0:
             return (original_text, None)
         original_name_list = list({"".join(n) for n in original_name_list})
@@ -308,8 +317,7 @@ class TextNormalizer:
         例如：GPT-5-nano -> GPT<H>5<H>nano，然后 5 被转换为 五
         最终恢复为：GPT-五-nano
         """
-        tech_pattern = re.compile(TextNormalizer.TECH_TERM_PATTERN)
-        original_tech_list = cast(list[str], tech_pattern.findall(original_text))
+        original_tech_list = cast(list[str], TECH_TERM_PATTERN.findall(original_text))
         if len(original_tech_list) == 0:
             return (original_text, None)
 
@@ -435,7 +443,7 @@ class TextNormalizer:
         例如：xuan4 -> <pinyin_a>
         """
         # 声母韵母+声调数字
-        origin_pinyin_pattern = re.compile(TextNormalizer.PINYIN_TONE_PATTERN, re.IGNORECASE)
+        origin_pinyin_pattern = re.compile(PINYIN_TONE_PATTERN, re.IGNORECASE)
         original_pinyin_list = re.findall(origin_pinyin_pattern, original_text)
         if len(original_pinyin_list) == 0:
             return (original_text, None)
@@ -667,7 +675,7 @@ class TextTokenizer:
     ) -> list[list[str]]:
         return TextTokenizer.split_segments_by_token(
             tokenized,
-            _punctuation_marks_tokens,
+            _PUNCTUATION_MARKS_TOKENS,
             max_text_tokens_per_segment=max_text_tokens_per_segment,
             quick_streaming_tokens=quick_streaming_tokens,
         )

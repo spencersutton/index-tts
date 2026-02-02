@@ -148,24 +148,13 @@ class RelPositionMultiHeadedAttention(nn.Module):
 
         """
         n_batch = value.size(0)
-        # NOTE(xcsong): When will `if mask.size(2) > 0` be True?
-        #   1. onnx(16/4) [WHY? Because we feed real cache & real mask for the
-        #           1st chunk to ease the onnx export.]
-        #   2. pytorch training
-        if mask.size(2) > 0:  # time2 > 0
-            mask = mask.unsqueeze(1).eq(0)  # (batch, 1, *, time2)
-            # For last chunk, time2 might be larger than scores.size(-1)
-            mask = mask[:, :, :, : scores.size(-1)]  # (batch, 1, *, time2)
-            scores = scores.masked_fill(mask, -float("inf"))
-            attn = scores.softmax(dim=-1).masked_fill(mask, 0.0)  # (batch, head, time1, time2)
-        # NOTE(xcsong): When will `if mask.size(2) > 0` be False?
-        #   1. onnx(16/-1, -1/-1, 16/0)
-        #   2. jit (16/-1, -1/-1, 16/0, 16/4)
-        else:
-            attn = scores.softmax(dim=-1)  # (batch, head, time1, time2)
+        mask = mask.unsqueeze(1) == 0
+        mask = mask[..., : scores.size(-1)]
+        scores = scores.masked_fill(mask, -float("inf"))
+        attn = scores.softmax(dim=-1)
 
-        x = attn @ value  # (batch, head, time1, d_k)
-        x = x.transpose(1, 2).contiguous().view(n_batch, -1, self.h * self.d_k)  # (batch, time1, d_model)
+        x = attn @ value
+        x = x.transpose(1, 2).reshape(n_batch, -1, self.h * self.d_k)
 
         return self.linear_out(x)  # (batch, time1, d_model)
 

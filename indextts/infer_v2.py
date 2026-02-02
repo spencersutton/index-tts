@@ -364,13 +364,7 @@ class IndexTTS2:
 
                 with torch.autocast(self.device.type, dtype=self.dtype), gpt_forward_time:
                     latent = self.gpt.__call__(
-                        speech_conditioning_latent,
-                        text_tokens,
-                        codes,
-                        emotion_conditioning_embedding,
-                        emo_vec=emotion_vector,
-                        use_speed=speaker_conditioning_embedding.size(0),
-                        device=self.device,
+                        speech_conditioning_latent, text_tokens, codes, emo_vec=emotion_vector, device=self.device
                     )
 
                 with s2mel_time:

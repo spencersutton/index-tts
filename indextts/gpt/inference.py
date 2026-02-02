@@ -98,7 +98,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         if input_ids.shape[1] != 1:
             text_inputs = input_ids[:, mel_len:]
             text_emb = self.embeddings(text_inputs)
-            text_emb += self.text_pos_embedding.__call__(text_emb.shape[1], device=text_emb.device)
+            text_emb += self.text_pos_embedding.__call__(text_emb.shape[1])
             if self.cached_mel_emb.shape[0] != text_emb.shape[0]:
                 mel_emb = self.cached_mel_emb.repeat_interleave(text_emb.shape[0] // self.cached_mel_emb.shape[0], 0)
             else:  # this outcome only occurs once per loop in most cases
@@ -107,7 +107,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         else:
             assert attention_mask is not None
             emb = self.embeddings(input_ids)
-            emb += self.text_pos_embedding.get_fixed_embedding(attention_mask.shape[1] - mel_len, attention_mask.device)
+            emb += self.text_pos_embedding.get_fixed_embedding(attention_mask.shape[1] - mel_len)
         transformer_outputs = self.transformer(
             inputs_embeds=emb,
             past_key_values=past_key_values,

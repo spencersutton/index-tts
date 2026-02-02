@@ -58,17 +58,6 @@ class RelPositionalEncoding(nn.Module):
         pe = pe.unsqueeze(0)
         self.register_buffer("pe", pe)
 
-    def position_encoding(self, size: int) -> Tensor:
-        """For getting encoding in a streaming fashion
-
-        Args:
-            size (int): required size of position encoding
-
-        Returns:
-            Tensor: Corresponding encoding
-        """
-        return self.pe[:, :size]
-
     @override
     def forward(self, x: Float[Tensor, "b t d"]) -> tuple[Tensor, Tensor]:
         """Compute positional encoding.
@@ -78,10 +67,8 @@ class RelPositionalEncoding(nn.Module):
             Tensor: Encoded tensor (batch, time, `*`).
             Tensor: Positional embedding tensor (1, time, `*`).
         """
-        self.pe = self.pe.to(x.device)
         x *= self.xscale
-        pos_emb = self.position_encoding(x.size(1))
-        return x, pos_emb
+        return x, self.pe[:, : x.size(1)]
 
     @patch_call(forward)
     def __call__(self) -> None: ...

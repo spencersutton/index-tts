@@ -61,9 +61,9 @@ class Conv2dSubsampling2(nn.Module):
 
         """
         x = x.unsqueeze(1)  # (b, c=1, t, f)
-        x = self.conv.__call__(x)
+        x = self.conv(x)
         b, c, t, f = x.size()
-        x = self.out.__call__(x.transpose(1, 2).contiguous().view(b, t, c * f))
+        x = self.out(x.transpose(1, 2).reshape(b, t, c * f))
         x, pos_emb = self.pos_enc.__call__(x)
         return x, pos_emb, x_mask[:, :, 2::2]
 

@@ -96,24 +96,24 @@ def semantic_stats(device: torch.device) -> tuple[Tensor, Tensor]:
     return mean, std
 
 
-def cfm(device: torch.device, dim: int = 512, in_channels: int = 80) -> CFM:
+def cfm(device: torch.device) -> CFM:
     with Timer() as t:
         path = "checkpoints/cfm.safetensors"
         data = safetensors.torch.load_file(path, device=str(device))
         with torch.device("meta"):
-            model = CFM(dim=dim, in_channels=in_channels)
+            model = CFM()
         model.load_state_dict(data, assign=True)
 
     print(f">> CFM weights restored in {t:.2f} seconds from: {path}")
     return model.eval()
 
 
-def length_regulator(device: torch.device, dim: int = 512) -> InterpolateRegulator:
+def length_regulator(device: torch.device) -> InterpolateRegulator:
     with Timer() as t:
         path = "checkpoints/length_regulator.safetensors"
         data = safetensors.torch.load_file(path, device=str(device))
         with torch.device("meta"):
-            model = InterpolateRegulator(dim)
+            model = InterpolateRegulator()
         model.load_state_dict(data, assign=True)
 
     print(f">> Length Regulator weights restored in {t:.2f} seconds from: {path}")

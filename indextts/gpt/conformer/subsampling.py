@@ -37,12 +37,12 @@ class Conv2dSubsampling2(nn.Module):
     out: nn.Sequential
     pos_enc: RelPositionalEncoding
 
-    def __init__(self, input_dim: int, output_dim: int) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
-        self.conv = nn.Sequential(nn.Conv2d(1, output_dim, kernel_size=3, stride=2), nn.ReLU())
-        self.out = nn.Sequential(nn.Linear(output_dim * ((input_dim - 1) // 2), output_dim))
-        self.pos_enc = RelPositionalEncoding(output_dim)
+        self.conv = nn.Sequential(nn.Conv2d(1, 512, kernel_size=3, stride=2), nn.ReLU())
+        self.out = nn.Sequential(nn.Linear(261632, 512))
+        self.pos_enc = RelPositionalEncoding(512)
 
     @override
     def forward(self, x: Float[Tensor, "b t d"], x_mask: Bool[Tensor, "b 1 t"]) -> tuple[Tensor, Tensor, Tensor]:

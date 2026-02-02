@@ -99,10 +99,10 @@ class UnifiedVoice(nn.Module):
         self.max_text_tokens = cfg.max_text_tokens
         self.cond_mask_pad = nn.ConstantPad1d((condition_num_latent, 0), True)
         self.emo_cond_mask_pad = nn.ConstantPad1d((1, 0), True)
-        self.conditioning_encoder = ConformerEncoder(dim=512, linear_units=2048, attention_heads=8, num_blocks=6)
+        self.conditioning_encoder = ConformerEncoder(linear_units=2048, attention_heads=8, num_blocks=6)
         self.perceiver_encoder = PerceiverResampler(dim, heads=8, num_latents=condition_num_latent)
 
-        self.emo_conditioning_encoder = ConformerEncoder(dim=512, linear_units=1024, attention_heads=4, num_blocks=4)
+        self.emo_conditioning_encoder = ConformerEncoder(linear_units=1024, attention_heads=4, num_blocks=4)
         self.emo_perceiver_encoder = PerceiverResampler(1024, heads=4, num_latents=1)
 
         self.emo_layer = nn.Linear(dim, dim)

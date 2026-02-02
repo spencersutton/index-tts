@@ -19,8 +19,6 @@ class AccelInferenceEngine:
     graph_pool: object | None = None
     model: GPT2AccelModel
     lm_head: nn.Sequential | None
-    block_size: int
-    num_blocks: int
     hidden_size: int
     kv_manager: KVCacheManager
     sampler: _Sampler
@@ -30,14 +28,7 @@ class AccelInferenceEngine:
     graph_captured: bool = False
 
     def __init__(
-        self,
-        model: GPT2AccelModel,
-        lm_head: nn.Sequential | None,
-        num_layers: int,
-        num_heads: int,
-        head_dim: int,
-        block_size: int = 256,
-        num_blocks: int = 128,
+        self, model: GPT2AccelModel, lm_head: nn.Sequential | None, num_layers: int, num_heads: int, head_dim: int
     ) -> None:
         """
         Args:
@@ -51,15 +42,13 @@ class AccelInferenceEngine:
         """
         self.model = model
         self.lm_head = lm_head
-        self.block_size = block_size
-        self.num_blocks = num_blocks
         self.hidden_size = model.config.hidden_size if hasattr(model, "config") else head_dim * num_heads
         self.kv_manager = KVCacheManager(
             num_layers=num_layers,
             num_heads=num_heads,
             head_dim=head_dim,
-            block_size=block_size,
-            num_blocks=num_blocks,
+            block_size=256,
+            num_blocks=16,
             dtype=torch.float16,  # Force fp16 for FlashAttention
         )
         self.kv_manager.wire_kv_cache_to_model(model)
@@ -92,10 +81,10 @@ class AccelInferenceEngine:
                 num_total = len(req)
 
                 for token_idx in range(num_cached, num_total):
-                    block_idx = token_idx // self.block_size
-                    block_offset = token_idx % self.block_size
+                    block_idx = token_idx // 256
+                    block_offset = token_idx % 256
                     block_id = req.block_table[block_idx]
-                    slot_idx = block_id * self.block_size + block_offset
+                    slot_idx = block_id * 256 + block_offset
                     slot_mapping_list.append(slot_idx)
 
         input_ids = torch.tensor(input_ids_list, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
@@ -135,7 +124,7 @@ class AccelInferenceEngine:
             positions_list.append(pos)
 
             context_lens_list.append(len(req))
-            slot_mapping_list.append(req.block_table[-1] * self.block_size + req.last_block_num_tokens - 1)
+            slot_mapping_list.append(req.block_table[-1] * 256 + req.last_block_num_tokens - 1)
 
         input_ids = torch.tensor(input_ids_list, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
         positions = torch.tensor(positions_list, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
@@ -166,16 +155,14 @@ class AccelInferenceEngine:
         self, tts_mel_embedding: nn.Embedding, tts_text_pos_embedding: LearnedPositionEmbeddings
     ) -> None:
         print("Capturing CUDA graphs for decode optimization...")
-        max_bs = 8  # Support up to batch size 8
-        max_num_blocks = (2048 + self.block_size - 1) // self.block_size
         model_dtype = next(self.model.parameters()).dtype
-        input_ids = torch.ones(max_bs, dtype=torch.int64, device="cuda")
-        positions = torch.ones(max_bs, dtype=torch.int64, device="cuda")
-        slot_mapping = torch.zeros(max_bs, dtype=torch.int32, device="cuda")
-        context_lens = torch.zeros(max_bs, dtype=torch.int32, device="cuda")
-        block_tables = torch.zeros(max_bs, max_num_blocks, dtype=torch.int32, device="cuda")
-        outputs = torch.zeros(max_bs, self.hidden_size, dtype=model_dtype, device="cuda")
-        inputs_embeds_buffer = torch.zeros(max_bs, self.hidden_size, dtype=model_dtype, device="cuda")
+        input_ids = torch.ones(8, dtype=torch.int64, device="cuda")
+        positions = torch.ones(8, dtype=torch.int64, device="cuda")
+        slot_mapping = torch.zeros(8, dtype=torch.int32, device="cuda")
+        context_lens = torch.zeros(8, dtype=torch.int32, device="cuda")
+        block_tables = torch.zeros(8, 8, dtype=torch.int32, device="cuda")
+        outputs = torch.zeros(8, self.hidden_size, dtype=model_dtype, device="cuda")
+        inputs_embeds_buffer = torch.zeros(8, self.hidden_size, dtype=model_dtype, device="cuda")
 
         for bs in reversed(GRAPH_BS):
             graph = torch.cuda.CUDAGraph()

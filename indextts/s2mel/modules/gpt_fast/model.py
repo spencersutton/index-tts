@@ -18,20 +18,18 @@ from indextts.util import patch_call
 class _AdaptiveLayerNorm(nn.Module):
     """Adaptive Layer Normalization"""
 
-    dim: int
     project_layer: nn.Linear
     norm: _RMSNorm
 
-    def __init__(self, dim: int) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
-        self.dim = dim
-        self.project_layer = nn.Linear(dim, 2 * dim)
-        self.norm = _RMSNorm(dim=dim)
+        self.project_layer = nn.Linear(512, 1024)
+        self.norm = _RMSNorm()
 
     @override
     def forward(self, input: Float[Tensor, "b t d"], embedding: Float[Tensor, "b t d"]) -> Tensor:
-        weight, bias = self.project_layer(embedding).split(self.dim, dim=-1)
+        weight, bias = self.project_layer(embedding).split(512, dim=-1)
         return weight * self.norm.__call__(input) + bias
 
     @patch_call(forward)
@@ -41,28 +39,21 @@ class _AdaptiveLayerNorm(nn.Module):
 class Transformer(nn.Module):
     layers: Sequence[_TransformerBlock]
     norm: _AdaptiveLayerNorm
-    n_layer: int
-    block_size: int
-    head_dim: int
 
-    def __init__(self, block_size: int, dim: int, n_head: int = 8, n_layer: int = 13) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
-        self.n_layer = n_layer
-        self.block_size = block_size
-        self.head_dim = dim // n_head
-
-        self.layers = nn.ModuleList(_TransformerBlock(dim=dim) for _ in range(n_layer))  # pyright: ignore[reportAttributeAccessIssue]
-        self.norm = _AdaptiveLayerNorm(dim=dim)
+        self.layers = nn.ModuleList(_TransformerBlock() for _ in range(13))  # pyright: ignore[reportAttributeAccessIssue]
+        self.norm = _AdaptiveLayerNorm()
 
     @cached_property[Tensor]
     def freqs_cis(self) -> Tensor:
         dtype = self.norm.project_layer.weight.dtype
         device = self.norm.project_layer.weight.device
 
-        freq_seq = torch.arange(0, self.head_dim, 2, device=device)
-        inv_freq = (10000 ** (freq_seq / self.head_dim)).reciprocal()
-        t = torch.arange(self.block_size, device=device, dtype=dtype)
+        freq_seq = torch.arange(0, 64, 2, device=device)
+        inv_freq = (10000 ** (freq_seq / 64)).reciprocal()
+        t = torch.arange(16384, device=device, dtype=dtype)
         angles = t.outer(inv_freq)
         freqs_cis = torch.polar(torch.ones_like(angles), angles)
         return torch.view_as_real(freqs_cis)
@@ -70,7 +61,7 @@ class Transformer(nn.Module):
     @override
     def forward(self, x: Float[Tensor, "b t d"], c: Float[Tensor, "b t d"], input_pos: Int[Tensor, "t"]) -> Tensor:  # noqa: UP037
         freqs_cis = self.freqs_cis[input_pos]
-        mid = self.n_layer // 2
+        mid = 13 // 2
         skip_stack: list[Tensor] = []
         for i, layer in enumerate(self.layers):
             skip_in_x = skip_stack.pop() if i > mid else None
@@ -89,17 +80,15 @@ class _TransformerBlock(nn.Module):
     ffn_norm: _AdaptiveLayerNorm
     attention_norm: _AdaptiveLayerNorm
     skip_in_linear: nn.Linear
-    dim: int
 
-    def __init__(self, dim: int) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
-        self.dim = dim
-        self.attention = _Attention(dim=dim)
-        self.feed_forward = _FeedForward(dim=dim)
-        self.ffn_norm = _AdaptiveLayerNorm(dim=dim)
-        self.attention_norm = _AdaptiveLayerNorm(dim=dim)
-        self.skip_in_linear = nn.Linear(dim * 2, dim)
+        self.attention = _Attention()
+        self.feed_forward = _FeedForward()
+        self.ffn_norm = _AdaptiveLayerNorm()
+        self.attention_norm = _AdaptiveLayerNorm()
+        self.skip_in_linear = nn.Linear(1024, 512)
 
     @override
     def forward(
@@ -123,30 +112,23 @@ class _TransformerBlock(nn.Module):
 class _Attention(nn.Module):
     wqkv: nn.Linear
     wo: nn.Linear
-    dim: int
-    n_head: int
-    head_dim: int
 
-    def __init__(self, dim: int, n_head: int = 8) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
-        self.dim = dim
-        self.n_head = n_head
-        self.head_dim = dim // n_head
-
         # key, query, value projections for all heads, but in a batch
-        self.wqkv = nn.Linear(self.dim, self.dim * 3, bias=False)
-        self.wo = nn.Linear(self.dim, self.dim, bias=False)
+        self.wqkv = nn.Linear(512, 1536, bias=False)
+        self.wo = nn.Linear(512, 512, bias=False)
 
     @override
     def forward(self, x: Float[Tensor, "b t d"], freqs_cis: Float[Tensor, "b t d"]) -> Tensor:
         bsz, seqlen, _ = x.shape
 
         query_key_value = self.wqkv(x)
-        q, k, v = query_key_value.split((self.dim, self.dim, self.dim), dim=-1)
-        q = q.view(bsz, seqlen, self.n_head, self.head_dim)
-        k = k.view(bsz, seqlen, self.n_head, self.head_dim)
-        v = v.view(bsz, seqlen, self.n_head, self.head_dim)
+        q, k, v = query_key_value.split((512, 512, 512), dim=-1)
+        q = q.view(bsz, seqlen, 8, 64)
+        k = k.view(bsz, seqlen, 8, 64)
+        v = v.view(bsz, seqlen, 8, 64)
 
         q = _apply_rotary_emb(q, freqs_cis)
         k = _apply_rotary_emb(k, freqs_cis)
@@ -157,7 +139,7 @@ class _Attention(nn.Module):
         v = v.repeat_interleave(1, dim=1)
         y = F.scaled_dot_product_attention(q, k, v)
 
-        y = y.transpose(1, 2).contiguous().view(bsz, seqlen, self.dim)
+        y = y.transpose(1, 2).contiguous().view(bsz, seqlen, 512)
         return self.wo(y)
 
     @patch_call(forward)
@@ -169,12 +151,12 @@ class _FeedForward(nn.Module):
     w2: nn.Linear
     w3: nn.Linear
 
-    def __init__(self, dim: int) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
-        self.w1 = nn.Linear(dim, dim * 3, bias=False)
-        self.w3 = nn.Linear(dim, dim * 3, bias=False)
-        self.w2 = nn.Linear(dim * 3, dim, bias=False)
+        self.w1 = nn.Linear(512, 1536, bias=False)
+        self.w3 = nn.Linear(512, 1536, bias=False)
+        self.w2 = nn.Linear(1536, 512, bias=False)
 
     @override
     def forward(self, x: Float[Tensor, "b t d"]) -> Tensor:
@@ -187,10 +169,10 @@ class _FeedForward(nn.Module):
 class _RMSNorm(nn.Module):
     weight: nn.Parameter
 
-    def __init__(self, dim: int) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
-        self.weight = nn.Parameter(torch.ones(dim))
+        self.weight = nn.Parameter(torch.ones(512))
 
     @staticmethod
     def _norm(x: Float[Tensor, "b t d"]) -> Tensor:

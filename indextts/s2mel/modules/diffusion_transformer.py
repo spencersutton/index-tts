@@ -29,11 +29,11 @@ class _TimestepEmbedder(nn.Module):
         freqs: Tensor = torch.empty(0)
     mlp: nn.Sequential
 
-    def __init__(self, dim: int) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.mlp = nn.Sequential(nn.Linear(dim // 2, dim), nn.SiLU(), nn.Linear(dim, dim))
+        self.mlp = nn.Sequential(nn.Linear(512 // 2, 512), nn.SiLU(), nn.Linear(512, 512))
 
-        half = dim // 4
+        half = 512 // 4
         freqs = (-math.log(10000) * torch.arange(half).float() / half).exp()
         self.register_buffer("freqs", freqs)
 
@@ -67,11 +67,11 @@ class _FinalLayer(nn.Module):
     linear: nn.Linear
     adaLN_modulation: nn.Sequential
 
-    def __init__(self, dim: int) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.norm_final = nn.LayerNorm(dim, elementwise_affine=False, eps=1e-6)
-        self.linear = weight_norm(nn.Linear(dim, dim))
-        self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(dim, 2 * dim))
+        self.norm_final = nn.LayerNorm(512, elementwise_affine=False, eps=1e-6)
+        self.linear = weight_norm(nn.Linear(512, 512))
+        self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(512, 1024))
 
     @override
     def forward(self, x: Float[Tensor, "b t d"], c: Float[Tensor, "b d"]) -> Tensor:
@@ -99,29 +99,28 @@ class DiT(nn.Module):
     skip_linear: nn.Linear
     cond_x_merge_linear: nn.Linear
 
-    def __init__(self, dim: int, in_channels: int, block_size: int = 16384, style_encoder_dim: int = 192) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.transformer = Transformer(dim=512, block_size=block_size)
+        self.transformer = Transformer()
 
-        self.x_embedder = weight_norm(nn.Linear(in_channels, dim))
-        self.cond_projection = nn.Linear(dim, dim)  # continuous content
+        self.x_embedder = weight_norm(nn.Linear(80, 512))
+        self.cond_projection = nn.Linear(512, 512)  # continuous content
 
-        self.t_embedder = _TimestepEmbedder(dim=dim)
+        self.t_embedder = _TimestepEmbedder()
 
-        input_pos = torch.arange(block_size)
+        input_pos = torch.arange(16384)
         self.register_buffer("input_pos", input_pos)
 
-        self.t_embedder2 = _TimestepEmbedder(dim=dim)
-        self.conv1 = nn.Linear(dim, dim)
-        self.conv2 = nn.Conv1d(dim, in_channels, kernel_size=1)
-        self.wavenet = WaveNet(dim)
-        self.final_layer = _FinalLayer(dim=dim)
+        self.t_embedder2 = _TimestepEmbedder()
+        self.conv1 = nn.Linear(512, 512)
+        self.conv2 = nn.Conv1d(512, 80, kernel_size=1)
+        self.wavenet = WaveNet()
+        self.final_layer = _FinalLayer()
         # residual connection from tranformer output to final output
-        self.res_projection = nn.Linear(dim, dim)
+        self.res_projection = nn.Linear(512, 512)
 
-        self.skip_linear = nn.Linear(dim + in_channels, dim)
-
-        self.cond_x_merge_linear = nn.Linear(dim + in_channels * 2 + style_encoder_dim, dim)
+        self.skip_linear = nn.Linear(592, 512)
+        self.cond_x_merge_linear = nn.Linear(864, 512)
 
     @override
     def forward(

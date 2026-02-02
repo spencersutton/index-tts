@@ -30,12 +30,12 @@ class SConv1d(nn.Module):
             new_k = k.replace("conv.conv", "conv")
             state_dict[new_k] = state_dict.pop(k)
 
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: int) -> None:
+    def __init__(self, out_channels: int, kernel_size: int) -> None:
         super().__init__()
         self.register_load_state_dict_pre_hook(self._remap_weights)
 
         self.kernel_size = kernel_size
-        self.conv = weight_norm(nn.Conv1d(in_channels, out_channels, kernel_size))
+        self.conv = weight_norm(nn.Conv1d(512, out_channels, kernel_size))
 
     @override
     def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:

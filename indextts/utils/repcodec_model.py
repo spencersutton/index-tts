@@ -38,14 +38,14 @@ class _ConvNeXtBlock(nn.Module):
     pwconv2: nn.Linear
     gamma: nn.Parameter
 
-    def __init__(self, dim: int = 384, intermediate_dim: int = 2048) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.dwconv = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
-        self.norm = nn.LayerNorm(dim, eps=1e-6)
-        self.pwconv1 = nn.Linear(dim, intermediate_dim)  # pointwise/1x1 convs, implemented with linear layers
+        self.dwconv = nn.Conv1d(384, 384, kernel_size=7, padding=3, groups=384)  # depthwise conv
+        self.norm = nn.LayerNorm(384, eps=1e-6)
+        self.pwconv1 = nn.Linear(384, 2048)  # pointwise/1x1 convs, implemented with linear layers
         self.act = nn.GELU()
-        self.pwconv2 = nn.Linear(intermediate_dim, dim)
-        self.gamma = nn.Parameter(1 / 12 * torch.ones(dim))
+        self.pwconv2 = nn.Linear(2048, 384)
+        self.gamma = nn.Parameter(torch.full([384], 1 / 12))
 
     @override
     def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:
@@ -56,7 +56,7 @@ class _ConvNeXtBlock(nn.Module):
         x = self.pwconv1(x)
         x = self.act(x)
         x = self.pwconv2(x)
-        x = self.gamma * x
+        x *= self.gamma
         x = x.mT  # (B, T, C) -> (B, C, T)
 
         return residual + x
@@ -75,12 +75,12 @@ class _VocosBackbone(nn.Module):
     convnext: Sequence[_ConvNeXtBlock]
     final_layer_norm: nn.LayerNorm
 
-    def __init__(self, in_channels: int, out_channels: int, n_layers: int = 12) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.embed = nn.Conv1d(in_channels, out_channels, kernel_size=7, padding=3)
-        self.norm = nn.LayerNorm(out_channels, eps=1e-6)
-        self.convnext = nn.ModuleList([_ConvNeXtBlock() for _ in range(n_layers)])  # pyright: ignore[reportAttributeAccessIssue]
-        self.final_layer_norm = nn.LayerNorm(out_channels, eps=1e-6)
+        self.embed = nn.Conv1d(1024, 384, kernel_size=7, padding=3)
+        self.norm = nn.LayerNorm(384, eps=1e-6)
+        self.convnext = nn.ModuleList([_ConvNeXtBlock() for _ in range(12)])  # pyright: ignore[reportAttributeAccessIssue]
+        self.final_layer_norm = nn.LayerNorm(384, eps=1e-6)
         self.apply(_init_weights)
 
     @override
@@ -101,12 +101,12 @@ class _FactorizedVectorQuantize(nn.Module):
     out_project: nn.Conv1d
     codebook: nn.Embedding
 
-    def __init__(self, in_channels: int = 1024, latent_dim: int = 8, codebook_size: int = 8192) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
-        self.in_project = weight_norm(nn.Conv1d(in_channels, latent_dim, kernel_size=1))
-        self.out_project = weight_norm(nn.Conv1d(latent_dim, in_channels, kernel_size=1))
-        self.codebook = nn.Embedding(codebook_size, latent_dim)
+        self.in_project = weight_norm(nn.Conv1d(1024, 8, kernel_size=1))
+        self.out_project = weight_norm(nn.Conv1d(8, 1024, kernel_size=1))
+        self.codebook = nn.Embedding(8192, 8)
 
     @override
     def forward(self, z: Float[Tensor, "b d t"]) -> Tensor:
@@ -168,11 +168,11 @@ class RepCodec(nn.Module):
             new_k = k.replace("quantizer.quantizers.0", "quantizer")
             state_dict[new_k] = state_dict.pop(k)
 
-    def __init__(self, in_features: int = 384, out_features: int = 1024) -> None:
+    def __init__(self) -> None:
         super().__init__()
         self.register_load_state_dict_pre_hook(self._remap_weights)
 
-        self.encoder = nn.Sequential(_VocosBackbone(out_features, in_features), nn.Linear(in_features, out_features))
+        self.encoder = nn.Sequential(_VocosBackbone(), nn.Linear(384, 1024))
         self.quantizer = _FactorizedVectorQuantize()
 
         self.apply(_init_weights)

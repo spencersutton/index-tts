@@ -51,7 +51,6 @@ prompts_dir = Path("prompts")
 prompts_dir.mkdir(exist_ok=True, parents=True)
 examples_dir = Path("examples")
 
-MAX_LENGTH_TO_USE_SPEED = 70
 example_cases = []
 with (examples_dir / "cases.jsonl").open(encoding="utf-8") as f:
     for line in f:

@@ -29,7 +29,6 @@ from indextts.utils.repcodec_model import RepCodec
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
-MAX_AUDIO_LENGTH_SECONDS = 15
 EMO_NUM = [3, 17, 2, 8, 4, 5, 10, 24]
 
 
@@ -63,14 +62,12 @@ def find_most_similar_cosine(query_vector: Float[Tensor, "1 C"], matrix: Float[T
 
 
 def _load_and_cut_audio(audio_path: Path, sample_rate: int | None = None) -> tuple[Tensor, int]:
-    samples = AudioDecoder(audio_path, num_channels=1, sample_rate=sample_rate).get_samples_played_in_range(
-        0, MAX_AUDIO_LENGTH_SECONDS
-    )
+    samples = AudioDecoder(audio_path, num_channels=1, sample_rate=sample_rate).get_samples_played_in_range(0, 15)
     audio = samples.data
     sample_rate = samples.sample_rate
 
     assert audio.dim() == 2 and audio.size(0) == 1, f"Only mono audio is supported. Got shape: {audio.shape}"
-    max_audio_samples = int(MAX_AUDIO_LENGTH_SECONDS * sample_rate)
+    max_audio_samples = 15 * sample_rate
 
     if audio.shape[1] > max_audio_samples:
         audio = audio[:, :max_audio_samples]

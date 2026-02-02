@@ -26,7 +26,6 @@ requires-python = ">=3.13"
 dependencies = [
   "accelerate>=1.8.1",
   "beartype>=0.22.9",
-  "bigvganinference>=0.0.3",
   "einops>=0.8.1",
   "jaxtyping>=0.3.6",
   "numpy>=1.26.2",
@@ -34,8 +33,8 @@ dependencies = [
   "pyinstrument>=5.1.2",
   "safetensors>=0.5.2",
   "sentencepiece>=0.2.1",
-  "torch[opt-einsum]>=2.8",
-  "torchaudio>=2.8",
+  "torch[opt-einsum]>=2.10",
+  "torchaudio>=2.10",
   "torchcodec>=0.10",
   "tqdm>=4.67.1",
   "transformers>=4.52.1",
@@ -139,7 +138,7 @@ reportIncompatibleUnannotatedOverride = "warning"
 reportUnannotatedClassAttribute = false
 reportUnknownMemberType = false
 reportUnusedCallResult = false
-stubPath = "../typings"
+stubPath = "/Users/spencer/projects/typings"
 
 [[tool.basedpyright.executionEnvironments]]
 root = "../typings"
@@ -147,3 +146,15 @@ reportUnknownParameterType = false
 reportMissingParameterType = false
 reportImplicitOverride = false
 reportExplicitAny = false
+
+[[tool.basedpyright.executionEnvironments]]
+root = "BigVGANInference/"
+reportUnknownParameterType = false
+reportMissingParameterType = false
+reportImplicitOverride = false
+reportExplicitAny = false
+reportUnknownVariableType = false
+reportUnreachable = false
+reportUninitializedInstanceVariable = false
+reportUnknownArgumentType = false
+reportMissingTypeStubs = false

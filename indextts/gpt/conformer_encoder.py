@@ -205,24 +205,11 @@ class _ConformerEncoderLayer(nn.Module):
         """
 
         # multi-headed self-attention module
-        residual = x
-        x = self.norm_mha.__call__(x)
-
-        x_att, _ = self.self_attn.__call__(x, x, x, mask, pos_emb, att_cache)
-        x = residual + x_att
-
-        residual = x
-        x = self.norm_conv.__call__(x)
-        x = self.conv_module.__call__(x, mask_pad)
-        x = residual + x
-
-        # feed forward module
-        residual = x
-        x = self.norm_ff.__call__(x)
-
-        x = residual + self.feed_forward.__call__(x)
-        x = self.norm_final.__call__(x)
-
+        norm = self.norm_mha(x)
+        x += self.self_attn.__call__(norm, norm, norm, mask, pos_emb, att_cache)
+        x += self.conv_module.__call__(self.norm_conv(x), mask_pad)
+        x += self.feed_forward.__call__(self.norm_ff(x))
+        x = self.norm_final(x)
         return x, mask
 
     @patch_call(forward)

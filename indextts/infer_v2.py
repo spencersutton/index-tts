@@ -104,7 +104,7 @@ class IndexTTS2:
 
     def __init__(
         self,
-        model_dir: Path = Path("checkpoints"),
+        model_dir: Path = Path("checkpoints"),  # pyright: ignore[reportCallInDefaultInitializer]
         use_fp16: bool = False,
         device: str | None = None,
         use_cuda_kernel: bool = False,
@@ -114,9 +114,9 @@ class IndexTTS2:
     ) -> None:
         """
         Args:
-            model_dir (str): path to the model directory.
+            model_dir (Path): path to the model directory.
             use_fp16 (bool): whether to use fp16.
-            device (str): device to use (e.g., 'cuda:0', 'cpu'). If None, it will be set automatically based on the availability of CUDA or MPS.
+            device (str | None): device to use (e.g., 'cuda:0', 'cpu'). If None, it will be set automatically based on the availability of CUDA or MPS.
             use_cuda_kernel (None | bool): whether to use BigVGan custom fused activation CUDA kernel, only for CUDA device.
             use_deepspeed (bool): whether to use DeepSpeed or not.
             use_accel (bool): whether to use acceleration engine for GPT2 or not.

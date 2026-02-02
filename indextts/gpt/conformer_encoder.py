@@ -92,9 +92,7 @@ class _ConvolutionModule(nn.Module):
         self.activation = activation
 
     @override
-    def forward(
-        self, x: Float[Tensor, "b t c"], mask_pad: Bool[Tensor, "b 1 t"] = torch.ones((0, 0, 0), dtype=torch.bool)
-    ) -> Tensor:
+    def forward(self, x: Float[Tensor, "b t c"], mask_pad: Bool[Tensor, "b 1 t"]) -> Tensor:
         """Compute convolution module.
         Args:
             x (Tensor): Input tensor (#batch, time, channels).
@@ -168,8 +166,8 @@ class _ConformerEncoderLayer(nn.Module):
         x: Float[Tensor, "b t c"],
         mask: Bool[Tensor, "b t c"],
         pos_emb: Float[Tensor, "b t c"],
-        mask_pad: Bool[Tensor, "b 1 t"] = torch.ones((0, 0, 0), dtype=torch.bool),
-        att_cache: Float[Tensor, "b h t d"] = torch.zeros((0, 0, 0, 0)),
+        mask_pad: Bool[Tensor, "b 1 t"],
+        att_cache: Float[Tensor, "b h t d"],
     ) -> tuple[Tensor, Tensor]:
         """Compute encoded features.
 
@@ -261,7 +259,7 @@ class ConformerEncoder(nn.Module):
         chunk_masks = masks
         mask_pad = masks  # (B, 1, T/subsample_rate)
         for layer in self.encoders:
-            xs, chunk_masks = layer.__call__(xs, chunk_masks, pos_emb, mask_pad)
+            xs, chunk_masks = layer.__call__(xs, chunk_masks, pos_emb, mask_pad, torch.zeros((0, 0, 0, 0)))
         xs = self.after_norm.__call__(xs)
         # Here we assume the mask is not changed in encoder layers, so just
         # return the masks before encoder layers, and the masks will be used

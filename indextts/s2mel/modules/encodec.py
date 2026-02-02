@@ -52,7 +52,7 @@ class SConv1d(nn.Module):
     @override
     def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:
         if self.kernel_size > 1:
-            x = F.pad(x, [2, 2], "reflect")
+            x = F.pad(x, (2, 2), "reflect")
         return self.conv(x)
 
     @patch_call(forward)

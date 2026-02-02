@@ -448,7 +448,7 @@ class IndexTTS2:
             index = [find_most_similar_cosine(style, x) for x in self.spk_matrix]
 
         matrix = [x[index].unsqueeze(0) for index, x in zip(index, self.emo_matrix)]
-        matrix = torch.cat(matrix, 0)
+        matrix = torch.cat(matrix)
         matrix = weight_vector.unsqueeze(1) * matrix
         matrix = matrix.sum(dim=0)
         return matrix.unsqueeze(0)
@@ -479,7 +479,7 @@ class IndexTTS2:
         audio_22k = torchaudio.functional.resample(audio, sr, 22050)
 
         mel = mel_spectrogram(audio_22k)
-        feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(self.device), num_mel_bins=80, sample_frequency=16000)
+        feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(self.device), num_mel_bins=80)
         feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
         style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
 

@@ -1,4 +1,4 @@
-from typing import override
+from typing import cast, override
 
 import torch
 import transformers
@@ -153,7 +153,7 @@ class GPT2AccelModel(GPT2Model):
             hidden_states = inputs_embeds
 
             for block in self.h:
-                hidden_states = block(hidden_states)[0]
+                hidden_states = cast(Tensor, block(hidden_states)[0])
 
             hidden_states = self.ln_f(hidden_states)
 

@@ -334,7 +334,7 @@ class UnifiedVoice(nn.Module):
         *,
         emo_vec: Float[Tensor, "B D"],
         max_generate_length: int | None = None,
-        **hf_generate_kwargs: Any,  # pyright: ignore[reportExplicitAny]
+        **hf_generate_kwargs: Any,  # pyright: ignore[reportExplicitAny, reportAny]
     ) -> Tensor:
         """
         Args:
@@ -360,7 +360,7 @@ class UnifiedVoice(nn.Module):
                 inputs_ids,  # fake input_ids (all 1s + start_mel_token)
                 max_new_tokens=max_length - trunc_index,
                 attention_mask=attention_mask,
-                temperature=float(hf_generate_kwargs.get("temperature", 1)),
+                temperature=float(hf_generate_kwargs.get("temperature", 1)),  # pyright: ignore
                 stop_tokens=[self.cfg.stop_mel_token],
                 tts_embeddings=inputs_embeds,  # [pad][cond][text] embeddings (87 tokens, NO start_mel_token)
                 tts_mel_embedding=self.inference_model.embeddings,  # mel_embedding layer
@@ -376,7 +376,7 @@ class UnifiedVoice(nn.Module):
                 max_length=max_length,
                 logits_processor=LogitsProcessorList(),
                 num_return_sequences=1,
-                **hf_generate_kwargs,
+                **hf_generate_kwargs,  # pyright: ignore
             )
         return output[:, trunc_index:]
 

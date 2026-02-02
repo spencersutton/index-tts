@@ -35,7 +35,7 @@ def de_tokenized_by_CJK_char(line: str, do_lower_case: bool = False) -> str:
     """
     # replace english words in the line with placeholders
     english_word_pattern = re.compile(r"([A-Z]+(?:[\s'-][A-Z-]+)*)", re.IGNORECASE)
-    english_sents = english_word_pattern.findall(line)
+    english_sents: list[str] = english_word_pattern.findall(line)
     for i, sent in enumerate(english_sents):
         line = line.replace(sent, f"<sent_{i}>")
 
@@ -43,7 +43,7 @@ def de_tokenized_by_CJK_char(line: str, do_lower_case: bool = False) -> str:
     # restore english sentences
     sent_placeholder_pattern = re.compile(r"(<sent_(\d+)>)")
     for i in range(len(words)):
-        all_matches = sent_placeholder_pattern.findall(words[i])
+        all_matches: list[tuple[str, str]] = sent_placeholder_pattern.findall(words[i])
         if len(all_matches) > 1:
             # restore the english word
             for h, j in all_matches:
@@ -272,7 +272,7 @@ class TextNormalizer:
         """
         # 人名
         name_pattern = re.compile(TextNormalizer.NAME_PATTERN, re.IGNORECASE)
-        original_name_list = re.findall(name_pattern, original_text)
+        original_name_list: list[str] = re.findall(name_pattern, original_text)
         if len(original_name_list) == 0:
             return (original_text, None)
         original_name_list = list({"".join(n) for n in original_name_list})
@@ -412,7 +412,7 @@ class TextNormalizer:
         """
         if glossary_path and Path(glossary_path).exists():
             with glossary_path.open(encoding="utf-8") as f:
-                external_glossary = yaml.safe_load(f)
+                external_glossary = yaml.safe_load(f)  # pyright: ignore
                 if external_glossary and isinstance(external_glossary, dict):
                     self.term_glossary = external_glossary
                     return True
@@ -439,7 +439,7 @@ class TextNormalizer:
         original_pinyin_list = re.findall(origin_pinyin_pattern, original_text)
         if len(original_pinyin_list) == 0:
             return (original_text, None)
-        original_pinyin_list = list({"".join(p) for p in original_pinyin_list})
+        original_pinyin_list = list({"".join(p) for p in original_pinyin_list})  # pyright: ignore
         transformed_text = original_text
         # 替换为占位符 <pinyin_a>, <pinyin_b>, ...
         for i, pinyin in enumerate(original_pinyin_list):

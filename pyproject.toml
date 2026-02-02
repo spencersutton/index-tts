@@ -124,17 +124,11 @@ ignore = [
 isort.split-on-trailing-comma = false
 
 [dependency-groups]
-dev = [
-    "mypy>=1.19.1",
-    "pytest>=9.0.2",
-    "pytest-cov>=7.0.0",
-    "rich>=14.1.0",
-]
+dev = ["mypy>=1.19.1", "pytest>=9.0.2", "pytest-cov>=7.0.0", "rich>=14.1.0"]
 
 [tool.basedpyright]
 enableTypeIgnoreComments = true
 ignore = ["tools/", "sitecustomize.py"]
-reportAny = false
 reportCallInDefaultInitializer = false
 reportIgnoreCommentWithoutRule = false
 reportImplicitStringConcatenation = false
@@ -162,3 +156,4 @@ reportUninitializedInstanceVariable = false
 reportUnknownArgumentType = false
 reportMissingTypeStubs = false
 reportUnknownMemberType = false
+reportAny = false

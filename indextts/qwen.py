@@ -1,9 +1,10 @@
 import json
 import re
 from collections.abc import Mapping
-from typing import Any, cast
+from typing import cast
 
 import torch
+from torch import Tensor
 from transformers import BatchEncoding, Qwen2Tokenizer, Qwen3ForCausalLM
 
 
@@ -75,11 +76,13 @@ class QwenEmotion:
             messages, tokenize=False, add_generation_prompt=True, enable_thinking=False
         )
         assert not isinstance(text, (BatchEncoding, list))
-        model_inputs = cast(Mapping[str, Any], self.tokenizer([text], return_tensors="pt").to(self.model.device))  # pyright: ignore[reportExplicitAny]
+        model_inputs = cast(Mapping[str, Tensor], self.tokenizer([text], return_tensors="pt").to(self.model.device))
 
         # conduct text completion
         generated_ids = self.model.generate(
-            **model_inputs, max_new_tokens=2**15, pad_token_id=self.tokenizer.eos_token_id
+            **model_inputs,  # pyright: ignore
+            max_new_tokens=2**15,
+            pad_token_id=self.tokenizer.eos_token_id,
         )
         assert isinstance(generated_ids, torch.Tensor)
         output_ids = generated_ids[0][len(model_inputs["input_ids"][0]) :].tolist()
@@ -95,7 +98,7 @@ class QwenEmotion:
 
         # decode the JSON emotion detections as a dictionary
         try:
-            content = json.loads(content)
+            content = json.loads(content)  # pyright: ignore
         except json.decoder.JSONDecodeError:
             # invalid JSON; fallback to manual string parsing
             content = {m.group(1): float(m.group(2)) for m in re.finditer(r'([^\s":.,]+?)"?\s*:\s*([\d.]+)', content)}

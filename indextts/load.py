@@ -1,4 +1,6 @@
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any, cast
 
 import huggingface_hub as hf
 import safetensors.torch
@@ -43,7 +45,7 @@ def gpt(device: torch.device, cfg: UnifiedVoiceConfig, use_accel: bool, use_fp16
 def campplus_model(device: torch.device) -> CAMPPlus:
     with Timer() as t:
         path = hf.hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
-        data = torch.load(path, map_location=device)
+        data: Mapping[str, Any] = torch.load(path, map_location=device)  # pyright: ignore
 
         with torch.device("meta"):
             model = CAMPPlus()
@@ -86,7 +88,7 @@ def semantic_model(device: torch.device) -> transformers.Wav2Vec2BertModel:
 def semantic_stats(device: torch.device) -> tuple[Tensor, Tensor]:
     with Timer() as t:
         path = hf.hf_hub_download("amphion/dualcodec", "w2vbert2_mean_var_stats_emilia.pt")
-        data: dict[str, Tensor] = torch.load(path)
+        data = cast(dict[str, Tensor], torch.load(path))
         mean = data["mean"].to(device)
         std = data["var"].sqrt().to(device)
 

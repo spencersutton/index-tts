@@ -1,4 +1,4 @@
-from typing import Any, override
+from typing import Any, cast, override
 
 import torch
 import transformers
@@ -42,9 +42,9 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         attention_mask: Int[Tensor, "b t"] | None = None,
         inputs_embeds: Tensor | None = None,
         cache_position: Tensor | None = None,
-        **kwargs: Any,  # pyright: ignore[reportExplicitAny]
+        **kwargs: Any,  # pyright: ignore[reportExplicitAny, reportAny]
     ) -> dict[str, transformers.Cache | Tensor | bool | None]:
-        token_type_ids = kwargs.get("token_type_ids")  # usually None
+        token_type_ids = cast(Tensor | None, kwargs.get("token_type_ids"))  # usually None
         position_ids = kwargs.get("position_ids")
         # only last token for inputs_ids if past is defined in kwargs
         if past_key_values:
@@ -123,7 +123,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             return_dict=return_dict,
         )
         assert not isinstance(transformer_outputs, tuple)
-        hidden_states: Tensor = transformer_outputs[0]
+        hidden_states: Tensor = transformer_outputs[0]  # pyright: ignore
 
         lm_logits = self.lm_head(hidden_states)
 

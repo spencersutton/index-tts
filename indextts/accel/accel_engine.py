@@ -9,7 +9,7 @@ from indextts.accel.attention import ForwardContext, get_forward_context, reset_
 from indextts.accel.gpt2_accel import GPT2AccelModel
 from indextts.accel.kv_manager import KVCacheManager, Seq
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
-from indextts.util import unwrap
+from indextts.util import patch_call, unwrap
 
 GRAPH_BS: Final[Sequence[int]] = [1, 2, 4, 8]
 
@@ -511,3 +511,6 @@ class _Sampler(nn.Module):
         logits = logits.float().div_(temperatures.unsqueeze(dim=1))
         probs = logits.softmax(dim=-1)
         return probs.div_(torch.empty_like(probs).exponential_(1).clamp_min_(1e-10)).argmax(dim=-1)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

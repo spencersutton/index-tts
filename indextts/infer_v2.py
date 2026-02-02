@@ -55,11 +55,8 @@ def get_silence_interval(size: int, interval_silence: int = 200, sampling_rate: 
 
 
 def find_most_similar_cosine(query_vector: Float[Tensor, "1 C"], matrix: Float[Tensor, "N C"]) -> int:
-    query_vector = query_vector.float()
-    matrix = matrix.float()
-
     similarities = F.cosine_similarity(query_vector, matrix, dim=1)
-    return int(torch.argmax(similarities))
+    return int(similarities.argmax())
 
 
 def _load_and_cut_audio(audio_path: Path, sample_rate: int | None = None) -> tuple[Tensor, int]:
@@ -317,7 +314,7 @@ class IndexTTS2:
         emotion_vector = base_vector + emo_alpha * (emotion_vector - base_vector)
 
         if weight_vector is not None and emotion_matrix is not None:
-            emotion_vector = torch.as_tensor(emotion_matrix + (1 - torch.sum(weight_vector)) * emotion_vector)
+            emotion_vector = torch.as_tensor(emotion_matrix + (1 - weight_vector.sum()) * emotion_vector)
 
         wavs: list[Tensor] = []
         gpt_gen_time = Timer()
@@ -453,13 +450,13 @@ class IndexTTS2:
         matrix = [x[index].unsqueeze(0) for index, x in zip(index, self.emo_matrix)]
         matrix = torch.cat(matrix, 0)
         matrix = weight_vector.unsqueeze(1) * matrix
-        matrix = torch.sum(matrix, 0)
+        matrix = matrix.sum(dim=0)
         return matrix.unsqueeze(0)
 
     def get_matrix(self, filename: str) -> tuple[Tensor, ...]:
         path = hf.hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=filename)
-        data = torch.load(path, map_location=self.device)
-        return torch.split(data, EMO_NUM)
+        data: Tensor = torch.load(path, map_location=self.device)
+        return data.split(EMO_NUM)
 
     @torch.inference_mode()
     def get_emb(self, input_features: Float[Tensor, "B T f"], attention_mask: Int[Tensor, "B T"]) -> Tensor:

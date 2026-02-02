@@ -73,7 +73,7 @@ class _Attend(nn.Module):
         d - feature dimension
         """
 
-        scale = q.shape[-1] ** -0.5
+        scale: float = q.shape[-1] ** -0.5
 
         kv_einsum_eq = "b j d" if k.ndim == 3 else "b h j d"
 

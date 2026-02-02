@@ -1,9 +1,10 @@
 import torch
+from torch import Tensor
 
 from indextts.s2mel.modules.gpt_fast.model import _apply_rotary_emb  # pyright: ignore[reportPrivateUsage]
 
 
-def _apply_rotary_emb_reference(x: torch.Tensor, freqs_cis: torch.Tensor) -> torch.Tensor:
+def _apply_rotary_emb_reference(x: Tensor, freqs_cis: Tensor) -> Tensor:
     """Reference implementation matching the original code path."""
 
     xshaped = x.reshape(*x.shape[:-1], -1, 2)
@@ -46,4 +47,4 @@ def test_apply_rotary_emb_matches_reference() -> None:
 
         assert out_ref.shape == out_opt.shape
         assert out_ref.dtype == out_opt.dtype
-        assert torch.allclose(out_opt, out_ref, atol=atol, rtol=rtol)
+        assert out_opt.allclose(out_ref, atol=atol, rtol=rtol)

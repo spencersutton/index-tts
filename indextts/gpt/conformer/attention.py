@@ -26,173 +26,7 @@ from torch import Tensor, nn
 from indextts.util import patch_call
 
 
-class MultiHeadedAttention(nn.Module):
-    """Multi-Head Attention layer.
-
-    Args:
-        n_head (int): The number of heads.
-        n_feat (int): The number of features.
-    """
-
-    d_k: int
-    h: int
-    linear_q: nn.Linear
-    linear_k: nn.Linear
-    linear_v: nn.Linear
-    linear_out: nn.Linear
-
-    def __init__(self, n_head: int, n_feat: int) -> None:
-        """Construct an MultiHeadedAttention object."""
-        super().__init__()
-        assert n_feat % n_head == 0
-        # We assume d_v always equals d_k
-        self.d_k = n_feat // n_head
-        self.h = n_head
-        self.linear_q = nn.Linear(n_feat, n_feat)
-        self.linear_k = nn.Linear(n_feat, n_feat)
-        self.linear_v = nn.Linear(n_feat, n_feat)
-        self.linear_out = nn.Linear(n_feat, n_feat)
-
-    def forward_qkv(
-        self, query: Float[Tensor, "b t d"], key: Float[Tensor, "b t d"], value: Float[Tensor, "b t d"]
-    ) -> tuple[Tensor, Tensor, Tensor]:
-        """Transform query, key and value.
-
-        Args:
-            query (Tensor): Query tensor (#batch, time1, size).
-            key (Tensor): Key tensor (#batch, time2, size).
-            value (Tensor): Value tensor (#batch, time2, size).
-
-        Returns:
-            Tensor: Transformed query tensor, size
-                (#batch, n_head, time1, d_k).
-            Tensor: Transformed key tensor, size
-                (#batch, n_head, time2, d_k).
-            Tensor: Transformed value tensor, size
-                (#batch, n_head, time2, d_k).
-
-        """
-        n_batch = query.size(0)
-        q = self.linear_q(query).view(n_batch, -1, self.h, self.d_k)
-        k = self.linear_k(key).view(n_batch, -1, self.h, self.d_k)
-        v = self.linear_v(value).view(n_batch, -1, self.h, self.d_k)
-        q = q.transpose(1, 2)  # (batch, head, time1, d_k)
-        k = k.transpose(1, 2)  # (batch, head, time2, d_k)
-        v = v.transpose(1, 2)  # (batch, head, time2, d_k)
-
-        return q, k, v
-
-    def forward_attention(
-        self, value: Float[Tensor, "b h t d"], scores: Float[Tensor, "b h t t"], mask: Bool[Tensor, "b t d"]
-    ) -> Tensor:
-        """Compute attention context vector.
-
-        Args:
-            value (Tensor): Transformed value, size
-                (#batch, n_head, time2, d_k).
-            scores (Tensor): Attention score, size
-                (#batch, n_head, time1, time2).
-            mask (Tensor): Mask, size (#batch, 1, time2) or
-                (#batch, time1, time2), (0, 0, 0) means fake mask.
-
-        Returns:
-            Tensor: Transformed value (#batch, time1, d_model)
-                weighted by the attention score (#batch, time1, time2).
-
-        """
-        n_batch = value.size(0)
-        # NOTE(xcsong): When will `if mask.size(2) > 0` be True?
-        #   1. onnx(16/4) [WHY? Because we feed real cache & real mask for the
-        #           1st chunk to ease the onnx export.]
-        #   2. pytorch training
-        if mask.size(2) > 0:  # time2 > 0
-            mask = mask.unsqueeze(1).eq(0)  # (batch, 1, *, time2)
-            # For last chunk, time2 might be larger than scores.size(-1)
-            mask = mask[:, :, :, : scores.size(-1)]  # (batch, 1, *, time2)
-            scores = scores.masked_fill(mask, -float("inf"))
-            attn = scores.softmax(dim=-1).masked_fill(mask, 0.0)  # (batch, head, time1, time2)
-        # NOTE(xcsong): When will `if mask.size(2) > 0` be False?
-        #   1. onnx(16/-1, -1/-1, 16/0)
-        #   2. jit (16/-1, -1/-1, 16/0, 16/4)
-        else:
-            attn = scores.softmax(dim=-1)  # (batch, head, time1, time2)
-
-        x = attn @ value  # (batch, head, time1, d_k)
-        x = x.transpose(1, 2).contiguous().view(n_batch, -1, self.h * self.d_k)  # (batch, time1, d_model)
-
-        return self.linear_out(x)  # (batch, time1, d_model)
-
-    @override
-    def forward(
-        self,
-        query: Float[Tensor, "b t d"],
-        key: Float[Tensor, "b t d"],
-        value: Float[Tensor, "b t d"],
-        mask: Bool[Tensor, "b t t"],
-        pos_emb: Float[Tensor, "b t d"],
-        cache: Float[Tensor, "0 0 0 0"],
-    ) -> Tensor:
-        """Compute scaled dot product attention.
-
-        Args:
-            query (Tensor): Query tensor (#batch, time1, size).
-            key (Tensor): Key tensor (#batch, time2, size).
-            value (Tensor): Value tensor (#batch, time2, size).
-            mask (Tensor): Mask tensor (#batch, 1, time2) or
-                (#batch, time1, time2).
-                1.When applying cross attention between decoder and encoder,
-                the batch padding mask for input is in (#batch, 1, T) shape.
-                2.When applying self attention of encoder,
-                the mask is in (#batch, T, T)  shape.
-                3.When applying self attention of decoder,
-                the mask is in (#batch, L, L)  shape.
-                4.If the different position in decoder see different block
-                of the encoder, such as Mocha, the passed in mask could be
-                in (#batch, L, T) shape. But there is no such case in current
-                Wenet.
-            cache (Tensor): Cache tensor (1, head, cache_t, d_k * 2),
-                where `cache_t == chunk_size * num_decoding_left_chunks`
-                and `head * d_k == size`
-
-
-        Returns:
-            Tensor: Output tensor (#batch, time1, d_model).
-            Tensor: Cache tensor (1, head, cache_t + time1, d_k * 2)
-                where `cache_t == chunk_size * num_decoding_left_chunks`
-                and `head * d_k == size`
-
-        """
-        q, k, v = self.forward_qkv(query, key, value)
-
-        # NOTE(xcsong):
-        #   when export onnx model, for 1st chunk, we feed
-        #       cache(1, head, 0, d_k * 2) (16/-1, -1/-1, 16/0 mode)
-        #       or cache(1, head, real_cache_t, d_k * 2) (16/4 mode).
-        #       In all modes, `if cache.size(0) > 0` will alwayse be `True`
-        #       and we will always do splitting and
-        #       concatnation(this will simplify onnx export). Note that
-        #       it's OK to concat & split zero-shaped tensors(see code below).
-        #   when export jit  model, for 1st chunk, we always feed
-        #       cache(0, 0, 0, 0) since jit supports dynamic if-branch.
-        # >>> a = torch.ones((1, 2, 0, 4))
-        # >>> b = torch.ones((1, 2, 3, 4))
-        # >>> c = torch.cat((a, b), dim=2)
-        # >>> torch.equal(b, c)        # True
-        # >>> d = torch.split(a, 2, dim=-1)
-        # >>> torch.equal(d[0], d[1])  # True
-        if cache.size(0) > 0:
-            key_cache, value_cache = cache.split(cache.size(-1) // 2, dim=-1)
-            k = torch.cat([key_cache, k], dim=2)
-            v = torch.cat([value_cache, v], dim=2)
-
-        scores = (q @ k.mT) / math.sqrt(self.d_k)
-        return self.forward_attention(v, scores, mask)
-
-    @patch_call(forward)
-    def __call__(self) -> None: ...
-
-
-class RelPositionMultiHeadedAttention(MultiHeadedAttention):
+class RelPositionMultiHeadedAttention(nn.Module):
     """Multi-Head Attention layer with relative position encoding.
     Paper: https://arxiv.org/abs/1901.02860
     Args:
@@ -203,10 +37,25 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
     linear_pos: nn.Linear
     pos_bias_u: nn.Parameter
     pos_bias_v: nn.Parameter
+    d_k: int
+    h: int
+    linear_q: nn.Linear
+    linear_k: nn.Linear
+    linear_v: nn.Linear
+    linear_out: nn.Linear
 
     def __init__(self, n_head: int, n_feat: int) -> None:
-        """Construct an RelPositionMultiHeadedAttention object."""
-        super().__init__(n_head, n_feat)
+        super().__init__()
+
+        assert n_feat % n_head == 0
+        # We assume d_v always equals d_k
+        self.d_k = n_feat // n_head
+        self.h = n_head
+        self.linear_q = nn.Linear(n_feat, n_feat)
+        self.linear_k = nn.Linear(n_feat, n_feat)
+        self.linear_v = nn.Linear(n_feat, n_feat)
+        self.linear_out = nn.Linear(n_feat, n_feat)
+
         # linear transformation for positional encoding
         self.linear_pos = nn.Linear(n_feat, n_feat, bias=False)
         # these two learnable bias are used in matrix c and matrix d
@@ -291,6 +140,75 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
         scores = (matrix_ac + matrix_bd) / math.sqrt(self.d_k)  # (batch, head, time1, time2)
 
         return self.forward_attention(v, scores, mask)
+
+    def forward_qkv(
+        self, query: Float[Tensor, "b t d"], key: Float[Tensor, "b t d"], value: Float[Tensor, "b t d"]
+    ) -> tuple[Tensor, Tensor, Tensor]:
+        """Transform query, key and value.
+
+        Args:
+            query (Tensor): Query tensor (#batch, time1, size).
+            key (Tensor): Key tensor (#batch, time2, size).
+            value (Tensor): Value tensor (#batch, time2, size).
+
+        Returns:
+            Tensor: Transformed query tensor, size
+                (#batch, n_head, time1, d_k).
+            Tensor: Transformed key tensor, size
+                (#batch, n_head, time2, d_k).
+            Tensor: Transformed value tensor, size
+                (#batch, n_head, time2, d_k).
+
+        """
+        n_batch = query.size(0)
+        q = self.linear_q(query).view(n_batch, -1, self.h, self.d_k)
+        k = self.linear_k(key).view(n_batch, -1, self.h, self.d_k)
+        v = self.linear_v(value).view(n_batch, -1, self.h, self.d_k)
+        q = q.transpose(1, 2)  # (batch, head, time1, d_k)
+        k = k.transpose(1, 2)  # (batch, head, time2, d_k)
+        v = v.transpose(1, 2)  # (batch, head, time2, d_k)
+
+        return q, k, v
+
+    def forward_attention(
+        self, value: Float[Tensor, "b h t d"], scores: Float[Tensor, "b h t t"], mask: Bool[Tensor, "b t d"]
+    ) -> Tensor:
+        """Compute attention context vector.
+
+        Args:
+            value (Tensor): Transformed value, size
+                (#batch, n_head, time2, d_k).
+            scores (Tensor): Attention score, size
+                (#batch, n_head, time1, time2).
+            mask (Tensor): Mask, size (#batch, 1, time2) or
+                (#batch, time1, time2), (0, 0, 0) means fake mask.
+
+        Returns:
+            Tensor: Transformed value (#batch, time1, d_model)
+                weighted by the attention score (#batch, time1, time2).
+
+        """
+        n_batch = value.size(0)
+        # NOTE(xcsong): When will `if mask.size(2) > 0` be True?
+        #   1. onnx(16/4) [WHY? Because we feed real cache & real mask for the
+        #           1st chunk to ease the onnx export.]
+        #   2. pytorch training
+        if mask.size(2) > 0:  # time2 > 0
+            mask = mask.unsqueeze(1).eq(0)  # (batch, 1, *, time2)
+            # For last chunk, time2 might be larger than scores.size(-1)
+            mask = mask[:, :, :, : scores.size(-1)]  # (batch, 1, *, time2)
+            scores = scores.masked_fill(mask, -float("inf"))
+            attn = scores.softmax(dim=-1).masked_fill(mask, 0.0)  # (batch, head, time1, time2)
+        # NOTE(xcsong): When will `if mask.size(2) > 0` be False?
+        #   1. onnx(16/-1, -1/-1, 16/0)
+        #   2. jit (16/-1, -1/-1, 16/0, 16/4)
+        else:
+            attn = scores.softmax(dim=-1)  # (batch, head, time1, time2)
+
+        x = attn @ value  # (batch, head, time1, d_k)
+        x = x.transpose(1, 2).contiguous().view(n_batch, -1, self.h * self.d_k)  # (batch, time1, d_model)
+
+        return self.linear_out(x)  # (batch, time1, d_model)
 
     @patch_call(forward)
     def __call__(self) -> None: ...

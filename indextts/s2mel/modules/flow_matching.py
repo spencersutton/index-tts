@@ -1,4 +1,4 @@
-from typing import Final
+from typing import Final, cast
 
 import torch
 from jaxtyping import Float
@@ -10,6 +10,9 @@ from indextts.s2mel.modules.diffusion_transformer import DiT
 
 class CFM(nn.Module):
     cfg_rate: Final = 0.7
+    in_channels: int
+    criterion: nn.L1Loss
+    estimator: DiT
 
     def __init__(self, dim: int, in_channels: int = 80) -> None:
         super().__init__()
@@ -107,4 +110,4 @@ class CFM(nn.Module):
         """
         if torch.distributed.is_initialized():
             torch._inductor.config.reorder_for_compute_comm_overlap = True  # pyright: ignore[reportPrivateUsage]
-        self.estimator = torch.compile(self.estimator, fullgraph=True, dynamic=True)
+        self.estimator = cast(DiT, torch.compile(self.estimator, fullgraph=True, dynamic=True))

@@ -14,6 +14,8 @@ class WaveNet(nn.Module):
     drop: nn.Dropout
     in_layers: Sequence[SConv1d]
     res_skip_layers: Sequence[SConv1d]
+    n_layers: int
+    dim: int
 
     def __init__(self, dim: int, n_layers: int = 8, kernel_size: int = 5) -> None:
         super().__init__()

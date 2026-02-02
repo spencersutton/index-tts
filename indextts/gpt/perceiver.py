@@ -16,6 +16,7 @@ class _Attention(nn.Module):
     heads: int
     to_out: nn.Linear
     to_q: nn.Linear
+    attend: _Attend
 
     def __init__(self, dim: int, heads: int = 8) -> None:
         super().__init__()
@@ -53,6 +54,8 @@ class _Attention(nn.Module):
 
 
 class _Attend(nn.Module):
+    attn_dropout: nn.Dropout
+
     def __init__(self) -> None:
         super().__init__()
         self.attn_dropout = nn.Dropout(0.0)
@@ -97,6 +100,9 @@ class _Attend(nn.Module):
 
 
 class _RMSNorm(nn.Module):
+    scale: float
+    gamma: nn.Parameter
+
     def __init__(self, dim: int) -> None:
         super().__init__()
 

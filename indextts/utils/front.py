@@ -2,7 +2,7 @@ import re
 import sys
 import traceback
 import warnings
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, cast
@@ -151,19 +151,19 @@ class TextNormalizer:
         pattern = r"^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]+$"
         return re.match(pattern, email) is not None
 
-    PINYIN_TONE_PATTERN = r"(?<![a-z])((?:[bpmfdtnlgkhjqxzcsryw]|[zcs]h)?(?:[aeiouüv]|[ae]i|u[aio]|ao|ou|i[aue]|[uüv]e|[uvü]ang?|uai|[aeiuv]n|[aeio]ng|ia[no]|i[ao]ng)|ng|er)([1-5])"
+    PINYIN_TONE_PATTERN: Final = r"(?<![a-z])((?:[bpmfdtnlgkhjqxzcsryw]|[zcs]h)?(?:[aeiouüv]|[ae]i|u[aio]|ao|ou|i[aue]|[uüv]e|[uvü]ang?|uai|[aeiuv]n|[aeio]ng|ia[no]|i[ao]ng)|ng|er)([1-5])"
     """
     匹配拼音声调格式：pinyin+数字，声调1-5，5表示轻声
     例如：xuan4, jve2, ying1, zhong4, shang5
     不匹配：beta1, voice2
     """
-    NAME_PATTERN = r"[\u4e00-\u9fff]+(?:[-·—][\u4e00-\u9fff]+){1,2}"
+    NAME_PATTERN: Final = r"[\u4e00-\u9fff]+(?:[-·—][\u4e00-\u9fff]+){1,2}"
     """
     匹配人名，格式：中文·中文，中文·中文-中文
     例如：克里斯托弗·诺兰，约瑟夫·高登-莱维特
     """
 
-    TECH_TERM_PATTERN = r"[A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)+"
+    TECH_TERM_PATTERN: Final = r"[A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)+"
     """
     匹配技术术语，格式：字母开头+(字母或数字)*+(-字母或数字)+
     例如：GPT-5-nano, F5-TTS, Fish-Speech, GPT-5, CosyVoice-2
@@ -172,7 +172,7 @@ class TextNormalizer:
     """
 
     # 匹配常见英语缩写 's，仅用于替换为 is，不匹配所有 's
-    ENGLISH_CONTRACTION_PATTERN = r"(what|where|who|which|how|t?here|it|s?he|that|this)'s"
+    ENGLISH_CONTRACTION_PATTERN: Final = r"(what|where|who|which|how|t?here|it|s?he|that|this)'s"
 
     def use_chinese(self, s: str) -> bool:
         has_chinese = bool(re.search(r"[\u4e00-\u9fff]", s))
@@ -466,6 +466,11 @@ class TextNormalizer:
 
 
 class TextTokenizer:
+    vocab_file: Path
+    normalizer: TextNormalizer
+    sp_model: SentencePieceProcessor
+    pre_tokenizers: list[Callable[[str], str]]
+
     def __init__(self, vocab_file: Path, normalizer: TextNormalizer) -> None:
         self.vocab_file = vocab_file
         self.normalizer = normalizer

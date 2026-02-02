@@ -130,8 +130,6 @@ dev = ["mypy>=1.19.1", "pytest>=9.0.2", "pytest-cov>=7.0.0", "rich>=14.1.0"]
 enableTypeIgnoreComments = true
 ignore = ["tools/", "sitecustomize.py"]
 reportIgnoreCommentWithoutRule = false
-reportIncompatibleUnannotatedOverride = "warning"
-reportUnannotatedClassAttribute = false
 reportUnusedCallResult = false
 stubPath = "/Users/spencer/projects/typings"
 
@@ -155,3 +153,5 @@ reportUnknownArgumentType = false
 reportMissingTypeStubs = false
 reportUnknownMemberType = false
 reportAny = false
+reportIncompatibleUnannotatedOverride = "warning"
+reportUnannotatedClassAttribute = false

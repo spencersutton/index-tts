@@ -11,6 +11,19 @@ from indextts.util import patch_call
 
 
 class _GPT2AccelAttention(nn.Module):
+    config: transformers.GPT2Config
+    layer_idx: int | None
+    embed_dim: int
+    num_heads: int
+    head_dim: int
+    split_size: int
+    scale_attn_weights: bool
+    c_attn: transformers.Conv1D
+    c_proj: transformers.Conv1D
+    attn_dropout: nn.Dropout
+    resid_dropout: nn.Dropout
+    accel_attn: Attention
+
     def __init__(self, config: transformers.GPT2Config, layer_idx: int | None = None) -> None:
         super().__init__()
         self.config = config
@@ -120,12 +133,16 @@ class _GPT2AccelAttention(nn.Module):
 
 
 class _GPT2AccelBlock(GPT2Block):
+    attn: _GPT2AccelAttention
+
     def __init__(self, config: transformers.GPT2Config, layer_idx: int | None = None) -> None:
         super().__init__(config, layer_idx)
         self.attn = _GPT2AccelAttention(config, layer_idx)
 
 
 class GPT2AccelModel(GPT2Model):
+    h: nn.ModuleList
+
     def __init__(self, config: transformers.GPT2Config) -> None:
         super().__init__(config)
         self.h = nn.ModuleList([_GPT2AccelBlock(config, layer_idx=i) for i in range(config.num_hidden_layers)])

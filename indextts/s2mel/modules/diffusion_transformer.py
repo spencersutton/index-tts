@@ -27,6 +27,7 @@ class _TimestepEmbedder(nn.Module):
 
     if TYPE_CHECKING:
         freqs: Tensor = torch.empty(0)
+    mlp: nn.Sequential
 
     def __init__(self, dim: int) -> None:
         super().__init__()
@@ -61,6 +62,10 @@ class _FinalLayer(nn.Module):
     """
     The final layer of DiT.
     """
+
+    norm_final: nn.LayerNorm
+    linear: nn.Linear
+    adaLN_modulation: nn.Sequential
 
     def __init__(self, dim: int) -> None:
         super().__init__()

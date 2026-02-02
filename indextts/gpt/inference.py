@@ -14,6 +14,10 @@ from indextts.util import patch_call
 
 class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     embeddings: nn.Embedding
+    text_pos_embedding: LearnedPositionEmbeddings
+    transformer: GPT2Model
+    final_norm: nn.Module
+    lm_head: nn.Sequential
 
     def __init__(
         self,

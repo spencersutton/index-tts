@@ -14,5 +14,4 @@ def test_infer_v2_loads_all_cached_modules() -> None:
     _ = tts.semantic_model
     _ = tts.semantic_mean
     _ = tts.semantic_std
-    _ = tts.s2mel
     _ = tts.extract_features

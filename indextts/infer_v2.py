@@ -142,7 +142,9 @@ class IndexTTS2:
         self.bigvgan = load.bigvgan(self.device, self.use_cuda_kernel)
         self.campplus_model = load.campplus_model(self.device)
         self.tokenizer = load.tokenizer(self.normalizer)
-        self.s2mel = load.s2mel(self.device)
+        self.cfm = load.cfm(self.device)
+        self.length_regulator = load.length_regulator(self.device)
+        self.gpt_layer = load.gpt_layer(self.device)
 
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
 
@@ -169,7 +171,7 @@ class IndexTTS2:
         # Enable torch.compile optimization if requested
         if use_torch_compile:
             print(">> Enabling torch.compile optimization")
-            self.s2mel.enable_torch_compile()
+            self.cfm.enable_torch_compile()
             print(">> torch.compile optimization enabled successfully")
 
         self.emo_matrix = self.get_matrix(self.cfg.emo_matrix)
@@ -424,12 +426,12 @@ class IndexTTS2:
         latent: Float[Tensor, "B T C"],
     ) -> Tensor:
         semantic_inference = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
-        semantic_inference = semantic_inference.mT + self.s2mel.gpt_layer(latent)
+        semantic_inference = semantic_inference.mT + self.gpt_layer.__call__(latent)
         target_lengths = (torch.tensor(code_lens, device=self.device) * 1.72).long().max().item()
 
-        cond = self.s2mel.length_regulator.__call__(semantic_inference, ylens=int(target_lengths))
+        cond = self.length_regulator.__call__(semantic_inference, ylens=int(target_lengths))
         cond = torch.cat([prompt_condition, cond], dim=1)
-        target = self.s2mel.cfm.inference(cond, ref_mel, style)
+        target = self.cfm.inference(cond, ref_mel, style)
         return target[:, :, ref_mel.size(-1) :]
 
     @lru_cache(5)  # noqa: B019
@@ -490,7 +492,5 @@ class IndexTTS2:
         )
 
         embedding = self.get_emb(inputs["input_features"], inputs["attention_mask"])
-        prompt_condition = self.s2mel.length_regulator.__call__(
-            self.semantic_codec.quantize(embedding), ylens=mel.size(2)
-        )
+        prompt_condition = self.length_regulator.__call__(self.semantic_codec.quantize(embedding), ylens=mel.size(2))
         return prompt_condition, style, mel, embedding

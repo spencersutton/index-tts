@@ -185,7 +185,6 @@ class _ConformerEncoderLayer(nn.Module):
         mask: Bool[Tensor, "b t c"],
         pos_emb: Float[Tensor, "b t c"],
         mask_pad: Bool[Tensor, "b 1 t"],
-        att_cache: Float[Tensor, "b h t d"],
     ) -> tuple[Tensor, Tensor]:
         """Compute encoded features.
 
@@ -206,7 +205,7 @@ class _ConformerEncoderLayer(nn.Module):
 
         # multi-headed self-attention module
         norm = self.norm_mha(x)
-        x += self.self_attn.__call__(norm, norm, norm, mask, pos_emb, att_cache)
+        x += self.self_attn.__call__(norm, norm, norm, mask, pos_emb)
         x += self.conv_module.__call__(self.norm_conv(x), mask_pad)
         x += self.feed_forward.__call__(self.norm_ff(x))
         x = self.norm_final(x)
@@ -268,7 +267,7 @@ class ConformerEncoder(nn.Module):
         chunk_masks = masks
         mask_pad = masks  # (B, 1, T/subsample_rate)
         for layer in self.encoders:
-            xs, chunk_masks = layer.__call__(xs, chunk_masks, pos_emb, mask_pad, torch.zeros((0, 0, 0, 0)))
+            xs, chunk_masks = layer.__call__(xs, chunk_masks, pos_emb, mask_pad)
         xs = self.after_norm.__call__(xs)
         # Here we assume the mask is not changed in encoder layers, so just
         # return the masks before encoder layers, and the masks will be used

@@ -16,41 +16,26 @@ from torch.nn.utils.parametrizations import weight_norm
 from indextts.util import patch_call
 
 
-class _NormConv1d(nn.Module):
-    """Wrapper around Conv1d and normalization applied to this conv
-    to provide a uniform interface across normalization approaches.
-    """
-
-    conv: nn.Conv1d
-    norm: nn.Identity
-
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: int) -> None:
-        super().__init__()
-
-        self.conv = weight_norm(nn.Conv1d(in_channels, out_channels, kernel_size))
-        self.norm = nn.Identity()
-
-    @override
-    def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:
-        return self.norm(self.conv(x))
-
-    @patch_call(forward)
-    def __call__(self) -> None: ...
-
-
 class SConv1d(nn.Module):
     """
     Conv1d layer with built-in handling of asymmetric padding and normalization.
     """
 
     kernel_size: int
-    conv: _NormConv1d
+    conv: nn.Conv1d
+
+    @staticmethod
+    def _remap_weights(_module: object, state_dict: dict[str, object], *_args: object) -> None:
+        for k in list(state_dict.keys()):
+            new_k = k.replace("conv.conv", "conv")
+            state_dict[new_k] = state_dict.pop(k)
 
     def __init__(self, in_channels: int, out_channels: int, kernel_size: int) -> None:
         super().__init__()
+        self.register_load_state_dict_pre_hook(self._remap_weights)
 
         self.kernel_size = kernel_size
-        self.conv = _NormConv1d(in_channels, out_channels, kernel_size)
+        self.conv = weight_norm(nn.Conv1d(in_channels, out_channels, kernel_size))
 
     @override
     def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:

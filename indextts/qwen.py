@@ -91,7 +91,7 @@ class QwenEmotion:
         except ValueError:
             index = 0
 
-        content = self.tokenizer.decode(output_ids[index:], skip_special_tokens=True)
+        content = self.tokenizer.decode(cast(list[int], output_ids[index:]), skip_special_tokens=True)
 
         # decode the JSON emotion detections as a dictionary
         try:

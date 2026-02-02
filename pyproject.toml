@@ -99,7 +99,6 @@ extend-select = [
   "FURB",
   "I",
   "PLR1711",
-  "PLR6301",
   "PTH",
   "PYI",
   "RET",
@@ -125,7 +124,12 @@ ignore = [
 isort.split-on-trailing-comma = false
 
 [dependency-groups]
-dev = ["pytest>=9.0.2", "pytest-cov>=7.0.0", "rich>=14.1.0"]
+dev = [
+    "mypy>=1.19.1",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "rich>=14.1.0",
+]
 
 [tool.basedpyright]
 enableTypeIgnoreComments = true
@@ -136,7 +140,6 @@ reportIgnoreCommentWithoutRule = false
 reportImplicitStringConcatenation = false
 reportIncompatibleUnannotatedOverride = "warning"
 reportUnannotatedClassAttribute = false
-reportUnknownMemberType = false
 reportUnusedCallResult = false
 stubPath = "/Users/spencer/projects/typings"
 
@@ -158,3 +161,4 @@ reportUnreachable = false
 reportUninitializedInstanceVariable = false
 reportUnknownArgumentType = false
 reportMissingTypeStubs = false
+reportUnknownMemberType = false

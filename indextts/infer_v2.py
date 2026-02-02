@@ -434,7 +434,10 @@ class IndexTTS2:
         return self.get_emb(inputs["input_features"], inputs["attention_mask"])
 
     def generate_emotion_matrix(
-        self, weight_vector: Float[Tensor, "emo"], style: Float[Tensor, "B C"], use_random: bool = False
+        self,
+        weight_vector: Float[Tensor, "emo"],  # noqa: UP037
+        style: Float[Tensor, "B C"],
+        use_random: bool = False,
     ) -> Tensor:
         if use_random:
             index = [random.randint(0, x - 1) for x in EMO_NUM]

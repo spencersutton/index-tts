@@ -40,8 +40,8 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         input_ids: Int[Tensor, "b t"],
         past_key_values: transformers.Cache | None = None,
         attention_mask: Int[Tensor, "b t"] | None = None,
-        inputs_embeds: Float[Tensor, "b t d"] | None = None,
-        cache_position: Int[Tensor, "b"] | None = None,
+        inputs_embeds: Tensor | None = None,
+        cache_position: Tensor | None = None,
         **kwargs: Any,  # pyright: ignore[reportExplicitAny]
     ) -> dict[str, transformers.Cache | Tensor | bool | None]:
         token_type_ids = kwargs.get("token_type_ids")  # usually None

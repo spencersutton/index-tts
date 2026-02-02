@@ -77,10 +77,7 @@ class MultiHeadedAttention(nn.Module):
         return q, k, v
 
     def forward_attention(
-        self,
-        value: Float[Tensor, "b h t d"],
-        scores: Float[Tensor, "b h t t"],
-        mask: Bool[Tensor, "b t d"] = torch.ones((0, 0, 0), dtype=torch.bool),
+        self, value: Float[Tensor, "b h t d"], scores: Float[Tensor, "b h t t"], mask: Bool[Tensor, "b t d"]
     ) -> Tensor:
         """Compute attention context vector.
 
@@ -126,9 +123,9 @@ class MultiHeadedAttention(nn.Module):
         query: Float[Tensor, "b t d"],
         key: Float[Tensor, "b t d"],
         value: Float[Tensor, "b t d"],
-        mask: Bool[Tensor, "b t t"] = torch.ones((0, 0, 0), dtype=torch.bool),
-        pos_emb: Float[Tensor, "b t d"] = torch.empty(0),
-        cache: Float[Tensor, "0 0 0 0"] = torch.zeros((0, 0, 0, 0)),
+        mask: Bool[Tensor, "b t t"],
+        pos_emb: Float[Tensor, "b t d"],
+        cache: Float[Tensor, "0 0 0 0"],
     ) -> tuple[Tensor, Tensor]:
         """Compute scaled dot product attention.
 
@@ -219,9 +216,9 @@ class RelPositionMultiHeadedAttention(MultiHeadedAttention):
         query: Float[Tensor, "b t d"],
         key: Float[Tensor, "b t d"],
         value: Float[Tensor, "b t d"],
-        mask: Bool[Tensor, "b t d"] = torch.ones((0, 0, 0), dtype=torch.bool),
-        pos_emb: Float[Tensor, "b t d"] = torch.empty(0),
-        cache: Float[Tensor, "0 0 0 0"] = torch.zeros((0, 0, 0, 0)),
+        mask: Bool[Tensor, "b t d"],
+        pos_emb: Float[Tensor, "b t d"],
+        cache: Float[Tensor, "0 0 0 0"],
     ) -> tuple[Tensor, Tensor]:
         """Compute 'Scaled Dot Product Attention' with rel. positional encoding.
         Args:

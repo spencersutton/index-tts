@@ -145,7 +145,7 @@ class DiT(nn.Module):
 
         x_res = self.skip_linear(torch.cat([x_res, x], dim=-1))
         x = self.conv1.__call__(x_res).mT
-        t2 = self.t_embedder2(t)
+        t2 = self.t_embedder2.__call__(t)
 
         x = self.wavenet.__call__(x, g=t2.unsqueeze(2)).mT + self.res_projection(x_res)
         x = self.final_layer.__call__(x, t1).mT

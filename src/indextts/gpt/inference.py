@@ -2,7 +2,6 @@ from typing import Any, cast, override
 
 import torch
 import transformers
-from jaxtyping import Float, Int
 from torch import Tensor, nn
 from transformers import GPT2Config, GPT2Model, GPT2PreTrainedModel
 from transformers.generation.utils import GenerationMixin
@@ -14,10 +13,11 @@ from indextts.util import patch_call
 
 class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     embeddings: nn.Embedding
-    text_pos_embedding: LearnedPositionEmbeddings
-    transformer: GPT2Model
     final_norm: nn.Module
     lm_head: nn.Sequential
+    text_pos_embedding: LearnedPositionEmbeddings
+    transformer: GPT2Model
+    cached_mel_emb: Tensor | None = None
 
     def __init__(
         self,
@@ -36,14 +36,12 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         self.final_norm = norm
         self.lm_head = nn.Sequential(norm, linear)
 
-        self.cached_mel_emb: Tensor | None = None
-
     @override
     def prepare_inputs_for_generation(
         self,
-        input_ids: Int[Tensor, "b t"],
+        input_ids: Tensor,
         past_key_values: transformers.Cache | None = None,
-        attention_mask: Int[Tensor, "b t"] | None = None,
+        attention_mask: Tensor | None = None,
         inputs_embeds: Tensor | None = None,
         cache_position: Tensor | None = None,
         **kwargs: Any,  # pyright: ignore[reportExplicitAny, reportAny]
@@ -77,15 +75,15 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     @override
     def forward(
         self,
-        input_ids: Int[Tensor, "b t"],
+        input_ids: Tensor,
         past_key_values: transformers.Cache | None = None,
-        attention_mask: Int[Tensor, "b t"] | None = None,
-        token_type_ids: Int[Tensor, ""] | None = None,
-        position_ids: Int[Tensor, "b t"] | None = None,
-        head_mask: Float[Tensor, ""] | None = None,
-        inputs_embeds: Float[Tensor, "b t d"] | None = None,
-        encoder_hidden_states: Float[Tensor, ""] | None = None,
-        encoder_attention_mask: Int[Tensor, ""] | None = None,
+        attention_mask: Tensor | None = None,
+        token_type_ids: Tensor | None = None,
+        position_ids: Tensor | None = None,
+        head_mask: Tensor | None = None,
+        inputs_embeds: Tensor | None = None,
+        encoder_hidden_states: Tensor | None = None,
+        encoder_attention_mask: Tensor | None = None,
         labels: None = None,
         use_cache: bool | None = None,
         output_attentions: bool | None = None,
@@ -127,7 +125,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             return_dict=return_dict,
         )
         assert not isinstance(transformer_outputs, tuple)
-        hidden_states: Tensor = transformer_outputs[0]  # pyright: ignore
+        hidden_states = cast(Tensor, transformer_outputs[0])
 
         lm_logits = self.lm_head(hidden_states)
 

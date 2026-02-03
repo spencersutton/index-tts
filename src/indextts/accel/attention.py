@@ -1,11 +1,10 @@
-# pyright: reportMissingImports=false
 from dataclasses import dataclass
 from typing import no_type_check, override
 
 import torch
-import triton
-import triton.language as tl
-from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache  # pyright: ignore[reportUnknownVariableType]
+import triton  # type: ignore
+import triton.language as tl  # type: ignore
+from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache  # type: ignore
 from torch import Tensor, nn
 
 from indextts.util import patch_call

@@ -4,15 +4,14 @@ import warnings
 from collections.abc import Callable, Generator, Mapping, Sequence
 from functools import cached_property, lru_cache
 from pathlib import Path
-from typing import Any, Final, cast
+from typing import Final, cast
 
 import huggingface_hub as hf
 import torch
 import torch.nn.functional as F
 import torchaudio
 import transformers
-from jaxtyping import Float, Int
-from torch import Tensor, nn
+from torch import Tensor
 from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
 
@@ -51,28 +50,23 @@ def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
     return list(vector)
 
 
-def get_silence_interval(size: int, interval_silence: int) -> Tensor:
+def _get_silence_interval(size: int, interval_silence: int) -> Tensor:
     return torch.zeros(size, (SAMPLING_RATE * interval_silence) // 1000)
 
 
-def find_most_similar_cosine(query_vector: Float[Tensor, "1 C"], matrix: Float[Tensor, "N C"]) -> int:
-    similarities = F.cosine_similarity(query_vector, matrix, dim=1)
-    return int(similarities.argmax())
-
-
-def _load_and_cut_audio(audio_path: Path, sample_rate: int | None = None) -> tuple[Tensor, int]:
-    samples = AudioDecoder(audio_path, num_channels=1, sample_rate=sample_rate).get_samples_played_in_range(
+def _load_and_cut_audio(path: Path, sample_rate: int | None = None) -> tuple[Tensor, int]:
+    samples = AudioDecoder(path, num_channels=1, sample_rate=sample_rate).get_samples_played_in_range(
         0, MAX_AUDIO_LENGTH_SECONDS
     )
     audio = samples.data
     sample_rate = samples.sample_rate
 
     assert audio.dim() == 2 and audio.size(0) == 1, f"Only mono audio is supported. Got shape: {audio.shape}"
-    max_audio_samples = int(MAX_AUDIO_LENGTH_SECONDS * sample_rate)
+    max_audio_samples = MAX_AUDIO_LENGTH_SECONDS * sample_rate
 
     if audio.shape[1] > max_audio_samples:
         audio = audio[:, :max_audio_samples]
-    return audio, int(sample_rate)
+    return audio, sample_rate
 
 
 class IndexTTS2:
@@ -91,7 +85,7 @@ class IndexTTS2:
 
     # Progress reference display (optional)
     gr_progress: Callable[..., None] | None = None
-    model_version: int | None
+    model_version: float = 2.0
 
     has_warned: bool = False
 
@@ -99,7 +93,6 @@ class IndexTTS2:
     campplus_model: CAMPPlus
     cfm: CFM
     extract_features: Final = load.extract_features()
-    gpt_layer: nn.Sequential
     gpt: UnifiedVoice
     length_regulator: InterpolateRegulator
     normalizer: Final = TextNormalizer()
@@ -111,11 +104,10 @@ class IndexTTS2:
 
     @cached_property[QwenEmotion]
     def qwen_emo(self) -> QwenEmotion:
-        return QwenEmotion(self.cfg.qwen_emo_path)
+        return QwenEmotion("dsinghvi/qwen0.6bemo4-merge")
 
     def __init__(
         self,
-        model_dir: Path = Path("checkpoints"),  # pyright: ignore[reportCallInDefaultInitializer]
         use_fp16: bool = False,
         device: str | None = None,
         use_cuda_kernel: bool = False,
@@ -124,7 +116,6 @@ class IndexTTS2:
     ) -> None:
         """
         Args:
-            model_dir (Path): path to the model directory.
             use_fp16 (bool): whether to use fp16.
             device (str | None): device to use (e.g., 'cuda:0', 'cpu'). If None, it will be set automatically based on the availability of CUDA or MPS.
             use_cuda_kernel (None | bool): whether to use BigVGan custom fused activation CUDA kernel, only for CUDA device.
@@ -149,7 +140,6 @@ class IndexTTS2:
         self.tokenizer = load.tokenizer(self.normalizer)
         self.cfm = load.cfm(self.device)
         self.length_regulator = load.length_regulator(self.device)
-        self.gpt_layer = load.gpt_layer(self.device)
 
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
 
@@ -172,18 +162,15 @@ class IndexTTS2:
             self.cfm.enable_torch_compile()
             print(">> torch.compile optimization enabled successfully")
 
-        self.emo_matrix = self.get_matrix(self.cfg.emo_matrix)
-        self.spk_matrix = self.get_matrix(self.cfg.spk_matrix)
+        self.spk_matrix = self._get_matrix("feat1.pt")
+        self.emo_matrix = self._get_matrix("feat2.pt")
 
         # 加载术语词汇表（如果存在）
-        self.glossary_path = model_dir / "glossary.yaml"
+        self.glossary_path = Path("checkpoints") / "glossary.yaml"
         if self.glossary_path.exists():
             self.normalizer.load_glossary_from_yaml(self.glossary_path)
             print(">> Glossary loaded from:", self.glossary_path)
 
-        self.model_version = int(self.cfg.version)
-
-    # 原始推理模式
     def infer(
         self,
         output_path: Path,
@@ -199,7 +186,14 @@ class IndexTTS2:
         stream_return: bool = False,
         use_emo_text: bool = False,
         use_random: bool = False,
-        **generation_kwargs: Any,  # pyright: ignore[reportExplicitAny, reportAny]
+        do_sample: bool = True,
+        length_penalty: float = 0.0,
+        max_mel_tokens: int = 1500,
+        num_beams: int = 3,
+        repetition_penalty: float = 10.0,
+        temperature: float = 0.8,
+        top_k: int = 30,
+        top_p: float = 0.8,
     ) -> Path | Generator[Tensor] | None:
         if use_emo_text or emo_vector is not None:
             # we're using a text or emotion vector guidance; so we must remove
@@ -231,7 +225,7 @@ class IndexTTS2:
             # must always use alpha=1.0 when we don'T have an external reference voice
             emo_alpha = 1.0
 
-        gen = self.infer_generator(
+        gen = self._infer_generator(
             spk_audio_prompt,
             text,
             output_path,
@@ -243,7 +237,14 @@ class IndexTTS2:
             max_text_tokens_per_segment,
             stream_return,
             more_segment_before,
-            **generation_kwargs,
+            do_sample,
+            length_penalty,
+            max_mel_tokens,
+            num_beams,
+            repetition_penalty,
+            temperature,
+            top_k,
+            top_p,
         )
         if stream_return:
             return gen
@@ -253,7 +254,7 @@ class IndexTTS2:
             return None
 
     @torch.inference_mode()
-    def infer_generator(
+    def _infer_generator(
         self,
         spk_audio_prompt: Path,
         text: str,
@@ -266,48 +267,37 @@ class IndexTTS2:
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
         quick_streaming_tokens: int = 0,
-        **generation_kwargs: Any,  # pyright: ignore[reportExplicitAny, reportAny]
+        do_sample: bool = True,
+        length_penalty: float = 0.0,
+        max_mel_tokens: int = 1500,
+        num_beams: int = 3,
+        repetition_penalty: float = 10.0,
+        temperature: float = 0.8,
+        top_k: int = 30,
+        top_p: float = 0.8,
     ) -> Generator[Tensor]:
         print(">> starting inference...")
         self._set_gr_progress(0.0, "starting inference...")
         inference_timer = Timer()
         inference_timer.start()
 
-        prompt_condition, style, ref_mel, speaker_conditioning_embedding = self.extract_audio_features(spk_audio_prompt)
+        prompt_condition, style, ref_mel, speaker_conditioning_embedding = self._extract_audio_features(
+            spk_audio_prompt
+        )
 
         weight_vector = None
         emotion_matrix = None
         if emo_vector is not None:
             weight_vector = torch.tensor(emo_vector, device=self.device)
-            emotion_matrix = self.generate_emotion_matrix(weight_vector, style, use_random=use_random)
+            emotion_matrix = self._generate_emotion_matrix(weight_vector, style, use_random=use_random)
 
-        emotion_conditioning_embedding = self.extract_emotion_features(emo_audio_prompt)
+        emotion_conditioning_embedding = self._extract_emotion_features(emo_audio_prompt)
 
         self._set_gr_progress(0.1, "text processing...")
         text_tokens_list = self.tokenizer.tokenize(text)
         segments = self.tokenizer.split_segments(
             text_tokens_list, max_text_tokens_per_segment, quick_streaming_tokens=quick_streaming_tokens
         )
-
-        text_token_ids = self.tokenizer.convert_tokens_to_ids(text_tokens_list)
-        if self.tokenizer.unk_token_id in text_token_ids:
-            print(
-                f"  >> Warning: input text contains {text_token_ids.count(self.tokenizer.unk_token_id)} unknown tokens (id={self.tokenizer.unk_token_id}):"
-            )
-            print(
-                "     Tokens which can't be encoded: ",
-                [T for T, id in zip(text_tokens_list, text_token_ids) if id == self.tokenizer.unk_token_id],
-            )
-            print("     Consider updating the BPE model or modifying the text to avoid unknown tokens.")
-
-        do_sample = cast(bool, generation_kwargs.pop("do_sample", True))
-        length_penalty = cast(float, generation_kwargs.pop("length_penalty", 0.0))
-        max_mel_tokens = cast(int, generation_kwargs.pop("max_mel_tokens", 1500))
-        num_beams = cast(int, generation_kwargs.pop("num_beams", 3))
-        repetition_penalty = cast(float, generation_kwargs.pop("repetition_penalty", 10.0))
-        temperature = cast(float, generation_kwargs.pop("temperature", 0.8))
-        top_k = cast(int, generation_kwargs.pop("top_k", 30))
-        top_p = cast(float, generation_kwargs.pop("top_p", 0.8))
 
         emotion_vector = self.gpt.get_emo_vec(emotion_conditioning_embedding)
         base_vector = self.gpt.get_emo_vec(speaker_conditioning_embedding)
@@ -319,7 +309,6 @@ class IndexTTS2:
 
         wavs: list[Tensor] = []
         gpt_gen_time = Timer()
-        gpt_forward_time = Timer()
         s2mel_time = Timer()
         bigvgan_time = Timer()
         has_warned = False
@@ -346,7 +335,6 @@ class IndexTTS2:
                         num_beams=num_beams,
                         repetition_penalty=repetition_penalty,
                         max_generate_length=max_mel_tokens,
-                        **generation_kwargs,
                     )
 
                 if not has_warned and (codes[:, -1] != self.stop_mel_token).any():
@@ -363,14 +351,9 @@ class IndexTTS2:
                 ]
                 codes = codes[:, : max(code_lens)]
 
-                with torch.autocast(self.device.type, dtype=self.dtype), gpt_forward_time:
-                    latent = self.gpt.__call__(
-                        speech_conditioning_latent, text_tokens, codes, emo_vec=emotion_vector, device=self.device
-                    )
-
                 with s2mel_time:
-                    voice_conversion_target = self.generate_voice_conversion(
-                        code_lens, prompt_condition, style, ref_mel, codes, latent
+                    voice_conversion_target = self._generate_voice_conversion(
+                        code_lens, prompt_condition, style, ref_mel, codes
                     )
 
                 with bigvgan_time:
@@ -379,17 +362,17 @@ class IndexTTS2:
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
                     yield wav.cpu()
-                    yield get_silence_interval(wavs[0].size(0), interval_silence)
+                    yield _get_silence_interval(wavs[0].size(0), interval_silence)
         inference_timer.stop()
 
         self._set_gr_progress(0.9, "saving audio...")
-        silence_tensor = get_silence_interval(wavs[0].size(0), interval_silence)
+        silence_tensor = _get_silence_interval(wavs[0].size(0), interval_silence)
         # Insert silences between segments
         wavs = [item for x in wavs for item in (x, silence_tensor)][:-1]
         wav = torch.cat(wavs, dim=1)
         wav_length = wav.shape[-1] / SAMPLING_RATE
+
         print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")
-        print(f">> gpt_forward_time: {gpt_forward_time:.2f} seconds")
         print(f">> s2mel_time: {s2mel_time:.2f} seconds")
         print(f">> bigvgan_time: {bigvgan_time:.2f} seconds")
         print(f">> Total inference time: {inference_timer:.2f} seconds")
@@ -408,17 +391,10 @@ class IndexTTS2:
             wav_data = wav_data.numpy().T
             yield (SAMPLING_RATE, wav_data)
 
-    def generate_voice_conversion(
-        self,
-        code_lens: list[int],
-        prompt_condition: Float[Tensor, "B T C"],
-        style: Float[Tensor, "B C"],
-        ref_mel: Float[Tensor, "B N T"],
-        codes: Int[Tensor, "B T"],
-        latent: Float[Tensor, "B T C"],
+    def _generate_voice_conversion(
+        self, code_lens: list[int], prompt_condition: Tensor, style: Tensor, ref_mel: Tensor, codes: Tensor
     ) -> Tensor:
-        semantic_inference = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
-        semantic_inference = semantic_inference.mT + self.gpt_layer.__call__(latent)
+        semantic_inference = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1)).mT
         target_lengths = (torch.tensor(code_lens, device=self.device) * 1.72).long().max().item()
 
         cond = self.length_regulator.__call__(semantic_inference, ylens=int(target_lengths))
@@ -427,23 +403,18 @@ class IndexTTS2:
         return target[:, :, ref_mel.size(-1) :]
 
     @lru_cache(5)  # noqa: B019
-    def extract_emotion_features(self, prompt: Path) -> Tensor:
+    def _extract_emotion_features(self, prompt: Path) -> Tensor:
         print(">> extracting emotion features from prompt:", prompt)
         audio, _ = _load_and_cut_audio(prompt, sample_rate=WIDEBAND_SR)
         inputs = self.extract_features(audio.numpy(), sampling_rate=WIDEBAND_SR, return_tensors="pt")
         inputs = cast(Mapping[str, Tensor], inputs.to(self.device))
-        return self.get_emb(inputs["input_features"], inputs["attention_mask"])
+        return self._get_emb(inputs["input_features"], inputs["attention_mask"])
 
-    def generate_emotion_matrix(
-        self,
-        weight_vector: Float[Tensor, "emo"],  # noqa: UP037
-        style: Float[Tensor, "B C"],
-        use_random: bool = False,
-    ) -> Tensor:
+    def _generate_emotion_matrix(self, weight_vector: Tensor, style: Tensor, use_random: bool = False) -> Tensor:
         if use_random:
             index = [random.randint(0, x - 1) for x in EMO_NUM]
         else:
-            index = [find_most_similar_cosine(style, x) for x in self.spk_matrix]
+            index = [int(F.cosine_similarity(style, x).argmax()) for x in self.spk_matrix]
 
         matrix = [x[index].unsqueeze(0) for index, x in zip(index, self.emo_matrix)]
         matrix = torch.cat(matrix)
@@ -451,13 +422,13 @@ class IndexTTS2:
         matrix = matrix.sum(dim=0)
         return matrix.unsqueeze(0)
 
-    def get_matrix(self, filename: str) -> tuple[Tensor, ...]:
+    def _get_matrix(self, filename: str) -> tuple[Tensor, ...]:
         path = hf.hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=filename)
         data = cast(Tensor, torch.load(path, map_location=self.device))
         return data.split(EMO_NUM)
 
     @torch.inference_mode()
-    def get_emb(self, input_features: Float[Tensor, "B T f"], attention_mask: Int[Tensor, "B T"]) -> Tensor:
+    def _get_emb(self, input_features: Tensor, attention_mask: Tensor) -> Tensor:
         vq_emb = self.semantic_model(
             input_features=input_features, attention_mask=attention_mask, output_hidden_states=True
         )
@@ -470,7 +441,7 @@ class IndexTTS2:
             self.gr_progress(value, desc=desc)
 
     @lru_cache  # noqa: B019
-    def extract_audio_features(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+    def _extract_audio_features(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         print(">> extracting audio features from prompt:", prompt)
         audio, sr = _load_and_cut_audio(prompt)
         audio_16k = torchaudio.functional.resample(audio, sr, WIDEBAND_SR)
@@ -486,6 +457,6 @@ class IndexTTS2:
             self.extract_features(audio_16k, sampling_rate=WIDEBAND_SR, return_tensors="pt").to(self.device),
         )
 
-        embedding = self.get_emb(inputs["input_features"], inputs["attention_mask"])
+        embedding = self._get_emb(inputs["input_features"], inputs["attention_mask"])
         prompt_condition = self.length_regulator.__call__(self.semantic_codec.quantize(embedding), ylens=mel.size(2))
         return prompt_condition, style, mel, embedding

@@ -2,7 +2,6 @@ import math
 from typing import TYPE_CHECKING, override
 
 import torch
-from jaxtyping import Float
 from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
@@ -11,7 +10,7 @@ from indextts.s2mel.modules.wavenet import WaveNet
 from indextts.util import patch_call
 
 
-def modulate(x: Float[Tensor, "b t d"], shift: Float[Tensor, "b d"], scale: Float[Tensor, "b d"]) -> Tensor:
+def modulate(x: Tensor, shift: Tensor, scale: Tensor) -> Tensor:
     return x * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
 
 
@@ -37,7 +36,7 @@ class _TimestepEmbedder(nn.Module):
         freqs = (-math.log(10000) * torch.arange(half).float() / half).exp()
         self.register_buffer("freqs", freqs)
 
-    def timestep_embedding(self, t: Float[Tensor, "b"]) -> Tensor:  # noqa: UP037
+    def timestep_embedding(self, t: Tensor) -> Tensor:
         """
         Create sinusoidal timestep embeddings.
         :param t: a 1-D Tensor of N indices, one per batch element.
@@ -50,7 +49,7 @@ class _TimestepEmbedder(nn.Module):
         return torch.cat([args.cos(), args.sin()], dim=-1)
 
     @override
-    def forward(self, t: Float[Tensor, b]) -> Tensor:  # pyright: ignore[reportUndefinedVariable]
+    def forward(self, t: Tensor) -> Tensor:
         t_freq = self.timestep_embedding(t)
         return self.mlp(t_freq)
 
@@ -74,7 +73,7 @@ class _FinalLayer(nn.Module):
         self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(dim, 2 * dim))
 
     @override
-    def forward(self, x: Float[Tensor, "b t d"], c: Float[Tensor, "b d"]) -> Tensor:
+    def forward(self, x: Tensor, c: Tensor) -> Tensor:
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)
         return self.linear(x)
@@ -122,14 +121,7 @@ class DiT(nn.Module):
         self.cond_x_merge_linear = nn.Linear(dim + in_channels * 2 + style_encoder_dim, dim)
 
     @override
-    def forward(
-        self,
-        x: Float[Tensor, "b c t"],
-        prompt_x: Float[Tensor, "b c t"],
-        t: Float[Tensor, "b"],  # noqa: UP037
-        style: Float[Tensor, "b c"],
-        cond: Float[Tensor, "b t c"],
-    ) -> Tensor:
+    def forward(self, x: Tensor, prompt_x: Tensor, t: Tensor, style: Tensor, cond: Tensor) -> Tensor:
         T = x.size(2)
 
         t1 = self.t_embedder.__call__(t)

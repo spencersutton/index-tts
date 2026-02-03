@@ -104,16 +104,12 @@ class _GPT2AccelAttention(nn.Module):
 
         # Reshape back: [B*T, H, D] -> [B, H, T, D]
         attn_output = o_flat.view(bsz, seq_len, num_heads, head_dim).transpose(1, 2)
-
         attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
-
         attn_output = self.c_proj(attn_output)
 
-        outputs = (attn_output, None)
         if output_attentions:
-            outputs += (None,)
-
-        return outputs
+            return (attn_output, None, None)
+        return (attn_output, None)
 
     def _split_heads(self, tensor: Tensor, num_heads: int, head_dim: int) -> Tensor:
         new_shape = (*tensor.size()[:-1], num_heads, head_dim)
@@ -135,7 +131,7 @@ class _GPT2AccelBlock(GPT2Block):
 
 
 class GPT2AccelModel(GPT2Model):
-    h: nn.ModuleList
+    h: nn.ModuleList[nn.Module]
 
     def __init__(self, config: transformers.GPT2Config) -> None:
         super().__init__(config)

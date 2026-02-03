@@ -3,12 +3,10 @@
 
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
-from collections.abc import Sequence
 from functools import cached_property
 from typing import override
 
 import torch
-from jaxtyping import Float, Int
 from torch import Tensor, nn
 from torch.nn import functional as F
 
@@ -30,7 +28,7 @@ class _AdaptiveLayerNorm(nn.Module):
         self.norm = _RMSNorm(dim=dim)
 
     @override
-    def forward(self, input: Float[Tensor, "b t d"], embedding: Float[Tensor, "b t d"]) -> Tensor:
+    def forward(self, input: Tensor, embedding: Tensor) -> Tensor:
         weight, bias = self.project_layer(embedding).split(self.dim, dim=-1)
         return weight * self.norm.__call__(input) + bias
 
@@ -39,7 +37,7 @@ class _AdaptiveLayerNorm(nn.Module):
 
 
 class Transformer(nn.Module):
-    layers: Sequence[_TransformerBlock]
+    layers: nn.ModuleList[_TransformerBlock]
     norm: _AdaptiveLayerNorm
     n_layer: int
     block_size: int
@@ -52,7 +50,7 @@ class Transformer(nn.Module):
         self.block_size = block_size
         self.head_dim = dim // n_head
 
-        self.layers = nn.ModuleList(_TransformerBlock(dim=dim) for _ in range(n_layer))  # pyright: ignore[reportAttributeAccessIssue]
+        self.layers = nn.ModuleList(_TransformerBlock(dim=dim) for _ in range(n_layer))
         self.norm = _AdaptiveLayerNorm(dim=dim)
 
     @cached_property[Tensor]
@@ -68,7 +66,7 @@ class Transformer(nn.Module):
         return torch.view_as_real(freqs_cis)
 
     @override
-    def forward(self, x: Float[Tensor, "b t d"], c: Float[Tensor, "b t d"], input_pos: Int[Tensor, "t"]) -> Tensor:  # noqa: UP037
+    def forward(self, x: Tensor, c: Tensor, input_pos: Tensor) -> Tensor:
         freqs_cis = self.freqs_cis[input_pos]
         mid = self.n_layer // 2
         skip_stack: list[Tensor] = []
@@ -102,13 +100,7 @@ class _TransformerBlock(nn.Module):
         self.skip_in_linear = nn.Linear(dim * 2, dim)
 
     @override
-    def forward(
-        self,
-        x: Float[Tensor, "b t d"],
-        c: Float[Tensor, "b t d"],
-        freqs_cis: Float[Tensor, "b t d"],
-        skip_in_x: Float[Tensor, "b t d"] | None = None,
-    ) -> Tensor:
+    def forward(self, x: Tensor, c: Tensor, freqs_cis: Tensor, skip_in_x: Tensor | None = None) -> Tensor:
         if skip_in_x is not None:
             x = self.skip_in_linear(torch.cat([x, skip_in_x], dim=-1))
         norm = self.attention_norm.__call__(x, c)
@@ -139,25 +131,27 @@ class _Attention(nn.Module):
         self.wo = nn.Linear(self.dim, self.dim, bias=False)
 
     @override
-    def forward(self, x: Float[Tensor, "b t d"], freqs_cis: Float[Tensor, "b t d"]) -> Tensor:
-        bsz, seqlen, _ = x.shape
+    def forward(self, x: Tensor, freqs_cis: Tensor) -> Tensor:
+        bsz, seq_len, _ = x.shape
 
         query_key_value = self.wqkv(x)
-        q, k, v = query_key_value.split((self.dim, self.dim, self.dim), dim=-1)
-        q = q.view(bsz, seqlen, self.n_head, self.head_dim)
-        k = k.view(bsz, seqlen, self.n_head, self.head_dim)
-        v = v.view(bsz, seqlen, self.n_head, self.head_dim)
+        q, k, v = query_key_value.split(self.dim, dim=-1)
+        q = q.view(bsz, seq_len, self.n_head, self.head_dim)
+        k = k.view(bsz, seq_len, self.n_head, self.head_dim)
+        v = v.view(bsz, seq_len, self.n_head, self.head_dim)
 
         q = _apply_rotary_emb(q, freqs_cis)
         k = _apply_rotary_emb(k, freqs_cis)
 
-        q, k, v = [x.transpose(1, 2) for x in (q, k, v)]
+        q = q.transpose(1, 2)
+        k = k.transpose(1, 2)
+        v = v.transpose(1, 2)
 
         k = k.repeat_interleave(1, dim=1)
         v = v.repeat_interleave(1, dim=1)
         y = F.scaled_dot_product_attention(q, k, v)
 
-        y = y.transpose(1, 2).contiguous().view(bsz, seqlen, self.dim)
+        y = y.transpose(1, 2).contiguous().view(bsz, seq_len, self.dim)
         return self.wo(y)
 
     @patch_call(forward)
@@ -177,7 +171,7 @@ class _FeedForward(nn.Module):
         self.w2 = nn.Linear(dim * 3, dim, bias=False)
 
     @override
-    def forward(self, x: Float[Tensor, "b t d"]) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return self.w2(F.silu(self.w1(x)) * self.w3(x))
 
     @patch_call(forward)
@@ -193,18 +187,18 @@ class _RMSNorm(nn.Module):
         self.weight = nn.Parameter(torch.ones(dim))
 
     @staticmethod
-    def _norm(x: Float[Tensor, "b t d"]) -> Tensor:
+    def _norm(x: Tensor) -> Tensor:
         return x * (x.square().mean(dim=-1, keepdim=True) + 1e-5).rsqrt()
 
     @override
-    def forward(self, x: Float[Tensor, "b t d"]) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return self._norm(x) * self.weight
 
     @patch_call(forward)
     def __call__(self) -> None: ...
 
 
-def _apply_rotary_emb(x: Float[Tensor, "b t h d"], freqs_cis: Float[Tensor, "b t d"]) -> Tensor:
+def _apply_rotary_emb(x: Tensor, freqs_cis: Tensor) -> Tensor:
     """Apply rotary embeddings to a (B, T, H, D) tensor.
 
     This implementation is intentionally allocation-light:

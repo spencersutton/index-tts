@@ -46,10 +46,10 @@ class QwenEmotion:
     model: Qwen3ForCausalLM
     tokenizer: Qwen2Tokenizer
 
-    def __init__(self, model_dir: str) -> None:
-        self.tokenizer = Qwen2Tokenizer.from_pretrained(model_dir)
+    def __init__(self, model_path: str) -> None:
+        self.tokenizer = Qwen2Tokenizer.from_pretrained(model_path)
         self.model = Qwen3ForCausalLM.from_pretrained(
-            model_dir,
+            model_path,
             torch_dtype="float16",  # "auto"
             device_map="auto",
         )
@@ -100,7 +100,7 @@ class QwenEmotion:
 
         # decode the JSON emotion detections as a dictionary
         try:
-            content = json.loads(content)  # pyright: ignore
+            content = cast(dict[str, float], json.loads(content))
         except json.decoder.JSONDecodeError:
             # invalid JSON; fallback to manual string parsing
             content = {m.group(1): float(m.group(2)) for m in re.finditer(r'([^\s":.,]+?)"?\s*:\s*([\d.]+)', content)}

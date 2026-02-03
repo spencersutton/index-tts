@@ -1,11 +1,9 @@
 # Adapted from https://github.com/lucidrains/naturalspeech2-pytorch/blob/659bec7f7543e7747e809e950cc2f84242fbeec7/naturalspeech2_pytorch/naturalspeech2_pytorch.py#L532
-from collections.abc import MutableSequence
 from typing import cast, override
 
 import torch
 import torch.nn.functional as F
 from einops import rearrange, repeat
-from jaxtyping import Bool, Float
 from torch import Tensor, nn
 
 from indextts.util import patch_call
@@ -30,12 +28,7 @@ class _Attention(nn.Module):
         self.to_out = nn.Linear(dim_inner, dim, bias=False)
 
     @override
-    def forward(
-        self,
-        x: Float[Tensor, "b n d"],
-        context: Float[Tensor, "b n d"] | None = None,
-        mask: Bool[Tensor, "b n"] | None = None,
-    ) -> Tensor:
+    def forward(self, x: Tensor, context: Tensor | None = None, mask: Tensor | None = None) -> Tensor:
         h = self.heads
 
         context = context if context is not None else x
@@ -55,13 +48,7 @@ class _Attention(nn.Module):
 
 class _Attend(nn.Module):
     @override
-    def forward(
-        self,
-        q: Float[Tensor, "b h n d"],
-        k: Float[Tensor, "b h n d"],
-        v: Float[Tensor, "b h n d"],
-        mask: Bool[Tensor, "b n"] | None = None,
-    ) -> Tensor:
+    def forward(self, q: Tensor, k: Tensor, v: Tensor, mask: Tensor | None = None) -> Tensor:
         """
         einstein notation
         b - batch
@@ -103,7 +90,7 @@ class _RMSNorm(nn.Module):
         self.gamma = nn.Parameter(torch.ones(dim))
 
     @override
-    def forward(self, x: Float[Tensor, "b n d"]) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return F.normalize(x, dim=-1) * self.scale * self.gamma
 
     @patch_call(forward)
@@ -112,7 +99,7 @@ class _RMSNorm(nn.Module):
 
 class _GEGLU(nn.Module):
     @override
-    def forward(self, x: Float[Tensor, "b n d"]) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x, gate = x.chunk(2, dim=-1)
         return F.gelu(gate) * x
 
@@ -123,7 +110,7 @@ class _GEGLU(nn.Module):
 class PerceiverResampler(nn.Module):
     proj_context: nn.Linear
     latents: nn.Parameter
-    layers: MutableSequence[tuple[_Attention, nn.Sequential]]
+    layers: nn.ModuleList[nn.ModuleList[_Attention | nn.Sequential]]
     norm: _RMSNorm
 
     def __init__(self, dim: int, num_latents: int = 32, heads: int = 8, depth: int = 2, dim_context: int = 512) -> None:
@@ -134,25 +121,25 @@ class PerceiverResampler(nn.Module):
         self.latents = nn.Parameter(torch.randn(num_latents, dim))
         nn.init.normal_(self.latents, std=0.02)
 
-        self.layers = nn.ModuleList()  # pyright: ignore[reportAttributeAccessIssue]
+        self.layers = nn.ModuleList()
         dim_inner = int(dim * 4 / 3)
         for _ in range(depth):
-            self.layers.append(
-                nn.ModuleList((  # pyright: ignore[reportArgumentType]
-                    _Attention(dim=dim, heads=heads),
-                    nn.Sequential(nn.Linear(dim, dim_inner * 2), _GEGLU(), nn.Linear(dim_inner, dim)),
-                ))
-            )
+            layer = nn.ModuleList((
+                _Attention(dim=dim, heads=heads),
+                nn.Sequential(nn.Linear(dim, dim_inner * 2), _GEGLU(), nn.Linear(dim_inner, dim)),
+            ))
+            self.layers.append(layer)
 
         self.norm = _RMSNorm(dim)
 
     @override
-    def forward(self, x: Float[Tensor, "b n d"], mask: Bool[Tensor, "b n"] | None = None) -> Tensor:
+    def forward(self, x: Tensor, mask: Tensor | None = None) -> Tensor:
         x = self.proj_context(x)
 
         latents = repeat(self.latents, "n d -> b n d", b=x.shape[0])
 
         for attn, ff in self.layers:
+            assert isinstance(attn, _Attention) and isinstance(ff, nn.Sequential)
             latents = attn(latents, x, mask=mask) + latents
             latents = ff(latents) + latents
 

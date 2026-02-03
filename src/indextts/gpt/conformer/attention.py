@@ -20,7 +20,6 @@ import math
 from typing import override
 
 import torch
-from jaxtyping import Bool, Float
 from torch import Tensor, nn
 
 from indextts.util import patch_call
@@ -66,14 +65,7 @@ class RelPositionMultiHeadedAttention(nn.Module):
         nn.init.xavier_uniform_(self.pos_bias_v)
 
     @override
-    def forward(
-        self,
-        query: Float[Tensor, "b t d"],
-        key: Float[Tensor, "b t d"],
-        value: Float[Tensor, "b t d"],
-        mask: Bool[Tensor, "b t d"],
-        pos_emb: Float[Tensor, "b t d"],
-    ) -> Tensor:
+    def forward(self, query: Tensor, key: Tensor, value: Tensor, mask: Tensor, pos_emb: Tensor) -> Tensor:
         """Compute 'Scaled Dot Product Attention' with rel. positional encoding.
         Args:
             query (Tensor): Query tensor (#batch, time1, size).
@@ -100,9 +92,7 @@ class RelPositionMultiHeadedAttention(nn.Module):
 
         return self.forward_attention(v, scores, mask)
 
-    def forward_qkv(
-        self, query: Float[Tensor, "b t d"], key: Float[Tensor, "b t d"], value: Float[Tensor, "b t d"]
-    ) -> tuple[Tensor, Tensor, Tensor]:
+    def forward_qkv(self, query: Tensor, key: Tensor, value: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         """Transform query, key and value.
 
         Args:
@@ -129,9 +119,7 @@ class RelPositionMultiHeadedAttention(nn.Module):
 
         return q, k, v
 
-    def forward_attention(
-        self, value: Float[Tensor, "b h t d"], scores: Float[Tensor, "b h t t"], mask: Bool[Tensor, "b t d"]
-    ) -> Tensor:
+    def forward_attention(self, value: Tensor, scores: Tensor, mask: Tensor) -> Tensor:
         """Compute attention context vector.
 
         Args:

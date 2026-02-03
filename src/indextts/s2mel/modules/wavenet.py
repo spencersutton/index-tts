@@ -1,8 +1,6 @@
-from collections.abc import Sequence
 from typing import override
 
 import torch
-from jaxtyping import Float
 from torch import Tensor, nn
 
 from indextts.s2mel.modules.encodec import SConv1d
@@ -11,8 +9,8 @@ from indextts.util import patch_call
 
 class WaveNet(nn.Module):
     cond_layer: SConv1d
-    in_layers: Sequence[SConv1d]
-    res_skip_layers: Sequence[SConv1d]
+    in_layers: nn.ModuleList[SConv1d]
+    res_skip_layers: nn.ModuleList[SConv1d]
     n_layers: int
     dim: int
 
@@ -23,14 +21,14 @@ class WaveNet(nn.Module):
 
         self.cond_layer = SConv1d(dim, 2 * dim * n_layers, 1)
         layers = [SConv1d(dim, 2 * dim, kernel_size) for _ in range(n_layers)]
-        self.in_layers = nn.ModuleList(layers)  # pyright: ignore[reportAttributeAccessIssue]
+        self.in_layers = nn.ModuleList(layers)
 
         layers = [SConv1d(dim, 2 * dim, 1) for _ in range(n_layers - 1)]
         layers.append(SConv1d(dim, dim, 1))
-        self.res_skip_layers = nn.ModuleList(layers)  # pyright: ignore[reportAttributeAccessIssue]
+        self.res_skip_layers = nn.ModuleList(layers)
 
     @override
-    def forward(self, x: Float[Tensor, "b c t"], g: Float[Tensor, "b c t"]) -> Tensor:
+    def forward(self, x: Tensor, g: Tensor) -> Tensor:
         output = torch.zeros_like(x)
 
         g = self.cond_layer(g)

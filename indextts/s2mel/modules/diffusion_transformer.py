@@ -87,7 +87,6 @@ class DiT(nn.Module):
     if TYPE_CHECKING:
         input_pos: Tensor = torch.empty(0)
     transformer: Transformer
-    x_embedder: nn.Linear
     cond_projection: nn.Linear
     t_embedder: _TimestepEmbedder
     t_embedder2: _TimestepEmbedder
@@ -103,7 +102,6 @@ class DiT(nn.Module):
         super().__init__()
         self.transformer = Transformer(dim=512, block_size=block_size)
 
-        self.x_embedder = weight_norm(nn.Linear(in_channels, dim))
         self.cond_projection = nn.Linear(dim, dim)  # continuous content
 
         self.t_embedder = _TimestepEmbedder(dim=dim)

@@ -133,24 +133,26 @@ class _Attention(nn.Module):
 
     @override
     def forward(self, x: Tensor, freqs_cis: Tensor) -> Tensor:
-        bsz, seqlen, _ = x.shape
+        bsz, seq_len, _ = x.shape
 
         query_key_value = self.wqkv(x)
-        q, k, v = query_key_value.split((self.dim, self.dim, self.dim), dim=-1)
-        q = q.view(bsz, seqlen, self.n_head, self.head_dim)
-        k = k.view(bsz, seqlen, self.n_head, self.head_dim)
-        v = v.view(bsz, seqlen, self.n_head, self.head_dim)
+        q, k, v = query_key_value.split(self.dim, dim=-1)
+        q = q.view(bsz, seq_len, self.n_head, self.head_dim)
+        k = k.view(bsz, seq_len, self.n_head, self.head_dim)
+        v = v.view(bsz, seq_len, self.n_head, self.head_dim)
 
         q = _apply_rotary_emb(q, freqs_cis)
         k = _apply_rotary_emb(k, freqs_cis)
 
-        q, k, v = [x.transpose(1, 2) for x in (q, k, v)]
+        q = q.transpose(1, 2)
+        k = k.transpose(1, 2)
+        v = v.transpose(1, 2)
 
         k = k.repeat_interleave(1, dim=1)
         v = v.repeat_interleave(1, dim=1)
         y = F.scaled_dot_product_attention(q, k, v)
 
-        y = y.transpose(1, 2).contiguous().view(bsz, seqlen, self.dim)
+        y = y.transpose(1, 2).contiguous().view(bsz, seq_len, self.dim)
         return self.wo(y)
 
     @patch_call(forward)

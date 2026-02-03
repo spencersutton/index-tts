@@ -4,6 +4,7 @@ from jaxtyping import Float
 from torch import Tensor, nn
 from torch.nn import functional as F
 
+from indextts.constants import DIM
 from indextts.util import patch_call
 
 
@@ -16,10 +17,10 @@ class InterpolateRegulator(nn.Module):
 
         self.model = nn.Sequential()
         for _ in range(4):
-            self.model.extend([nn.Conv1d(512, 512, kernel_size=3, padding=1), nn.GroupNorm(1, 512), nn.Mish()])
-        self.model.append(nn.Conv1d(512, 512, kernel_size=1))
+            self.model.extend([nn.Conv1d(DIM, DIM, kernel_size=3, padding=1), nn.GroupNorm(1, DIM), nn.Mish()])
+        self.model.append(nn.Conv1d(DIM, DIM, kernel_size=1))
 
-        self.content_in_proj = nn.Linear(1024, 512)
+        self.content_in_proj = nn.Linear(DIM * 2, DIM)
 
     @override
     def forward(self, x: Float[Tensor, "b t c"], ylens: int) -> Tensor:

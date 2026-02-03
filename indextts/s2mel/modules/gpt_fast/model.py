@@ -5,13 +5,14 @@
 # LICENSE file in the root directory of this source tree.
 from collections.abc import Sequence
 from functools import cached_property
-from typing import override
+from typing import Final, override
 
 import torch
 from jaxtyping import Float, Int
 from torch import Tensor, nn
 from torch.nn import functional as F
 
+from indextts.constants import DIM
 from indextts.util import patch_call
 
 
@@ -24,12 +25,12 @@ class _AdaptiveLayerNorm(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        self.project_layer = nn.Linear(512, 1024)
+        self.project_layer = nn.Linear(DIM, 1024)
         self.norm = _RMSNorm()
 
     @override
     def forward(self, input: Float[Tensor, "b t d"], embedding: Float[Tensor, "b t d"]) -> Tensor:
-        weight, bias = self.project_layer(embedding).split(512, dim=-1)
+        weight, bias = self.project_layer(embedding).split(DIM, dim=-1)
         return weight * self.norm.__call__(input) + bias
 
     @patch_call(forward)
@@ -88,7 +89,7 @@ class _TransformerBlock(nn.Module):
         self.feed_forward = _FeedForward()
         self.ffn_norm = _AdaptiveLayerNorm()
         self.attention_norm = _AdaptiveLayerNorm()
-        self.skip_in_linear = nn.Linear(1024, 512)
+        self.skip_in_linear = nn.Linear(1024, DIM)
 
     @override
     def forward(
@@ -112,23 +113,25 @@ class _TransformerBlock(nn.Module):
 class _Attention(nn.Module):
     wqkv: nn.Linear
     wo: nn.Linear
+    n_head: Final = 8
+    head_dim: Final = DIM // n_head
 
     def __init__(self) -> None:
         super().__init__()
 
         # key, query, value projections for all heads, but in a batch
-        self.wqkv = nn.Linear(512, 1536, bias=False)
-        self.wo = nn.Linear(512, 512, bias=False)
+        self.wqkv = nn.Linear(DIM, DIM * 3, bias=False)
+        self.wo = nn.Linear(DIM, DIM, bias=False)
 
     @override
     def forward(self, x: Float[Tensor, "b t d"], freqs_cis: Float[Tensor, "b t d"]) -> Tensor:
-        bsz, seqlen, _ = x.shape
+        bsz, seq_len, _ = x.shape
 
         query_key_value = self.wqkv(x)
-        q, k, v = query_key_value.split((512, 512, 512), dim=-1)
-        q = q.view(bsz, seqlen, 8, 64)
-        k = k.view(bsz, seqlen, 8, 64)
-        v = v.view(bsz, seqlen, 8, 64)
+        q, k, v = query_key_value.split(DIM, dim=-1)
+        q = q.view(bsz, seq_len, self.n_head, self.head_dim)
+        k = k.view(bsz, seq_len, self.n_head, self.head_dim)
+        v = v.view(bsz, seq_len, self.n_head, self.head_dim)
 
         q = _apply_rotary_emb(q, freqs_cis)
         k = _apply_rotary_emb(k, freqs_cis)
@@ -139,7 +142,7 @@ class _Attention(nn.Module):
         v = v.repeat_interleave(1, dim=1)
         y = F.scaled_dot_product_attention(q, k, v)
 
-        y = y.transpose(1, 2).contiguous().view(bsz, seqlen, 512)
+        y = y.transpose(1, 2).contiguous().view(bsz, seq_len, DIM)
         return self.wo(y)
 
     @patch_call(forward)
@@ -154,9 +157,9 @@ class _FeedForward(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        self.w1 = nn.Linear(512, 1536, bias=False)
-        self.w3 = nn.Linear(512, 1536, bias=False)
-        self.w2 = nn.Linear(1536, 512, bias=False)
+        self.w1 = nn.Linear(DIM, DIM * 3, bias=False)
+        self.w3 = nn.Linear(DIM, DIM * 3, bias=False)
+        self.w2 = nn.Linear(DIM * 3, DIM, bias=False)
 
     @override
     def forward(self, x: Float[Tensor, "b t d"]) -> Tensor:
@@ -172,7 +175,7 @@ class _RMSNorm(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        self.weight = nn.Parameter(torch.ones(512))
+        self.weight = nn.Parameter(torch.ones(DIM))
 
     @staticmethod
     def _norm(x: Float[Tensor, "b t d"]) -> Tensor:

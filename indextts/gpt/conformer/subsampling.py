@@ -21,6 +21,7 @@ from typing import override
 from jaxtyping import Bool, Float
 from torch import Tensor, nn
 
+from indextts.constants import DIM
 from indextts.gpt.conformer.embedding import RelPositionalEncoding
 from indextts.util import patch_call
 
@@ -40,9 +41,9 @@ class Conv2dSubsampling2(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        self.conv = nn.Sequential(nn.Conv2d(1, 512, kernel_size=3, stride=2), nn.ReLU())
-        self.out = nn.Sequential(nn.Linear(261632, 512))
-        self.pos_enc = RelPositionalEncoding(512)
+        self.conv = nn.Sequential(nn.Conv2d(1, DIM, kernel_size=3, stride=2), nn.ReLU())
+        self.out = nn.Sequential(nn.Linear(DIM * (DIM - 1), DIM))
+        self.pos_enc = RelPositionalEncoding(DIM)
 
     @override
     def forward(self, x: Float[Tensor, "b t d"], x_mask: Bool[Tensor, "b 1 t"]) -> tuple[Tensor, Tensor, Tensor]:

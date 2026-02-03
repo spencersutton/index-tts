@@ -5,6 +5,7 @@ import torch
 from jaxtyping import Float
 from torch import Tensor, nn
 
+from indextts.constants import DIM
 from indextts.s2mel.modules.encodec import SConv1d
 from indextts.util import patch_call
 
@@ -24,7 +25,7 @@ class WaveNet(nn.Module):
         self.in_layers = nn.ModuleList(layers)  # pyright: ignore[reportAttributeAccessIssue]
 
         layers = [SConv1d(1024, 1) for _ in range(7)]
-        layers.append(SConv1d(512, 1))
+        layers.append(SConv1d(DIM, 1))
         self.res_skip_layers = nn.ModuleList(layers)  # pyright: ignore[reportAttributeAccessIssue]
 
     @override
@@ -38,14 +39,14 @@ class WaveNet(nn.Module):
             g_l = g[:, offset : offset + 1024, :]
 
             x_in = self.in_layers[i].__call__(x)
-            t_act_part, s_act_part = (x_in + g_l).split(512, dim=1)
+            t_act_part, s_act_part = (x_in + g_l).split(DIM, dim=1)
             acts = t_act_part.tanh() * s_act_part.sigmoid()
 
             res_skip_acts = self.res_skip_layers[i].__call__(acts)
             if i < 7:
-                res_acts = res_skip_acts[:, :512, :]
+                res_acts = res_skip_acts[:, :DIM, :]
                 x = x + res_acts
-                output += res_skip_acts[:, 512:, :]
+                output += res_skip_acts[:, DIM:, :]
             else:
                 output += res_skip_acts
         return output

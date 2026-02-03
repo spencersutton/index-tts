@@ -13,6 +13,7 @@ from torch import Tensor, nn
 from torch.nn import functional as F
 from torch.nn.utils.parametrizations import weight_norm
 
+from indextts.constants import DIM
 from indextts.util import patch_call
 
 
@@ -35,7 +36,7 @@ class SConv1d(nn.Module):
         self.register_load_state_dict_pre_hook(self._remap_weights)
 
         self.kernel_size = kernel_size
-        self.conv = weight_norm(nn.Conv1d(512, out_channels, kernel_size))
+        self.conv = weight_norm(nn.Conv1d(DIM, out_channels, kernel_size))
 
     @override
     def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:

@@ -18,7 +18,7 @@ from torchcodec.encoders import AudioEncoder
 
 import indextts.load as load
 from BigVGANInference.bigvganinference.inference import BigVGANInference
-from indextts.constants import MEL_BINS
+from indextts.constants import AUDIO_SAMPLE_RATE, END_MEL_TOKEN, MEL_BINS
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.qwen import QwenEmotion
 from indextts.s2mel.modules import CFM, CAMPPlus, InterpolateRegulator, mel_spectrogram
@@ -28,7 +28,8 @@ from indextts.utils.repcodec_model import RepCodec
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
-EMO_NUM = [3, 17, 2, 8, 4, 5, 10, 24]
+EMO_NUM: Final[Sequence[int]] = [3, 17, 2, 8, 4, 5, 10, 24]
+WIDEBAND_SR: Final = 16000
 
 
 def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
@@ -36,8 +37,8 @@ def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
     # by de-emphasizing emotions that can cause strange results
 
     # [happy, angry, sad, afraid, disgusted, melancholic, surprised, calm]
-    biases = [0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625]
-    vector = [vec * bias for vec, bias in zip(vector, biases)]
+    BIASES: Final[Sequence[float]] = [0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625]
+    vector = [vec * bias for vec, bias in zip(vector, BIASES)]
 
     # the total emotion sum must be 0.8 or less
     total = sum(vector)
@@ -52,7 +53,7 @@ def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
 def get_silence_interval(size: int, interval_silence: int) -> Tensor:
     """Silences to be insert between generated segments."""
 
-    return torch.zeros(size, (22050 * interval_silence) // 1000)
+    return torch.zeros(size, (AUDIO_SAMPLE_RATE * interval_silence) // 1000)
 
 
 def find_most_similar_cosine(query_vector: Float[Tensor, "1 C"], matrix: Float[Tensor, "N C"]) -> int:
@@ -328,7 +329,7 @@ class IndexTTS2:
                         **generation_kwargs,
                     )
 
-                if not has_warned and (codes[:, -1] != 8193).any():
+                if not has_warned and (codes[:, -1] != END_MEL_TOKEN).any():
                     warnings.warn(
                         f"WARN: generation stopped due to exceeding `max_mel_tokens` ({max_mel_tokens}). "
                         + f"Input text tokens: {text_tokens.shape[1]}. "
@@ -337,7 +338,7 @@ class IndexTTS2:
                     )
                     has_warned = True
 
-                code_lens = [x.tolist().index(8193) if 8193 in x else len(x) for x in codes]
+                code_lens = [x.tolist().index(END_MEL_TOKEN) if END_MEL_TOKEN in x else len(x) for x in codes]
                 codes = codes[:, : max(code_lens)]
 
                 with torch.autocast(self.device.type, dtype=self.dtype), gpt_forward_time:
@@ -364,7 +365,7 @@ class IndexTTS2:
         # Insert silences between segments
         wavs = [item for x in wavs for item in (x, silence_tensor)][:-1]
         wav = torch.cat(wavs, dim=1)
-        wav_length = wav.shape[-1] / 22050
+        wav_length = wav.shape[-1] / AUDIO_SAMPLE_RATE
         print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")
         print(f">> gpt_forward_time: {gpt_forward_time:.2f} seconds")
         print(f">> s2mel_time: {s2mel_time:.2f} seconds")
@@ -376,14 +377,14 @@ class IndexTTS2:
         wav = wav.cpu()
         if output_path:
             # Save audio directly to the specified path
-            AudioEncoder(wav, sample_rate=22050).to_file(output_path)
+            AudioEncoder(wav, sample_rate=AUDIO_SAMPLE_RATE).to_file(output_path)
             print(">> wav file saved to:", output_path)
             yield output_path  # pyright: ignore[reportReturnType]
         else:
             # Return in a format compatible with Gradio
             wav_data = wav.type(torch.int16)  # pyright: ignore[reportUnreachable]
             wav_data = wav_data.numpy().T
-            yield (22050, wav_data)
+            yield (AUDIO_SAMPLE_RATE, wav_data)
 
     def generate_voice_conversion(
         self,
@@ -406,8 +407,8 @@ class IndexTTS2:
     @lru_cache(5)  # noqa: B019
     def extract_emotion_features(self, prompt: Path) -> Tensor:
         print(">> extracting emotion features from prompt:", prompt)
-        audio, _ = _load_and_cut_audio(prompt, sample_rate=16000)
-        inputs = self.extract_features(audio.numpy(), sampling_rate=16000, return_tensors="pt")
+        audio, _ = _load_and_cut_audio(prompt, sample_rate=WIDEBAND_SR)
+        inputs = self.extract_features(audio.numpy(), sampling_rate=WIDEBAND_SR, return_tensors="pt")
         inputs = cast(Mapping[str, Tensor], inputs.to(self.device))
         return self.get_emb(inputs["input_features"], inputs["attention_mask"])
 
@@ -450,8 +451,8 @@ class IndexTTS2:
     def extract_audio_features(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         print(">> extracting audio features from prompt:", prompt)
         audio, sr = _load_and_cut_audio(prompt)
-        audio_16k = torchaudio.functional.resample(audio, sr, 16000)
-        audio_22k = torchaudio.functional.resample(audio, sr, 22050)
+        audio_16k = torchaudio.functional.resample(audio, sr, WIDEBAND_SR)
+        audio_22k = torchaudio.functional.resample(audio, sr, AUDIO_SAMPLE_RATE)
 
         mel = mel_spectrogram(audio_22k)
         feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(self.device), num_mel_bins=MEL_BINS)
@@ -460,7 +461,7 @@ class IndexTTS2:
 
         inputs = cast(
             Mapping[str, Tensor],
-            self.extract_features(audio_16k, sampling_rate=16000, return_tensors="pt").to(self.device),
+            self.extract_features(audio_16k, sampling_rate=WIDEBAND_SR, return_tensors="pt").to(self.device),
         )
 
         embedding = self.get_emb(inputs["input_features"], inputs["attention_mask"])

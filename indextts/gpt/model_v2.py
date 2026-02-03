@@ -6,7 +6,7 @@ from jaxtyping import Float, Int
 from torch import Tensor, nn
 from transformers import GPT2Config, GPT2Model, LogitsProcessorList
 
-from indextts.constants import GPT_HIDDEN_SIZE
+from indextts.constants import END_MEL_TOKEN, GPT_HIDDEN_SIZE, MEL_VOCAB_SIZE, START_MEL_TOKEN, TEXT_VOCAB_SIZE
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.inference import GPT2InferenceModel
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
@@ -79,8 +79,8 @@ class UnifiedVoice(nn.Module):
         self.emo_layer = nn.Linear(GPT_HIDDEN_SIZE, GPT_HIDDEN_SIZE)
         self.emovec_layer = nn.Linear(1024, GPT_HIDDEN_SIZE)
 
-        self.text_embedding = nn.Embedding(12000 + 1, GPT_HIDDEN_SIZE)
-        self.mel_embedding = nn.Embedding(8194, GPT_HIDDEN_SIZE)
+        self.text_embedding = nn.Embedding(TEXT_VOCAB_SIZE, GPT_HIDDEN_SIZE)
+        self.mel_embedding = nn.Embedding(MEL_VOCAB_SIZE, GPT_HIDDEN_SIZE)
         max_mel_seq_len = 1815 + 3
         max_text_seq_len = 600 + 2
 
@@ -103,8 +103,8 @@ class UnifiedVoice(nn.Module):
         self.text_pos_embedding = LearnedPositionEmbeddings(max_text_seq_len)
 
         self.final_norm = nn.LayerNorm(GPT_HIDDEN_SIZE)
-        self.text_head = nn.Linear(GPT_HIDDEN_SIZE, 12000 + 1)
-        self.mel_head = nn.Linear(GPT_HIDDEN_SIZE, 8194)
+        self.text_head = nn.Linear(GPT_HIDDEN_SIZE, TEXT_VOCAB_SIZE)
+        self.mel_head = nn.Linear(GPT_HIDDEN_SIZE, MEL_VOCAB_SIZE)
 
         self.speed_emb = nn.Embedding(2, GPT_HIDDEN_SIZE)
         self.speed_emb.weight.data.normal_(std=0.0)
@@ -120,7 +120,12 @@ class UnifiedVoice(nn.Module):
     def post_init_gpt2_config(self, half: bool) -> None:
         seq_length = 1815 + 600 + 2
         gpt_config = GPT2Config(
-            vocab_size=8194, n_positions=seq_length, n_ctx=seq_length, n_embd=GPT_HIDDEN_SIZE, n_layer=24, n_head=20
+            vocab_size=MEL_VOCAB_SIZE,
+            n_positions=seq_length,
+            n_ctx=seq_length,
+            n_embd=GPT_HIDDEN_SIZE,
+            n_layer=24,
+            n_head=20,
         )
 
         if self.use_accel and torch.cuda.is_available():
@@ -176,8 +181,8 @@ class UnifiedVoice(nn.Module):
         text_inputs = F.pad(text_inputs, (1, 0), value=0)
         text_inputs = F.pad(text_inputs, (0, 1), value=1)
 
-        mel_codes = F.pad(mel_codes, (1, 0), value=8192)
-        mel_codes = F.pad(mel_codes, (0, 1), value=8193)
+        mel_codes = F.pad(mel_codes, (1, 0), value=START_MEL_TOKEN)
+        mel_codes = F.pad(mel_codes, (0, 1), value=END_MEL_TOKEN)
 
         mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes.shape[1])
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs.shape[1])
@@ -258,7 +263,7 @@ class UnifiedVoice(nn.Module):
             dtype=torch.long,
             device=device,
         )
-        fake_inputs[:, -1] = 8192
+        fake_inputs[:, -1] = START_MEL_TOKEN
         return fake_inputs, batched_mel_emb_tensor, attention_mask
 
     def combine_latents(
@@ -307,7 +312,7 @@ class UnifiedVoice(nn.Module):
                 max_new_tokens=max_length - trunc_index,
                 attention_mask=attention_mask,
                 temperature=float(hf_generate_kwargs.get("temperature", 1)),  # pyright: ignore
-                stop_tokens=[8193],
+                stop_tokens=[END_MEL_TOKEN],
                 tts_embeddings=inputs_embeds,  # [pad][cond][text] embeddings (87 tokens, NO start_mel_token)
                 tts_mel_embedding=self.inference_model.embeddings,  # mel_embedding layer
                 tts_text_pos_embedding=self.inference_model.text_pos_embedding,  # text_pos_embedding layer
@@ -315,9 +320,9 @@ class UnifiedVoice(nn.Module):
         else:
             output = self.inference_model.generate(
                 inputs_ids,
-                bos_token_id=8192,
-                pad_token_id=8193,
-                eos_token_id=8193,
+                bos_token_id=START_MEL_TOKEN,
+                pad_token_id=END_MEL_TOKEN,
+                eos_token_id=END_MEL_TOKEN,
                 attention_mask=attention_mask,
                 max_length=max_length,
                 logits_processor=LogitsProcessorList(),

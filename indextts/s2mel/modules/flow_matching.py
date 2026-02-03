@@ -5,11 +5,14 @@ from jaxtyping import Float
 from torch import Tensor, nn
 from tqdm import tqdm
 
+from indextts.constants import MEL_BINS
 from indextts.s2mel.modules.diffusion_transformer import DiT
+
+INFERENCE_CFG_RATE = 0.7
+DIFFUSION_STEPS: Final = 25
 
 
 class CFM(nn.Module):
-    cfg_rate: Final = 0.7
     criterion: nn.L1Loss
     estimator: DiT
 
@@ -33,8 +36,8 @@ class CFM(nn.Module):
             sample: generated mel-spectrogram
         """
         B, T, _ = mu.shape
-        z = torch.randn([B, 80, T], device=mu.device)
-        t_span = torch.linspace(0, 1, 26, device=mu.device)
+        z = torch.randn([B, MEL_BINS, T], device=mu.device)
+        t_span = torch.linspace(0, 1, DIFFUSION_STEPS + 1, device=mu.device)
         return self.solve_euler(z, prompt, mu, style, t_span)
 
     def solve_euler(
@@ -77,7 +80,7 @@ class CFM(nn.Module):
             dphi_dt, cfg_dphi_dt = stacked_dphi_dt.chunk(2)
 
             # Apply CFG formula
-            dphi_dt = 1.7 * dphi_dt - 0.7 * cfg_dphi_dt
+            dphi_dt = (1.0 + INFERENCE_CFG_RATE) * dphi_dt - INFERENCE_CFG_RATE * cfg_dphi_dt
 
             dt = t_span[step] - t_span[step - 1]
             x += dt * dphi_dt

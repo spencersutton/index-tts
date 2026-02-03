@@ -27,7 +27,6 @@ dependencies = [
   "accelerate>=1.8.1",
   "beartype>=0.22.9",
   "einops>=0.8.1",
-  "jaxtyping>=0.3.6",
   "numpy>=1.26.2",
   "omegaconf>=2.3.0",
   "pyinstrument>=5.1.2",

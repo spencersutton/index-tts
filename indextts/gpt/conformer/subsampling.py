@@ -18,7 +18,6 @@
 
 from typing import override
 
-from jaxtyping import Bool, Float
 from torch import Tensor, nn
 
 from indextts.gpt.conformer.embedding import RelPositionalEncoding
@@ -45,7 +44,7 @@ class Conv2dSubsampling2(nn.Module):
         self.pos_enc = RelPositionalEncoding(output_dim)
 
     @override
-    def forward(self, x: Float[Tensor, "b t d"], x_mask: Bool[Tensor, "b 1 t"]) -> tuple[Tensor, Tensor, Tensor]:
+    def forward(self, x: Tensor, x_mask: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         """Subsample x.
 
         Args:

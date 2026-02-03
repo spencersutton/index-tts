@@ -11,7 +11,6 @@ import torch
 import torch.nn.functional as F
 import torchaudio
 import transformers
-from jaxtyping import Float, Int
 from torch import Tensor, nn
 from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
@@ -55,7 +54,7 @@ def get_silence_interval(size: int, interval_silence: int) -> Tensor:
     return torch.zeros(size, (SAMPLING_RATE * interval_silence) // 1000)
 
 
-def find_most_similar_cosine(query_vector: Float[Tensor, "1 C"], matrix: Float[Tensor, "N C"]) -> int:
+def find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> int:
     similarities = F.cosine_similarity(query_vector, matrix, dim=1)
     return int(similarities.argmax())
 
@@ -183,7 +182,6 @@ class IndexTTS2:
 
         self.model_version = int(self.cfg.version)
 
-    # 原始推理模式
     def infer(
         self,
         output_path: Path,
@@ -289,17 +287,6 @@ class IndexTTS2:
             text_tokens_list, max_text_tokens_per_segment, quick_streaming_tokens=quick_streaming_tokens
         )
 
-        text_token_ids = self.tokenizer.convert_tokens_to_ids(text_tokens_list)
-        if self.tokenizer.unk_token_id in text_token_ids:
-            print(
-                f"  >> Warning: input text contains {text_token_ids.count(self.tokenizer.unk_token_id)} unknown tokens (id={self.tokenizer.unk_token_id}):"
-            )
-            print(
-                "     Tokens which can't be encoded: ",
-                [T for T, id in zip(text_tokens_list, text_token_ids) if id == self.tokenizer.unk_token_id],
-            )
-            print("     Consider updating the BPE model or modifying the text to avoid unknown tokens.")
-
         do_sample = cast(bool, generation_kwargs.pop("do_sample", True))
         length_penalty = cast(float, generation_kwargs.pop("length_penalty", 0.0))
         max_mel_tokens = cast(int, generation_kwargs.pop("max_mel_tokens", 1500))
@@ -319,7 +306,6 @@ class IndexTTS2:
 
         wavs: list[Tensor] = []
         gpt_gen_time = Timer()
-        gpt_forward_time = Timer()
         s2mel_time = Timer()
         bigvgan_time = Timer()
         has_warned = False
@@ -363,10 +349,8 @@ class IndexTTS2:
                 ]
                 codes = codes[:, : max(code_lens)]
 
-                with torch.autocast(self.device.type, dtype=self.dtype), gpt_forward_time:
-                    latent = self.gpt.__call__(
-                        speech_conditioning_latent, text_tokens, codes, emo_vec=emotion_vector, device=self.device
-                    )
+                with torch.autocast(self.device.type, dtype=self.dtype):
+                    latent = self.gpt.__call__(speech_conditioning_latent, text_tokens, codes, emo_vec=emotion_vector)
 
                 with s2mel_time:
                     voice_conversion_target = self.generate_voice_conversion(
@@ -388,8 +372,8 @@ class IndexTTS2:
         wavs = [item for x in wavs for item in (x, silence_tensor)][:-1]
         wav = torch.cat(wavs, dim=1)
         wav_length = wav.shape[-1] / SAMPLING_RATE
+
         print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")
-        print(f">> gpt_forward_time: {gpt_forward_time:.2f} seconds")
         print(f">> s2mel_time: {s2mel_time:.2f} seconds")
         print(f">> bigvgan_time: {bigvgan_time:.2f} seconds")
         print(f">> Total inference time: {inference_timer:.2f} seconds")
@@ -411,11 +395,11 @@ class IndexTTS2:
     def generate_voice_conversion(
         self,
         code_lens: list[int],
-        prompt_condition: Float[Tensor, "B T C"],
-        style: Float[Tensor, "B C"],
-        ref_mel: Float[Tensor, "B N T"],
-        codes: Int[Tensor, "B T"],
-        latent: Float[Tensor, "B T C"],
+        prompt_condition: Tensor,
+        style: Tensor,
+        ref_mel: Tensor,
+        codes: Tensor,
+        latent: Tensor,
     ) -> Tensor:
         semantic_inference = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
         semantic_inference = semantic_inference.mT + self.gpt_layer.__call__(latent)
@@ -434,12 +418,7 @@ class IndexTTS2:
         inputs = cast(Mapping[str, Tensor], inputs.to(self.device))
         return self.get_emb(inputs["input_features"], inputs["attention_mask"])
 
-    def generate_emotion_matrix(
-        self,
-        weight_vector: Float[Tensor, "emo"],  # noqa: UP037
-        style: Float[Tensor, "B C"],
-        use_random: bool = False,
-    ) -> Tensor:
+    def generate_emotion_matrix(self, weight_vector: Tensor, style: Tensor, use_random: bool = False) -> Tensor:
         if use_random:
             index = [random.randint(0, x - 1) for x in EMO_NUM]
         else:
@@ -457,7 +436,7 @@ class IndexTTS2:
         return data.split(EMO_NUM)
 
     @torch.inference_mode()
-    def get_emb(self, input_features: Float[Tensor, "B T f"], attention_mask: Int[Tensor, "B T"]) -> Tensor:
+    def get_emb(self, input_features: Tensor, attention_mask: Tensor) -> Tensor:
         vq_emb = self.semantic_model(
             input_features=input_features, attention_mask=attention_mask, output_hidden_states=True
         )

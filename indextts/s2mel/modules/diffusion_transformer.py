@@ -74,7 +74,8 @@ class _FinalLayer(nn.Module):
         super().__init__()
         self.norm_final = nn.LayerNorm(self.dim, elementwise_affine=False, eps=1e-6)
         self.linear = weight_norm(nn.Linear(self.dim, self.dim))
-        self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(self.dim, 1024))
+        # 2x dim for (shift, scale)
+        self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(self.dim, S2MEL_MODEL_DIM * 2))
 
     @override
     def forward(self, x: Float[Tensor, "b t d"], c: Float[Tensor, "b d"]) -> Tensor:

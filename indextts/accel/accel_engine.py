@@ -345,7 +345,9 @@ class AccelInferenceEngine:
 
         _prefill_ids, _prefill_pos = self._prepare_prefill(sequences)
 
-        start_token_id = input_ids[0, -1] if input_ids.size(1) > 0 else 8192
+        from indextts.constants import START_MEL_TOKEN
+
+        start_token_id = input_ids[0, -1] if input_ids.size(1) > 0 else START_MEL_TOKEN
 
         start_emb = tts_mel_embedding(torch.tensor([[start_token_id]], device="cuda"))  # [1, 1, hidden_dim]
 

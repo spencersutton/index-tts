@@ -6,7 +6,14 @@ from jaxtyping import Float, Int
 from torch import Tensor, nn
 from transformers import GPT2Config, GPT2Model, LogitsProcessorList
 
-from indextts.constants import END_MEL_TOKEN, GPT_HIDDEN_SIZE, MEL_VOCAB_SIZE, START_MEL_TOKEN, TEXT_VOCAB_SIZE
+from indextts.constants import (
+    END_MEL_TOKEN,
+    GPT_HIDDEN_SIZE,
+    MEL_VOCAB_SIZE,
+    S2MEL_MODEL_DIM,
+    START_MEL_TOKEN,
+    TEXT_VOCAB_SIZE,
+)
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.inference import GPT2InferenceModel
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
@@ -30,7 +37,7 @@ class UnifiedVoice(nn.Module):
     emo_layer: nn.Linear
     """Final projection applied to the emotion vector in the GPT embedding space (dim -> dim)."""
     emovec_layer: nn.Linear
-    """Projects the emotion-conditioning latent (1024-d) into the GPT embedding space (1024 -> dim)."""
+    """Projects the emotion-conditioning latent into the GPT embedding space (S2MEL_MODEL_DIM * 2 -> dim)."""
     final_norm: nn.LayerNorm
     """LayerNorm applied to transformer hidden states before projecting to logits."""
     gpt: GPT2Model
@@ -73,11 +80,13 @@ class UnifiedVoice(nn.Module):
         self.conditioning_encoder = ConformerEncoder(linear_units=2048, attention_heads=8, num_blocks=6)
         self.perceiver_encoder = PerceiverResampler(GPT_HIDDEN_SIZE, heads=8, num_latents=condition_num_latent)
 
-        self.emo_conditioning_encoder = ConformerEncoder(linear_units=1024, attention_heads=4, num_blocks=4)
-        self.emo_perceiver_encoder = PerceiverResampler(1024, heads=4, num_latents=1)
+        self.emo_conditioning_encoder = ConformerEncoder(
+            linear_units=S2MEL_MODEL_DIM * 2, attention_heads=4, num_blocks=4
+        )
+        self.emo_perceiver_encoder = PerceiverResampler(S2MEL_MODEL_DIM * 2, heads=4, num_latents=1)
 
         self.emo_layer = nn.Linear(GPT_HIDDEN_SIZE, GPT_HIDDEN_SIZE)
-        self.emovec_layer = nn.Linear(1024, GPT_HIDDEN_SIZE)
+        self.emovec_layer = nn.Linear(S2MEL_MODEL_DIM * 2, GPT_HIDDEN_SIZE)
 
         self.text_embedding = nn.Embedding(TEXT_VOCAB_SIZE, GPT_HIDDEN_SIZE)
         self.mel_embedding = nn.Embedding(MEL_VOCAB_SIZE, GPT_HIDDEN_SIZE)

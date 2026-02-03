@@ -21,11 +21,14 @@ class WaveNet(nn.Module):
         super().__init__()
         self.n_layers = 8
 
-        self.cond_layer = SConv1d(8192, 1)
-        layers = [SConv1d(1024, 5) for _ in range(8)]
+        # Per-layer conditioning chunk is 2*dim (split into tanh/sigmoid parts).
+        cond_chunk = S2MEL_MODEL_DIM * 2
+        self.cond_layer = SConv1d(self.n_layers * cond_chunk, 1)
+
+        layers = [SConv1d(cond_chunk, 5) for _ in range(self.n_layers)]
         self.in_layers = nn.ModuleList(layers)  # pyright: ignore[reportAttributeAccessIssue]
 
-        layers = [SConv1d(1024, 1) for _ in range(7)]
+        layers = [SConv1d(cond_chunk, 1) for _ in range(self.n_layers - 1)]
         layers.append(SConv1d(self.dim, 1))
         self.res_skip_layers = nn.ModuleList(layers)  # pyright: ignore[reportAttributeAccessIssue]
 
@@ -35,16 +38,18 @@ class WaveNet(nn.Module):
 
         g = self.cond_layer(g)
 
-        for i in range(8):
-            offset = i * 1024
-            g_l = g[:, offset : offset + 1024, :]
+        cond_chunk = S2MEL_MODEL_DIM * 2
+
+        for i in range(self.n_layers):
+            offset = i * cond_chunk
+            g_l = g[:, offset : offset + cond_chunk, :]
 
             x_in = self.in_layers[i].__call__(x)
             t_act_part, s_act_part = (x_in + g_l).split(self.dim, dim=1)
             acts = t_act_part.tanh() * s_act_part.sigmoid()
 
             res_skip_acts = self.res_skip_layers[i].__call__(acts)
-            if i < 7:
+            if i < self.n_layers - 1:
                 res_acts = res_skip_acts[:, : self.dim, :]
                 x = x + res_acts
                 output += res_skip_acts[:, self.dim :, :]

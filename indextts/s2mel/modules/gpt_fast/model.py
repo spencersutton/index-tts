@@ -26,7 +26,8 @@ class _AdaptiveLayerNorm(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        self.project_layer = nn.Linear(self.dim, 1024)
+        # 2x dim to produce (weight, bias)
+        self.project_layer = nn.Linear(self.dim, S2MEL_MODEL_DIM * 2)
         self.norm = _RMSNorm()
 
     @override

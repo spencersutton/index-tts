@@ -12,6 +12,7 @@ from jaxtyping import Float, Int
 from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
+from indextts.constants import MEL_CODEBOOK_SIZE, REP_CODEC_CODE_DIM, SEMANTIC_STREAM_DIM, VOCOS_DIM
 from indextts.util import patch_call, unwrap
 
 
@@ -37,15 +38,17 @@ class _ConvNeXtBlock(nn.Module):
     pwconv1: nn.Linear
     pwconv2: nn.Linear
     gamma: nn.Parameter
+    dim: int = VOCOS_DIM
 
-    def __init__(self) -> None:
+    def __init__(self, intermediate_dim: int = 2048) -> None:
         super().__init__()
-        self.dwconv = nn.Conv1d(384, 384, kernel_size=7, padding=3, groups=384)  # depthwise conv
-        self.norm = nn.LayerNorm(384, eps=1e-6)
-        self.pwconv1 = nn.Linear(384, 2048)  # pointwise/1x1 convs, implemented with linear layers
+
+        self.dwconv = nn.Conv1d(self.dim, self.dim, kernel_size=7, padding=3, groups=self.dim)  # depthwise conv
+        self.norm = nn.LayerNorm(self.dim, eps=1e-6)
+        self.pwconv1 = nn.Linear(self.dim, intermediate_dim)  # pointwise/1x1 convs, implemented with linear layers
         self.act = nn.GELU()
-        self.pwconv2 = nn.Linear(2048, 384)
-        self.gamma = nn.Parameter(torch.full([384], 1 / 12))
+        self.pwconv2 = nn.Linear(intermediate_dim, self.dim)
+        self.gamma = nn.Parameter(torch.full([self.dim], 1 / 12))
 
     @override
     def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:
@@ -77,10 +80,10 @@ class _VocosBackbone(nn.Module):
 
     def __init__(self) -> None:
         super().__init__()
-        self.embed = nn.Conv1d(1024, 384, kernel_size=7, padding=3)
-        self.norm = nn.LayerNorm(384, eps=1e-6)
+        self.embed = nn.Conv1d(SEMANTIC_STREAM_DIM, VOCOS_DIM, kernel_size=7, padding=3)
+        self.norm = nn.LayerNorm(VOCOS_DIM, eps=1e-6)
         self.convnext = nn.ModuleList([_ConvNeXtBlock() for _ in range(12)])  # pyright: ignore[reportAttributeAccessIssue]
-        self.final_layer_norm = nn.LayerNorm(384, eps=1e-6)
+        self.final_layer_norm = nn.LayerNorm(VOCOS_DIM, eps=1e-6)
         self.apply(_init_weights)
 
     @override
@@ -104,9 +107,9 @@ class _FactorizedVectorQuantize(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        self.in_project = weight_norm(nn.Conv1d(1024, 8, kernel_size=1))
-        self.out_project = weight_norm(nn.Conv1d(8, 1024, kernel_size=1))
-        self.codebook = nn.Embedding(8192, 8)
+        self.in_project = weight_norm(nn.Conv1d(SEMANTIC_STREAM_DIM, REP_CODEC_CODE_DIM, kernel_size=1))
+        self.out_project = weight_norm(nn.Conv1d(REP_CODEC_CODE_DIM, SEMANTIC_STREAM_DIM, kernel_size=1))
+        self.codebook = nn.Embedding(MEL_CODEBOOK_SIZE, REP_CODEC_CODE_DIM)
 
     @override
     def forward(self, z: Float[Tensor, "b d t"]) -> Tensor:
@@ -172,7 +175,7 @@ class RepCodec(nn.Module):
         super().__init__()
         self.register_load_state_dict_pre_hook(self._remap_weights)
 
-        self.encoder = nn.Sequential(_VocosBackbone(), nn.Linear(384, 1024))
+        self.encoder = nn.Sequential(_VocosBackbone(), nn.Linear(VOCOS_DIM, SEMANTIC_STREAM_DIM))
         self.quantizer = _FactorizedVectorQuantize()
 
         self.apply(_init_weights)

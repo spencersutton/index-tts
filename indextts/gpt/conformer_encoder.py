@@ -96,7 +96,8 @@ class _ConvolutionModule(nn.Module):
         """
         super().__init__()
 
-        self.pointwise_conv1 = nn.Conv1d(self.dim, 1024, kernel_size=1)
+        # 2x channels for GLU (split into two halves of size `self.dim`).
+        self.pointwise_conv1 = nn.Conv1d(self.dim, S2MEL_MODEL_DIM * 2, kernel_size=1)
         self.depthwise_conv = nn.Conv1d(self.dim, self.dim, kernel_size=15, padding=7, groups=self.dim)
 
         self.norm = nn.LayerNorm(self.dim)

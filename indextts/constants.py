@@ -24,7 +24,7 @@ S2MEL_DOUBLE_DIM: Final = S2MEL_MODEL_DIM * 2  # 1024
 
 # The semantic stream often uses a 1024-wide representation that is projected down
 # to `S2MEL_MODEL_DIM` by the length regulator (`content_in_proj: Linear(S2MEL_MODEL_DIM*2 -> S2MEL_MODEL_DIM)`).
-SEMANTIC_STREAM_DIM: Final = S2MEL_DOUBLE_DIM
+SEMANTIC_STREAM_DIM: Final = S2MEL_MODEL_DIM * 2
 
 # ---------------------------------------------------------------------------
 # Audio feature dimensions
@@ -76,6 +76,13 @@ TEXT_VOCAB_SIZE: Final = 12000 + 1
 # ---------------------------------------------------------------------------
 
 AUDIO_SAMPLE_RATE: Final = 22050
+
+# STFT configuration used by `indextts.s2mel.modules.audio`.
+STFT_N_FFT: Final = 1024
+STFT_N_FREQS: Final = STFT_N_FFT // 2 + 1
+
+# Convenience constant for mel filterbank construction.
+AUDIO_NYQUIST_HZ: Final = AUDIO_SAMPLE_RATE // 2
 
 VOCOS_DIM: Final = 384
 

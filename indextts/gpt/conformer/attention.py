@@ -17,13 +17,13 @@
 """Multi-Head Attention layer definition."""
 
 import math
-from typing import override
+from typing import Final, override
 
 import torch
 from jaxtyping import Bool, Float
 from torch import Tensor, nn
 
-from indextts.constants import DIM
+from indextts.constants import S2MEL_MODEL_DIM
 from indextts.util import patch_call
 
 
@@ -44,21 +44,22 @@ class RelPositionMultiHeadedAttention(nn.Module):
     linear_k: nn.Linear
     linear_v: nn.Linear
     linear_out: nn.Linear
+    dim: Final = S2MEL_MODEL_DIM
 
     def __init__(self, n_head: int) -> None:
         super().__init__()
 
-        assert DIM % n_head == 0
+        assert self.dim % n_head == 0
         # We assume d_v always equals d_k
-        self.d_k = DIM // n_head
+        self.d_k = self.dim // n_head
         self.h = n_head
-        self.linear_q = nn.Linear(DIM, DIM)
-        self.linear_k = nn.Linear(DIM, DIM)
-        self.linear_v = nn.Linear(DIM, DIM)
-        self.linear_out = nn.Linear(DIM, DIM)
+        self.linear_q = nn.Linear(self.dim, self.dim)
+        self.linear_k = nn.Linear(self.dim, self.dim)
+        self.linear_v = nn.Linear(self.dim, self.dim)
+        self.linear_out = nn.Linear(self.dim, self.dim)
 
         # linear transformation for positional encoding
-        self.linear_pos = nn.Linear(DIM, DIM, bias=False)
+        self.linear_pos = nn.Linear(self.dim, self.dim, bias=False)
         # these two learnable bias are used in matrix c and matrix d
         # as described in https://arxiv.org/abs/1901.02860 Section 3.3
         self.pos_bias_u = nn.Parameter(torch.zeros(self.h, self.d_k))

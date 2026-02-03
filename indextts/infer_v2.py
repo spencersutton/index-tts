@@ -18,7 +18,7 @@ from torchcodec.encoders import AudioEncoder
 
 import indextts.load as load
 from BigVGANInference.bigvganinference.inference import BigVGANInference
-from indextts.constants import N_CHANNELS
+from indextts.constants import MEL_BINS
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.qwen import QwenEmotion
 from indextts.s2mel.modules import CFM, CAMPPlus, InterpolateRegulator, mel_spectrogram
@@ -454,7 +454,7 @@ class IndexTTS2:
         audio_22k = torchaudio.functional.resample(audio, sr, 22050)
 
         mel = mel_spectrogram(audio_22k)
-        feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(self.device), num_mel_bins=N_CHANNELS)
+        feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(self.device), num_mel_bins=MEL_BINS)
         feat -= feat.mean(dim=0, keepdim=True)
         style = self.campplus_model(feat.unsqueeze(0))
 

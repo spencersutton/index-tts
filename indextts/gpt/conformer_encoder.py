@@ -1,12 +1,12 @@
 from collections.abc import Sequence
-from typing import cast, override
+from typing import Final, cast, override
 
 import torch
 import torch.nn.functional as F
 from jaxtyping import Bool, Float, Int
 from torch import Tensor, nn
 
-from indextts.constants import DIM
+from indextts.constants import S2MEL_MODEL_DIM
 from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
 from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
 from indextts.util import patch_call
@@ -52,14 +52,15 @@ class _PositionwiseFeedForward(nn.Module):
     activation: nn.SiLU
     w_1: nn.Linear
     w_2: nn.Linear
+    dim: Final = S2MEL_MODEL_DIM
 
     def __init__(self, hidden_units: int) -> None:
         """Construct a PositionwiseFeedForward object."""
         super().__init__()
 
         self.activation = nn.SiLU()
-        self.w_1 = nn.Linear(DIM, hidden_units)
-        self.w_2 = nn.Linear(hidden_units, DIM)
+        self.w_1 = nn.Linear(self.dim, hidden_units)
+        self.w_2 = nn.Linear(hidden_units, self.dim)
 
     @override
     def forward(self, xs: Float[Tensor, "b t d"]) -> Tensor:
@@ -84,6 +85,7 @@ class _ConvolutionModule(nn.Module):
     norm: nn.LayerNorm
     pointwise_conv2: nn.Conv1d
     activation: nn.SiLU
+    dim: Final = S2MEL_MODEL_DIM
 
     def __init__(self, activation: nn.SiLU) -> None:
         """Construct an ConvolutionModule object.
@@ -94,12 +96,12 @@ class _ConvolutionModule(nn.Module):
         """
         super().__init__()
 
-        self.pointwise_conv1 = nn.Conv1d(DIM, 1024, kernel_size=1)
-        self.depthwise_conv = nn.Conv1d(DIM, DIM, kernel_size=15, padding=7, groups=DIM)
+        self.pointwise_conv1 = nn.Conv1d(self.dim, 1024, kernel_size=1)
+        self.depthwise_conv = nn.Conv1d(self.dim, self.dim, kernel_size=15, padding=7, groups=self.dim)
 
-        self.norm = nn.LayerNorm(DIM)
+        self.norm = nn.LayerNorm(self.dim)
 
-        self.pointwise_conv2 = nn.Conv1d(DIM, DIM, kernel_size=1)
+        self.pointwise_conv2 = nn.Conv1d(self.dim, self.dim, kernel_size=1)
         self.activation = activation
 
     @override
@@ -223,6 +225,7 @@ class ConformerEncoder(nn.Module):
     embed: Conv2dSubsampling2
     after_norm: nn.LayerNorm
     encoders: Sequence[_ConformerEncoderLayer]
+    dim: Final = S2MEL_MODEL_DIM
 
     def __init__(self, attention_heads: int, linear_units: int, num_blocks: int) -> None:
         """
@@ -235,14 +238,14 @@ class ConformerEncoder(nn.Module):
         super().__init__()
 
         self.embed = Conv2dSubsampling2()
-        self.after_norm = nn.LayerNorm(DIM)
+        self.after_norm = nn.LayerNorm(self.dim)
         activation = nn.SiLU()
 
         self.encoders = cast(  # pyright: ignore[reportInvalidCast]
             Sequence[_ConformerEncoderLayer],
             nn.ModuleList([
                 _ConformerEncoderLayer(
-                    DIM,
+                    self.dim,
                     RelPositionMultiHeadedAttention(attention_heads),
                     _PositionwiseFeedForward(linear_units),
                     _ConvolutionModule(activation),

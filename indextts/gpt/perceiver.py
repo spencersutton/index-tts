@@ -8,7 +8,7 @@ from einops import rearrange, repeat
 from jaxtyping import Bool, Float
 from torch import Tensor, nn
 
-from indextts.constants import DIM
+from indextts.constants import S2MEL_MODEL_DIM
 from indextts.util import patch_call
 
 
@@ -130,7 +130,7 @@ class PerceiverResampler(nn.Module):
     def __init__(self, dim: int, num_latents: int, heads: int) -> None:
         super().__init__()
 
-        self.proj_context = nn.Linear(DIM, dim)
+        self.proj_context = nn.Linear(S2MEL_MODEL_DIM, dim)
 
         self.latents = nn.Parameter(torch.randn(num_latents, dim))
         nn.init.normal_(self.latents, std=0.02)

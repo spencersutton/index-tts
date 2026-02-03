@@ -12,7 +12,7 @@ from jaxtyping import Float, Int
 from torch import Tensor, nn
 from torch.nn import functional as F
 
-from indextts.constants import DIM
+from indextts.constants import S2MEL_MODEL_DIM
 from indextts.util import patch_call
 
 
@@ -21,16 +21,17 @@ class _AdaptiveLayerNorm(nn.Module):
 
     project_layer: nn.Linear
     norm: _RMSNorm
+    dim: Final = S2MEL_MODEL_DIM
 
     def __init__(self) -> None:
         super().__init__()
 
-        self.project_layer = nn.Linear(DIM, 1024)
+        self.project_layer = nn.Linear(self.dim, 1024)
         self.norm = _RMSNorm()
 
     @override
     def forward(self, input: Float[Tensor, "b t d"], embedding: Float[Tensor, "b t d"]) -> Tensor:
-        weight, bias = self.project_layer(embedding).split(DIM, dim=-1)
+        weight, bias = self.project_layer(embedding).split(self.dim, dim=-1)
         return weight * self.norm.__call__(input) + bias
 
     @patch_call(forward)
@@ -81,6 +82,7 @@ class _TransformerBlock(nn.Module):
     ffn_norm: _AdaptiveLayerNorm
     attention_norm: _AdaptiveLayerNorm
     skip_in_linear: nn.Linear
+    dim: Final = S2MEL_MODEL_DIM
 
     def __init__(self) -> None:
         super().__init__()
@@ -89,7 +91,7 @@ class _TransformerBlock(nn.Module):
         self.feed_forward = _FeedForward()
         self.ffn_norm = _AdaptiveLayerNorm()
         self.attention_norm = _AdaptiveLayerNorm()
-        self.skip_in_linear = nn.Linear(1024, DIM)
+        self.skip_in_linear = nn.Linear(self.dim * 2, self.dim)
 
     @override
     def forward(
@@ -114,21 +116,22 @@ class _Attention(nn.Module):
     wqkv: nn.Linear
     wo: nn.Linear
     n_head: Final = 8
-    head_dim: Final = DIM // n_head
+    head_dim: Final = S2MEL_MODEL_DIM // n_head
+    dim: Final = S2MEL_MODEL_DIM
 
     def __init__(self) -> None:
         super().__init__()
 
         # key, query, value projections for all heads, but in a batch
-        self.wqkv = nn.Linear(DIM, DIM * 3, bias=False)
-        self.wo = nn.Linear(DIM, DIM, bias=False)
+        self.wqkv = nn.Linear(self.dim, self.dim * 3, bias=False)
+        self.wo = nn.Linear(self.dim, self.dim, bias=False)
 
     @override
     def forward(self, x: Float[Tensor, "b t d"], freqs_cis: Float[Tensor, "b t d"]) -> Tensor:
         bsz, seq_len, _ = x.shape
 
         query_key_value = self.wqkv(x)
-        q, k, v = query_key_value.split(DIM, dim=-1)
+        q, k, v = query_key_value.split(self.dim, dim=-1)
         q = q.view(bsz, seq_len, self.n_head, self.head_dim)
         k = k.view(bsz, seq_len, self.n_head, self.head_dim)
         v = v.view(bsz, seq_len, self.n_head, self.head_dim)
@@ -142,7 +145,7 @@ class _Attention(nn.Module):
         v = v.repeat_interleave(1, dim=1)
         y = F.scaled_dot_product_attention(q, k, v)
 
-        y = y.transpose(1, 2).contiguous().view(bsz, seq_len, DIM)
+        y = y.transpose(1, 2).contiguous().view(bsz, seq_len, self.dim)
         return self.wo(y)
 
     @patch_call(forward)
@@ -153,13 +156,14 @@ class _FeedForward(nn.Module):
     w1: nn.Linear
     w2: nn.Linear
     w3: nn.Linear
+    dim: Final = S2MEL_MODEL_DIM
 
     def __init__(self) -> None:
         super().__init__()
 
-        self.w1 = nn.Linear(DIM, DIM * 3, bias=False)
-        self.w3 = nn.Linear(DIM, DIM * 3, bias=False)
-        self.w2 = nn.Linear(DIM * 3, DIM, bias=False)
+        self.w1 = nn.Linear(self.dim, self.dim * 3, bias=False)
+        self.w3 = nn.Linear(self.dim, self.dim * 3, bias=False)
+        self.w2 = nn.Linear(self.dim * 3, self.dim, bias=False)
 
     @override
     def forward(self, x: Float[Tensor, "b t d"]) -> Tensor:
@@ -171,11 +175,12 @@ class _FeedForward(nn.Module):
 
 class _RMSNorm(nn.Module):
     weight: nn.Parameter
+    dim: Final = S2MEL_MODEL_DIM
 
     def __init__(self) -> None:
         super().__init__()
 
-        self.weight = nn.Parameter(torch.ones(DIM))
+        self.weight = nn.Parameter(torch.ones(self.dim))
 
     @staticmethod
     def _norm(x: Float[Tensor, "b t d"]) -> Tensor:

@@ -9,7 +9,7 @@ import transformers
 from torch import Tensor, nn
 
 from BigVGANInference.bigvganinference import BigVGANInference as BigVGAN
-from indextts.constants import GPT_DIM
+from indextts.constants import GPT_HIDDEN_SIZE
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.flow_matching import CFM
@@ -125,7 +125,7 @@ def gpt_layer(device: torch.device) -> nn.Sequential:
         path = "checkpoints/gpt_layer.safetensors"
         data = safetensors.torch.load_file(path, device=str(device))
         with torch.device("meta"):
-            model = nn.Sequential(nn.Linear(GPT_DIM, 256), nn.Linear(256, 128), nn.Linear(128, 1024))
+            model = nn.Sequential(nn.Linear(GPT_HIDDEN_SIZE, 256), nn.Linear(256, 128), nn.Linear(128, 1024))
         model.load_state_dict(data, assign=True)
 
     print(f">> GPT Layer weights restored in {t:.2f} seconds from: {path}")

@@ -1,12 +1,12 @@
 import math
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, Final, override
 
 import torch
 from jaxtyping import Float
 from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
-from indextts.constants import DIM, N_CHANNELS, STYLE_DIM
+from indextts.constants import MEL_BINS, S2MEL_MODEL_DIM, STYLE_EMBED_DIM
 from indextts.s2mel.modules.gpt_fast.model import Transformer
 from indextts.s2mel.modules.wavenet import WaveNet
 from indextts.util import patch_call
@@ -29,12 +29,13 @@ class _TimestepEmbedder(nn.Module):
     if TYPE_CHECKING:
         freqs: Tensor = torch.empty(0)
     mlp: nn.Sequential
+    dim: Final = S2MEL_MODEL_DIM
 
     def __init__(self) -> None:
         super().__init__()
-        self.mlp = nn.Sequential(nn.Linear(DIM // 2, DIM), nn.SiLU(), nn.Linear(DIM, DIM))
+        self.mlp = nn.Sequential(nn.Linear(self.dim // 2, self.dim), nn.SiLU(), nn.Linear(self.dim, self.dim))
 
-        half = DIM // 4
+        half = self.dim // 4
         freqs = (-math.log(10000) * torch.arange(half).float() / half).exp()
         self.register_buffer("freqs", freqs)
 
@@ -67,12 +68,13 @@ class _FinalLayer(nn.Module):
     norm_final: nn.LayerNorm
     linear: nn.Linear
     adaLN_modulation: nn.Sequential
+    dim: Final = S2MEL_MODEL_DIM
 
     def __init__(self) -> None:
         super().__init__()
-        self.norm_final = nn.LayerNorm(DIM, elementwise_affine=False, eps=1e-6)
-        self.linear = weight_norm(nn.Linear(DIM, DIM))
-        self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(DIM, 1024))
+        self.norm_final = nn.LayerNorm(self.dim, elementwise_affine=False, eps=1e-6)
+        self.linear = weight_norm(nn.Linear(self.dim, self.dim))
+        self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(self.dim, 1024))
 
     @override
     def forward(self, x: Float[Tensor, "b t d"], c: Float[Tensor, "b d"]) -> Tensor:
@@ -98,12 +100,13 @@ class DiT(nn.Module):
     res_projection: nn.Linear
     skip_linear: nn.Linear
     cond_x_merge_linear: nn.Linear
+    dim: Final = S2MEL_MODEL_DIM
 
     def __init__(self) -> None:
         super().__init__()
         self.transformer = Transformer()
 
-        self.cond_projection = nn.Linear(DIM, DIM)  # continuous content
+        self.cond_projection = nn.Linear(self.dim, self.dim)  # continuous content
 
         self.t_embedder = _TimestepEmbedder()
 
@@ -111,15 +114,15 @@ class DiT(nn.Module):
         self.register_buffer("input_pos", input_pos)
 
         self.t_embedder2 = _TimestepEmbedder()
-        self.conv1 = nn.Linear(DIM, DIM)
-        self.conv2 = nn.Conv1d(DIM, N_CHANNELS, kernel_size=1)
+        self.conv1 = nn.Linear(self.dim, self.dim)
+        self.conv2 = nn.Conv1d(self.dim, MEL_BINS, kernel_size=1)
         self.wavenet = WaveNet()
         self.final_layer = _FinalLayer()
         # residual connection from tranformer output to final output
-        self.res_projection = nn.Linear(DIM, DIM)
+        self.res_projection = nn.Linear(self.dim, self.dim)
 
-        self.skip_linear = nn.Linear(DIM + N_CHANNELS, DIM)
-        self.cond_x_merge_linear = nn.Linear(DIM + N_CHANNELS * 2 + STYLE_DIM, DIM)
+        self.skip_linear = nn.Linear(self.dim + MEL_BINS, self.dim)
+        self.cond_x_merge_linear = nn.Linear(self.dim + MEL_BINS * 2 + STYLE_EMBED_DIM, self.dim)
 
     @override
     def forward(

@@ -26,9 +26,16 @@ class AccelInferenceEngine:
     graphs: dict[int, torch.cuda.CUDAGraph]
     graph_vars: dict[str, Tensor] | None = None
     graph_captured: bool = False
+    block_size: int
 
     def __init__(
-        self, model: GPT2AccelModel, lm_head: nn.Sequential | None, num_layers: int, num_heads: int, head_dim: int
+        self,
+        model: GPT2AccelModel,
+        lm_head: nn.Sequential | None,
+        num_layers: int,
+        num_heads: int,
+        head_dim: int,
+        block_size: int = 256,
     ) -> None:
         """
         Args:
@@ -43,11 +50,12 @@ class AccelInferenceEngine:
         self.model = model
         self.lm_head = lm_head
         self.hidden_size = model.config.hidden_size if hasattr(model, "config") else head_dim * num_heads
+        self.block_size = block_size
         self.kv_manager = KVCacheManager(
             num_layers=num_layers,
             num_heads=num_heads,
             head_dim=head_dim,
-            block_size=256,
+            block_size=self.block_size,
             num_blocks=16,
             dtype=torch.float16,  # Force fp16 for FlashAttention
         )
@@ -81,10 +89,10 @@ class AccelInferenceEngine:
                 num_total = len(req)
 
                 for token_idx in range(num_cached, num_total):
-                    block_idx = token_idx // 256
-                    block_offset = token_idx % 256
+                    block_idx = token_idx // self.block_size
+                    block_offset = token_idx % self.block_size
                     block_id = req.block_table[block_idx]
-                    slot_idx = block_id * 256 + block_offset
+                    slot_idx = block_id * self.block_size + block_offset
                     slot_mapping_list.append(slot_idx)
 
         input_ids = torch.tensor(input_ids_list, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
@@ -124,7 +132,7 @@ class AccelInferenceEngine:
             positions_list.append(pos)
 
             context_lens_list.append(len(req))
-            slot_mapping_list.append(req.block_table[-1] * 256 + req.last_block_num_tokens - 1)
+            slot_mapping_list.append(req.block_table[-1] * self.block_size + req.last_block_num_tokens - 1)
 
         input_ids = torch.tensor(input_ids_list, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)
         positions = torch.tensor(positions_list, dtype=torch.int64, pin_memory=True).cuda(non_blocking=True)

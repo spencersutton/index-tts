@@ -6,6 +6,7 @@ from jaxtyping import Float
 from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
+from indextts.constants import DIM, N_CHANNELS, STYLE_DIM
 from indextts.s2mel.modules.gpt_fast.model import Transformer
 from indextts.s2mel.modules.wavenet import WaveNet
 from indextts.util import patch_call
@@ -31,9 +32,9 @@ class _TimestepEmbedder(nn.Module):
 
     def __init__(self) -> None:
         super().__init__()
-        self.mlp = nn.Sequential(nn.Linear(512 // 2, 512), nn.SiLU(), nn.Linear(512, 512))
+        self.mlp = nn.Sequential(nn.Linear(DIM // 2, DIM), nn.SiLU(), nn.Linear(DIM, DIM))
 
-        half = 512 // 4
+        half = DIM // 4
         freqs = (-math.log(10000) * torch.arange(half).float() / half).exp()
         self.register_buffer("freqs", freqs)
 
@@ -69,9 +70,9 @@ class _FinalLayer(nn.Module):
 
     def __init__(self) -> None:
         super().__init__()
-        self.norm_final = nn.LayerNorm(512, elementwise_affine=False, eps=1e-6)
-        self.linear = weight_norm(nn.Linear(512, 512))
-        self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(512, 1024))
+        self.norm_final = nn.LayerNorm(DIM, elementwise_affine=False, eps=1e-6)
+        self.linear = weight_norm(nn.Linear(DIM, DIM))
+        self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(DIM, 1024))
 
     @override
     def forward(self, x: Float[Tensor, "b t d"], c: Float[Tensor, "b d"]) -> Tensor:
@@ -102,7 +103,7 @@ class DiT(nn.Module):
         super().__init__()
         self.transformer = Transformer()
 
-        self.cond_projection = nn.Linear(512, 512)  # continuous content
+        self.cond_projection = nn.Linear(DIM, DIM)  # continuous content
 
         self.t_embedder = _TimestepEmbedder()
 
@@ -110,15 +111,15 @@ class DiT(nn.Module):
         self.register_buffer("input_pos", input_pos)
 
         self.t_embedder2 = _TimestepEmbedder()
-        self.conv1 = nn.Linear(512, 512)
-        self.conv2 = nn.Conv1d(512, 80, kernel_size=1)
+        self.conv1 = nn.Linear(DIM, DIM)
+        self.conv2 = nn.Conv1d(DIM, N_CHANNELS, kernel_size=1)
         self.wavenet = WaveNet()
         self.final_layer = _FinalLayer()
         # residual connection from tranformer output to final output
-        self.res_projection = nn.Linear(512, 512)
+        self.res_projection = nn.Linear(DIM, DIM)
 
-        self.skip_linear = nn.Linear(592, 512)
-        self.cond_x_merge_linear = nn.Linear(864, 512)
+        self.skip_linear = nn.Linear(DIM + N_CHANNELS, DIM)
+        self.cond_x_merge_linear = nn.Linear(DIM + N_CHANNELS * 2 + STYLE_DIM, DIM)
 
     @override
     def forward(

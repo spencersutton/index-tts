@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from jaxtyping import Float
 from torch import Tensor, nn
 
+from indextts.constants import STYLE_DIM
 from indextts.s2mel.modules.campplus.layers import (
     BasicResBlock,
     CAMDenseTDNNBlock,
@@ -79,7 +80,7 @@ class CAMPPlus(nn.Module):
         self.xvector.add_module("out_nonlinear", get_nonlinear(channels))
 
         self.xvector.add_module("stats", StatsPool())
-        self.xvector.add_module("dense", DenseLayer(channels * 2, 192))
+        self.xvector.add_module("dense", DenseLayer(channels * 2, STYLE_DIM))
 
         for m in self.modules():
             if isinstance(m, (nn.Conv1d, nn.Linear)):

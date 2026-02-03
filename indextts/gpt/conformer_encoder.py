@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from jaxtyping import Bool, Float, Int
 from torch import Tensor, nn
 
+from indextts.constants import DIM
 from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
 from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
 from indextts.util import patch_call
@@ -48,16 +49,17 @@ class _PositionwiseFeedForward(nn.Module):
         activation (nn.Module): Activation function
     """
 
-    w_1: nn.Linear
     activation: nn.SiLU
+    w_1: nn.Linear
     w_2: nn.Linear
 
-    def __init__(self, hidden_units: int, activation: nn.SiLU) -> None:
+    def __init__(self, hidden_units: int) -> None:
         """Construct a PositionwiseFeedForward object."""
         super().__init__()
-        self.w_1 = nn.Linear(512, hidden_units)
-        self.activation = activation
-        self.w_2 = nn.Linear(hidden_units, 512)
+
+        self.activation = nn.SiLU()
+        self.w_1 = nn.Linear(DIM, hidden_units)
+        self.w_2 = nn.Linear(hidden_units, DIM)
 
     @override
     def forward(self, xs: Float[Tensor, "b t d"]) -> Tensor:
@@ -92,12 +94,12 @@ class _ConvolutionModule(nn.Module):
         """
         super().__init__()
 
-        self.pointwise_conv1 = nn.Conv1d(512, 1024, kernel_size=1)
-        self.depthwise_conv = nn.Conv1d(512, 512, kernel_size=15, padding=7, groups=512)
+        self.pointwise_conv1 = nn.Conv1d(DIM, 1024, kernel_size=1)
+        self.depthwise_conv = nn.Conv1d(DIM, DIM, kernel_size=15, padding=7, groups=DIM)
 
-        self.norm = nn.LayerNorm(512)
+        self.norm = nn.LayerNorm(DIM)
 
-        self.pointwise_conv2 = nn.Conv1d(512, 512, kernel_size=1)
+        self.pointwise_conv2 = nn.Conv1d(DIM, DIM, kernel_size=1)
         self.activation = activation
 
     @override
@@ -222,7 +224,7 @@ class ConformerEncoder(nn.Module):
     after_norm: nn.LayerNorm
     encoders: Sequence[_ConformerEncoderLayer]
 
-    def __init__(self, attention_heads: int = 4, linear_units: int = 2048, num_blocks: int = 6) -> None:
+    def __init__(self, attention_heads: int, linear_units: int, num_blocks: int) -> None:
         """
         Args:
             attention_heads (int): the number of heads of multi head attention
@@ -233,16 +235,16 @@ class ConformerEncoder(nn.Module):
         super().__init__()
 
         self.embed = Conv2dSubsampling2()
-        self.after_norm = nn.LayerNorm(512)
+        self.after_norm = nn.LayerNorm(DIM)
         activation = nn.SiLU()
 
         self.encoders = cast(  # pyright: ignore[reportInvalidCast]
             Sequence[_ConformerEncoderLayer],
             nn.ModuleList([
                 _ConformerEncoderLayer(
-                    512,
+                    DIM,
                     RelPositionMultiHeadedAttention(attention_heads),
-                    _PositionwiseFeedForward(linear_units, activation=activation),
+                    _PositionwiseFeedForward(linear_units),
                     _ConvolutionModule(activation),
                 )
                 for _ in range(num_blocks)

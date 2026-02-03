@@ -83,7 +83,7 @@ class QwenEmotion:
         # conduct text completion
         generated_ids = self.model.generate(
             **model_inputs,  # pyright: ignore
-            max_new_tokens=32768,
+            max_new_tokens=2**15,
             pad_token_id=self.tokenizer.eos_token_id,
         )
         assert isinstance(generated_ids, torch.Tensor)

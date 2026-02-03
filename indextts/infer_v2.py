@@ -18,6 +18,7 @@ from torchcodec.encoders import AudioEncoder
 
 import indextts.load as load
 from BigVGANInference.bigvganinference.inference import BigVGANInference
+from indextts.constants import N_CHANNELS
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.qwen import QwenEmotion
 from indextts.s2mel.modules import CFM, CAMPPlus, InterpolateRegulator, mel_spectrogram
@@ -206,21 +207,11 @@ class IndexTTS2:
             # convert ordered dict to list of vectors; the order is VERY important!
             emo_vector = list(emo_dict.values())
 
-        if emo_vector is not None:
-            # we have emotion vectors; they can'T be blended via alpha mixing
-            # in the main inference process later, so we must pre-calculate
-            # their new strengths here based on the alpha instead!
-            emo_vector_scale = max(0.0, min(1.0, emo_alpha))
-            if emo_vector_scale != 1.0:
-                # scale each vector and truncate to 4 decimals (for nicer printing)
-                emo_vector = [int(x * emo_vector_scale * 10000) / 10000 for x in emo_vector]
-                print(f"scaled emotion vectors to {emo_vector_scale}x: {emo_vector}")
-
         if emo_audio_prompt is None:
             # we are not using any external "emotion reference voice"; use
             # speaker's voice as the main emotion reference audio.
             emo_audio_prompt = spk_audio_prompt
-            # must always use alpha=1.0 when we don'T have an external reference voice
+            # must always use alpha=1.0 when we don't have an external reference voice
             emo_alpha = 1.0
 
         gen = self.infer_generator(
@@ -463,9 +454,9 @@ class IndexTTS2:
         audio_22k = torchaudio.functional.resample(audio, sr, 22050)
 
         mel = mel_spectrogram(audio_22k)
-        feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(self.device), num_mel_bins=80)
-        feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
-        style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
+        feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(self.device), num_mel_bins=N_CHANNELS)
+        feat -= feat.mean(dim=0, keepdim=True)
+        style = self.campplus_model(feat.unsqueeze(0))
 
         inputs = cast(
             Mapping[str, Tensor],

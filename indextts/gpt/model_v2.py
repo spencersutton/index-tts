@@ -25,8 +25,6 @@ class UnifiedVoice(nn.Module):
     if TYPE_CHECKING:
         accel_engine: AccelInferenceEngine | None
         """Optional accelerated generation engine (CUDA/flash-attn path, initialized lazily)."""
-    ds_engine: Any  # pyright: ignore[reportExplicitAny, reportUninitializedInstanceVariable]
-    """Optional DeepSpeed inference wrapper, created in `post_init_gpt2_config` when enabled."""
 
     emo_layer: nn.Linear
     """Final projection applied to the emotion vector in the GPT embedding space (dim -> dim)."""
@@ -125,7 +123,7 @@ class UnifiedVoice(nn.Module):
         self.use_accel = use_accel
         self.accel_engine = None  # Will be initialized in post_init_gpt2_config
 
-    def post_init_gpt2_config(self, use_deepspeed: bool, half: bool) -> None:
+    def post_init_gpt2_config(self, half: bool) -> None:
         seq_length = 1815 + 600 + 2
         gpt_config = GPT2Config(
             vocab_size=8194, n_positions=seq_length, n_ctx=seq_length, n_embd=1280, n_layer=24, n_head=20
@@ -161,22 +159,7 @@ class UnifiedVoice(nn.Module):
         self.inference_model = GPT2InferenceModel(
             gpt_config, self.gpt, self.mel_pos_embedding, self.mel_embedding, self.final_norm, self.mel_head
         )
-        if use_deepspeed and half and torch.cuda.is_available():
-            import deepspeed  # type: ignore
-
-            self.ds_engine = deepspeed.init_inference(  # pyright: ignore[reportUnknownMemberType]
-                model=self.inference_model, mp_size=1, replace_with_kernel_inject=True, dtype=torch.float16
-            )
-            self.inference_model = self.ds_engine.module.eval()  # pyright: ignore[reportUnknownMemberType]
-        elif use_deepspeed and torch.cuda.is_available():
-            import deepspeed  # type: ignore
-
-            self.ds_engine = deepspeed.init_inference(  # pyright: ignore[reportUnknownMemberType]
-                model=self.inference_model, mp_size=1, replace_with_kernel_inject=True, dtype=torch.float32
-            )
-            self.inference_model = self.ds_engine.module.eval()  # pyright: ignore[reportUnknownMemberType]
-        else:
-            self.inference_model = self.inference_model.eval()
+        self.inference_model = self.inference_model.eval()
 
         self.gpt.wte = self.mel_embedding
 

@@ -44,7 +44,6 @@ dependencies = [
 
 [project.optional-dependencies]
 webui = ["gradio>=5.45.0"]
-deepspeed = ["deepspeed>=0.17.1"]
 
 [project.urls]
 Homepage = "https://github.com/index-tts/index-tts"
@@ -58,7 +57,6 @@ requires = ["hatchling >= 1.27.0"]
 build-backend = "hatchling.build"
 
 [tool.uv]
-no-build-isolation-package = ["deepspeed"]
 override-dependencies = ["pynini>=2.1.7"]
 
 [tool.uv.sources]

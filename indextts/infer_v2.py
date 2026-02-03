@@ -4,7 +4,6 @@ import warnings
 from collections.abc import Callable, Generator, Mapping, Sequence
 from functools import cache, cached_property, lru_cache
 from pathlib import Path
-from subprocess import CalledProcessError
 from typing import Any, Final, cast
 
 import huggingface_hub as hf
@@ -115,7 +114,6 @@ class IndexTTS2:
         use_fp16: bool = False,
         device: str | None = None,
         use_cuda_kernel: bool = False,
-        use_deepspeed: bool = False,
         use_accel: bool = False,
         use_torch_compile: bool = False,
     ) -> None:
@@ -125,7 +123,6 @@ class IndexTTS2:
             use_fp16 (bool): whether to use fp16.
             device (str | None): device to use (e.g., 'cuda:0', 'cpu'). If None, it will be set automatically based on the availability of CUDA or MPS.
             use_cuda_kernel (None | bool): whether to use BigVGan custom fused activation CUDA kernel, only for CUDA device.
-            use_deepspeed (bool): whether to use DeepSpeed or not.
             use_accel (bool): whether to use acceleration engine for GPT2 or not.
             use_torch_compile (bool): whether to use torch.compile for optimization or not.
         """
@@ -149,14 +146,7 @@ class IndexTTS2:
         self.length_regulator = load.length_regulator(self.device)
         self.gpt_layer = load.gpt_layer(self.device)
 
-        if use_deepspeed:
-            try:
-                import deepspeed  # type: ignore  # noqa: F401
-            except (ImportError, OSError, CalledProcessError) as e:
-                use_deepspeed = False
-                print(f">> Failed to load DeepSpeed. Falling back to normal inference. Error: {e}")
-
-        self.gpt.post_init_gpt2_config(use_deepspeed=use_deepspeed, half=self.use_fp16)
+        self.gpt.post_init_gpt2_config(half=self.use_fp16)
 
         if self.use_cuda_kernel:
             # preload the CUDA kernel for BigVGAN

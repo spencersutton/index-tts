@@ -19,7 +19,6 @@ from torchcodec.encoders import AudioEncoder
 
 import indextts.load as load
 from BigVGANInference.bigvganinference.inference import BigVGANInference
-from indextts.config import IndexTTSConfig
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.qwen import QwenEmotion
 from indextts.s2mel.modules import CFM, CAMPPlus, InterpolateRegulator, mel_spectrogram
@@ -50,10 +49,10 @@ def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
 
 
 @cache
-def get_silence_interval(size: int, interval_silence: int = 200, sampling_rate: int = 22050) -> Tensor:
+def get_silence_interval(size: int, interval_silence: int) -> Tensor:
     """Silences to be insert between generated segments."""
 
-    return torch.zeros(size, (sampling_rate * interval_silence) // 1000)
+    return torch.zeros(size, (22050 * interval_silence) // 1000)
 
 
 def find_most_similar_cosine(query_vector: Float[Tensor, "1 C"], matrix: Float[Tensor, "N C"]) -> int:
@@ -75,13 +74,11 @@ def _load_and_cut_audio(audio_path: Path, sample_rate: int | None = None) -> tup
 
 
 class IndexTTS2:
-    cfg: Final = IndexTTSConfig()
     dtype: torch.dtype
     device: torch.device
     use_fp16: bool
     use_cuda_kernel: bool
     use_accel: bool
-    stop_mel_token: int
 
     emo_matrix: tuple[Tensor, ...]
     spk_matrix: tuple[Tensor, ...]
@@ -90,7 +87,7 @@ class IndexTTS2:
 
     # Progress reference display (optional)
     gr_progress: Callable[..., None] | None = None
-    model_version: int | None
+    model_version: float | None
 
     has_warned: bool = False
 
@@ -110,7 +107,7 @@ class IndexTTS2:
 
     @cached_property[QwenEmotion]
     def qwen_emo(self) -> QwenEmotion:
-        return QwenEmotion(self.cfg.qwen_emo_path)
+        return QwenEmotion("dsinghvi/qwen0.6bemo4-merge")
 
     def __init__(
         self,
@@ -141,7 +138,7 @@ class IndexTTS2:
         self.dtype = torch.float16 if self.use_fp16 else torch.get_default_dtype()
         self.use_accel = use_accel
 
-        self.gpt = load.gpt(self.device, self.cfg.gpt, self.use_accel, self.use_fp16)
+        self.gpt = load.gpt(self.device, self.use_accel, self.use_fp16)
         self.semantic_model = load.semantic_model(self.device)
         self.semantic_mean, self.semantic_std = load.semantic_stats(self.device)
         self.semantic_codec = load.semantic_codec(self.device)
@@ -151,8 +148,6 @@ class IndexTTS2:
         self.cfm = load.cfm(self.device)
         self.length_regulator = load.length_regulator(self.device)
         self.gpt_layer = load.gpt_layer(self.device)
-
-        self.stop_mel_token = self.cfg.gpt.stop_mel_token
 
         if use_deepspeed:
             try:
@@ -180,8 +175,8 @@ class IndexTTS2:
             self.cfm.enable_torch_compile()
             print(">> torch.compile optimization enabled successfully")
 
-        self.emo_matrix = self.get_matrix(self.cfg.emo_matrix)
-        self.spk_matrix = self.get_matrix(self.cfg.spk_matrix)
+        self.spk_matrix = self.get_matrix("feat1.pt")
+        self.emo_matrix = self.get_matrix("feat2.pt")
 
         # 加载术语词汇表（如果存在）
         self.glossary_path = model_dir / "glossary.yaml"
@@ -189,7 +184,7 @@ class IndexTTS2:
             self.normalizer.load_glossary_from_yaml(self.glossary_path)
             print(">> Glossary loaded from:", self.glossary_path)
 
-        self.model_version = int(self.cfg.version)
+        self.model_version = 2.0
 
     # 原始推理模式
     def infer(
@@ -203,7 +198,6 @@ class IndexTTS2:
         emo_vector: Sequence[float] | None = None,
         interval_silence: int = 200,
         max_text_tokens_per_segment: int = 120,
-        more_segment_before: int = 0,
         stream_return: bool = False,
         use_emo_text: bool = False,
         use_random: bool = False,
@@ -250,7 +244,6 @@ class IndexTTS2:
             interval_silence,
             max_text_tokens_per_segment,
             stream_return,
-            more_segment_before,
             **generation_kwargs,
         )
         if stream_return:
@@ -273,7 +266,6 @@ class IndexTTS2:
         interval_silence: int = 200,
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
-        quick_streaming_tokens: int = 0,
         **generation_kwargs: Any,  # pyright: ignore[reportExplicitAny, reportAny]
     ) -> Generator[Tensor]:
         print(">> starting inference...")
@@ -293,9 +285,7 @@ class IndexTTS2:
 
         self._set_gr_progress(0.1, "text processing...")
         text_tokens_list = self.tokenizer.tokenize(text)
-        segments = self.tokenizer.split_segments(
-            text_tokens_list, max_text_tokens_per_segment, quick_streaming_tokens=quick_streaming_tokens
-        )
+        segments = self.tokenizer.split_segments(text_tokens_list, max_text_tokens_per_segment)
 
         text_token_ids = self.tokenizer.convert_tokens_to_ids(text_tokens_list)
         if self.tokenizer.unk_token_id in text_token_ids:
@@ -357,7 +347,7 @@ class IndexTTS2:
                         **generation_kwargs,
                     )
 
-                if not has_warned and (codes[:, -1] != self.stop_mel_token).any():
+                if not has_warned and (codes[:, -1] != 8193).any():
                     warnings.warn(
                         f"WARN: generation stopped due to exceeding `max_mel_tokens` ({max_mel_tokens}). "
                         + f"Input text tokens: {text_tokens.shape[1]}. "
@@ -366,9 +356,7 @@ class IndexTTS2:
                     )
                     has_warned = True
 
-                code_lens = [
-                    x.tolist().index(self.stop_mel_token) if self.stop_mel_token in x else len(x) for x in codes
-                ]
+                code_lens = [x.tolist().index(8193) if 8193 in x else len(x) for x in codes]
                 codes = codes[:, : max(code_lens)]
 
                 with torch.autocast(self.device.type, dtype=self.dtype), gpt_forward_time:
@@ -387,15 +375,15 @@ class IndexTTS2:
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
                     yield wav.cpu()
-                    yield get_silence_interval(wavs[0].size(0), interval_silence, self.cfg.sample_rate)
+                    yield get_silence_interval(wavs[0].size(0), interval_silence)
         inference_timer.stop()
 
         self._set_gr_progress(0.9, "saving audio...")
-        silence_tensor = get_silence_interval(wavs[0].size(0), interval_silence, self.cfg.sample_rate)
+        silence_tensor = get_silence_interval(wavs[0].size(0), interval_silence)
         # Insert silences between segments
         wavs = [item for x in wavs for item in (x, silence_tensor)][:-1]
         wav = torch.cat(wavs, dim=1)
-        wav_length = wav.shape[-1] / self.cfg.sample_rate
+        wav_length = wav.shape[-1] / 22050
         print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")
         print(f">> gpt_forward_time: {gpt_forward_time:.2f} seconds")
         print(f">> s2mel_time: {s2mel_time:.2f} seconds")
@@ -407,14 +395,14 @@ class IndexTTS2:
         wav = wav.cpu()
         if output_path:
             # Save audio directly to the specified path
-            AudioEncoder(wav, sample_rate=self.cfg.sample_rate).to_file(output_path)
+            AudioEncoder(wav, sample_rate=22050).to_file(output_path)
             print(">> wav file saved to:", output_path)
             yield output_path  # pyright: ignore[reportReturnType]
         else:
             # Return in a format compatible with Gradio
             wav_data = wav.type(torch.int16)  # pyright: ignore[reportUnreachable]
             wav_data = wav_data.numpy().T
-            yield (self.cfg.sample_rate, wav_data)
+            yield (22050, wav_data)
 
     def generate_voice_conversion(
         self,

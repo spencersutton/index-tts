@@ -158,7 +158,7 @@ def gen_single(
         emo_vector=vec,
         length_penalty=float(length_penalty),
         max_mel_tokens=int(max_mel_tokens),
-        max_text_tokens_per_segment=int(max_text_tokens_per_segment),
+        max_text_tokens_per_segment=max_text_tokens_per_segment,
         num_beams=num_beams,
         output_path=output_path,
         repetition_penalty=float(repetition_penalty),

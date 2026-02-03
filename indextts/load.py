@@ -9,7 +9,6 @@ import transformers
 from torch import Tensor, nn
 
 from BigVGANInference.bigvganinference import BigVGANInference as BigVGAN
-from indextts.config import UnifiedVoiceConfig
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.modules.flow_matching import CFM
@@ -26,13 +25,13 @@ def extract_features() -> transformers.SeamlessM4TFeatureExtractor:
     return model
 
 
-def gpt(device: torch.device, cfg: UnifiedVoiceConfig, use_accel: bool, use_fp16: bool) -> UnifiedVoice:
+def gpt(device: torch.device, use_accel: bool, use_fp16: bool) -> UnifiedVoice:
     with Timer() as t:
         path = "./checkpoints/gpt.safetensors"
         data = safetensors.torch.load_file(path, device=str(device))
 
         with torch.device("meta"):
-            model = UnifiedVoice(cfg=cfg, use_accel=use_accel)
+            model = UnifiedVoice(use_accel=use_accel)
         model.load_state_dict(data, assign=True)
 
         if use_fp16:

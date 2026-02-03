@@ -1,5 +1,4 @@
-from collections.abc import Sequence
-from typing import cast, override
+from typing import override
 
 import torch
 import torch.nn.functional as F
@@ -213,7 +212,7 @@ class ConformerEncoder(nn.Module):
 
     embed: Conv2dSubsampling2
     after_norm: nn.LayerNorm
-    encoders: Sequence[_ConformerEncoderLayer]
+    encoders: nn.ModuleList[_ConformerEncoderLayer]
 
     def __init__(self, dim: int, attention_heads: int = 4, linear_units: int = 2048, num_blocks: int = 6) -> None:
         """
@@ -229,18 +228,15 @@ class ConformerEncoder(nn.Module):
         self.after_norm = nn.LayerNorm(dim)
         activation = nn.SiLU()
 
-        self.encoders = cast(  # pyright: ignore[reportInvalidCast]
-            Sequence[_ConformerEncoderLayer],
-            nn.ModuleList([
-                _ConformerEncoderLayer(
-                    dim,
-                    RelPositionMultiHeadedAttention(attention_heads, dim),
-                    _PositionwiseFeedForward(dim, linear_units, activation=activation),
-                    _ConvolutionModule(dim, activation),
-                )
-                for _ in range(num_blocks)
-            ]),
-        )
+        self.encoders = nn.ModuleList([
+            _ConformerEncoderLayer(
+                dim,
+                RelPositionMultiHeadedAttention(attention_heads, dim),
+                _PositionwiseFeedForward(dim, linear_units, activation=activation),
+                _ConvolutionModule(dim, activation),
+            )
+            for _ in range(num_blocks)
+        ])
 
     @override
     def forward(self, xs: Tensor) -> tuple[Tensor, Tensor]:

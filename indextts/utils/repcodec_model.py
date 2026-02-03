@@ -2,7 +2,6 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-from collections.abc import Sequence
 from typing import override
 
 import torch
@@ -71,14 +70,14 @@ class _VocosBackbone(nn.Module):
 
     embed: nn.Conv1d
     norm: nn.LayerNorm
-    convnext: Sequence[_ConvNeXtBlock]
+    convnext: nn.ModuleList[_ConvNeXtBlock]
     final_layer_norm: nn.LayerNorm
 
     def __init__(self, in_channels: int, out_channels: int, n_layers: int = 12) -> None:
         super().__init__()
         self.embed = nn.Conv1d(in_channels, out_channels, kernel_size=7, padding=3)
         self.norm = nn.LayerNorm(out_channels, eps=1e-6)
-        self.convnext = nn.ModuleList([_ConvNeXtBlock() for _ in range(n_layers)])  # pyright: ignore[reportAttributeAccessIssue]
+        self.convnext = nn.ModuleList([_ConvNeXtBlock() for _ in range(n_layers)])
         self.final_layer_norm = nn.LayerNorm(out_channels, eps=1e-6)
         self.apply(_init_weights)
 

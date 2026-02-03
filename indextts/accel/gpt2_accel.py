@@ -135,7 +135,7 @@ class _GPT2AccelBlock(GPT2Block):
 
 
 class GPT2AccelModel(GPT2Model):
-    h: nn.ModuleList
+    h: nn.ModuleList[nn.Module]
 
     def __init__(self, config: transformers.GPT2Config) -> None:
         super().__init__(config)

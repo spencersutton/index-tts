@@ -1,5 +1,4 @@
 # Adapted from https://github.com/lucidrains/naturalspeech2-pytorch/blob/659bec7f7543e7747e809e950cc2f84242fbeec7/naturalspeech2_pytorch/naturalspeech2_pytorch.py#L532
-from collections.abc import MutableSequence
 from typing import cast, override
 
 import torch
@@ -111,7 +110,7 @@ class _GEGLU(nn.Module):
 class PerceiverResampler(nn.Module):
     proj_context: nn.Linear
     latents: nn.Parameter
-    layers: MutableSequence[tuple[_Attention, nn.Sequential]]
+    layers: nn.ModuleList[nn.ModuleList[_Attention | nn.Sequential]]
     norm: _RMSNorm
 
     def __init__(self, dim: int, num_latents: int = 32, heads: int = 8, depth: int = 2, dim_context: int = 512) -> None:
@@ -122,15 +121,14 @@ class PerceiverResampler(nn.Module):
         self.latents = nn.Parameter(torch.randn(num_latents, dim))
         nn.init.normal_(self.latents, std=0.02)
 
-        self.layers = nn.ModuleList()  # pyright: ignore[reportAttributeAccessIssue]
+        self.layers = nn.ModuleList()
         dim_inner = int(dim * 4 / 3)
         for _ in range(depth):
-            self.layers.append(
-                nn.ModuleList((  # pyright: ignore[reportArgumentType]
-                    _Attention(dim=dim, heads=heads),
-                    nn.Sequential(nn.Linear(dim, dim_inner * 2), _GEGLU(), nn.Linear(dim_inner, dim)),
-                ))
-            )
+            layer = nn.ModuleList((
+                _Attention(dim=dim, heads=heads),
+                nn.Sequential(nn.Linear(dim, dim_inner * 2), _GEGLU(), nn.Linear(dim_inner, dim)),
+            ))
+            self.layers.append(layer)
 
         self.norm = _RMSNorm(dim)
 
@@ -141,6 +139,7 @@ class PerceiverResampler(nn.Module):
         latents = repeat(self.latents, "n d -> b n d", b=x.shape[0])
 
         for attn, ff in self.layers:
+            assert isinstance(attn, _Attention) and isinstance(ff, nn.Sequential)
             latents = attn(latents, x, mask=mask) + latents
             latents = ff(latents) + latents
 

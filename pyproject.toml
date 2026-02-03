@@ -27,8 +27,6 @@ dependencies = [
   "accelerate>=1.8.1",
   "beartype>=0.22.9",
   "einops>=0.8.1",
-  "numpy>=1.26.2",
-  "omegaconf>=2.3.0",
   "pyinstrument>=5.1.2",
   "safetensors>=0.5.2",
   "sentencepiece>=0.2.1",
@@ -43,7 +41,6 @@ dependencies = [
 
 [project.optional-dependencies]
 webui = ["gradio>=5.45.0"]
-deepspeed = ["deepspeed>=0.17.1"]
 
 [project.urls]
 Homepage = "https://github.com/index-tts/index-tts"
@@ -57,7 +54,6 @@ requires = ["hatchling >= 1.27.0"]
 build-backend = "hatchling.build"
 
 [tool.uv]
-no-build-isolation-package = ["deepspeed"]
 override-dependencies = ["pynini>=2.1.7"]
 
 [tool.uv.sources]
@@ -114,11 +110,11 @@ ignore = [
   "C901",
   "F722",
   "F821",
+  "PYI041",
   "RUF001",
   "RUF002",
   "RUF003",
   "SIM108",
-  "PYI041",
 ]
 isort.split-on-trailing-comma = false
 
@@ -130,27 +126,27 @@ enableTypeIgnoreComments = true
 ignore = ["tools/", "sitecustomize.py"]
 reportIgnoreCommentWithoutRule = false
 reportUnusedCallResult = false
-stubPath = "/Users/spencer/projects/typings"
+stubPath = "../typings"
 
 [[tool.basedpyright.executionEnvironments]]
 root = "../typings"
-reportUnknownParameterType = false
-reportMissingParameterType = false
-reportImplicitOverride = false
 reportExplicitAny = false
+reportImplicitOverride = false
+reportMissingParameterType = false
+reportUnknownParameterType = false
 
 [[tool.basedpyright.executionEnvironments]]
 root = "BigVGANInference/"
-reportUnknownParameterType = false
-reportMissingParameterType = false
-reportImplicitOverride = false
+reportAny = false
 reportExplicitAny = false
-reportUnknownVariableType = false
-reportUnreachable = false
+reportImplicitOverride = false
+reportIncompatibleUnannotatedOverride = "warning"
+reportMissingParameterType = false
+reportMissingTypeStubs = false
+reportUnannotatedClassAttribute = false
 reportUninitializedInstanceVariable = false
 reportUnknownArgumentType = false
-reportMissingTypeStubs = false
 reportUnknownMemberType = false
-reportAny = false
-reportIncompatibleUnannotatedOverride = "warning"
-reportUnannotatedClassAttribute = false
+reportUnknownParameterType = false
+reportUnknownVariableType = false
+reportUnreachable = false

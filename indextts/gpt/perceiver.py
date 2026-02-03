@@ -5,7 +5,6 @@ from typing import cast, override
 import torch
 import torch.nn.functional as F
 from einops import rearrange, repeat
-from jaxtyping import Bool, Float
 from torch import Tensor, nn
 
 from indextts.util import patch_call
@@ -30,12 +29,7 @@ class _Attention(nn.Module):
         self.to_out = nn.Linear(dim_inner, dim, bias=False)
 
     @override
-    def forward(
-        self,
-        x: Float[Tensor, "b n d"],
-        context: Float[Tensor, "b n d"] | None = None,
-        mask: Bool[Tensor, "b n"] | None = None,
-    ) -> Tensor:
+    def forward(self, x: Tensor, context: Tensor | None = None, mask: Tensor | None = None) -> Tensor:
         h = self.heads
 
         context = context if context is not None else x
@@ -55,13 +49,7 @@ class _Attention(nn.Module):
 
 class _Attend(nn.Module):
     @override
-    def forward(
-        self,
-        q: Float[Tensor, "b h n d"],
-        k: Float[Tensor, "b h n d"],
-        v: Float[Tensor, "b h n d"],
-        mask: Bool[Tensor, "b n"] | None = None,
-    ) -> Tensor:
+    def forward(self, q: Tensor, k: Tensor, v: Tensor, mask: Tensor | None = None) -> Tensor:
         """
         einstein notation
         b - batch
@@ -103,7 +91,7 @@ class _RMSNorm(nn.Module):
         self.gamma = nn.Parameter(torch.ones(dim))
 
     @override
-    def forward(self, x: Float[Tensor, "b n d"]) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return F.normalize(x, dim=-1) * self.scale * self.gamma
 
     @patch_call(forward)
@@ -112,7 +100,7 @@ class _RMSNorm(nn.Module):
 
 class _GEGLU(nn.Module):
     @override
-    def forward(self, x: Float[Tensor, "b n d"]) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x, gate = x.chunk(2, dim=-1)
         return F.gelu(gate) * x
 
@@ -147,7 +135,7 @@ class PerceiverResampler(nn.Module):
         self.norm = _RMSNorm(dim)
 
     @override
-    def forward(self, x: Float[Tensor, "b n d"], mask: Bool[Tensor, "b n"] | None = None) -> Tensor:
+    def forward(self, x: Tensor, mask: Tensor | None = None) -> Tensor:
         x = self.proj_context(x)
 
         latents = repeat(self.latents, "n d -> b n d", b=x.shape[0])

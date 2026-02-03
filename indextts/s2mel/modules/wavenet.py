@@ -2,7 +2,6 @@ from collections.abc import Sequence
 from typing import override
 
 import torch
-from jaxtyping import Float
 from torch import Tensor, nn
 
 from indextts.s2mel.modules.encodec import SConv1d
@@ -30,7 +29,7 @@ class WaveNet(nn.Module):
         self.res_skip_layers = nn.ModuleList(layers)  # pyright: ignore[reportAttributeAccessIssue]
 
     @override
-    def forward(self, x: Float[Tensor, "b c t"], g: Float[Tensor, "b c t"]) -> Tensor:
+    def forward(self, x: Tensor, g: Tensor) -> Tensor:
         output = torch.zeros_like(x)
 
         g = self.cond_layer(g)

@@ -3,7 +3,6 @@ from typing import cast, override
 
 import torch
 import torch.nn.functional as F
-from jaxtyping import Bool, Float, Int
 from torch import Tensor, nn
 
 from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
@@ -11,7 +10,7 @@ from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
 from indextts.util import patch_call
 
 
-def make_pad_mask(lengths: Int[Tensor, "b"], max_len: int = 0) -> Bool[Tensor, "b t"]:  # noqa: UP037
+def make_pad_mask(lengths: Tensor, max_len: int = 0) -> Tensor:
     """Make mask tensor containing indices of padded part.
 
     See description of make_non_pad_mask.
@@ -60,7 +59,7 @@ class _PositionwiseFeedForward(nn.Module):
         self.w_2 = nn.Linear(hidden_units, idim)
 
     @override
-    def forward(self, xs: Float[Tensor, "b t d"]) -> Tensor:
+    def forward(self, xs: Tensor) -> Tensor:
         """Forward function.
 
         Args:
@@ -101,7 +100,7 @@ class _ConvolutionModule(nn.Module):
         self.activation = activation
 
     @override
-    def forward(self, x: Float[Tensor, "b t c"], mask_pad: Bool[Tensor, "b 1 t"]) -> Tensor:
+    def forward(self, x: Tensor, mask_pad: Tensor) -> Tensor:
         """Compute convolution module.
         Args:
             x (Tensor): Input tensor (#batch, time, channels).
@@ -179,13 +178,7 @@ class _ConformerEncoderLayer(nn.Module):
         self.concat_linear = nn.Identity()
 
     @override
-    def forward(
-        self,
-        x: Float[Tensor, "b t c"],
-        mask: Bool[Tensor, "b t c"],
-        pos_emb: Float[Tensor, "b t c"],
-        mask_pad: Bool[Tensor, "b 1 t"],
-    ) -> tuple[Tensor, Tensor]:
+    def forward(self, x: Tensor, mask: Tensor, pos_emb: Tensor, mask_pad: Tensor) -> tuple[Tensor, Tensor]:
         """Compute encoded features.
 
         Args:
@@ -250,7 +243,7 @@ class ConformerEncoder(nn.Module):
         )
 
     @override
-    def forward(self, xs: Float[Tensor, "b t d"]) -> tuple[Tensor, Tensor]:
+    def forward(self, xs: Tensor) -> tuple[Tensor, Tensor]:
         """Embed positions in tensor.
 
         Args:

@@ -8,7 +8,6 @@ from typing import override
 import torch
 import torch.nn.functional as F
 from einops import rearrange
-from jaxtyping import Float, Int
 from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
@@ -48,7 +47,7 @@ class _ConvNeXtBlock(nn.Module):
         self.gamma = nn.Parameter(1 / 12 * torch.ones(dim))
 
     @override
-    def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         residual = x
         x = self.dwconv(x)
         x = x.mT  # (B, C, T) -> (B, T, C)
@@ -84,7 +83,7 @@ class _VocosBackbone(nn.Module):
         self.apply(_init_weights)
 
     @override
-    def forward(self, x: Float[Tensor, "b c t"]) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x = self.embed(x)
         x = self.norm(x.mT)
         x = x.mT
@@ -109,7 +108,7 @@ class _FactorizedVectorQuantize(nn.Module):
         self.codebook = nn.Embedding(codebook_size, latent_dim)
 
     @override
-    def forward(self, z: Float[Tensor, "b d t"]) -> Tensor:
+    def forward(self, z: Tensor) -> Tensor:
         """
         Parameters
         ----------
@@ -129,10 +128,10 @@ class _FactorizedVectorQuantize(nn.Module):
 
         return self.out_project(z_q)
 
-    def decode_code(self, embed_id: Int[Tensor, "b t"]) -> Tensor:
+    def decode_code(self, embed_id: Tensor) -> Tensor:
         return F.embedding(embed_id, self.codebook.weight).mT
 
-    def decode_latents(self, latents: Float[Tensor, "b d t"]) -> Tensor:
+    def decode_latents(self, latents: Tensor) -> Tensor:
         encodings = rearrange(latents, "b d t -> (b t) d")
         codebook = self.codebook.weight
 
@@ -150,7 +149,7 @@ class _FactorizedVectorQuantize(nn.Module):
         indices = rearrange((-dist).max(1)[1], "(b t) -> b t", b=latents.size(0))
         return self.decode_code(indices)
 
-    def vq2emb(self, vq: Int[Tensor, "b d t"]) -> Tensor:
+    def vq2emb(self, vq: Tensor) -> Tensor:
         emb = self.decode_code(vq[0])
         return self.out_project(emb)
 
@@ -177,7 +176,7 @@ class RepCodec(nn.Module):
 
         self.apply(_init_weights)
 
-    def quantize(self, x: Float[Tensor, "b t c"]) -> Tensor:
+    def quantize(self, x: Tensor) -> Tensor:
         x = self.encoder(x.mT).mT
 
         return self.quantizer(x).mT

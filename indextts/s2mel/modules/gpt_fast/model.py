@@ -8,7 +8,6 @@ from functools import cached_property
 from typing import override
 
 import torch
-from jaxtyping import Float, Int
 from torch import Tensor, nn
 from torch.nn import functional as F
 
@@ -30,7 +29,7 @@ class _AdaptiveLayerNorm(nn.Module):
         self.norm = _RMSNorm(dim=dim)
 
     @override
-    def forward(self, input: Float[Tensor, "b t d"], embedding: Float[Tensor, "b t d"]) -> Tensor:
+    def forward(self, input: Tensor, embedding: Tensor) -> Tensor:
         weight, bias = self.project_layer(embedding).split(self.dim, dim=-1)
         return weight * self.norm.__call__(input) + bias
 
@@ -68,7 +67,7 @@ class Transformer(nn.Module):
         return torch.view_as_real(freqs_cis)
 
     @override
-    def forward(self, x: Float[Tensor, "b t d"], c: Float[Tensor, "b t d"], input_pos: Int[Tensor, "t"]) -> Tensor:  # noqa: UP037
+    def forward(self, x: Tensor, c: Tensor, input_pos: Tensor) -> Tensor:
         freqs_cis = self.freqs_cis[input_pos]
         mid = self.n_layer // 2
         skip_stack: list[Tensor] = []
@@ -102,13 +101,7 @@ class _TransformerBlock(nn.Module):
         self.skip_in_linear = nn.Linear(dim * 2, dim)
 
     @override
-    def forward(
-        self,
-        x: Float[Tensor, "b t d"],
-        c: Float[Tensor, "b t d"],
-        freqs_cis: Float[Tensor, "b t d"],
-        skip_in_x: Float[Tensor, "b t d"] | None = None,
-    ) -> Tensor:
+    def forward(self, x: Tensor, c: Tensor, freqs_cis: Tensor, skip_in_x: Tensor | None = None) -> Tensor:
         if skip_in_x is not None:
             x = self.skip_in_linear(torch.cat([x, skip_in_x], dim=-1))
         norm = self.attention_norm.__call__(x, c)
@@ -139,7 +132,7 @@ class _Attention(nn.Module):
         self.wo = nn.Linear(self.dim, self.dim, bias=False)
 
     @override
-    def forward(self, x: Float[Tensor, "b t d"], freqs_cis: Float[Tensor, "b t d"]) -> Tensor:
+    def forward(self, x: Tensor, freqs_cis: Tensor) -> Tensor:
         bsz, seqlen, _ = x.shape
 
         query_key_value = self.wqkv(x)
@@ -177,7 +170,7 @@ class _FeedForward(nn.Module):
         self.w2 = nn.Linear(dim * 3, dim, bias=False)
 
     @override
-    def forward(self, x: Float[Tensor, "b t d"]) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return self.w2(F.silu(self.w1(x)) * self.w3(x))
 
     @patch_call(forward)
@@ -193,18 +186,18 @@ class _RMSNorm(nn.Module):
         self.weight = nn.Parameter(torch.ones(dim))
 
     @staticmethod
-    def _norm(x: Float[Tensor, "b t d"]) -> Tensor:
+    def _norm(x: Tensor) -> Tensor:
         return x * (x.square().mean(dim=-1, keepdim=True) + 1e-5).rsqrt()
 
     @override
-    def forward(self, x: Float[Tensor, "b t d"]) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return self._norm(x) * self.weight
 
     @patch_call(forward)
     def __call__(self) -> None: ...
 
 
-def _apply_rotary_emb(x: Float[Tensor, "b t h d"], freqs_cis: Float[Tensor, "b t d"]) -> Tensor:
+def _apply_rotary_emb(x: Tensor, freqs_cis: Tensor) -> Tensor:
     """Apply rotary embeddings to a (B, T, H, D) tensor.
 
     This implementation is intentionally allocation-light:

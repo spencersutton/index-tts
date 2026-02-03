@@ -2,7 +2,7 @@ import os
 import random
 import warnings
 from collections.abc import Callable, Generator, Mapping, Sequence
-from functools import cache, cached_property, lru_cache
+from functools import cached_property, lru_cache
 from pathlib import Path
 from typing import Any, Final, cast
 
@@ -51,11 +51,8 @@ def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
     return list(vector)
 
 
-@cache
-def get_silence_interval(size: int, interval_silence: int, sampling_rate: int) -> Tensor:
-    """Silences to be insert between generated segments."""
-
-    return torch.zeros(size, (sampling_rate * interval_silence) // 1000)
+def get_silence_interval(size: int, interval_silence: int) -> Tensor:
+    return torch.zeros(size, (SAMPLING_RATE * interval_silence) // 1000)
 
 
 def find_most_similar_cosine(query_vector: Float[Tensor, "1 C"], matrix: Float[Tensor, "N C"]) -> int:
@@ -382,15 +379,15 @@ class IndexTTS2:
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
                     yield wav.cpu()
-                    yield get_silence_interval(wavs[0].size(0), interval_silence, self.cfg.sample_rate)
+                    yield get_silence_interval(wavs[0].size(0), interval_silence)
         inference_timer.stop()
 
         self._set_gr_progress(0.9, "saving audio...")
-        silence_tensor = get_silence_interval(wavs[0].size(0), interval_silence, self.cfg.sample_rate)
+        silence_tensor = get_silence_interval(wavs[0].size(0), interval_silence)
         # Insert silences between segments
         wavs = [item for x in wavs for item in (x, silence_tensor)][:-1]
         wav = torch.cat(wavs, dim=1)
-        wav_length = wav.shape[-1] / self.cfg.sample_rate
+        wav_length = wav.shape[-1] / SAMPLING_RATE
         print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")
         print(f">> gpt_forward_time: {gpt_forward_time:.2f} seconds")
         print(f">> s2mel_time: {s2mel_time:.2f} seconds")
@@ -402,14 +399,14 @@ class IndexTTS2:
         wav = wav.cpu()
         if output_path:
             # Save audio directly to the specified path
-            AudioEncoder(wav, sample_rate=self.cfg.sample_rate).to_file(output_path)
+            AudioEncoder(wav, sample_rate=SAMPLING_RATE).to_file(output_path)
             print(">> wav file saved to:", output_path)
             yield output_path  # pyright: ignore[reportReturnType]
         else:
             # Return in a format compatible with Gradio
             wav_data = wav.type(torch.int16)  # pyright: ignore[reportUnreachable]
             wav_data = wav_data.numpy().T
-            yield (self.cfg.sample_rate, wav_data)
+            yield (SAMPLING_RATE, wav_data)
 
     def generate_voice_conversion(
         self,

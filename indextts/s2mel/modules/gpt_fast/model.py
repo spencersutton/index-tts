@@ -3,7 +3,6 @@
 
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
-from collections.abc import Sequence
 from functools import cached_property
 from typing import override
 
@@ -38,7 +37,7 @@ class _AdaptiveLayerNorm(nn.Module):
 
 
 class Transformer(nn.Module):
-    layers: Sequence[_TransformerBlock]
+    layers: nn.ModuleList[_TransformerBlock]
     norm: _AdaptiveLayerNorm
     n_layer: int
     block_size: int
@@ -51,7 +50,7 @@ class Transformer(nn.Module):
         self.block_size = block_size
         self.head_dim = dim // n_head
 
-        self.layers = nn.ModuleList(_TransformerBlock(dim=dim) for _ in range(n_layer))  # pyright: ignore[reportAttributeAccessIssue]
+        self.layers = nn.ModuleList(_TransformerBlock(dim=dim) for _ in range(n_layer))
         self.norm = _AdaptiveLayerNorm(dim=dim)
 
     @cached_property[Tensor]

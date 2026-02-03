@@ -12,7 +12,6 @@ from jaxtyping import Float, Int
 from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
-from indextts.constants import MEL_CODEBOOK_SIZE, REP_CODEC_CODE_DIM, SEMANTIC_STREAM_DIM
 from indextts.util import patch_call, unwrap
 
 
@@ -107,12 +106,12 @@ class _FactorizedVectorQuantize(nn.Module):
     out_project: nn.Conv1d
     codebook: nn.Embedding
 
-    def __init__(self) -> None:
+    def __init__(self, input_dim: int, codebook_size: int, codebook_dim: int) -> None:
         super().__init__()
 
-        self.in_project = weight_norm(nn.Conv1d(SEMANTIC_STREAM_DIM, REP_CODEC_CODE_DIM, kernel_size=1))
-        self.out_project = weight_norm(nn.Conv1d(REP_CODEC_CODE_DIM, SEMANTIC_STREAM_DIM, kernel_size=1))
-        self.codebook = nn.Embedding(MEL_CODEBOOK_SIZE, REP_CODEC_CODE_DIM)
+        self.in_project = weight_norm(nn.Conv1d(input_dim, codebook_dim, kernel_size=1))
+        self.out_project = weight_norm(nn.Conv1d(codebook_dim, input_dim, kernel_size=1))
+        self.codebook = nn.Embedding(codebook_size, codebook_dim)
 
     @override
     def forward(self, z: Float[Tensor, "b d t"]) -> Tensor:
@@ -175,7 +174,14 @@ class RepCodec(nn.Module):
             state_dict[new_k] = state_dict.pop(k)
 
     def __init__(
-        self, hidden_size: int = 1024, dim: int = 384, intermediate_dim: int = 2048, n_layers: int = 12
+        self,
+        codebook_dim: int = 8,
+        codebook_size: int = 8192,
+        dim: int = 384,
+        hidden_size: int = 1024,
+        input_dim: int = 256,
+        intermediate_dim: int = 2048,
+        n_layers: int = 12,
     ) -> None:
         super().__init__()
         self.register_load_state_dict_pre_hook(self._remap_weights)
@@ -184,7 +190,9 @@ class RepCodec(nn.Module):
             _VocosBackbone(input_channels=hidden_size, dim=dim, intermediate_dim=intermediate_dim, n_layers=n_layers),
             nn.Linear(dim, hidden_size),
         )
-        self.quantizer = _FactorizedVectorQuantize()
+        self.quantizer = _FactorizedVectorQuantize(
+            input_dim=input_dim, codebook_size=codebook_size, codebook_dim=codebook_dim
+        )
 
         self.apply(_init_weights)
 

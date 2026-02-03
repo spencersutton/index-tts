@@ -25,7 +25,6 @@ class UnifiedVoiceConfig:
 
 @dataclass
 class IndexTTSConfig:
-    sample_rate: int = 22050
     spk_matrix: str = "feat1.pt"
     emo_matrix: str = "feat2.pt"
     dataset: _HFModelReference = field(default_factory=lambda: _HFModelReference("IndexTeam/IndexTTS-2", "bpe.model"))

@@ -22,6 +22,7 @@ from indextts.config import IndexTTSConfig
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.qwen import QwenEmotion
 from indextts.s2mel.modules import CFM, CAMPPlus, InterpolateRegulator, mel_spectrogram
+from indextts.s2mel.modules.audio import N_MELS, SAMPLING_RATE
 from indextts.util import Timer
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.repcodec_model import RepCodec
@@ -30,6 +31,7 @@ os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
 MAX_AUDIO_LENGTH_SECONDS = 15
 EMO_NUM = [3, 17, 2, 8, 4, 5, 10, 24]
+WIDEBAND_SR = 16000
 
 
 def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
@@ -50,7 +52,7 @@ def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
 
 
 @cache
-def get_silence_interval(size: int, interval_silence: int = 200, sampling_rate: int = 22050) -> Tensor:
+def get_silence_interval(size: int, interval_silence: int, sampling_rate: int) -> Tensor:
     """Silences to be insert between generated segments."""
 
     return torch.zeros(size, (sampling_rate * interval_silence) // 1000)
@@ -430,8 +432,8 @@ class IndexTTS2:
     @lru_cache(5)  # noqa: B019
     def extract_emotion_features(self, prompt: Path) -> Tensor:
         print(">> extracting emotion features from prompt:", prompt)
-        audio, _ = _load_and_cut_audio(prompt, sample_rate=16000)
-        inputs = self.extract_features(audio.numpy(), sampling_rate=16000, return_tensors="pt")
+        audio, _ = _load_and_cut_audio(prompt, sample_rate=WIDEBAND_SR)
+        inputs = self.extract_features(audio.numpy(), sampling_rate=WIDEBAND_SR, return_tensors="pt")
         inputs = cast(Mapping[str, Tensor], inputs.to(self.device))
         return self.get_emb(inputs["input_features"], inputs["attention_mask"])
 
@@ -474,17 +476,17 @@ class IndexTTS2:
     def extract_audio_features(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         print(">> extracting audio features from prompt:", prompt)
         audio, sr = _load_and_cut_audio(prompt)
-        audio_16k = torchaudio.functional.resample(audio, sr, 16000)
-        audio_22k = torchaudio.functional.resample(audio, sr, 22050)
+        audio_16k = torchaudio.functional.resample(audio, sr, WIDEBAND_SR)
+        audio_22k = torchaudio.functional.resample(audio, sr, SAMPLING_RATE)
 
         mel = mel_spectrogram(audio_22k)
-        feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(self.device), num_mel_bins=80)
-        feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
-        style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
+        feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(self.device), num_mel_bins=N_MELS)
+        feat -= feat.mean(dim=0, keepdim=True)  # feat2: Another filter energy group feature [922, 80]
+        style = self.campplus_model(feat.unsqueeze(0))  # Global style of the reference audio [1, 192]
 
         inputs = cast(
             Mapping[str, Tensor],
-            self.extract_features(audio_16k, sampling_rate=16000, return_tensors="pt").to(self.device),
+            self.extract_features(audio_16k, sampling_rate=WIDEBAND_SR, return_tensors="pt").to(self.device),
         )
 
         embedding = self.get_emb(inputs["input_features"], inputs["attention_mask"])

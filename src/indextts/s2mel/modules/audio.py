@@ -4,6 +4,7 @@ import torchaudio.functional as AF
 from torch import Tensor
 
 N_FFT = 1024
+N_MELS = 80
 SAMPLING_RATE = 22050
 
 

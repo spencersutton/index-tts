@@ -2,9 +2,8 @@ import os
 import random
 import warnings
 from collections.abc import Callable, Generator, Mapping, Sequence
-from functools import cache, cached_property, lru_cache
+from functools import cached_property, lru_cache
 from pathlib import Path
-from subprocess import CalledProcessError
 from typing import Any, Final, cast
 
 import huggingface_hub as hf
@@ -23,6 +22,7 @@ from indextts.config import IndexTTSConfig
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.qwen import QwenEmotion
 from indextts.s2mel.modules import CFM, CAMPPlus, InterpolateRegulator, mel_spectrogram
+from indextts.s2mel.modules.audio import N_MELS, SAMPLING_RATE
 from indextts.util import Timer
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.repcodec_model import RepCodec
@@ -31,6 +31,7 @@ os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
 MAX_AUDIO_LENGTH_SECONDS = 15
 EMO_NUM = [3, 17, 2, 8, 4, 5, 10, 24]
+WIDEBAND_SR = 16000
 
 
 def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
@@ -50,11 +51,8 @@ def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
     return list(vector)
 
 
-@cache
-def get_silence_interval(size: int, interval_silence: int = 200, sampling_rate: int = 22050) -> Tensor:
-    """Silences to be insert between generated segments."""
-
-    return torch.zeros(size, (sampling_rate * interval_silence) // 1000)
+def get_silence_interval(size: int, interval_silence: int) -> Tensor:
+    return torch.zeros(size, (SAMPLING_RATE * interval_silence) // 1000)
 
 
 def find_most_similar_cosine(query_vector: Float[Tensor, "1 C"], matrix: Float[Tensor, "N C"]) -> int:
@@ -121,7 +119,6 @@ class IndexTTS2:
         use_fp16: bool = False,
         device: str | None = None,
         use_cuda_kernel: bool = False,
-        use_deepspeed: bool = False,
         use_accel: bool = False,
         use_torch_compile: bool = False,
     ) -> None:
@@ -131,7 +128,6 @@ class IndexTTS2:
             use_fp16 (bool): whether to use fp16.
             device (str | None): device to use (e.g., 'cuda:0', 'cpu'). If None, it will be set automatically based on the availability of CUDA or MPS.
             use_cuda_kernel (None | bool): whether to use BigVGan custom fused activation CUDA kernel, only for CUDA device.
-            use_deepspeed (bool): whether to use DeepSpeed or not.
             use_accel (bool): whether to use acceleration engine for GPT2 or not.
             use_torch_compile (bool): whether to use torch.compile for optimization or not.
         """
@@ -157,14 +153,7 @@ class IndexTTS2:
 
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
 
-        if use_deepspeed:
-            try:
-                import deepspeed  # type: ignore  # noqa: F401
-            except (ImportError, OSError, CalledProcessError) as e:
-                use_deepspeed = False
-                print(f">> Failed to load DeepSpeed. Falling back to normal inference. Error: {e}")
-
-        self.gpt.post_init_gpt2_config(use_deepspeed=use_deepspeed, half=self.use_fp16)
+        self.gpt.post_init_gpt2_config(half=self.use_fp16)
 
         if self.use_cuda_kernel:
             # preload the CUDA kernel for BigVGAN
@@ -390,15 +379,15 @@ class IndexTTS2:
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
                     yield wav.cpu()
-                    yield get_silence_interval(wavs[0].size(0), interval_silence, self.cfg.sample_rate)
+                    yield get_silence_interval(wavs[0].size(0), interval_silence)
         inference_timer.stop()
 
         self._set_gr_progress(0.9, "saving audio...")
-        silence_tensor = get_silence_interval(wavs[0].size(0), interval_silence, self.cfg.sample_rate)
+        silence_tensor = get_silence_interval(wavs[0].size(0), interval_silence)
         # Insert silences between segments
         wavs = [item for x in wavs for item in (x, silence_tensor)][:-1]
         wav = torch.cat(wavs, dim=1)
-        wav_length = wav.shape[-1] / self.cfg.sample_rate
+        wav_length = wav.shape[-1] / SAMPLING_RATE
         print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")
         print(f">> gpt_forward_time: {gpt_forward_time:.2f} seconds")
         print(f">> s2mel_time: {s2mel_time:.2f} seconds")
@@ -410,14 +399,14 @@ class IndexTTS2:
         wav = wav.cpu()
         if output_path:
             # Save audio directly to the specified path
-            AudioEncoder(wav, sample_rate=self.cfg.sample_rate).to_file(output_path)
+            AudioEncoder(wav, sample_rate=SAMPLING_RATE).to_file(output_path)
             print(">> wav file saved to:", output_path)
             yield output_path  # pyright: ignore[reportReturnType]
         else:
             # Return in a format compatible with Gradio
             wav_data = wav.type(torch.int16)  # pyright: ignore[reportUnreachable]
             wav_data = wav_data.numpy().T
-            yield (self.cfg.sample_rate, wav_data)
+            yield (SAMPLING_RATE, wav_data)
 
     def generate_voice_conversion(
         self,
@@ -440,8 +429,8 @@ class IndexTTS2:
     @lru_cache(5)  # noqa: B019
     def extract_emotion_features(self, prompt: Path) -> Tensor:
         print(">> extracting emotion features from prompt:", prompt)
-        audio, _ = _load_and_cut_audio(prompt, sample_rate=16000)
-        inputs = self.extract_features(audio.numpy(), sampling_rate=16000, return_tensors="pt")
+        audio, _ = _load_and_cut_audio(prompt, sample_rate=WIDEBAND_SR)
+        inputs = self.extract_features(audio.numpy(), sampling_rate=WIDEBAND_SR, return_tensors="pt")
         inputs = cast(Mapping[str, Tensor], inputs.to(self.device))
         return self.get_emb(inputs["input_features"], inputs["attention_mask"])
 
@@ -484,17 +473,17 @@ class IndexTTS2:
     def extract_audio_features(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         print(">> extracting audio features from prompt:", prompt)
         audio, sr = _load_and_cut_audio(prompt)
-        audio_16k = torchaudio.functional.resample(audio, sr, 16000)
-        audio_22k = torchaudio.functional.resample(audio, sr, 22050)
+        audio_16k = torchaudio.functional.resample(audio, sr, WIDEBAND_SR)
+        audio_22k = torchaudio.functional.resample(audio, sr, SAMPLING_RATE)
 
         mel = mel_spectrogram(audio_22k)
-        feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(self.device), num_mel_bins=80)
-        feat -= feat.mean(dim=0, keepdim=True)  # feat2另外一个滤波器能量组特征[922, 80]
-        style = self.campplus_model(feat.unsqueeze(0))  # 参考音频的全局style2[1,192]
+        feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(self.device), num_mel_bins=N_MELS)
+        feat -= feat.mean(dim=0, keepdim=True)  # feat2: Another filter energy group feature [922, 80]
+        style = self.campplus_model(feat.unsqueeze(0))  # Global style of the reference audio [1, 192]
 
         inputs = cast(
             Mapping[str, Tensor],
-            self.extract_features(audio_16k, sampling_rate=16000, return_tensors="pt").to(self.device),
+            self.extract_features(audio_16k, sampling_rate=WIDEBAND_SR, return_tensors="pt").to(self.device),
         )
 
         embedding = self.get_emb(inputs["input_features"], inputs["attention_mask"])

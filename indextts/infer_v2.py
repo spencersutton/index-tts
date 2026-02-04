@@ -4,7 +4,7 @@ import warnings
 from collections.abc import Callable, Generator, Mapping, Sequence
 from functools import cached_property, lru_cache
 from pathlib import Path
-from typing import Any, Final, cast
+from typing import Final, cast
 
 import huggingface_hub as hf
 import torch
@@ -193,7 +193,14 @@ class IndexTTS2:
         stream_return: bool = False,
         use_emo_text: bool = False,
         use_random: bool = False,
-        **generation_kwargs: Any,  # pyright: ignore[reportExplicitAny, reportAny]
+        do_sample: bool = True,
+        length_penalty: float = 0.0,
+        max_mel_tokens: int = 1500,
+        num_beams: int = 3,
+        repetition_penalty: float = 10.0,
+        temperature: float = 0.8,
+        top_k: int = 30,
+        top_p: float = 0.8,
     ) -> Path | Generator[Tensor] | None:
         if use_emo_text or emo_vector is not None:
             # we're using a text or emotion vector guidance; so we must remove
@@ -237,7 +244,14 @@ class IndexTTS2:
             max_text_tokens_per_segment,
             stream_return,
             more_segment_before,
-            **generation_kwargs,
+            do_sample,
+            length_penalty,
+            max_mel_tokens,
+            num_beams,
+            repetition_penalty,
+            temperature,
+            top_k,
+            top_p,
         )
         if stream_return:
             return gen
@@ -260,7 +274,14 @@ class IndexTTS2:
         max_text_tokens_per_segment: int = 120,
         stream_return: bool = False,
         quick_streaming_tokens: int = 0,
-        **generation_kwargs: Any,  # pyright: ignore[reportExplicitAny, reportAny]
+        do_sample: bool = True,
+        length_penalty: float = 0.0,
+        max_mel_tokens: int = 1500,
+        num_beams: int = 3,
+        repetition_penalty: float = 10.0,
+        temperature: float = 0.8,
+        top_k: int = 30,
+        top_p: float = 0.8,
     ) -> Generator[Tensor]:
         print(">> starting inference...")
         self._set_gr_progress(0.0, "starting inference...")
@@ -282,15 +303,6 @@ class IndexTTS2:
         segments = self.tokenizer.split_segments(
             text_tokens_list, max_text_tokens_per_segment, quick_streaming_tokens=quick_streaming_tokens
         )
-
-        do_sample = cast(bool, generation_kwargs.pop("do_sample", True))
-        length_penalty = cast(float, generation_kwargs.pop("length_penalty", 0.0))
-        max_mel_tokens = cast(int, generation_kwargs.pop("max_mel_tokens", 1500))
-        num_beams = cast(int, generation_kwargs.pop("num_beams", 3))
-        repetition_penalty = cast(float, generation_kwargs.pop("repetition_penalty", 10.0))
-        temperature = cast(float, generation_kwargs.pop("temperature", 0.8))
-        top_k = cast(int, generation_kwargs.pop("top_k", 30))
-        top_p = cast(float, generation_kwargs.pop("top_p", 0.8))
 
         emotion_vector = self.gpt.get_emo_vec(emotion_conditioning_embedding)
         base_vector = self.gpt.get_emo_vec(speaker_conditioning_embedding)
@@ -328,7 +340,6 @@ class IndexTTS2:
                         num_beams=num_beams,
                         repetition_penalty=repetition_penalty,
                         max_generate_length=max_mel_tokens,
-                        **generation_kwargs,
                     )
 
                 if not has_warned and (codes[:, -1] != self.stop_mel_token).any():

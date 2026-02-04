@@ -50,28 +50,23 @@ def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
     return list(vector)
 
 
-def get_silence_interval(size: int, interval_silence: int) -> Tensor:
+def _get_silence_interval(size: int, interval_silence: int) -> Tensor:
     return torch.zeros(size, (SAMPLING_RATE * interval_silence) // 1000)
 
 
-def find_most_similar_cosine(query_vector: Tensor, matrix: Tensor) -> int:
-    similarities = F.cosine_similarity(query_vector, matrix, dim=1)
-    return int(similarities.argmax())
-
-
-def _load_and_cut_audio(audio_path: Path, sample_rate: int | None = None) -> tuple[Tensor, int]:
-    samples = AudioDecoder(audio_path, num_channels=1, sample_rate=sample_rate).get_samples_played_in_range(
+def _load_and_cut_audio(path: Path, sample_rate: int | None = None) -> tuple[Tensor, int]:
+    samples = AudioDecoder(path, num_channels=1, sample_rate=sample_rate).get_samples_played_in_range(
         0, MAX_AUDIO_LENGTH_SECONDS
     )
     audio = samples.data
     sample_rate = samples.sample_rate
 
     assert audio.dim() == 2 and audio.size(0) == 1, f"Only mono audio is supported. Got shape: {audio.shape}"
-    max_audio_samples = int(MAX_AUDIO_LENGTH_SECONDS * sample_rate)
+    max_audio_samples = MAX_AUDIO_LENGTH_SECONDS * sample_rate
 
     if audio.shape[1] > max_audio_samples:
         audio = audio[:, :max_audio_samples]
-    return audio, int(sample_rate)
+    return audio, sample_rate
 
 
 class IndexTTS2:
@@ -169,8 +164,8 @@ class IndexTTS2:
             self.cfm.enable_torch_compile()
             print(">> torch.compile optimization enabled successfully")
 
-        self.spk_matrix = self.get_matrix("feat1.pt")
-        self.emo_matrix = self.get_matrix("feat2.pt")
+        self.spk_matrix = self._get_matrix("feat1.pt")
+        self.emo_matrix = self._get_matrix("feat2.pt")
 
         # 加载术语词汇表（如果存在）
         self.glossary_path = Path("checkpoints") / "glossary.yaml"
@@ -232,7 +227,7 @@ class IndexTTS2:
             # must always use alpha=1.0 when we don'T have an external reference voice
             emo_alpha = 1.0
 
-        gen = self.infer_generator(
+        gen = self._infer_generator(
             spk_audio_prompt,
             text,
             output_path,
@@ -261,7 +256,7 @@ class IndexTTS2:
             return None
 
     @torch.inference_mode()
-    def infer_generator(
+    def _infer_generator(
         self,
         spk_audio_prompt: Path,
         text: str,
@@ -288,15 +283,17 @@ class IndexTTS2:
         inference_timer = Timer()
         inference_timer.start()
 
-        prompt_condition, style, ref_mel, speaker_conditioning_embedding = self.extract_audio_features(spk_audio_prompt)
+        prompt_condition, style, ref_mel, speaker_conditioning_embedding = self._extract_audio_features(
+            spk_audio_prompt
+        )
 
         weight_vector = None
         emotion_matrix = None
         if emo_vector is not None:
             weight_vector = torch.tensor(emo_vector, device=self.device)
-            emotion_matrix = self.generate_emotion_matrix(weight_vector, style, use_random=use_random)
+            emotion_matrix = self._generate_emotion_matrix(weight_vector, style, use_random=use_random)
 
-        emotion_conditioning_embedding = self.extract_emotion_features(emo_audio_prompt)
+        emotion_conditioning_embedding = self._extract_emotion_features(emo_audio_prompt)
 
         self._set_gr_progress(0.1, "text processing...")
         text_tokens_list = self.tokenizer.tokenize(text)
@@ -360,7 +357,7 @@ class IndexTTS2:
                     latent = self.gpt.__call__(speech_conditioning_latent, text_tokens, codes, emo_vec=emotion_vector)
 
                 with s2mel_time:
-                    voice_conversion_target = self.generate_voice_conversion(
+                    voice_conversion_target = self._generate_voice_conversion(
                         code_lens, prompt_condition, style, ref_mel, codes, latent
                     )
 
@@ -370,11 +367,11 @@ class IndexTTS2:
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
                     yield wav.cpu()
-                    yield get_silence_interval(wavs[0].size(0), interval_silence)
+                    yield _get_silence_interval(wavs[0].size(0), interval_silence)
         inference_timer.stop()
 
         self._set_gr_progress(0.9, "saving audio...")
-        silence_tensor = get_silence_interval(wavs[0].size(0), interval_silence)
+        silence_tensor = _get_silence_interval(wavs[0].size(0), interval_silence)
         # Insert silences between segments
         wavs = [item for x in wavs for item in (x, silence_tensor)][:-1]
         wav = torch.cat(wavs, dim=1)
@@ -399,7 +396,7 @@ class IndexTTS2:
             wav_data = wav_data.numpy().T
             yield (SAMPLING_RATE, wav_data)
 
-    def generate_voice_conversion(
+    def _generate_voice_conversion(
         self,
         code_lens: list[int],
         prompt_condition: Tensor,
@@ -418,18 +415,18 @@ class IndexTTS2:
         return target[:, :, ref_mel.size(-1) :]
 
     @lru_cache(5)  # noqa: B019
-    def extract_emotion_features(self, prompt: Path) -> Tensor:
+    def _extract_emotion_features(self, prompt: Path) -> Tensor:
         print(">> extracting emotion features from prompt:", prompt)
         audio, _ = _load_and_cut_audio(prompt, sample_rate=WIDEBAND_SR)
         inputs = self.extract_features(audio.numpy(), sampling_rate=WIDEBAND_SR, return_tensors="pt")
         inputs = cast(Mapping[str, Tensor], inputs.to(self.device))
-        return self.get_emb(inputs["input_features"], inputs["attention_mask"])
+        return self._get_emb(inputs["input_features"], inputs["attention_mask"])
 
-    def generate_emotion_matrix(self, weight_vector: Tensor, style: Tensor, use_random: bool = False) -> Tensor:
+    def _generate_emotion_matrix(self, weight_vector: Tensor, style: Tensor, use_random: bool = False) -> Tensor:
         if use_random:
             index = [random.randint(0, x - 1) for x in EMO_NUM]
         else:
-            index = [find_most_similar_cosine(style, x) for x in self.spk_matrix]
+            index = [int(F.cosine_similarity(style, x).argmax()) for x in self.spk_matrix]
 
         matrix = [x[index].unsqueeze(0) for index, x in zip(index, self.emo_matrix)]
         matrix = torch.cat(matrix)
@@ -437,13 +434,13 @@ class IndexTTS2:
         matrix = matrix.sum(dim=0)
         return matrix.unsqueeze(0)
 
-    def get_matrix(self, filename: str) -> tuple[Tensor, ...]:
+    def _get_matrix(self, filename: str) -> tuple[Tensor, ...]:
         path = hf.hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=filename)
         data = cast(Tensor, torch.load(path, map_location=self.device))
         return data.split(EMO_NUM)
 
     @torch.inference_mode()
-    def get_emb(self, input_features: Tensor, attention_mask: Tensor) -> Tensor:
+    def _get_emb(self, input_features: Tensor, attention_mask: Tensor) -> Tensor:
         vq_emb = self.semantic_model(
             input_features=input_features, attention_mask=attention_mask, output_hidden_states=True
         )
@@ -456,7 +453,7 @@ class IndexTTS2:
             self.gr_progress(value, desc=desc)
 
     @lru_cache  # noqa: B019
-    def extract_audio_features(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+    def _extract_audio_features(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         print(">> extracting audio features from prompt:", prompt)
         audio, sr = _load_and_cut_audio(prompt)
         audio_16k = torchaudio.functional.resample(audio, sr, WIDEBAND_SR)
@@ -472,6 +469,6 @@ class IndexTTS2:
             self.extract_features(audio_16k, sampling_rate=WIDEBAND_SR, return_tensors="pt").to(self.device),
         )
 
-        embedding = self.get_emb(inputs["input_features"], inputs["attention_mask"])
+        embedding = self._get_emb(inputs["input_features"], inputs["attention_mask"])
         prompt_condition = self.length_regulator.__call__(self.semantic_codec.quantize(embedding), ylens=mel.size(2))
         return prompt_condition, style, mel, embedding

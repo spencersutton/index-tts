@@ -11,11 +11,7 @@ def load_language_list(language: str) -> dict[str, str]:
 
 
 def scan_language_list() -> list[str]:
-    language_list = []
-    for path in I18N_JSON_DIR.iterdir():
-        if path.name.endswith(".json"):
-            language_list.append(path.stem)
-    return language_list
+    return [path.stem for path in I18N_JSON_DIR.iterdir() if path.name.endswith(".json")]
 
 
 class I18nAuto:

@@ -2,7 +2,6 @@
 import argparse
 import html
 import json
-import sys
 import threading
 import time
 from pathlib import Path
@@ -17,22 +16,17 @@ from tools.i18n.i18n import I18nAuto
 parser = argparse.ArgumentParser(description="IndexTTS WebUI", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--port", type=int, default=7860, help="Port to run the web UI on")
 parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to run the web UI on")
-parser.add_argument("--model_dir", type=str, default="./checkpoints", help="Model checkpoints directory")
 parser.add_argument("--fp16", action="store_true", default=False, help="Use FP16 for inference if available")
 parser.add_argument(
     "--cuda_kernel", action="store_true", default=False, help="Use CUDA kernel for inference if available"
 )
 parser.add_argument("--gui_seg_tokens", type=int, default=120, help="GUI: Max tokens per generation segment")
 cmd_args = parser.parse_args()
-model_dir = Path(cmd_args.model_dir)
 
-if not model_dir.exists():
-    print(f"Model directory {model_dir} does not exist. Please download the model first.")
-    sys.exit(1)
 
 i18n = I18nAuto(language="Auto")
 MODE = "local"
-tts = IndexTTS2(model_dir=model_dir, use_fp16=cmd_args.fp16, use_cuda_kernel=cmd_args.cuda_kernel)
+tts = IndexTTS2(use_fp16=cmd_args.fp16, use_cuda_kernel=cmd_args.cuda_kernel)
 # 支持的语言列表
 LANGUAGES = {"中文": "zh_CN", "English": "en_US"}
 EMO_CHOICES_ALL = [

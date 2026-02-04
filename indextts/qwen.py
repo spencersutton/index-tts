@@ -46,10 +46,10 @@ class QwenEmotion:
     model: Qwen3ForCausalLM
     tokenizer: Qwen2Tokenizer
 
-    def __init__(self, model_dir: str) -> None:
-        self.tokenizer = Qwen2Tokenizer.from_pretrained(model_dir)
+    def __init__(self, model_path: str) -> None:
+        self.tokenizer = Qwen2Tokenizer.from_pretrained(model_path)
         self.model = Qwen3ForCausalLM.from_pretrained(
-            model_dir,
+            model_path,
             torch_dtype="float16",  # "auto"
             device_map="auto",
         )

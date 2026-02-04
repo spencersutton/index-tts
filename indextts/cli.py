@@ -20,9 +20,6 @@ def main() -> None:
         default="checkpoints/config.yaml",
         help="Path to the config file. Default is 'checkpoints/config.yaml'",
     )
-    parser.add_argument(
-        "--model_dir", type=str, default="checkpoints", help="Path to the model directory. Default is 'checkpoints'"
-    )
     parser.add_argument("--fp16", action="store_true", default=False, help="Use FP16 for inference if available")
     parser.add_argument(
         "-f", "--force", action="store_true", default=False, help="Force to overwrite the output file if it exists"
@@ -38,7 +35,6 @@ def main() -> None:
     args = parser.parse_args()
     voice_file = Path(args.voice)  # pyright: ignore
     output_path = Path(args.output_path)  # pyright: ignore
-    model_dir = Path(args.model_dir)  # pyright: ignore
 
     assert isinstance(args.text, str)  # pyright: ignore
     if len(args.text.strip()) == 0:
@@ -84,7 +80,7 @@ def main() -> None:
         profiler.start()
 
     print("Initializing IndexTTS2...")
-    tts = IndexTTS2(model_dir=model_dir, use_fp16=args.fp16, device=args.device, use_accel=args.use_accel)  # pyright: ignore
+    tts = IndexTTS2(use_fp16=args.fp16, device=args.device, use_accel=args.use_accel)  # pyright: ignore
     print("Start inference...")
     tts.infer(output_path=output_path, spk_audio_prompt=voice_file, text=args.text.strip())
 

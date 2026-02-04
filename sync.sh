@@ -17,4 +17,3 @@ ssh -t ${REMOTE_HOST} "INDEXTTS_DEBUG_MODE=1 time ${UV_CMD} run --directory ${RE
 mkdir -p ${LOCAL_DIR}/outputs
 rsync --info=NAME -a ${REMOTE_TARGET}/outputs/gen.wav ${LOCAL_DIR}/outputs/gen.wav
 rsync --info=NAME -az "${REMOTE_TARGET}/outputs/profile_*.html" ${LOCAL_DIR}/outputs/
-ls -d outputs/profile_*.html(om[1]) | xargs open

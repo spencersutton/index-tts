@@ -231,61 +231,47 @@ class UnifiedVoice(nn.Module):
             inputs_embeds: (B, s+1, dim) the input embeddings for the GPT2InferenceModel.forward()
             attention_mask: (B, s+1) the attention mask for the GPT2InferenceModel.generate()
         """
-        B = inputs.size(0)
-        L = inputs.size(1)
-        device = inputs.device
-        single_cond = latent.ndim == 3 and latent.shape[0] == 1
-        if not single_cond:
-            assert latent.shape[0] == B, f"batch size mismatch: {latent.shape[0]} vs {B}"
+        is_single_condition = latent.ndim == 3 and latent.shape[0] == 1
+        assert is_single_condition or latent.shape[0] == inputs.shape[0], (
+            f"batch size mismatch: {latent.shape[0]} vs {inputs.shape[0]}"
+        )
         batched_mel_emb: list[Tensor] = []
         attention_masks: list[Tensor] = []
-        target_len = latent.shape[1] + L + 2
-        for i in range(inputs.size(0)):
-            valid_mask = (inputs[i] != self.cfg.stop_text_token) & (inputs[i] != self.cfg.start_text_token)
+        target_len = latent.shape[1] + inputs.shape[1] + 2
+        for i, row in enumerate(inputs):
+            valid_mask = (row != self.cfg.stop_text_token) & (row != self.cfg.start_text_token)
 
-            text_input = inputs[i][valid_mask]
+            text_input = row[valid_mask]
             text_input = F.pad(text_input, (1, 0), value=self.cfg.start_text_token)
             text_input = F.pad(text_input, (0, 1), value=self.cfg.stop_text_token)
-            text_input_pos = torch.arange(text_input.size(-1), device=device)
+            text_input_pos = torch.arange(text_input.size(-1), device=inputs.device)
 
             text_emb = self.text_embedding(text_input) + self.text_pos_embedding.emb(text_input_pos)
 
             # concatenate [conditional latents][text embeddings]
-            conds_text_emb: list[Tensor] = [latent.squeeze(0) if single_cond else latent[i], text_emb]
+            conds_text_emb = [latent.squeeze(0) if is_single_condition else latent[i], text_emb]
 
             # +1 for the start_mel_token
-            attention_mask = torch.ones(target_len + 1, dtype=torch.long, device=device)
+            attention_mask = inputs.new_ones(target_len + 1)
 
             # check this text input is padded
-            padding: int = L + 2 - text_input.size(-1)
+            padding = inputs.shape[1] + 2 - text_input.size(-1)
 
             # pad left of [cond][text] -> [pad][cond][text]
             if padding > 0:
-                pad = torch.zeros((padding, latent.size(-1)), dtype=text_emb.dtype, device=device)  # [p, dim]
+                pad = inputs.new_zeros((padding, latent.size(-1)))  # [p, dim]
                 conds_text_emb.insert(0, pad)
                 attention_mask[:padding] = 0
-            mel_emb = torch.cat(conds_text_emb)  # [s, dim]
-            assert mel_emb.shape[0] == target_len, f"mel_emb.shape: {mel_emb.shape}, target_len: {target_len}"
-            batched_mel_emb.append(mel_emb)
+            batched_mel_emb.append(torch.cat(conds_text_emb))
             attention_masks.append(attention_mask)
-        # [B, s, dim]
-        batched_mel_emb_tensor = torch.stack(batched_mel_emb)
-        # [B, s + 1]
+        mel_embedding_batch = torch.stack(batched_mel_emb)
         attention_mask = torch.stack(attention_masks)
-        # [B, s + 1]
-        fake_inputs = torch.ones(
-            (
-                batched_mel_emb_tensor.shape[0],
-                batched_mel_emb_tensor.shape[1] + 1,  # +1 for the start_mel_token
-            ),
-            dtype=torch.long,
-            device=device,
-        )
+        fake_inputs = inputs.new_ones((mel_embedding_batch.shape[0], mel_embedding_batch.shape[1] + 1))
         fake_inputs[:, -1] = self.cfg.start_mel_token
-        return fake_inputs, batched_mel_emb_tensor, attention_mask
+        return fake_inputs, mel_embedding_batch, attention_mask
 
     def combine_latents(self, speech_conditioning_latent: Tensor, emo_vec: Tensor, text_inputs: Tensor) -> Tensor:
-        template = text_inputs.new_zeros(text_inputs.size(0))
+        template = text_inputs.new_zeros(text_inputs.shape[0])
         return torch.cat(
             (
                 speech_conditioning_latent + emo_vec.unsqueeze(1),

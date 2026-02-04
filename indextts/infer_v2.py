@@ -90,7 +90,7 @@ class IndexTTS2:
 
     # Progress reference display (optional)
     gr_progress: Callable[..., None] | None = None
-    model_version: int | None
+    model_version: float = 2.0
 
     has_warned: bool = False
 
@@ -110,7 +110,7 @@ class IndexTTS2:
 
     @cached_property[QwenEmotion]
     def qwen_emo(self) -> QwenEmotion:
-        return QwenEmotion(self.cfg.qwen_emo_path)
+        return QwenEmotion("dsinghvi/qwen0.6bemo4-merge")
 
     def __init__(
         self,
@@ -169,16 +169,14 @@ class IndexTTS2:
             self.cfm.enable_torch_compile()
             print(">> torch.compile optimization enabled successfully")
 
-        self.emo_matrix = self.get_matrix(self.cfg.emo_matrix)
-        self.spk_matrix = self.get_matrix(self.cfg.spk_matrix)
+        self.spk_matrix = self.get_matrix("feat1.pt")
+        self.emo_matrix = self.get_matrix("feat2.pt")
 
         # 加载术语词汇表（如果存在）
         self.glossary_path = Path("checkpoints") / "glossary.yaml"
         if self.glossary_path.exists():
             self.normalizer.load_glossary_from_yaml(self.glossary_path)
             print(">> Glossary loaded from:", self.glossary_path)
-
-        self.model_version = int(self.cfg.version)
 
     def infer(
         self,

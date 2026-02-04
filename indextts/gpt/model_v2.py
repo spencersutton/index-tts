@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, override
+from typing import TYPE_CHECKING, Any, Final, override
 
 import torch
 import torch.nn.functional as F
@@ -50,9 +50,9 @@ class UnifiedVoice(nn.Module):
     """Learned positional embeddings for the mel-code segment."""
     text_pos_embedding: LearnedPositionEmbeddings
     """Learned positional embeddings for the text segment."""
-    heads: int
+    heads: Final = 20
     """Number of attention heads in the GPT transformer."""
-    layers: int
+    layers: Final = 24
     """Number of transformer layers in the GPT stack."""
     max_mel_tokens: int
     """Maximum mel-code tokens supported (used to size positional embeddings / generation limits)."""
@@ -72,7 +72,7 @@ class UnifiedVoice(nn.Module):
     """Perceiver resampler that reduces speech conditioning to `condition_num_latent` latent tokens."""
     cfg: UnifiedVoiceConfig
     """Model configuration (token ids, vocab sizes, architecture hyperparameters, limits)."""
-    dim: int
+    dim: Final = 1280
     """Model hidden dimension (GPT embedding size)."""
     use_accel: bool
     """Whether to use the acceleration engine (if available)."""
@@ -88,10 +88,7 @@ class UnifiedVoice(nn.Module):
             max_mel_tokens: Maximum number of MEL tokens that will be encountered by model.
         """
         super().__init__()
-        self.dim = dim
         self.cfg = cfg
-        self.layers = cfg.layers
-        self.heads = cfg.heads
         self.max_mel_tokens = cfg.max_mel_tokens
         self.max_text_tokens = cfg.max_text_tokens
         self.cond_mask_pad = nn.ConstantPad1d((condition_num_latent, 0), True)
@@ -116,8 +113,8 @@ class UnifiedVoice(nn.Module):
                 n_positions=max_mel_seq_len + max_text_seq_len,
                 n_ctx=max_mel_seq_len + max_text_seq_len,
                 n_embd=dim,
-                n_layer=cfg.layers,
-                n_head=cfg.heads,
+                n_layer=self.layers,
+                n_head=self.heads,
             )
         )
         # Override the built in positional embeddings

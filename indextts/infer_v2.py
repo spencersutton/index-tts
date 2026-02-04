@@ -11,7 +11,7 @@ import torch
 import torch.nn.functional as F
 import torchaudio
 import transformers
-from torch import Tensor, nn
+from torch import Tensor
 from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
 
@@ -93,7 +93,6 @@ class IndexTTS2:
     campplus_model: CAMPPlus
     cfm: CFM
     extract_features: Final = load.extract_features()
-    gpt_layer: nn.Sequential
     gpt: UnifiedVoice
     length_regulator: InterpolateRegulator
     normalizer: Final = TextNormalizer()
@@ -141,7 +140,6 @@ class IndexTTS2:
         self.tokenizer = load.tokenizer(self.normalizer)
         self.cfm = load.cfm(self.device)
         self.length_regulator = load.length_regulator(self.device)
-        self.gpt_layer = load.gpt_layer(self.device)
 
         self.stop_mel_token = self.cfg.gpt.stop_mel_token
 
@@ -353,12 +351,9 @@ class IndexTTS2:
                 ]
                 codes = codes[:, : max(code_lens)]
 
-                with torch.autocast(self.device.type, dtype=self.dtype):
-                    latent = self.gpt.__call__(speech_conditioning_latent, text_tokens, codes, emo_vec=emotion_vector)
-
                 with s2mel_time:
                     voice_conversion_target = self._generate_voice_conversion(
-                        code_lens, prompt_condition, style, ref_mel, codes, latent
+                        code_lens, prompt_condition, style, ref_mel, codes
                     )
 
                 with bigvgan_time:
@@ -397,16 +392,9 @@ class IndexTTS2:
             yield (SAMPLING_RATE, wav_data)
 
     def _generate_voice_conversion(
-        self,
-        code_lens: list[int],
-        prompt_condition: Tensor,
-        style: Tensor,
-        ref_mel: Tensor,
-        codes: Tensor,
-        latent: Tensor,
+        self, code_lens: list[int], prompt_condition: Tensor, style: Tensor, ref_mel: Tensor, codes: Tensor
     ) -> Tensor:
-        semantic_inference = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1))
-        semantic_inference = semantic_inference.mT + self.gpt_layer.__call__(latent)
+        semantic_inference = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1)).mT
         target_lengths = (torch.tensor(code_lens, device=self.device) * 1.72).long().max().item()
 
         cond = self.length_regulator.__call__(semantic_inference, ylens=int(target_lengths))

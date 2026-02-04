@@ -6,7 +6,7 @@ import huggingface_hub as hf
 import safetensors.torch
 import torch
 import transformers
-from torch import Tensor, nn
+from torch import Tensor
 
 from BigVGANInference.bigvganinference import BigVGANInference as BigVGAN
 from indextts.config import UnifiedVoiceConfig
@@ -117,18 +117,6 @@ def length_regulator(device: torch.device, dim: int = 512) -> InterpolateRegulat
         model.load_state_dict(data, assign=True)
 
     print(f">> Length Regulator weights restored in {t:.2f} seconds from: {path}")
-    return model.eval()
-
-
-def gpt_layer(device: torch.device) -> nn.Sequential:
-    with Timer() as t:
-        path = "checkpoints/gpt_layer.safetensors"
-        data = safetensors.torch.load_file(path, device=str(device))
-        with torch.device("meta"):
-            model = nn.Sequential(nn.Linear(1280, 256), nn.Linear(256, 128), nn.Linear(128, 1024))
-        model.load_state_dict(data, assign=True)
-
-    print(f">> GPT Layer weights restored in {t:.2f} seconds from: {path}")
     return model.eval()
 
 

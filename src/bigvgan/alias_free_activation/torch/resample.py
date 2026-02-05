@@ -1,40 +1,51 @@
 # Adapted from https://github.com/junjun3518/alias-free-torch under the Apache License 2.0
 #   LICENSE is in incl_licenses directory.
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 import torch
 import torch.nn as nn
-from bigvgan.alias_free_activation.torch.filter import LowPassFilter1d, kaiser_sinc_filter1d
+from torch import Tensor
 from torch.nn import functional as F
+
+from bigvgan.alias_free_activation.torch.filter import LowPassFilter1d, kaiser_sinc_filter1d
+from indextts.util import patch_call
 
 
 class UpSample1d(nn.Module):
     if TYPE_CHECKING:
-        filter: torch.Tensor
+        filter: torch.Tensor = torch.empty()
 
-    def __init__(self, ratio=2, kernel_size=None) -> None:
+    def __init__(self, ratio: int = 2, kernel_size: int | None = None) -> None:
         super().__init__()
-        self.ratio = ratio
-        self.kernel_size = int(6 * ratio // 2) * 2 if kernel_size is None else kernel_size
-        self.stride = ratio
-        self.pad = self.kernel_size // ratio - 1
-        self.pad_left = self.pad * self.stride + (self.kernel_size - self.stride) // 2
-        self.pad_right = self.pad * self.stride + (self.kernel_size - self.stride + 1) // 2
+        self.ratio: int = ratio
+        self.kernel_size: int = int(6 * ratio // 2) * 2 if kernel_size is None else kernel_size
+        self.stride: int = ratio
+        self.pad: int = self.kernel_size // ratio - 1
+        self.pad_left: int = self.pad * self.stride + (self.kernel_size - self.stride) // 2
+        self.pad_right: int = self.pad * self.stride + (self.kernel_size - self.stride + 1) // 2
         filter = kaiser_sinc_filter1d(cutoff=0.5 / ratio, half_width=0.6 / ratio, kernel_size=self.kernel_size)
         self.register_buffer("filter", filter)
 
     # x: [B, C, T]
-    def forward(self, x):
+    @override
+    def forward(self, x: Tensor) -> Tensor:
         _, C, _ = x.shape
 
         x = F.pad(x, (self.pad, self.pad), mode="replicate")
         x = self.ratio * F.conv_transpose1d(x, self.filter.expand(C, -1, -1), stride=self.stride, groups=C)
         return x[..., self.pad_left : -self.pad_right]
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
 
 class DownSample1d(nn.Module):
-    def __init__(self, ratio=2, kernel_size=None) -> None:
+    ratio: int
+    kernel_size: int
+    lowpass: LowPassFilter1d
+
+    def __init__(self, ratio: int = 2, kernel_size: int | None = None) -> None:
         super().__init__()
         self.ratio = ratio
         self.kernel_size = int(6 * ratio // 2) * 2 if kernel_size is None else kernel_size
@@ -42,5 +53,9 @@ class DownSample1d(nn.Module):
             cutoff=0.5 / ratio, half_width=0.6 / ratio, stride=ratio, kernel_size=self.kernel_size
         )
 
-    def forward(self, x):
-        return self.lowpass(x)
+    @override
+    def forward(self, x: Tensor) -> Tensor:
+        return self.lowpass.__call__(x)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

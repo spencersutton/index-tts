@@ -1,10 +1,10 @@
 import site
 from pathlib import Path
 
-from rich.traceback import install
+import rich.traceback
 
 sitepackage = Path(site.getsitepackages()[0])
 suppressed = ["transformers", "torch"]
 suppressed = [str(sitepackage / x) for x in suppressed]
 
-install(suppress=suppressed, width=None)
+rich.traceback.install(suppress=suppressed, width=None)

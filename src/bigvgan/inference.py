@@ -1,11 +1,11 @@
 from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Self, override
 
 import torch
 
-from bigvgan.bigvgan import BigVGAN
-from bigvgan.env import AttrDict
+from bigvgan.bigvgan import BigVGAN, HParams
+from indextts.util import patch_call
 
 
 class BigVGANHFModel(StrEnum):
@@ -23,6 +23,7 @@ class BigVGANHFModel(StrEnum):
     BASE_24KHZ_100BAND = "nvidia/bigvgan_base_24khz_100band"
     BASE_22KHZ_80BAND = "nvidia/bigvgan_base_22khz_80band"
 
+    @override
     def __str__(self) -> str:
         return self.value
 
@@ -32,12 +33,13 @@ class BigVGANInference(BigVGAN):
     BigVGAN inference.
     """
 
-    def __init__(self, h: AttrDict, use_cuda_kernel: bool = False) -> None:
+    def __init__(self, h: HParams, use_cuda_kernel: bool = False) -> None:
         super().__init__(h, use_cuda_kernel)
 
         # set to eval and remove weight norm
         self.eval()
 
+    @override
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Forward pass with inference mode enabled.
@@ -51,12 +53,11 @@ class BigVGANInference(BigVGAN):
         with torch.inference_mode():
             return super().forward(x)
 
-    if TYPE_CHECKING:
-
-        def __call__(self, x: torch.Tensor) -> torch.Tensor:
-            return self.forward(x)
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
     @classmethod
+    @override
     def _from_pretrained(
         cls,
         *,
@@ -69,8 +70,8 @@ class BigVGANInference(BigVGAN):
         map_location: str = "cpu",  # Additional argument
         strict: bool = False,  # Additional argument
         use_cuda_kernel: bool = False,
-        **model_kwargs,
-    ):
+        **model_kwargs: object,
+    ) -> Self:
         model = super()._from_pretrained(
             model_id=model_id,
             revision=revision,

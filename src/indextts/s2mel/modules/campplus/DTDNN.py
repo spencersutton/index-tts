@@ -6,15 +6,7 @@ from typing import override
 import torch.nn.functional as F
 from torch import Tensor, nn
 
-from indextts.s2mel.modules.campplus.layers import (
-    BasicResBlock,
-    CAMDenseTDNNBlock,
-    DenseLayer,
-    StatsPool,
-    TDNNLayer,
-    TransitLayer,
-    get_nonlinear,
-)
+import indextts.s2mel.modules.campplus.layers as layers
 from indextts.util import patch_call
 
 
@@ -33,8 +25,8 @@ class _FCM(nn.Module):
         self.in_planes = m_channels
         self.conv1 = nn.Conv2d(1, m_channels, kernel_size=3, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(m_channels)
-        self.layer1 = nn.Sequential(*[BasicResBlock(x) for x in (2, 1)])
-        self.layer2 = nn.Sequential(*[BasicResBlock(x) for x in (2, 1)])
+        self.layer1 = nn.Sequential(*[layers.BasicResBlock(x) for x in (2, 1)])
+        self.layer2 = nn.Sequential(*[layers.BasicResBlock(x) for x in (2, 1)])
 
         self.conv2 = nn.Conv2d(m_channels, m_channels, kernel_size=3, stride=(2, 1), padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(m_channels)
@@ -65,20 +57,20 @@ class CAMPPlus(nn.Module):
         self.head = _FCM()
         channels = self.head.out_channels
 
-        modules = OrderedDict({"tdnn": TDNNLayer(channels)})
+        modules = OrderedDict({"tdnn": layers.TDNNLayer(channels)})
         self.xvector = nn.Sequential(modules)
         channels = 128
         for i, (num_layers, dilation) in enumerate(zip((12, 24, 16), (1, 2, 2))):
-            block = CAMDenseTDNNBlock(num_layers=num_layers, in_channels=channels, dilation=dilation)
+            block = layers.CAMDenseTDNNBlock(num_layers=num_layers, in_channels=channels, dilation=dilation)
             self.xvector.add_module(f"block{i + 1}", block)
             channels += num_layers * 32
-            self.xvector.add_module(f"transit{i + 1}", TransitLayer(channels, channels // 2, bias=False))
+            self.xvector.add_module(f"transit{i + 1}", layers.TransitLayer(channels, channels // 2, bias=False))
             channels //= 2
 
-        self.xvector.add_module("out_nonlinear", get_nonlinear(channels))
+        self.xvector.add_module("out_nonlinear", layers.get_nonlinear(channels))
 
-        self.xvector.add_module("stats", StatsPool())
-        self.xvector.add_module("dense", DenseLayer(channels * 2, 192))
+        self.xvector.add_module("stats", layers.StatsPool())
+        self.xvector.add_module("dense", layers.DenseLayer(channels * 2, 192))
 
         for m in self.modules():
             if isinstance(m, (nn.Conv1d, nn.Linear)):

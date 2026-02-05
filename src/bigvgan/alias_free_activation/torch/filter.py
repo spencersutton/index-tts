@@ -2,17 +2,21 @@
 #   LICENSE is in incl_licenses directory.
 
 import math
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from jaxtyping import Float
+from torch import Tensor
+
+from indextts.util import patch_call
 
 
 # This code is adopted from adefossez's julius.lowpass.LowPassFilters under the MIT License
 # https://adefossez.github.io/julius/julius/lowpass.html
 #   LICENSE is in incl_licenses directory.
-def kaiser_sinc_filter1d(cutoff, half_width, kernel_size):  # return filter [1,1,kernel_size]
+def kaiser_sinc_filter1d(cutoff: float, half_width: float, kernel_size: int) -> Float[torch.Tensor, "1 1 kernel_size"]:
     even = kernel_size % 2 == 0
     half_size = kernel_size // 2
 
@@ -33,26 +37,26 @@ def kaiser_sinc_filter1d(cutoff, half_width, kernel_size):  # return filter [1,1
     else:
         time = torch.arange(kernel_size) - half_size
     if cutoff == 0:
-        filter = torch.zeros_like(time)
+        filter_ = torch.zeros_like(time)
     else:
         filter_ = 2 * cutoff * window * torch.sinc(2 * cutoff * time)
         """
         Normalize filter to have sum = 1, otherwise we will have a small leakage of the constant component in the input signal.
         """
-        filter_ /= filter_.sum()
-        filter = filter_.view(1, 1, kernel_size)
+        filter_ = filter_ / filter_.sum()
+        filter_ = filter_.view(1, 1, kernel_size)
 
-    return filter
+    return filter_
 
 
 class LowPassFilter1d(nn.Module):
     if TYPE_CHECKING:
-        filter: torch.Tensor
+        filter: torch.Tensor = torch.empty()
 
     def __init__(
         self,
-        cutoff=0.5,
-        half_width=0.6,
+        cutoff: float = 0.5,
+        half_width: float = 0.6,
         stride: int = 1,
         padding: bool = True,
         padding_mode: str = "replicate",
@@ -66,21 +70,24 @@ class LowPassFilter1d(nn.Module):
             raise ValueError("Minimum cutoff must be larger than zero.")
         if cutoff > 0.5:
             raise ValueError("A cutoff above 0.5 does not make sense.")
-        self.kernel_size = kernel_size
-        self.even = kernel_size % 2 == 0
-        self.pad_left = kernel_size // 2 - int(self.even)
-        self.pad_right = kernel_size // 2
-        self.stride = stride
-        self.padding = padding
-        self.padding_mode = padding_mode
+        self.kernel_size: int = kernel_size
+        self.even: bool = kernel_size % 2 == 0
+        self.pad_left: int = kernel_size // 2 - int(self.even)
+        self.pad_right: int = kernel_size // 2
+        self.stride: int = stride
+        self.padding: bool = padding
+        self.padding_mode: str = padding_mode
         filter = kaiser_sinc_filter1d(cutoff, half_width, kernel_size)
         self.register_buffer("filter", filter)
 
     # Input [B, C, T]
-    def forward(self, x):
+    @override
+    def forward(self, x: Tensor) -> Tensor:
         _, C, _ = x.shape
 
         if self.padding:
             x = F.pad(x, (self.pad_left, self.pad_right), mode=self.padding_mode)
         return F.conv1d(x, self.filter.expand(C, -1, -1), stride=self.stride, groups=C)
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...

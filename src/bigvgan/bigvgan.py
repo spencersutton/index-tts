@@ -8,10 +8,10 @@
 
 
 import json
-import os
 from collections.abc import MutableSequence
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Self, cast, override
 
 import torch
 import torch.nn as nn
@@ -21,13 +21,43 @@ from torch.nn.utils import remove_weight_norm, weight_norm
 
 import bigvgan.activations as activations
 from bigvgan.alias_free_activation.torch.act import Activation1d as TorchActivation1d
-from bigvgan.env import AttrDict
 from bigvgan.utils import get_padding, init_weights
+from indextts.util import patch_call
 
 
-def load_hparams_from_json(path) -> AttrDict:
-    data = Path(path).read_text()
-    return AttrDict(json.loads(data))
+@dataclass
+class HParams:
+    resblock_kernel_sizes: list[int]
+    resblock_dilation_sizes: list[tuple[int, int, int]]
+    resblock: str
+    upsample_rates: list[int]
+    upsample_kernel_sizes: list[int]
+    upsample_initial_channel: int
+    num_mels: int
+    activation: str
+    snake_logscale: bool
+    use_bias_at_final: bool = True
+    use_tanh_at_final: bool = True
+    use_cuda_kernel: bool = False
+
+
+def load_hparams_from_json(path: Path) -> HParams:
+    text = path.read_text()
+    data = cast(dict[str, object], json.loads(text))
+    return HParams(
+        resblock=cast(str, data["resblock"]),
+        resblock_kernel_sizes=cast(list[int], data["resblock_kernel_sizes"]),
+        resblock_dilation_sizes=cast(list[tuple[int, int, int]], data["resblock_dilation_sizes"]),
+        upsample_rates=cast(list[int], data["upsample_rates"]),
+        upsample_kernel_sizes=cast(list[int], data["upsample_kernel_sizes"]),
+        upsample_initial_channel=cast(int, data["upsample_initial_channel"]),
+        num_mels=cast(int, data["num_mels"]),
+        activation=cast(str, data["activation"]),
+        snake_logscale=cast(bool, data["snake_logscale"]),
+        use_bias_at_final=cast(bool, data.get("use_bias_at_final", True)),
+        use_tanh_at_final=cast(bool, data.get("use_tanh_at_final", True)),
+        use_cuda_kernel=cast(bool, data.get("use_cuda_kernel", False)),
+    )
 
 
 class AMPBlock1(torch.nn.Module):
@@ -36,16 +66,22 @@ class AMPBlock1(torch.nn.Module):
     AMPBlock1 has additional self.convs2 that contains additional Conv1d layers with a fixed dilation=1 followed by each layer in self.convs1
 
     Args:
-        h (AttrDict): Hyperparameters.
+        h (HParams): Hyperparameters.
         channels (int): Number of convolution channels.
         kernel_size (int): Size of the convolution kernel. Default is 3.
         dilation (tuple): Dilation rates for the convolutions. Each dilation layer has two convolutions. Default is (1, 3, 5).
         activation (str): Activation function type. Should be either 'snake' or 'snakebeta'. Default is None.
     """
 
+    h: HParams
+    convs1: nn.ModuleList[Conv1d]
+    convs2: nn.ModuleList[Conv1d]
+    num_layers: int
+    activations: nn.ModuleList[TorchActivation1d]
+
     def __init__(
         self,
-        h: AttrDict,
+        h: HParams,
         channels: int,
         kernel_size: int = 3,
         dilation: tuple[int, int, int] = (1, 3, 5),
@@ -74,7 +110,7 @@ class AMPBlock1(torch.nn.Module):
         self.num_layers = len(self.convs1) + len(self.convs2)  # Total number of conv layers
 
         # Select which Activation1d, lazy-load cuda version to ensure backward compatibility
-        if self.h.get("use_cuda_kernel", False):
+        if h.use_cuda_kernel:
             from bigvgan.alias_free_activation.cuda.activation1d import Activation1d as CudaActivation1d
 
             Activation1d = CudaActivation1d
@@ -97,7 +133,8 @@ class AMPBlock1(torch.nn.Module):
                 "activation incorrectly specified. check the config file and look for 'activation'."
             )
 
-    def forward(self, x):
+    @override
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         acts1, acts2 = self.activations[::2], self.activations[1::2]
         for c1, c2, a1, a2 in zip(self.convs1, self.convs2, acts1, acts2):
             xt = a1(x)
@@ -121,16 +158,21 @@ class AMPBlock2(torch.nn.Module):
     Unlike AMPBlock1, AMPBlock2 does not contain extra Conv1d layers with fixed dilation=1
 
     Args:
-        h (AttrDict): Hyperparameters.
+        h (HParams): Hyperparameters.
         channels (int): Number of convolution channels.
         kernel_size (int): Size of the convolution kernel. Default is 3.
         dilation (tuple): Dilation rates for the convolutions. Each dilation layer has two convolutions. Default is (1, 3, 5).
         activation (str): Activation function type. Should be either 'snake' or 'snakebeta'. Default is None.
     """
 
+    h: HParams
+    convs: nn.ModuleList[Conv1d]
+    num_layers: int
+    activations: nn.ModuleList[TorchActivation1d]
+
     def __init__(
         self,
-        h: AttrDict,
+        h: HParams,
         channels: int,
         kernel_size: int = 3,
         dilation: tuple[int, int, int] = (1, 3, 5),
@@ -151,7 +193,7 @@ class AMPBlock2(torch.nn.Module):
         self.num_layers = len(self.convs)  # Total number of conv layers
 
         # Select which Activation1d, lazy-load cuda version to ensure backward compatibility
-        if self.h.get("use_cuda_kernel", False):
+        if h.use_cuda_kernel:
             from bigvgan.alias_free_activation.cuda.activation1d import Activation1d as CudaActivation1d
 
             Activation1d = CudaActivation1d
@@ -174,12 +216,16 @@ class AMPBlock2(torch.nn.Module):
                 "activation incorrectly specified. check the config file and look for 'activation'."
             )
 
-    def forward(self, x):
+    @override
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         for c, a in zip(self.convs, self.activations):
             xt = a(x)
             xt = c(xt)
             x = xt + x
         return x
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
     def remove_weight_norm(self) -> None:
         for l in self.convs:  # noqa: E741
@@ -201,7 +247,7 @@ class BigVGAN(
     New in BigVGAN-v2: it can optionally use optimized CUDA kernels for AMP (anti-aliased multi-periodicity) blocks.
 
     Args:
-        h (AttrDict): Hyperparameters.
+        h (HParams): Hyperparameters.
         use_cuda_kernel (bool): If set to True, loads optimized CUDA kernels for AMP.
             This should be used for inference only, as training is not supported with CUDA kernels.
 
@@ -212,14 +258,23 @@ class BigVGAN(
 
     if TYPE_CHECKING:
         resblocks: MutableSequence[AMPBlock1 | AMPBlock2]
+    num_kernels: int
+    num_upsamples: int
+    conv_pre: Conv1d
+    conv_post: Conv1d
+    if TYPE_CHECKING:
+        activation_post: TorchActivation1d
+    use_bias_at_final: bool
+    use_tanh_at_final: bool
+    h: HParams
 
-    def __init__(self, h: AttrDict, use_cuda_kernel: bool = False) -> None:
+    def __init__(self, h: HParams, use_cuda_kernel: bool = False) -> None:
         super().__init__()
         self.h = h
-        self.h["use_cuda_kernel"] = use_cuda_kernel
+        h.use_cuda_kernel = use_cuda_kernel
 
         # Select which Activation1d, lazy-load cuda version to ensure backward compatibility
-        if self.h.get("use_cuda_kernel", False):
+        if h.use_cuda_kernel:
             from bigvgan.alias_free_activation.cuda.activation1d import Activation1d as CudaActivation1d
 
             Activation1d = CudaActivation1d
@@ -284,7 +339,7 @@ class BigVGAN(
         self.activation_post = Activation1d(activation=activation_post)
 
         # Whether to use bias for the final conv_post. Default to True for backward compatibility
-        self.use_bias_at_final = h.get("use_bias_at_final", True)
+        self.use_bias_at_final = h.use_bias_at_final
         self.conv_post = weight_norm(Conv1d(ch, 1, 7, 1, padding=3, bias=self.use_bias_at_final))
 
         # Weight initialization
@@ -293,16 +348,17 @@ class BigVGAN(
         self.conv_post.apply(init_weights)
 
         # Final tanh activation. Defaults to True for backward compatibility
-        self.use_tanh_at_final = h.get("use_tanh_at_final", True)
+        self.use_tanh_at_final = h.use_tanh_at_final
 
-    def forward(self, x):
+    @override
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Pre-conv
         x = self.conv_pre(x)
 
         for i in range(self.num_upsamples):
             # Upsampling
             for i_up in range(len(self.ups[i])):
-                x = self.ups[i][i_up](x)
+                x = self.ups[i][i_up].__call__(x)
             # AMP blocks
             xs = None
             for j in range(self.num_kernels):
@@ -346,8 +402,8 @@ class BigVGAN(
         torch.save({"generator": self.state_dict()}, model_path)
 
         config_path = save_directory / "config.json"
-        with Path(config_path).open("w") as config_file:
-            json.dump(self.h, config_file, indent=4)
+        with config_path.open("w") as config_file:
+            json.dump(asdict(self.h), config_file, indent=4)
 
     @classmethod
     def _from_pretrained(
@@ -361,22 +417,25 @@ class BigVGAN(
         token: str | bool | None,
         map_location: str = "cpu",  # Additional argument
         use_cuda_kernel: bool = False,
-    ):
+    ) -> Self:
         """Load Pytorch pretrained weights and return the loaded model."""
+        model_id_path = Path(model_id)
 
         # Download and load hyperparameters (h) used by BigVGAN
-        if Path(model_id).is_dir():
+        if model_id_path.is_dir():
             print("Loading config.json from local directory")
-            config_file = os.path.join(model_id, "config.json")
+            config_file = model_id_path / "config.json"
         else:
-            config_file = hf_hub_download(
-                repo_id=model_id,
-                filename="config.json",
-                revision=revision,
-                cache_dir=cache_dir,
-                force_download=force_download,
-                token=token,
-                local_files_only=local_files_only,
+            config_file = Path(
+                hf_hub_download(
+                    repo_id=model_id,
+                    filename="config.json",
+                    revision=revision,
+                    cache_dir=cache_dir,
+                    force_download=force_download,
+                    token=token,
+                    local_files_only=local_files_only,
+                )
             )
         h = load_hparams_from_json(config_file)
 
@@ -396,22 +455,26 @@ class BigVGAN(
         model = cls(h, use_cuda_kernel=use_cuda_kernel)
 
         # Download and load pretrained generator weight
-        if Path(model_id).is_dir():
+        if model_id_path.is_dir():
             print("Loading weights from local directory")
-            model_file = os.path.join(model_id, "bigvgan_generator.pt")
+            model_file = model_id_path / "bigvgan_generator.pt"
         else:
             print(f"Loading weights from {model_id}")
-            model_file = hf_hub_download(
-                repo_id=model_id,
-                filename="bigvgan_generator.pt",
-                revision=revision,
-                cache_dir=cache_dir,
-                force_download=force_download,
-                token=token,
-                local_files_only=local_files_only,
+            model_file = Path(
+                hf_hub_download(
+                    repo_id=model_id,
+                    filename="bigvgan_generator.pt",
+                    revision=revision,
+                    cache_dir=cache_dir,
+                    force_download=force_download,
+                    token=token,
+                    local_files_only=local_files_only,
+                )
             )
 
-        checkpoint_dict = torch.load(model_file, map_location=map_location, weights_only=True)
+        checkpoint_dict = cast(
+            dict[str, dict[str, torch.Tensor]], torch.load(model_file, map_location=map_location, weights_only=True)
+        )
 
         try:
             model.load_state_dict(checkpoint_dict["generator"])

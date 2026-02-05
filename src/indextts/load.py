@@ -18,6 +18,8 @@ from indextts.util import Timer
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.repcodec_model import RepCodec
 
+CHECKPOINT_DIR = Path("./checkpoints")
+
 
 def extract_features() -> transformers.SeamlessM4TFeatureExtractor:
     with Timer() as t:
@@ -28,7 +30,12 @@ def extract_features() -> transformers.SeamlessM4TFeatureExtractor:
 
 def gpt(device: torch.device, cfg: UnifiedVoiceConfig, use_accel: bool, use_fp16: bool) -> UnifiedVoice:
     with Timer() as t:
-        path = "./checkpoints/gpt.safetensors"
+        path = CHECKPOINT_DIR / "gpt.safetensors"
+        if not path.exists():
+            pt_path = hf.hf_hub_download("IndexTeam/IndexTTS-2", filename="gpt.pth")
+            data = cast(dict[str, Tensor], torch.load(pt_path, map_location="cpu"))
+            safetensors.torch.save_file(data, path)
+
         data = safetensors.torch.load_file(path, device=str(device))
 
         with torch.device("meta"):
@@ -67,7 +74,14 @@ def tokenizer(normalizer: TextNormalizer) -> TextTokenizer:
 
 def semantic_codec(device: torch.device) -> RepCodec:
     with Timer() as t:
-        path = "checkpoints/semantic_codec.safetensors"
+        path = CHECKPOINT_DIR / "semantic_codec.safetensors"
+        if not path.exists():
+            cache_path = hf.hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
+            cache_data = safetensors.torch.load_file(cache_path)
+            for k in list(cache_data.keys()):
+                if k.startswith("decoder."):
+                    del cache_data[k]
+            safetensors.torch.save_file(cache_data, path)
 
         with torch.device("meta"):
             model = RepCodec()
@@ -96,10 +110,25 @@ def semantic_stats(device: torch.device) -> tuple[Tensor, Tensor]:
     return mean, std
 
 
+def _get_s2mel_checkpoint() -> dict[str, dict[str, dict[str, Tensor]]]:
+    path = hf.hf_hub_download("IndexTeam/IndexTTS-2", "s2mel.pth")
+    return cast(dict[str, dict[str, dict[str, Tensor]]], torch.load(path, map_location="cpu", weights_only=False))
+
+
 def cfm(device: torch.device, dim: int = 512, in_channels: int = 80) -> CFM:
     with Timer() as t:
-        path = "checkpoints/cfm.safetensors"
-        data = safetensors.torch.load_file(path, device=str(device))
+        path = CHECKPOINT_DIR / "cfm.safetensors"
+        if not path.exists():
+            data = _get_s2mel_checkpoint()
+            data = data["net"]["cfm"]
+            del data["estimator.x_embedder.bias"]
+            del data["estimator.x_embedder.weight_g"]
+            del data["estimator.x_embedder.weight_v"]
+            del data["estimator.cond_embedder.weight"]
+            del data["estimator.content_mask_embedder.weight"]
+            safetensors.torch.save_file(data, path)
+        else:
+            data = safetensors.torch.load_file(path, device=str(device))
         with torch.device("meta"):
             model = CFM(dim=dim, in_channels=in_channels)
         model.load_state_dict(data, assign=True)
@@ -110,7 +139,13 @@ def cfm(device: torch.device, dim: int = 512, in_channels: int = 80) -> CFM:
 
 def length_regulator(device: torch.device, dim: int = 512) -> InterpolateRegulator:
     with Timer() as t:
-        path = "checkpoints/length_regulator.safetensors"
+        path = CHECKPOINT_DIR / "length_regulator.safetensors"
+        if not path.exists():
+            data = _get_s2mel_checkpoint()
+            data = data["net"]["length_regulator"]
+            del data["embedding.weight"]
+            del data["mask_token"]
+            safetensors.torch.save_file(data, path)
         data = safetensors.torch.load_file(path, device=str(device))
         with torch.device("meta"):
             model = InterpolateRegulator(dim)
@@ -128,3 +163,7 @@ def bigvgan(device: torch.device, use_cuda_kernel: bool) -> BigVGAN:
 
     print(f">> bigvgan weights restored in {t:.2f} seconds.")
     return model
+
+
+if __name__ == "__main__":
+    x = cfm(torch.device("cpu"))

@@ -3,9 +3,13 @@
 
 # Further Adapted from https://github.com/NVIDIA/BigVGAN under the MIT license.
 
+from typing import override
+
 import torch
-from torch import nn, pow, sin
+from torch import Tensor, nn, pow, sin
 from torch.nn import Parameter
+
+from indextts.util import patch_call
 
 
 class Snake(nn.Module):
@@ -25,7 +29,14 @@ class Snake(nn.Module):
         >>> x = a1(x)
     """
 
-    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False) -> None:
+    in_features: int
+    alpha_logscale: bool
+    alpha: Parameter
+    no_div_by_zero: float
+
+    def __init__(
+        self, in_features: int, alpha: float = 1.0, alpha_trainable: bool = True, alpha_logscale: bool = False
+    ) -> None:
         """
         Initialization.
         INPUT:
@@ -48,7 +59,14 @@ class Snake(nn.Module):
 
         self.no_div_by_zero = 0.000000001
 
-    def forward(self, x):
+    def _parameter(self) -> Tensor:
+        alpha = self.alpha.unsqueeze(0).unsqueeze(-1)  # Line up with x to [B, C, T]
+        if self.alpha_logscale:
+            alpha = torch.exp(alpha)
+        return alpha
+
+    @override
+    def forward(self, x: Tensor) -> Tensor:
         """
         Forward pass of the function.
         Applies the function to the input elementwise.
@@ -57,11 +75,13 @@ class Snake(nn.Module):
         alpha = self.alpha.unsqueeze(0).unsqueeze(-1)  # Line up with x to [B, C, T]
         if self.alpha_logscale:
             alpha = torch.exp(alpha)
-        return x + (1.0 / (alpha + self.no_div_by_zero)) * pow(sin(x * alpha), 2)
+        return x + (1.0 / (self._parameter() + self.no_div_by_zero)) * pow(sin(x * alpha), 2)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
-
-class SnakeBeta(nn.Module):
+class SnakeBeta(Snake):
     """
     A modified Snake function which uses separate parameters for the magnitude of the periodic components
     Shape:
@@ -80,7 +100,11 @@ class SnakeBeta(nn.Module):
         >>> x = a1(x)
     """
 
-    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False) -> None:
+    beta: Parameter
+
+    def __init__(
+        self, in_features: int, alpha: float = 1.0, alpha_trainable: bool = True, alpha_logscale: bool = False
+    ) -> None:
         """
         Initialization.
         INPUT:
@@ -91,33 +115,15 @@ class SnakeBeta(nn.Module):
             beta is initialized to 1 by default, higher values = higher-magnitude.
             alpha will be trained along with the rest of your model.
         """
-        super().__init__()
-        self.in_features = in_features
+        super().__init__(in_features, alpha, alpha_trainable, alpha_logscale)
 
-        # Initialize alpha
-        self.alpha_logscale = alpha_logscale
-        if self.alpha_logscale:  # Log scale alphas initialized to zeros
-            self.alpha = Parameter(torch.zeros(in_features) * alpha)
-            self.beta = Parameter(torch.zeros(in_features) * alpha)
-        else:  # Linear scale alphas initialized to ones
-            self.alpha = Parameter(torch.ones(in_features) * alpha)
-            self.beta = Parameter(torch.ones(in_features) * alpha)
-
-        self.alpha.requires_grad = alpha_trainable
+        # Initialize beta
+        self.beta = Parameter(self.alpha.detach().clone())
         self.beta.requires_grad = alpha_trainable
 
-        self.no_div_by_zero = 0.000000001
-
-    def forward(self, x):
-        """
-        Forward pass of the function.
-        Applies the function to the input elementwise.
-        SnakeBeta ∶= x + 1/b * sin^2 (xa)
-        """
-        alpha = self.alpha.unsqueeze(0).unsqueeze(-1)  # Line up with x to [B, C, T]
+    @override
+    def _parameter(self) -> Tensor:
         beta = self.beta.unsqueeze(0).unsqueeze(-1)
         if self.alpha_logscale:
-            alpha = torch.exp(alpha)
             beta = torch.exp(beta)
-        return x + (1.0 / (beta + self.no_div_by_zero)) * pow(sin(x * alpha), 2)
-
+        return beta

@@ -2,15 +2,17 @@
 #   Licensed under the MIT license.
 
 # load fused CUDA kernel: this enables importing anti_alias_activation_cuda
-from typing import Any
+from typing import cast, override
 
 import torch
-import torch.nn as nn
+from torch import Tensor
+from torch.autograd.function import FunctionCtx
 
+from bigvgan.activations import Snake, SnakeBeta
 from bigvgan.alias_free_activation.cuda import load
-from bigvgan.alias_free_activation.torch.resample import DownSample1d, UpSample1d
+from bigvgan.alias_free_activation.torch.act import Activation1d as TorchActivation1d
 
-anti_alias_activation_cuda: Any = load.load()
+anti_alias_activation_cuda = load.load()
 
 
 class FusedAntiAliasActivation(torch.autograd.Function):
@@ -21,43 +23,46 @@ class FusedAntiAliasActivation(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, inputs, up_ftr, down_ftr, alpha, beta):
+    @override
+    def forward(
+        ctx: FunctionCtx, inputs: Tensor, up_ftr: Tensor, down_ftr: Tensor, alpha: Tensor, beta: Tensor
+    ) -> Tensor:
         return anti_alias_activation_cuda.forward(inputs, up_ftr, down_ftr, alpha, beta)
 
     @staticmethod
-    def backward(ctx, *grad_outputs):
+    @override
+    def backward(ctx: FunctionCtx, *grad_outputs: Tensor) -> tuple[Tensor | None, ...]:
         raise NotImplementedError
-        return grad_outputs, None, None
+
+    @classmethod
+    @override
+    def apply(cls, inputs: Tensor, up_ftr: Tensor, down_ftr: Tensor, alpha: Tensor, beta: Tensor) -> Tensor:
+        return cast(Tensor, super().apply(inputs, up_ftr, down_ftr, alpha, beta))
 
 
-class Activation1d(nn.Module):
+class Activation1d(TorchActivation1d):
+    fused: bool
+
     def __init__(
         self,
-        activation,
+        activation: Snake,
         up_ratio: int = 2,
         down_ratio: int = 2,
         up_kernel_size: int = 12,
         down_kernel_size: int = 12,
         fused: bool = True,
     ) -> None:
-        super().__init__()
-        self.up_ratio = up_ratio
-        self.down_ratio = down_ratio
-        self.act = activation
-        self.upsample = UpSample1d(up_ratio, up_kernel_size)
-        self.downsample = DownSample1d(down_ratio, down_kernel_size)
-
+        super().__init__(activation, up_ratio, down_ratio, up_kernel_size, down_kernel_size)
         self.fused = fused  # Whether to use fused CUDA kernel or not
 
-    def forward(self, x):
+    @override
+    def forward(self, x: Tensor) -> Tensor:
         if not self.fused:
-            x = self.upsample(x)
-            x = self.act(x)
-            return self.downsample(x)
-        if self.act.__class__.__name__ == "Snake":
-            beta = self.act.alpha.data  # Snake uses same params for alpha and beta
-        else:
+            return super().forward(x)
+        if isinstance(self.act, SnakeBeta):
             beta = self.act.beta.data  # Snakebeta uses different params for alpha and beta
+        else:
+            beta = self.act.alpha.data  # Snake uses same params for alpha and beta
         alpha = self.act.alpha.data
         if not self.act.alpha_logscale:  # Exp baked into cuda kernel, cancel it out with a log
             alpha = torch.log(alpha)

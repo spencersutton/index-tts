@@ -2,27 +2,25 @@ from typing import Any, cast, override
 
 import torch
 import transformers
+import transformers.modeling_outputs
 from torch import Tensor, nn
-from transformers import GPT2Config, GPT2Model, GPT2PreTrainedModel
-from transformers.generation.utils import GenerationMixin
-from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.util import patch_call
 
 
-class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
+class GPT2InferenceModel(transformers.GPT2PreTrainedModel, transformers.GenerationMixin):
     embeddings: nn.Embedding
     final_norm: nn.Module
     lm_head: nn.Sequential
     text_pos_embedding: LearnedPositionEmbeddings
-    transformer: GPT2Model
+    transformer: transformers.GPT2Model
     cached_mel_emb: Tensor | None = None
 
     def __init__(
         self,
-        config: GPT2Config,
-        gpt: GPT2Model,
+        config: transformers.GPT2Config,
+        gpt: transformers.GPT2Model,
         text_pos_emb: LearnedPositionEmbeddings,
         embeddings: nn.Embedding,
         norm: nn.Module,
@@ -89,7 +87,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         output_attentions: bool | None = None,
         output_hidden_states: bool | None = None,
         return_dict: bool | None = None,
-    ) -> CausalLMOutputWithCrossAttentions | tuple[Tensor, ...]:
+    ) -> transformers.modeling_outputs.CausalLMOutputWithCrossAttentions | tuple[Tensor, ...]:
         assert inputs_embeds is None  # Not supported by this inference model.
         assert labels is None  # Training not supported by this inference model.
         assert self.cached_mel_emb is not None, "cached_mel_emb must be set before calling forward()"
@@ -133,7 +131,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             return (lm_logits, *transformer_outputs[1:])
 
         assert not isinstance(transformer_outputs, tuple)
-        return CausalLMOutputWithCrossAttentions(
+        return transformers.modeling_outputs.CausalLMOutputWithCrossAttentions(
             loss=None,
             logits=lm_logits,
             past_key_values=transformer_outputs.past_key_values,

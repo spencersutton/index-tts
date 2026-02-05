@@ -370,7 +370,7 @@ class TextNormalizer:
         """
         if glossary_path and Path(glossary_path).exists():
             with glossary_path.open(encoding="utf-8") as f:
-                external_glossary = yaml.safe_load(f)  # pyright: ignore
+                external_glossary = cast(dict[str, dict[str, str] | str] | object, yaml.safe_load(f))
                 if external_glossary and isinstance(external_glossary, dict):
                     self.term_glossary = external_glossary
                     return True
@@ -394,10 +394,10 @@ class TextNormalizer:
         """
         # Initial+final + tone digit.
         origin_pinyin_pattern = re.compile(_PINYIN_TONE_PATTERN, re.IGNORECASE)
-        original_pinyin_list = re.findall(origin_pinyin_pattern, original_text)
+        original_pinyin_list = cast(list[str], re.findall(origin_pinyin_pattern, original_text))
         if len(original_pinyin_list) == 0:
             return (original_text, None)
-        original_pinyin_list = list({"".join(p) for p in original_pinyin_list})  # pyright: ignore
+        original_pinyin_list = list({"".join(p) for p in original_pinyin_list})
         transformed_text = original_text
         # Replace with placeholders <pinyin_a>, <pinyin_b>, ...
         for i, pinyin in enumerate(original_pinyin_list):

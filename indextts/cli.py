@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from typing import cast
 
 import pyinstrument
 
@@ -33,10 +34,15 @@ def main() -> None:
     parser.add_argument("--profile", action="store_true", default=False, help="Enable profiling")
 
     args = parser.parse_args()
-    voice_file = Path(args.voice)  # pyright: ignore
-    output_path = Path(args.output_path)  # pyright: ignore
+    voice_file = Path(cast(str, args.voice))
+    output_path = Path(cast(str, args.output_path))
 
-    assert isinstance(args.text, str)  # pyright: ignore
+    args.text = cast(str, args.text)
+    args.force = cast(bool, args.force)
+    args.device = cast(str | None, args.device)
+    args.profile = cast(bool, args.profile)
+    args.use_accel = cast(bool, args.use_accel)
+
     if len(args.text.strip()) == 0:
         print("ERROR: Text is empty.")
         parser.print_help()
@@ -47,7 +53,7 @@ def main() -> None:
         sys.exit(1)
 
     if output_path.exists():
-        if not args.force:  # pyright: ignore
+        if not args.force:
             print(f"ERROR: Output file {output_path} already exists. Use --force to overwrite.")
             parser.print_help()
             sys.exit(1)
@@ -60,7 +66,7 @@ def main() -> None:
         print("ERROR: PyTorch is not installed. Please install it first.")
         sys.exit(1)
 
-    if args.device is None:  # pyright: ignore
+    if args.device is None:
         if torch.cuda.is_available():
             args.device = "cuda:0"
         elif hasattr(torch, "xpu") and torch.xpu.is_available():
@@ -76,15 +82,15 @@ def main() -> None:
     from indextts.infer_v2 import IndexTTS2
 
     profiler = pyinstrument.Profiler()
-    if args.profile:  # pyright: ignore
+    if args.profile:
         profiler.start()
 
     print("Initializing IndexTTS2...")
-    tts = IndexTTS2(use_fp16=args.fp16, device=args.device, use_accel=args.use_accel)  # pyright: ignore
+    tts = IndexTTS2(use_fp16=args.fp16, device=args.device, use_accel=args.use_accel)
     print("Start inference...")
     tts.infer(output_path=output_path, spk_audio_prompt=voice_file, text=args.text.strip())
 
-    if args.profile:  # pyright: ignore
+    if args.profile:
         profiler.stop()
         generate_profile_report(profiler)
 

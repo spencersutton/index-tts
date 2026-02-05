@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Final, override
+from typing import TYPE_CHECKING, Final, cast, override
 
 import torch
 import torch.nn.functional as F
@@ -119,7 +119,11 @@ class UnifiedVoice(nn.Module):
         )
         # Override the built in positional embeddings
         del self.gpt.wpe
-        self.gpt.wpe = lambda x: torch.zeros((x.shape[0], x.shape[1], dim), device=x.device)  # type: ignore
+
+        def wpe_override(x: Tensor) -> Tensor:
+            return torch.zeros((x.shape[0], x.shape[1], dim), device=x.device)
+
+        self.gpt.wpe = cast(nn.Embedding, wpe_override)
         # Built-in token embeddings are unused.
         del self.gpt.wte
         self.mel_pos_embedding = LearnedPositionEmbeddings(max_mel_seq_len)
@@ -154,7 +158,7 @@ class UnifiedVoice(nn.Module):
         if self.use_accel and torch.cuda.is_available():
             # Check if flash attention is available
             try:
-                import flash_attn  # noqa: F401  # type: ignore
+                import flash_attn  # noqa: F401  # pyright: ignore
             except ImportError as err:
                 raise ImportError(
                     "flash_attn is required for acceleration but not installed. Please install from https://github.com/Dao-AILab/flash-attention/releases/"
@@ -288,7 +292,7 @@ class UnifiedVoice(nn.Module):
         *,
         emo_vec: Tensor,
         max_generate_length: int | None = None,
-        **hf_generate_kwargs: Any,  # pyright: ignore[reportExplicitAny, reportAny]
+        **hf_generate_kwargs: object,
     ) -> Tensor:
         """
         Args:
@@ -314,7 +318,7 @@ class UnifiedVoice(nn.Module):
                 inputs_ids,  # fake input_ids (all 1s + start_mel_token)
                 max_new_tokens=max_length - trunc_index,
                 attention_mask=attention_mask,
-                temperature=float(hf_generate_kwargs.get("temperature", 1)),  # pyright: ignore
+                temperature=cast(float, hf_generate_kwargs.get("temperature", 1)),
                 stop_tokens=[self.cfg.stop_mel_token],
                 tts_embeddings=inputs_embeds,  # [pad][cond][text] embeddings (87 tokens, NO start_mel_token)
                 tts_mel_embedding=self.inference_model.embeddings,  # mel_embedding layer

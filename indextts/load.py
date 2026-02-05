@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, cast
+from typing import cast
 
 import huggingface_hub as hf
 import safetensors.torch
@@ -45,7 +45,7 @@ def gpt(device: torch.device, cfg: UnifiedVoiceConfig, use_accel: bool, use_fp16
 def campplus_model(device: torch.device) -> CAMPPlus:
     with Timer() as t:
         path = hf.hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
-        data: Mapping[str, Any] = torch.load(path, map_location=device)  # pyright: ignore
+        data = cast(Mapping[str, object], torch.load(path, map_location=device))
 
         with torch.device("meta"):
             model = CAMPPlus()

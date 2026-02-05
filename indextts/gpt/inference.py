@@ -125,7 +125,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
             return_dict=return_dict,
         )
         assert not isinstance(transformer_outputs, tuple)
-        hidden_states: Tensor = transformer_outputs[0]  # pyright: ignore
+        hidden_states = cast(Tensor, transformer_outputs[0])
 
         lm_logits = self.lm_head(hidden_states)
 

@@ -4,8 +4,8 @@ from collections.abc import Collection, Mapping, Sequence
 from typing import Final, cast
 
 import torch
+import transformers
 from torch import Tensor
-from transformers import BatchEncoding, Qwen2Tokenizer, Qwen3ForCausalLM
 
 
 def _clamp(value: float, min_val: float, max_val: float) -> float:
@@ -43,12 +43,12 @@ min_score: Final = 0.0
 
 
 class QwenEmotion:
-    model: Qwen3ForCausalLM
-    tokenizer: Qwen2Tokenizer
+    model: transformers.Qwen3ForCausalLM
+    tokenizer: transformers.Qwen2Tokenizer
 
     def __init__(self, model_path: str) -> None:
-        self.tokenizer = Qwen2Tokenizer.from_pretrained(model_path)
-        self.model = Qwen3ForCausalLM.from_pretrained(
+        self.tokenizer = transformers.Qwen2Tokenizer.from_pretrained(model_path)
+        self.model = transformers.Qwen3ForCausalLM.from_pretrained(
             model_path,
             torch_dtype="float16",  # "auto"
             device_map="auto",
@@ -77,7 +77,7 @@ class QwenEmotion:
         text = self.tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True, enable_thinking=False
         )
-        assert not isinstance(text, (BatchEncoding, list))
+        assert not isinstance(text, (transformers.BatchEncoding, list))
         model_inputs = cast(Mapping[str, Tensor], self.tokenizer([text], return_tensors="pt").to(self.model.device))
 
         # conduct text completion

@@ -17,6 +17,7 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
     lm_head: nn.Sequential
     text_pos_embedding: LearnedPositionEmbeddings
     transformer: GPT2Model
+    cached_mel_emb: Tensor | None = None
 
     def __init__(
         self,
@@ -34,8 +35,6 @@ class GPT2InferenceModel(GPT2PreTrainedModel, GenerationMixin):
         self.embeddings = embeddings
         self.final_norm = norm
         self.lm_head = nn.Sequential(norm, linear)
-
-        self.cached_mel_emb: Tensor | None = None
 
     @override
     def prepare_inputs_for_generation(

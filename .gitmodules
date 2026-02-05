@@ -1,6 +1,0 @@
-[submodule "BigVGAN"]
-	path = BigVGAN
-	url = https://github.com/NVIDIA/BigVGAN
-[submodule "BigVGANInference"]
-	path = BigVGANInference
-	url = https://github.com/thunn/BigVGANInference.git

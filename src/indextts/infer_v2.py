@@ -16,7 +16,7 @@ from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
 
 import indextts.load as load
-from BigVGANInference.bigvganinference.inference import BigVGANInference
+from bigvgan.inference import BigVGANInference
 from indextts.config import IndexTTSConfig
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.qwen import QwenEmotion
@@ -148,7 +148,7 @@ class IndexTTS2:
         if self.use_cuda_kernel:
             # preload the CUDA kernel for BigVGAN
             try:
-                from BigVGANInference.bigvganinference.alias_free_activation.cuda import activation1d
+                from bigvgan.alias_free_activation.cuda import activation1d
 
                 print(">> Preload custom CUDA kernel for BigVGAN", activation1d.anti_alias_activation_cuda)  # pyright: ignore
             except Exception as e:

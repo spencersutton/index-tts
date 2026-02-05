@@ -20,8 +20,7 @@ def load():
     cc_flag = []
     _, bare_metal_major, _ = _get_cuda_bare_metal_version(cpp_extension.CUDA_HOME)
     if int(bare_metal_major) >= 11:
-        cc_flag.append("-gencode")
-        cc_flag.append("arch=compute_80,code=sm_80")
+        cc_flag.extend(("-gencode", "arch=compute_80,code=sm_80"))
 
     # Build path
     srcpath = pathlib.Path(__file__).parent.absolute()
@@ -37,14 +36,7 @@ def load():
             extra_cflags=[
                 "-O3",
             ],
-            extra_cuda_cflags=[
-                "-O3",
-                "-gencode",
-                "arch=compute_70,code=sm_70",
-                "--use_fast_math",
-            ]
-            + extra_cuda_flags
-            + cc_flag,
+            extra_cuda_cflags=["-O3", "-gencode", "arch=compute_70,code=sm_70", "--use_fast_math", *extra_cuda_flags, *cc_flag],
             verbose=True,
         )
 
@@ -59,9 +51,8 @@ def load():
         srcpath / "anti_alias_activation.cpp",
         srcpath / "anti_alias_activation_cuda.cu",
     ]
-    anti_alias_activation_cuda = _cpp_extention_load_helper("anti_alias_activation_cuda", sources, extra_cuda_flags)
+    return _cpp_extention_load_helper("anti_alias_activation_cuda", sources, extra_cuda_flags)
 
-    return anti_alias_activation_cuda
 
 
 def _get_cuda_bare_metal_version(cuda_dir):
@@ -75,9 +66,9 @@ def _get_cuda_bare_metal_version(cuda_dir):
     return raw_output, bare_metal_major, bare_metal_minor
 
 
-def _create_build_dir(buildpath):
+def _create_build_dir(buildpath) -> None:
     try:
-        os.mkdir(buildpath)
+        pathlib.Path(buildpath).mkdir()
     except OSError:
-        if not os.path.isdir(buildpath):
+        if not pathlib.Path(buildpath).is_dir():
             print(f"Creation of the build directory {buildpath} failed")

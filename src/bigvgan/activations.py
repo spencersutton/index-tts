@@ -25,7 +25,7 @@ class Snake(nn.Module):
         >>> x = a1(x)
     """
 
-    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False):
+    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False) -> None:
         """
         Initialization.
         INPUT:
@@ -34,7 +34,7 @@ class Snake(nn.Module):
             alpha is initialized to 1 by default, higher values = higher-frequency.
             alpha will be trained along with the rest of your model.
         """
-        super(Snake, self).__init__()
+        super().__init__()
         self.in_features = in_features
 
         # Initialize alpha
@@ -57,9 +57,8 @@ class Snake(nn.Module):
         alpha = self.alpha.unsqueeze(0).unsqueeze(-1)  # Line up with x to [B, C, T]
         if self.alpha_logscale:
             alpha = torch.exp(alpha)
-        x = x + (1.0 / (alpha + self.no_div_by_zero)) * pow(sin(x * alpha), 2)
+        return x + (1.0 / (alpha + self.no_div_by_zero)) * pow(sin(x * alpha), 2)
 
-        return x
 
 
 class SnakeBeta(nn.Module):
@@ -81,7 +80,7 @@ class SnakeBeta(nn.Module):
         >>> x = a1(x)
     """
 
-    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False):
+    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False) -> None:
         """
         Initialization.
         INPUT:
@@ -92,7 +91,7 @@ class SnakeBeta(nn.Module):
             beta is initialized to 1 by default, higher values = higher-magnitude.
             alpha will be trained along with the rest of your model.
         """
-        super(SnakeBeta, self).__init__()
+        super().__init__()
         self.in_features = in_features
 
         # Initialize alpha
@@ -120,6 +119,5 @@ class SnakeBeta(nn.Module):
         if self.alpha_logscale:
             alpha = torch.exp(alpha)
             beta = torch.exp(beta)
-        x = x + (1.0 / (beta + self.no_div_by_zero)) * pow(sin(x * alpha), 2)
+        return x + (1.0 / (beta + self.no_div_by_zero)) * pow(sin(x * alpha), 2)
 
-        return x

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Final, cast, override
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
-from transformers import GPT2Config, GPT2Model, LogitsProcessorList
+from transformers import GPT2Config, GPT2Model
 
 from indextts.config import UnifiedVoiceConfig
 from indextts.gpt.conformer_encoder import ConformerEncoder
@@ -332,8 +332,6 @@ class UnifiedVoice(nn.Module):
                 eos_token_id=self.cfg.stop_mel_token,
                 attention_mask=attention_mask,
                 max_length=max_length,
-                logits_processor=LogitsProcessorList(),
-                num_return_sequences=1,
                 **hf_generate_kwargs,  # pyright: ignore
             )
         return output[:, trunc_index:]

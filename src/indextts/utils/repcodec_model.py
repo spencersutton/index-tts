@@ -4,9 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 from typing import override
 
+import einops
 import torch
 import torch.nn.functional as F
-from einops import rearrange
 from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
@@ -131,7 +131,7 @@ class _FactorizedVectorQuantize(nn.Module):
         return F.embedding(embed_id, self.codebook.weight).mT
 
     def decode_latents(self, latents: Tensor) -> Tensor:
-        encodings = rearrange(latents, "b d t -> (b t) d")
+        encodings = einops.rearrange(latents, "b d t -> (b t) d")
         codebook = self.codebook.weight
 
         # L2 normalize encodings and codebook
@@ -145,7 +145,7 @@ class _FactorizedVectorQuantize(nn.Module):
             - 2 * encodings @ codebook.mT
             + codebook.square().sum(1, keepdim=True).mT
         )
-        indices = rearrange((-dist).max(1)[1], "(b t) -> b t", b=latents.size(0))
+        indices = einops.rearrange((-dist).max(1)[1], "(b t) -> b t", b=latents.size(0))
         return self.decode_code(indices)
 
     def vq2emb(self, vq: Tensor) -> Tensor:

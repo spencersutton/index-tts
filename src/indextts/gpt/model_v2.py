@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING, Final, cast, override
 
 import torch
 import torch.nn.functional as F
+import transformers
 from torch import Tensor, nn
-from transformers import GPT2Config, GPT2Model
 
 from indextts.config import UnifiedVoiceConfig
 from indextts.gpt.conformer_encoder import ConformerEncoder
@@ -32,7 +32,7 @@ class UnifiedVoice(nn.Module):
     """Projects the emotion-conditioning latent (1024-d) into the GPT embedding space (1024 -> dim)."""
     final_norm: nn.LayerNorm
     """LayerNorm applied to transformer hidden states before projecting to logits."""
-    gpt: GPT2Model
+    gpt: transformers.GPT2Model
     """Core GPT-2 transformer backbone that consumes concatenated conditioning/text/mel embeddings."""
     inference_model: GPT2InferenceModel  # pyright: ignore[reportUninitializedInstanceVariable]
     """Generation-oriented wrapper around the transformer (caching/positioning + `generate`)."""
@@ -107,8 +107,8 @@ class UnifiedVoice(nn.Module):
         max_mel_seq_len = self.max_mel_tokens + 3
         max_text_seq_len = self.max_text_tokens + 2
 
-        self.gpt = GPT2Model(
-            GPT2Config(
+        self.gpt = transformers.GPT2Model(
+            transformers.GPT2Config(
                 vocab_size=256,  # Unused.
                 n_positions=max_mel_seq_len + max_text_seq_len,
                 n_ctx=max_mel_seq_len + max_text_seq_len,
@@ -146,7 +146,7 @@ class UnifiedVoice(nn.Module):
 
     def post_init_gpt2_config(self, half: bool) -> None:
         seq_length = self.max_mel_tokens + self.max_text_tokens + 2
-        gpt_config = GPT2Config(
+        gpt_config = transformers.GPT2Config(
             vocab_size=self.cfg.number_mel_codes,
             n_positions=seq_length,
             n_ctx=seq_length,

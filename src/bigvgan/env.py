@@ -1,11 +1,12 @@
 # Adapted from https://github.com/jik876/hifi-gan under the MIT license.
 #   LICENSE is in incl_licenses directory.
 
+from collections import UserDict
 from typing import Any
 
 
-class AttrDict(dict[str, Any]):
-    def __init__(self, *args, **kwargs):
+class AttrDict(UserDict[str, Any]):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.__dict__ = self
 

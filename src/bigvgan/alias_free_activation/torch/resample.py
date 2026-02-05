@@ -3,10 +3,9 @@
 
 from typing import TYPE_CHECKING
 
-from BigVGANInference.bigvganinference.alias_free_activation.torch.filter import LowPassFilter1d, kaiser_sinc_filter1d
-
 import torch
 import torch.nn as nn
+from bigvgan.alias_free_activation.torch.filter import LowPassFilter1d, kaiser_sinc_filter1d
 from torch.nn import functional as F
 
 
@@ -14,7 +13,7 @@ class UpSample1d(nn.Module):
     if TYPE_CHECKING:
         filter: torch.Tensor
 
-    def __init__(self, ratio=2, kernel_size=None):
+    def __init__(self, ratio=2, kernel_size=None) -> None:
         super().__init__()
         self.ratio = ratio
         self.kernel_size = int(6 * ratio // 2) * 2 if kernel_size is None else kernel_size
@@ -31,24 +30,17 @@ class UpSample1d(nn.Module):
 
         x = F.pad(x, (self.pad, self.pad), mode="replicate")
         x = self.ratio * F.conv_transpose1d(x, self.filter.expand(C, -1, -1), stride=self.stride, groups=C)
-        x = x[..., self.pad_left : -self.pad_right]
-
-        return x
+        return x[..., self.pad_left : -self.pad_right]
 
 
 class DownSample1d(nn.Module):
-    def __init__(self, ratio=2, kernel_size=None):
+    def __init__(self, ratio=2, kernel_size=None) -> None:
         super().__init__()
         self.ratio = ratio
         self.kernel_size = int(6 * ratio // 2) * 2 if kernel_size is None else kernel_size
         self.lowpass = LowPassFilter1d(
-            cutoff=0.5 / ratio,
-            half_width=0.6 / ratio,
-            stride=ratio,
-            kernel_size=self.kernel_size,
+            cutoff=0.5 / ratio, half_width=0.6 / ratio, stride=ratio, kernel_size=self.kernel_size
         )
 
     def forward(self, x):
-        xx = self.lowpass(x)
-
-        return xx
+        return self.lowpass(x)

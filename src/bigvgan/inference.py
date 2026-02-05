@@ -1,15 +1,14 @@
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from BigVGANInference.bigvganinference.bigvgan import BigVGAN
-from BigVGANInference.bigvganinference.env import AttrDict
-from indextts.s2mel.modules.audio import mel_spectrogram
-import numpy as np
 import torch
 
+from bigvgan.bigvgan import BigVGAN
+from bigvgan.env import AttrDict
 
-class BigVGANHFModel(str, Enum):
+
+class BigVGANHFModel(StrEnum):
     """
     BigVGAN HF models.
     """
@@ -24,7 +23,7 @@ class BigVGANHFModel(str, Enum):
     BASE_24KHZ_100BAND = "nvidia/bigvgan_base_24khz_100band"
     BASE_22KHZ_80BAND = "nvidia/bigvgan_base_22khz_80band"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.value
 
 
@@ -33,7 +32,7 @@ class BigVGANInference(BigVGAN):
     BigVGAN inference.
     """
 
-    def __init__(self, h: AttrDict, use_cuda_kernel: bool = False):
+    def __init__(self, h: AttrDict, use_cuda_kernel: bool = False) -> None:
         super().__init__(h, use_cuda_kernel)
 
         # set to eval and remove weight norm

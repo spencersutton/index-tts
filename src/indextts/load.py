@@ -8,7 +8,7 @@ import torch
 import transformers
 from torch import Tensor
 
-from BigVGANInference.bigvganinference import BigVGANInference as BigVGAN
+from bigvgan import BigVGANInference as BigVGAN
 from indextts.config import UnifiedVoiceConfig
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus

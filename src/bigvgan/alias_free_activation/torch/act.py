@@ -1,13 +1,28 @@
 # Adapted from https://github.com/junjun3518/alias-free-torch under the Apache License 2.0
 #   LICENSE is in incl_licenses directory.
 
+from typing import override
+
+import torch
 import torch.nn as nn
+
 from bigvgan.alias_free_activation.torch.resample import DownSample1d, UpSample1d
 
 
 class Activation1d(nn.Module):
+    up_ratio: int
+    down_ratio: int
+    act: nn.Module
+    upsample: UpSample1d
+    downsample: DownSample1d
+
     def __init__(
-        self, activation, up_ratio: int = 2, down_ratio: int = 2, up_kernel_size: int = 12, down_kernel_size: int = 12
+        self,
+        activation: nn.Module,
+        up_ratio: int = 2,
+        down_ratio: int = 2,
+        up_kernel_size: int = 12,
+        down_kernel_size: int = 12,
     ) -> None:
         super().__init__()
         self.up_ratio = up_ratio
@@ -17,7 +32,8 @@ class Activation1d(nn.Module):
         self.downsample = DownSample1d(down_ratio, down_kernel_size)
 
     # x: [B,C,T]
-    def forward(self, x):
+    @override
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.upsample(x)
         x = self.act(x)
         return self.downsample(x)

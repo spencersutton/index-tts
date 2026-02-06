@@ -2,10 +2,12 @@
 #   Licensed under the MIT license.
 
 # load fused CUDA kernel: this enables importing anti_alias_activation_cuda
-from typing import Any
+from typing import cast, override
 
 import torch
 import torch.nn as nn
+from torch import Tensor
+from torch.autograd.function import FunctionCtx
 
 from bigvgan.alias_free_activation.cuda import load
 from bigvgan.alias_free_activation.torch.resample import DownSample1d, UpSample1d
@@ -21,16 +23,25 @@ class FusedAntiAliasActivation(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, inputs, up_ftr, down_ftr, alpha, beta):
+    def forward(
+        ctx: FunctionCtx, inputs: Tensor, up_ftr: Tensor, down_ftr: Tensor, alpha: Tensor, beta: Tensor
+    ) -> Tensor:
         return anti_alias_activation_cuda.forward(inputs, up_ftr, down_ftr, alpha, beta)
 
     @staticmethod
-    def backward(ctx, *grad_outputs):
+    def backward(ctx: FunctionCtx, *grad_outputs: Tensor) -> tuple[Tensor | None, ...]:
         raise NotImplementedError
         return grad_outputs, None, None
 
 
 class Activation1d(nn.Module):
+    up_ratio: int
+    down_ratio: int
+    act: nn.Module
+    upsample: UpSample1d
+    downsample: DownSample1d
+    fused: bool
+
     def __init__(
         self,
         activation,
@@ -49,7 +60,8 @@ class Activation1d(nn.Module):
 
         self.fused = fused  # Whether to use fused CUDA kernel or not
 
-    def forward(self, x):
+@override
+    def forward(self, x: Tensor) -> Tensor:
         if not self.fused:
             x = self.upsample(x)
             x = self.act(x)

@@ -8,11 +8,10 @@
 
 
 import json
-import os
 from collections.abc import MutableSequence
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Self, cast, override
 
 import torch
 import torch.nn as nn
@@ -35,7 +34,7 @@ class HParams:
     upsample_initial_channel: int
     num_mels: int
     activation: str
-    snake_logscale: float
+    snake_logscale: bool
     use_bias_at_final: bool = True
     use_tanh_at_final: bool = True
     use_cuda_kernel: bool = False
@@ -113,7 +112,7 @@ class AMPBlock1(torch.nn.Module):
                 "activation incorrectly specified. check the config file and look for 'activation'."
             )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         acts1, acts2 = self.activations[::2], self.activations[1::2]
         for c1, c2, a1, a2 in zip(self.convs1, self.convs2, acts1, acts2):
             xt = a1(x)
@@ -190,7 +189,7 @@ class AMPBlock2(torch.nn.Module):
                 "activation incorrectly specified. check the config file and look for 'activation'."
             )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         for c, a in zip(self.convs, self.activations):
             xt = a(x)
             xt = c(xt)
@@ -319,7 +318,8 @@ class BigVGAN(
         # Final tanh activation. Defaults to True for backward compatibility
         self.use_tanh_at_final = h.use_tanh_at_final
 
-    def forward(self, x):
+    @override
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Pre-conv
         x = self.conv_pre(x)
 
@@ -370,8 +370,8 @@ class BigVGAN(
         torch.save({"generator": self.state_dict()}, model_path)
 
         config_path = save_directory / "config.json"
-        with Path(config_path).open("w") as config_file:
-            json.dump(self.h, config_file, indent=4)
+        with config_path.open("w") as config_file:
+            json.dump(asdict(self.h), config_file, indent=4)
 
     @classmethod
     def _from_pretrained(
@@ -385,15 +385,16 @@ class BigVGAN(
         token: str | bool | None,
         map_location: str = "cpu",  # Additional argument
         use_cuda_kernel: bool = False,
-    ):
+    ) -> Self:
         """Load Pytorch pretrained weights and return the loaded model."""
 
         # Download and load hyperparameters (h) used by BigVGAN
         if Path(model_id).is_dir():
             print("Loading config.json from local directory")
-            config_file = os.path.join(model_id, "config.json")
+            config_file = Path(model_id) / "config.json"
         else:
-            config_file = hf_hub_download(
+            config_file = Path(
+                hf_hub_download(
                 repo_id=model_id,
                 filename="config.json",
                 revision=revision,
@@ -401,6 +402,7 @@ class BigVGAN(
                 force_download=force_download,
                 token=token,
                 local_files_only=local_files_only,
+                )
             )
         h = load_hparams_from_json(config_file)
 
@@ -422,10 +424,11 @@ class BigVGAN(
         # Download and load pretrained generator weight
         if Path(model_id).is_dir():
             print("Loading weights from local directory")
-            model_file = os.path.join(model_id, "bigvgan_generator.pt")
+            model_file = Path(model_id) / "bigvgan_generator.pt"
         else:
             print(f"Loading weights from {model_id}")
-            model_file = hf_hub_download(
+            model_file = Path(
+                hf_hub_download(
                 repo_id=model_id,
                 filename="bigvgan_generator.pt",
                 revision=revision,
@@ -433,9 +436,12 @@ class BigVGAN(
                 force_download=force_download,
                 token=token,
                 local_files_only=local_files_only,
+                )
             )
 
-        checkpoint_dict = torch.load(model_file, map_location=map_location, weights_only=True)
+        checkpoint_dict = cast(
+            dict[str, dict[str, torch.Tensor]], torch.load(model_file, map_location=map_location, weights_only=True)
+        )
 
         try:
             model.load_state_dict(checkpoint_dict["generator"])

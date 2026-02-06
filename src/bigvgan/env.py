@@ -5,8 +5,8 @@ from collections import UserDict
 from typing import Any
 
 
-class AttrDict(UserDict[str, Any]):
-    def __init__(self, *args, **kwargs) -> None:
+class AttrDict(UserDict[str, object]):
+    def __init__(self, *args: object, **kwargs: object) -> None:
         super().__init__(*args, **kwargs)
         self.__dict__ = self
 

@@ -127,6 +127,7 @@ ignore = ["tools/", "sitecustomize.py"]
 reportIgnoreCommentWithoutRule = false
 reportUnusedCallResult = false
 stubPath = "../typings"
+typeshedPath = '../typeshed'
 
 [[tool.basedpyright.executionEnvironments]]
 root = "../typings"

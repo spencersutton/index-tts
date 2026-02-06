@@ -3,8 +3,10 @@
 
 # Further Adapted from https://github.com/NVIDIA/BigVGAN under the MIT license.
 
+from typing import override
+
 import torch
-from torch import nn, pow, sin
+from torch import Tensor, nn, pow, sin
 from torch.nn import Parameter
 
 
@@ -25,7 +27,14 @@ class Snake(nn.Module):
         >>> x = a1(x)
     """
 
-    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False) -> None:
+    in_features: int
+    alpha_logscale: bool
+    alpha: Parameter
+    no_div_by_zero: float
+
+    def __init__(
+        self, in_features: int, alpha: float = 1.0, alpha_trainable: bool = True, alpha_logscale: bool = False
+    ) -> None:
         """
         Initialization.
         INPUT:
@@ -48,7 +57,8 @@ class Snake(nn.Module):
 
         self.no_div_by_zero = 0.000000001
 
-    def forward(self, x):
+    @override
+    def forward(self, x: Tensor) -> Tensor:
         """
         Forward pass of the function.
         Applies the function to the input elementwise.
@@ -58,7 +68,6 @@ class Snake(nn.Module):
         if self.alpha_logscale:
             alpha = torch.exp(alpha)
         return x + (1.0 / (alpha + self.no_div_by_zero)) * pow(sin(x * alpha), 2)
-
 
 
 class SnakeBeta(nn.Module):
@@ -80,7 +89,15 @@ class SnakeBeta(nn.Module):
         >>> x = a1(x)
     """
 
-    def __init__(self, in_features, alpha=1.0, alpha_trainable=True, alpha_logscale=False) -> None:
+    in_features: int
+    alpha_logscale: bool
+    alpha: Parameter
+    beta: Parameter
+    no_div_by_zero: float
+
+    def __init__(
+        self, in_features: int, alpha: float = 1.0, alpha_trainable: bool = True, alpha_logscale: bool = False
+    ) -> None:
         """
         Initialization.
         INPUT:
@@ -108,7 +125,8 @@ class SnakeBeta(nn.Module):
 
         self.no_div_by_zero = 0.000000001
 
-    def forward(self, x):
+    @override
+    def forward(self, x: Tensor) -> Tensor:
         """
         Forward pass of the function.
         Applies the function to the input elementwise.
@@ -120,4 +138,3 @@ class SnakeBeta(nn.Module):
             alpha = torch.exp(alpha)
             beta = torch.exp(beta)
         return x + (1.0 / (beta + self.no_div_by_zero)) * pow(sin(x * alpha), 2)
-

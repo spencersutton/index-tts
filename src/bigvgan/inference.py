@@ -1,6 +1,6 @@
 from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self, override
 
 import torch
 
@@ -22,6 +22,7 @@ class BigVGANHFModel(StrEnum):
     BASE_24KHZ_100BAND = "nvidia/bigvgan_base_24khz_100band"
     BASE_22KHZ_80BAND = "nvidia/bigvgan_base_22khz_80band"
 
+    @override
     def __str__(self) -> str:
         return self.value
 
@@ -37,6 +38,7 @@ class BigVGANInference(BigVGAN):
         # set to eval and remove weight norm
         self.eval()
 
+    @override
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Forward pass with inference mode enabled.
@@ -68,8 +70,8 @@ class BigVGANInference(BigVGAN):
         map_location: str = "cpu",  # Additional argument
         strict: bool = False,  # Additional argument
         use_cuda_kernel: bool = False,
-        **model_kwargs,
-    ):
+        **model_kwargs: object,
+    ) -> Self:
         model = super()._from_pretrained(
             model_id=model_id,
             revision=revision,

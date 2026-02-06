@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import torch
 
-from bigvgan.bigvgan import BigVGAN
+from bigvgan.bigvgan import BigVGAN, HParams
 
 
 class BigVGANHFModel(StrEnum):
@@ -31,7 +31,7 @@ class BigVGANInference(BigVGAN):
     BigVGAN inference.
     """
 
-    def __init__(self, h: dict[str, object], use_cuda_kernel: bool = False) -> None:
+    def __init__(self, h: HParams, use_cuda_kernel: bool = False) -> None:
         super().__init__(h, use_cuda_kernel)
 
         # set to eval and remove weight norm

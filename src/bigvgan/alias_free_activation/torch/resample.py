@@ -13,7 +13,7 @@ from bigvgan.alias_free_activation.torch.filter import LowPassFilter1d, kaiser_s
 
 class UpSample1d(nn.Module):
     if TYPE_CHECKING:
-        filter: torch.Tensor
+        filter: torch.Tensor = torch.empty()
 
     def __init__(self, ratio: int = 2, kernel_size: int | None = None) -> None:
         super().__init__()

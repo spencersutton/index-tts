@@ -51,7 +51,7 @@ def kaiser_sinc_filter1d(cutoff: float, half_width: float, kernel_size: int) -> 
 
 class LowPassFilter1d(nn.Module):
     if TYPE_CHECKING:
-        filter: torch.Tensor
+        filter: torch.Tensor = torch.empty()
 
     def __init__(
         self,

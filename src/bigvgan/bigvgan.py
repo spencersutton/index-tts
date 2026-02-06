@@ -21,13 +21,12 @@ from torch.nn.utils import remove_weight_norm, weight_norm
 
 import bigvgan.activations as activations
 from bigvgan.alias_free_activation.torch.act import Activation1d as TorchActivation1d
-from bigvgan.env import AttrDict
 from bigvgan.utils import get_padding, init_weights
 
 
-def load_hparams_from_json(path) -> AttrDict:
+def load_hparams_from_json(path) -> dict[str, object]:
     data = Path(path).read_text()
-    return AttrDict(json.loads(data))
+    return dict(json.loads(data))
 
 
 class AMPBlock1(torch.nn.Module):
@@ -36,7 +35,7 @@ class AMPBlock1(torch.nn.Module):
     AMPBlock1 has additional self.convs2 that contains additional Conv1d layers with a fixed dilation=1 followed by each layer in self.convs1
 
     Args:
-        h (AttrDict): Hyperparameters.
+        h (dict[str, object]): Hyperparameters.
         channels (int): Number of convolution channels.
         kernel_size (int): Size of the convolution kernel. Default is 3.
         dilation (tuple): Dilation rates for the convolutions. Each dilation layer has two convolutions. Default is (1, 3, 5).
@@ -45,7 +44,7 @@ class AMPBlock1(torch.nn.Module):
 
     def __init__(
         self,
-        h: AttrDict,
+        h: dict[str, object],
         channels: int,
         kernel_size: int = 3,
         dilation: tuple[int, int, int] = (1, 3, 5),
@@ -121,7 +120,7 @@ class AMPBlock2(torch.nn.Module):
     Unlike AMPBlock1, AMPBlock2 does not contain extra Conv1d layers with fixed dilation=1
 
     Args:
-        h (AttrDict): Hyperparameters.
+        h (dict[str, object]): Hyperparameters.
         channels (int): Number of convolution channels.
         kernel_size (int): Size of the convolution kernel. Default is 3.
         dilation (tuple): Dilation rates for the convolutions. Each dilation layer has two convolutions. Default is (1, 3, 5).
@@ -130,7 +129,7 @@ class AMPBlock2(torch.nn.Module):
 
     def __init__(
         self,
-        h: AttrDict,
+        h: dict[str, object],
         channels: int,
         kernel_size: int = 3,
         dilation: tuple[int, int, int] = (1, 3, 5),
@@ -201,7 +200,7 @@ class BigVGAN(
     New in BigVGAN-v2: it can optionally use optimized CUDA kernels for AMP (anti-aliased multi-periodicity) blocks.
 
     Args:
-        h (AttrDict): Hyperparameters.
+        h (dict[str, object]): Hyperparameters.
         use_cuda_kernel (bool): If set to True, loads optimized CUDA kernels for AMP.
             This should be used for inference only, as training is not supported with CUDA kernels.
 
@@ -213,7 +212,7 @@ class BigVGAN(
     if TYPE_CHECKING:
         resblocks: MutableSequence[AMPBlock1 | AMPBlock2]
 
-    def __init__(self, h: AttrDict, use_cuda_kernel: bool = False) -> None:
+    def __init__(self, h: dict[str, object], use_cuda_kernel: bool = False) -> None:
         super().__init__()
         self.h = h
         self.h["use_cuda_kernel"] = use_cuda_kernel

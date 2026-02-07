@@ -419,11 +419,12 @@ class BigVGAN(
         use_cuda_kernel: bool = False,
     ) -> Self:
         """Load Pytorch pretrained weights and return the loaded model."""
+        model_id_path = Path(model_id)
 
         # Download and load hyperparameters (h) used by BigVGAN
-        if Path(model_id).is_dir():
+        if model_id_path.is_dir():
             print("Loading config.json from local directory")
-            config_file = Path(model_id) / "config.json"
+            config_file = model_id_path / "config.json"
         else:
             config_file = Path(
                 hf_hub_download(
@@ -454,9 +455,9 @@ class BigVGAN(
         model = cls(h, use_cuda_kernel=use_cuda_kernel)
 
         # Download and load pretrained generator weight
-        if Path(model_id).is_dir():
+        if model_id_path.is_dir():
             print("Loading weights from local directory")
-            model_file = Path(model_id) / "bigvgan_generator.pt"
+            model_file = model_id_path / "bigvgan_generator.pt"
         else:
             print(f"Loading weights from {model_id}")
             model_file = Path(

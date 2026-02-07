@@ -150,7 +150,7 @@ class IndexTTS2:
             try:
                 from bigvgan.alias_free_activation.cuda import activation1d
 
-                print(">> Preload custom CUDA kernel for BigVGAN", activation1d.anti_alias_activation_cuda)  # pyright: ignore
+                print(">> Preload custom CUDA kernel for BigVGAN", activation1d.anti_alias_activation_cuda)
             except Exception as e:
                 print(">> Failed to load custom CUDA kernel for BigVGAN. Falling back to torch.")
                 print(f"{e!r}")

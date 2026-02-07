@@ -53,7 +53,7 @@ class AccelInferenceEngine:
         self.lm_head = lm_head
         self.block_size = block_size
         self.num_blocks = num_blocks
-        self.hidden_size = model.config.hidden_size if hasattr(model, "config") else head_dim * num_heads
+        self.hidden_size = model.embed_dim
         self.kv_manager = KVCacheManager(
             num_layers=num_layers,
             num_heads=num_heads,

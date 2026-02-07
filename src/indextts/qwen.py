@@ -84,7 +84,7 @@ class QwenEmotion:
         generated_ids = self.model.generate(
             **model_inputs,  # pyright: ignore
             max_new_tokens=2**15,
-            pad_token_id=self.tokenizer.eos_token_id,
+            pad_token_id=self.model.config.eos_token_id,
         )
         assert isinstance(generated_ids, torch.Tensor)
         output_ids = generated_ids[0][len(model_inputs["input_ids"][0]) :].tolist()
@@ -97,6 +97,7 @@ class QwenEmotion:
             index = 0
 
         content = self.tokenizer.decode(cast(list[int], output_ids[index:]), skip_special_tokens=True)
+        assert isinstance(content, str)
 
         # decode the JSON emotion detections as a dictionary
         try:

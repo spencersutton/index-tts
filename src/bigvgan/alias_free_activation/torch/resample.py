@@ -9,6 +9,7 @@ from torch import Tensor
 from torch.nn import functional as F
 
 from bigvgan.alias_free_activation.torch.filter import LowPassFilter1d, kaiser_sinc_filter1d
+from indextts.util import patch_call
 
 
 class UpSample1d(nn.Module):
@@ -35,6 +36,9 @@ class UpSample1d(nn.Module):
         x = self.ratio * F.conv_transpose1d(x, self.filter.expand(C, -1, -1), stride=self.stride, groups=C)
         return x[..., self.pad_left : -self.pad_right]
 
+    @patch_call(forward)
+    def __call__(self) -> None: ...
+
 
 class DownSample1d(nn.Module):
     ratio: int
@@ -52,3 +56,6 @@ class DownSample1d(nn.Module):
     @override
     def forward(self, x: Tensor) -> Tensor:
         return self.lowpass.__call__(x)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

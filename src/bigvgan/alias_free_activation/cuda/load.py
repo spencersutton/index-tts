@@ -3,9 +3,12 @@
 
 import os
 import subprocess
+from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from pathlib import Path
+from typing import TYPE_CHECKING, cast, type_check_only
 
+from torch import Tensor
 from torch.utils import cpp_extension
 
 """
@@ -15,11 +18,22 @@ Set it to empty stringo avoid recompilation and assign arch flags explicity in e
 """
 os.environ["TORCH_CUDA_ARCH_LIST"] = ""
 
+if TYPE_CHECKING:
 
-def load() -> object:
+    @type_check_only
+    class CudaActivationModule(ABC):
+        @abstractmethod
+        def forward(self, inputs: Tensor, up_ftr: Tensor, down_ftr: Tensor, alpha: Tensor, beta: Tensor) -> Tensor: ...
+
+
+def load() -> CudaActivationModule:
     # Check if cuda 11 is installed for compute capability 8.0
-    cc_flag = []
-    _, bare_metal_major, _ = _get_cuda_bare_metal_version(cpp_extension.CUDA_HOME)
+    cc_flag: list[str] = []
+    cuda_home = cpp_extension.CUDA_HOME
+    if cuda_home is None:
+        raise RuntimeError("CUDA_HOME is not set; cannot build anti_alias_activation CUDA extension")
+
+    _, bare_metal_major, _ = _get_cuda_bare_metal_version(cuda_home)
     if int(bare_metal_major) >= 11:
         cc_flag.extend(("-gencode", "arch=compute_80,code=sm_80"))
 
@@ -29,21 +43,26 @@ def load() -> object:
     _create_build_dir(buildpath)
 
     # Helper function to build the kernels.
-    def _cpp_extention_load_helper(name: str, sources: Sequence[str | Path], extra_cuda_flags: Sequence[str]) -> object:
-        return cpp_extension.load(
-            name=name,
-            sources=sources,
-            build_directory=buildpath,
-            extra_cflags=["-O3"],
-            extra_cuda_cflags=[
-                "-O3",
-                "-gencode",
-                "arch=compute_70,code=sm_70",
-                "--use_fast_math",
-                *extra_cuda_flags,
-                *cc_flag,
-            ],
-            verbose=True,
+    def _cpp_extention_load_helper(
+        name: str, sources: Sequence[str | Path], extra_cuda_flags: Sequence[str]
+    ) -> CudaActivationModule:
+        return cast(
+            CudaActivationModule,
+            cpp_extension.load(
+                name=name,
+                sources=list(sources),
+                build_directory=buildpath,
+                extra_cflags=["-O3"],
+                extra_cuda_cflags=[
+                    "-O3",
+                    "-gencode",
+                    "arch=compute_70,code=sm_70",
+                    "--use_fast_math",
+                    *extra_cuda_flags,
+                    *cc_flag,
+                ],
+                verbose=True,
+            ),
         )
 
     extra_cuda_flags = [

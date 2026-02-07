@@ -6,19 +6,22 @@ from typing import override
 import torch
 import torch.nn as nn
 
+from bigvgan.activations import Snake
 from bigvgan.alias_free_activation.torch.resample import DownSample1d, UpSample1d
+from indextts.util import patch_call
 
 
 class Activation1d(nn.Module):
-    up_ratio: int
+    act: Snake
     down_ratio: int
-    act: nn.Module
-    upsample: UpSample1d
     downsample: DownSample1d
+    # fused: bool
+    up_ratio: int
+    upsample: UpSample1d
 
     def __init__(
         self,
-        activation: nn.Module,
+        activation: Snake,
         up_ratio: int = 2,
         down_ratio: int = 2,
         up_kernel_size: int = 12,
@@ -37,3 +40,6 @@ class Activation1d(nn.Module):
         x = self.upsample(x)
         x = self.act(x)
         return self.downsample(x)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...

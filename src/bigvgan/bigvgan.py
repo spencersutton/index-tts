@@ -22,6 +22,7 @@ from torch.nn.utils import remove_weight_norm, weight_norm
 import bigvgan.activations as activations
 from bigvgan.alias_free_activation.torch.act import Activation1d as TorchActivation1d
 from bigvgan.utils import get_padding, init_weights
+from indextts.util import patch_call
 
 
 @dataclass
@@ -40,9 +41,23 @@ class HParams:
     use_cuda_kernel: bool = False
 
 
-def load_hparams_from_json(path: str) -> HParams:
-    data = Path(path).read_text()
-    return HParams(json.loads(data))
+def load_hparams_from_json(path: Path) -> HParams:
+    text = path.read_text()
+    data = cast(dict[str, object], json.loads(text))
+    return HParams(
+        resblock=cast(str, data["resblock"]),
+        resblock_kernel_sizes=cast(list[int], data["resblock_kernel_sizes"]),
+        resblock_dilation_sizes=cast(list[tuple[int, int, int]], data["resblock_dilation_sizes"]),
+        upsample_rates=cast(list[int], data["upsample_rates"]),
+        upsample_kernel_sizes=cast(list[int], data["upsample_kernel_sizes"]),
+        upsample_initial_channel=cast(int, data["upsample_initial_channel"]),
+        num_mels=cast(int, data["num_mels"]),
+        activation=cast(str, data["activation"]),
+        snake_logscale=cast(bool, data["snake_logscale"]),
+        use_bias_at_final=cast(bool, data.get("use_bias_at_final", True)),
+        use_tanh_at_final=cast(bool, data.get("use_tanh_at_final", True)),
+        use_cuda_kernel=cast(bool, data.get("use_cuda_kernel", False)),
+    )
 
 
 class AMPBlock1(torch.nn.Module):
@@ -57,6 +72,12 @@ class AMPBlock1(torch.nn.Module):
         dilation (tuple): Dilation rates for the convolutions. Each dilation layer has two convolutions. Default is (1, 3, 5).
         activation (str): Activation function type. Should be either 'snake' or 'snakebeta'. Default is None.
     """
+
+    h: HParams
+    convs1: nn.ModuleList[Conv1d]
+    convs2: nn.ModuleList[Conv1d]
+    num_layers: int
+    activations: nn.ModuleList[TorchActivation1d]
 
     def __init__(
         self,
@@ -112,6 +133,7 @@ class AMPBlock1(torch.nn.Module):
                 "activation incorrectly specified. check the config file and look for 'activation'."
             )
 
+    @override
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         acts1, acts2 = self.activations[::2], self.activations[1::2]
         for c1, c2, a1, a2 in zip(self.convs1, self.convs2, acts1, acts2):
@@ -142,6 +164,11 @@ class AMPBlock2(torch.nn.Module):
         dilation (tuple): Dilation rates for the convolutions. Each dilation layer has two convolutions. Default is (1, 3, 5).
         activation (str): Activation function type. Should be either 'snake' or 'snakebeta'. Default is None.
     """
+
+    h: HParams
+    convs: nn.ModuleList[Conv1d]
+    num_layers: int
+    activations: nn.ModuleList[TorchActivation1d]
 
     def __init__(
         self,
@@ -189,12 +216,16 @@ class AMPBlock2(torch.nn.Module):
                 "activation incorrectly specified. check the config file and look for 'activation'."
             )
 
+    @override
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         for c, a in zip(self.convs, self.activations):
             xt = a(x)
             xt = c(xt)
             x = xt + x
         return x
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
     def remove_weight_norm(self) -> None:
         for l in self.convs:  # noqa: E741
@@ -235,6 +266,7 @@ class BigVGAN(
         activation_post: TorchActivation1d
     use_bias_at_final: bool
     use_tanh_at_final: bool
+    h: HParams
 
     def __init__(self, h: HParams, use_cuda_kernel: bool = False) -> None:
         super().__init__()
@@ -326,7 +358,7 @@ class BigVGAN(
         for i in range(self.num_upsamples):
             # Upsampling
             for i_up in range(len(self.ups[i])):
-                x = self.ups[i][i_up](x)
+                x = self.ups[i][i_up].__call__(x)
             # AMP blocks
             xs = None
             for j in range(self.num_kernels):
@@ -395,13 +427,13 @@ class BigVGAN(
         else:
             config_file = Path(
                 hf_hub_download(
-                repo_id=model_id,
-                filename="config.json",
-                revision=revision,
-                cache_dir=cache_dir,
-                force_download=force_download,
-                token=token,
-                local_files_only=local_files_only,
+                    repo_id=model_id,
+                    filename="config.json",
+                    revision=revision,
+                    cache_dir=cache_dir,
+                    force_download=force_download,
+                    token=token,
+                    local_files_only=local_files_only,
                 )
             )
         h = load_hparams_from_json(config_file)
@@ -429,13 +461,13 @@ class BigVGAN(
             print(f"Loading weights from {model_id}")
             model_file = Path(
                 hf_hub_download(
-                repo_id=model_id,
-                filename="bigvgan_generator.pt",
-                revision=revision,
-                cache_dir=cache_dir,
-                force_download=force_download,
-                token=token,
-                local_files_only=local_files_only,
+                    repo_id=model_id,
+                    filename="bigvgan_generator.pt",
+                    revision=revision,
+                    cache_dir=cache_dir,
+                    force_download=force_download,
+                    token=token,
+                    local_files_only=local_files_only,
                 )
             )
 

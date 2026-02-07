@@ -1,10 +1,11 @@
 from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING, Self, override
+from typing import Self, override
 
 import torch
 
 from bigvgan.bigvgan import BigVGAN, HParams
+from indextts.util import patch_call
 
 
 class BigVGANHFModel(StrEnum):
@@ -52,12 +53,11 @@ class BigVGANInference(BigVGAN):
         with torch.inference_mode():
             return super().forward(x)
 
-    if TYPE_CHECKING:
-
-        def __call__(self, x: torch.Tensor) -> torch.Tensor:
-            return self.forward(x)
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
     @classmethod
+    @override
     def _from_pretrained(
         cls,
         *,

@@ -124,12 +124,12 @@ class GPT2InferenceModel(transformers.GPT2PreTrainedModel, transformers.Generati
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
         )
-        assert not isinstance(transformer_outputs, tuple)
         hidden_states = cast(Tensor, transformer_outputs[0])
 
         lm_logits = self.lm_head(hidden_states)
 
         if not return_dict:
+            assert isinstance(transformer_outputs, tuple)
             return (lm_logits, *transformer_outputs[1:])
 
         assert not isinstance(transformer_outputs, tuple)

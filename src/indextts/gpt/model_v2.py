@@ -334,7 +334,7 @@ class UnifiedVoice(nn.Module):
                 max_length=max_length,
                 **hf_generate_kwargs,  # pyright: ignore
             )
-        return output[:, trunc_index:]
+        return output[:, trunc_index:]  # pyright: ignore[reportUnknownVariableType]
 
     def process_speech_condition(self, condition: Tensor) -> Tensor:
         if condition.ndim == 2:

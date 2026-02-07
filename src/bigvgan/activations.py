@@ -9,6 +9,8 @@ import torch
 from torch import Tensor, nn, pow, sin
 from torch.nn import Parameter
 
+from indextts.util import patch_call
+
 
 class Snake(nn.Module):
     """
@@ -74,6 +76,9 @@ class Snake(nn.Module):
         if self.alpha_logscale:
             alpha = torch.exp(alpha)
         return x + (1.0 / (self._parameter() + self.no_div_by_zero)) * pow(sin(x * alpha), 2)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 class SnakeBeta(Snake):

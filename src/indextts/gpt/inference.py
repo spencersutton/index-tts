@@ -42,12 +42,13 @@ class GPT2InferenceModel(transformers.GPT2PreTrainedModel, transformers.Generati
         attention_mask: Tensor | None = None,
         inputs_embeds: Tensor | None = None,
         cache_position: Tensor | None = None,
+        is_first_iteration: bool | None = False,
         **kwargs: Any,  # pyright: ignore[reportExplicitAny, reportAny]
     ) -> dict[str, transformers.Cache | Tensor | bool | None]:
         token_type_ids = cast(Tensor | None, kwargs.get("token_type_ids"))  # usually None
-        position_ids = kwargs.get("position_ids")
-        # only last token for inputs_ids if past is defined in kwargs
-        if past_key_values:
+        position_ids = cast(Tensor | None, kwargs.get("position_ids"))
+
+        if not is_first_iteration:
             input_ids = input_ids[:, -1].unsqueeze(-1)
             if token_type_ids is not None:
                 token_type_ids = token_type_ids[:, -1].unsqueeze(-1)
@@ -56,10 +57,11 @@ class GPT2InferenceModel(transformers.GPT2PreTrainedModel, transformers.Generati
             # create position_ids on the fly for batch generation
             position_ids = attention_mask.long().cumsum(-1) - 1
             position_ids.masked_fill_(attention_mask == 0, 0)
-            if past_key_values:
+            if not is_first_iteration:
                 position_ids = position_ids[:, -1].unsqueeze(-1)
-        else:
-            position_ids = None
+        elif position_ids is not None and not is_first_iteration:
+            # If the caller provided position_ids for the full sequence, slice to the last token.
+            position_ids = position_ids[:, -1].unsqueeze(-1)
 
         return {
             "input_ids": input_ids,

@@ -1,5 +1,5 @@
 # Adapted from https://github.com/lucidrains/naturalspeech2-pytorch/blob/659bec7f7543e7747e809e950cc2f84242fbeec7/naturalspeech2_pytorch/naturalspeech2_pytorch.py#L532
-from typing import cast, override
+from typing import override
 
 import torch
 import torch.nn.functional as F
@@ -57,7 +57,7 @@ class _Attend(nn.Module):
         d - feature dimension
         """
 
-        scale = cast(float, q.shape[-1] ** -0.5)
+        scale = q.shape[-1] ** -0.5
 
         kv_einsum_eq = "b j d" if k.ndim == 3 else "b h j d"
 
@@ -86,7 +86,7 @@ class _RMSNorm(nn.Module):
     def __init__(self, dim: int) -> None:
         super().__init__()
 
-        self.scale = cast(float, dim**0.5)
+        self.scale = dim**0.5
         self.gamma = nn.Parameter(torch.ones(dim))
 
     @override

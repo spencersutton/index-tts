@@ -27,7 +27,7 @@ class _GPT2AccelAttention(nn.Module):
         self.config = config
         self.layer_idx = layer_idx
 
-        max_positions = config.max_position_embeddings
+        max_positions = config.n_positions
         self.register_buffer(
             "bias",
             torch
@@ -38,8 +38,8 @@ class _GPT2AccelAttention(nn.Module):
         )
         self.register_buffer("masked_bias", torch.tensor(-1e4), persistent=False)
 
-        self.embed_dim = config.hidden_size
-        self.num_heads = config.num_attention_heads
+        self.embed_dim = config.n_embd
+        self.num_heads = config.n_head
         self.head_dim = self.embed_dim // self.num_heads
         self.split_size = self.embed_dim
 
@@ -135,18 +135,17 @@ class GPT2AccelModel(GPT2Model):
 
     def __init__(self, config: transformers.GPT2Config) -> None:
         super().__init__(config)
-        self.h = nn.ModuleList([_GPT2AccelBlock(config, layer_idx=i) for i in range(config.num_hidden_layers)])
+        self.h = nn.ModuleList([_GPT2AccelBlock(config, layer_idx=i) for i in range(config.n_layer)])
 
     @override
     def forward(
         self,
         input_ids: Tensor | None = None,
-        past_key_values: tuple[tuple[Tensor]] | transformers.Cache | None = None,
+        past_key_values: transformers.Cache | None = None,
         cache_position: Tensor | None = None,
         attention_mask: Tensor | None = None,
         token_type_ids: Tensor | None = None,
         position_ids: Tensor | None = None,
-        head_mask: Tensor | None = None,
         inputs_embeds: Tensor | None = None,
         encoder_hidden_states: Tensor | None = None,
         encoder_attention_mask: Tensor | None = None,
@@ -175,7 +174,6 @@ class GPT2AccelModel(GPT2Model):
             attention_mask=attention_mask,
             token_type_ids=token_type_ids,
             position_ids=position_ids,
-            head_mask=head_mask,
             inputs_embeds=None,
             encoder_hidden_states=encoder_hidden_states,
             encoder_attention_mask=encoder_attention_mask,

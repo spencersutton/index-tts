@@ -198,7 +198,6 @@ class _RMSNorm(nn.Module):
     def __call__(self) -> None: ...
 
 
-@torch.compile(mode="max-autotune")
 def _apply_rotary_emb(x: Tensor, freqs_cis: Tensor) -> Tensor:
     x_shaped = x.view(*x.shape[:-1], -1, 2)
     freqs_cis = freqs_cis.view(1, x_shaped.size(1), 1, x_shaped.size(3), 2)

@@ -16,7 +16,7 @@
 """Positonal Encoding Module."""
 
 import math
-from typing import TYPE_CHECKING, override
+from typing import override
 
 import torch
 from torch import Tensor, nn
@@ -40,8 +40,7 @@ class RelPositionalEncoding(nn.Module):
         max_len (int): Maximum input length.
     """
 
-    if TYPE_CHECKING:
-        pe: Tensor = torch.empty(0)
+    pe: Tensor
     xscale: float
 
     def __init__(self, dim: int, max_len: int = 5000) -> None:
@@ -55,7 +54,7 @@ class RelPositionalEncoding(nn.Module):
         pe[:, 0::2] = (position * div_term).sin()
         pe[:, 1::2] = (position * div_term).cos()
         pe = pe.unsqueeze(0)
-        self.register_buffer("pe", pe)
+        self.pe = nn.Buffer(pe)
 
     @override
     def forward(self, x: Tensor) -> tuple[Tensor, Tensor]:

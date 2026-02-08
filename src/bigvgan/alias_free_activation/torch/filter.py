@@ -2,7 +2,7 @@
 #   LICENSE is in incl_licenses directory.
 
 import math
-from typing import TYPE_CHECKING, override
+from typing import override
 
 import torch
 import torch.nn as nn
@@ -50,43 +50,33 @@ def kaiser_sinc_filter1d(cutoff: float, half_width: float, kernel_size: int) -> 
 
 
 class LowPassFilter1d(nn.Module):
-    if TYPE_CHECKING:
-        filter: torch.Tensor = torch.empty()
+    filter: torch.Tensor
+    kernel_size: int
+    padding: tuple[int, int]
+    stride: int
 
-    def __init__(
-        self,
-        cutoff: float = 0.5,
-        half_width: float = 0.6,
-        stride: int = 1,
-        padding: bool = True,
-        padding_mode: str = "replicate",
-        kernel_size: int = 12,
-    ) -> None:
+    def __init__(self, cutoff: float = 0.5, half_width: float = 0.6, stride: int = 1, kernel_size: int = 12) -> None:
         """
         kernel_size should be even number for stylegan3 setup, in this implementation, odd number is also possible.
         """
         super().__init__()
+
         if cutoff < -0.0:
             raise ValueError("Minimum cutoff must be larger than zero.")
         if cutoff > 0.5:
             raise ValueError("A cutoff above 0.5 does not make sense.")
-        self.kernel_size: int = kernel_size
-        self.even: bool = kernel_size % 2 == 0
-        self.pad_left: int = kernel_size // 2 - int(self.even)
-        self.pad_right: int = kernel_size // 2
-        self.stride: int = stride
-        self.padding: bool = padding
-        self.padding_mode: str = padding_mode
+        self.kernel_size = kernel_size
+        self.padding = ((kernel_size - 1) // 2, kernel_size // 2)
+        self.stride = stride
         filter = kaiser_sinc_filter1d(cutoff, half_width, kernel_size)
-        self.register_buffer("filter", filter)
+        self.filter = nn.Buffer(filter)
 
     # Input [B, C, T]
     @override
     def forward(self, x: Tensor) -> Tensor:
         _, C, _ = x.shape
 
-        if self.padding:
-            x = F.pad(x, (self.pad_left, self.pad_right), mode=self.padding_mode)
+        x = F.pad(x, self.padding, mode="replicate")
         return F.conv1d(x, self.filter.expand(C, -1, -1), stride=self.stride, groups=C)
 
     @patch_call(forward)

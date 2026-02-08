@@ -62,7 +62,7 @@ class Snake(nn.Module):
     def _parameter(self) -> Tensor:
         alpha = self.alpha.unsqueeze(0).unsqueeze(-1)  # Line up with x to [B, C, T]
         if self.alpha_logscale:
-            alpha = torch.exp(alpha)
+            alpha = alpha.exp()
         return alpha
 
     @override
@@ -74,7 +74,7 @@ class Snake(nn.Module):
         """
         alpha = self.alpha.unsqueeze(0).unsqueeze(-1)  # Line up with x to [B, C, T]
         if self.alpha_logscale:
-            alpha = torch.exp(alpha)
+            alpha = alpha.exp()
         return x + (1.0 / (self._parameter() + self.no_div_by_zero)) * pow(sin(x * alpha), 2)
 
     @patch_call(forward)
@@ -125,5 +125,5 @@ class SnakeBeta(Snake):
     def _parameter(self) -> Tensor:
         beta = self.beta.unsqueeze(0).unsqueeze(-1)
         if self.alpha_logscale:
-            beta = torch.exp(beta)
+            beta = beta.exp()
         return beta

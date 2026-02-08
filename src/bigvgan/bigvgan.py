@@ -374,9 +374,9 @@ class BigVGAN(
         x = self.conv_post(x)
         # Final tanh activation
         if self.use_tanh_at_final:
-            x = torch.tanh(x)
+            x = x.tanh()
         else:
-            x = torch.clamp(x, min=-1.0, max=1.0)  # Bound the output to [-1, 1]
+            x = x.clamp(min=-1.0, max=1.0)  # Bound the output to [-1, 1]
 
         return x
 

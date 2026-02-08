@@ -11,16 +11,18 @@ from indextts.util import patch_call
 
 
 class _GPT2AccelAttention(nn.Module):
-    config: transformers.GPT2Config
-    layer_idx: int | None
-    embed_dim: int
-    num_heads: int
-    head_dim: int
-    split_size: int
-    scale_attn_weights: bool
+    accel_attn: Attention
+    bias: Tensor
     c_attn: transformers.Conv1D
     c_proj: transformers.Conv1D
-    accel_attn: Attention
+    config: transformers.GPT2Config
+    embed_dim: int
+    head_dim: int
+    layer_idx: int | None
+    masked_bias: Tensor
+    num_heads: int
+    scale_attn_weights: bool
+    split_size: int
 
     def __init__(self, config: transformers.GPT2Config, layer_idx: int | None = None) -> None:
         super().__init__()
@@ -28,15 +30,14 @@ class _GPT2AccelAttention(nn.Module):
         self.layer_idx = layer_idx
 
         max_positions = config.n_positions
-        self.register_buffer(
-            "bias",
+        self.bias = nn.Buffer(
             torch
             .ones((max_positions, max_positions), dtype=torch.bool)
             .tril()
             .view(1, 1, max_positions, max_positions),
             persistent=False,
         )
-        self.register_buffer("masked_bias", torch.tensor(-1e4), persistent=False)
+        self.masked_bias = nn.Buffer(torch.tensor(-1e4), persistent=False)
 
         self.embed_dim = config.n_embd
         self.num_heads = config.n_head

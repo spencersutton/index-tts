@@ -16,32 +16,30 @@
 
 """Subsampling layer definition."""
 
-from typing import override
+from typing import Final, override
 
 from torch import Tensor, nn
 
 from indextts.gpt.conformer.embedding import RelPositionalEncoding
 from indextts.util import patch_call
 
+DIM: Final = 512
+INPUT_DIM: Final = 1024
+
 
 class Conv2dSubsampling2(nn.Module):
-    """Convolutional 2D subsampling (to 1/2 length).
-
-    Args:
-        input_dim (int): Input dimension.
-        output_dim (int): Output dimension.
-    """
+    """Convolutional 2D subsampling (to 1/2 length)."""
 
     conv: nn.Sequential
     out: nn.Sequential
     pos_enc: RelPositionalEncoding
 
-    def __init__(self, input_dim: int, output_dim: int) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
-        self.conv = nn.Sequential(nn.Conv2d(1, output_dim, kernel_size=3, stride=2), nn.ReLU())
-        self.out = nn.Sequential(nn.Linear(output_dim * ((input_dim - 1) // 2), output_dim))
-        self.pos_enc = RelPositionalEncoding(output_dim)
+        self.conv = nn.Sequential(nn.Conv2d(1, DIM, kernel_size=3, stride=2), nn.ReLU())
+        self.out = nn.Sequential(nn.Linear(DIM * ((INPUT_DIM - 1) // 2), DIM))
+        self.pos_enc = RelPositionalEncoding()
 
     @override
     def forward(self, x: Tensor, x_mask: Tensor) -> tuple[Tensor, Tensor, Tensor]:

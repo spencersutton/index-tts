@@ -24,13 +24,14 @@ from torch import Tensor, nn
 
 from indextts.util import patch_call
 
+DIM = 512
+
 
 class RelPositionMultiHeadedAttention(nn.Module):
     """Multi-Head Attention layer with relative position encoding.
     Paper: https://arxiv.org/abs/1901.02860
     Args:
         n_head (int): The number of heads.
-        n_feat (int): The number of features.
     """
 
     d_k: int
@@ -43,20 +44,20 @@ class RelPositionMultiHeadedAttention(nn.Module):
     pos_bias_u: nn.Parameter
     pos_bias_v: nn.Parameter
 
-    def __init__(self, n_head: int, n_feat: int) -> None:
+    def __init__(self, n_head: int) -> None:
         super().__init__()
 
-        assert n_feat % n_head == 0
+        assert DIM % n_head == 0
         # We assume d_v always equals d_k
-        self.d_k = n_feat // n_head
+        self.d_k = DIM // n_head
         self.h = n_head
-        self.linear_q = nn.Linear(n_feat, n_feat)
-        self.linear_k = nn.Linear(n_feat, n_feat)
-        self.linear_v = nn.Linear(n_feat, n_feat)
-        self.linear_out = nn.Linear(n_feat, n_feat)
+        self.linear_q = nn.Linear(DIM, DIM)
+        self.linear_k = nn.Linear(DIM, DIM)
+        self.linear_v = nn.Linear(DIM, DIM)
+        self.linear_out = nn.Linear(DIM, DIM)
 
         # linear transformation for positional encoding
-        self.linear_pos = nn.Linear(n_feat, n_feat, bias=False)
+        self.linear_pos = nn.Linear(DIM, DIM, bias=False)
         # these two learnable bias are used in matrix c and matrix d
         # as described in https://arxiv.org/abs/1901.02860 Section 3.3
         self.pos_bias_u = nn.Parameter(torch.zeros(self.h, self.d_k))

@@ -20,7 +20,7 @@ mel: Final = AF.melscale_fbanks(
     mel_scale="slaney",
 ).mT
 
-window: Final = torch.hann_window(1024)
+window: Final = torch.hann_window(N_FFT)
 padding: Final = (N_FFT - (N_FFT // 4)) // 2
 
 

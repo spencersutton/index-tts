@@ -23,12 +23,13 @@ from torch import Tensor, nn
 
 from indextts.util import patch_call
 
+DIM = 512
+MAX_LEN = 5000
+XSCALE = math.sqrt(DIM)
+
 
 class RelPositionalEncoding(nn.Module):
     """Positional encoding.
-
-    :param int d_model: embedding dim
-    :param int max_len: maximum input length
 
     PE(pos, 2i)   = sin(pos/(10000^(2i/dmodel)))
     PE(pos, 2i+1) = cos(pos/(10000^(2i/dmodel)))
@@ -41,16 +42,14 @@ class RelPositionalEncoding(nn.Module):
     """
 
     pe: Tensor
-    xscale: float
 
-    def __init__(self, dim: int, max_len: int = 5000) -> None:
+    def __init__(self) -> None:
         """Construct an PositionalEncoding object."""
         super().__init__()
-        self.xscale = math.sqrt(dim)
 
-        pe = torch.zeros(max_len, dim)
-        position = torch.arange(0, max_len).unsqueeze(1)
-        div_term = (torch.arange(0, dim, 2) * -(math.log(10000.0) / dim)).exp()
+        pe = torch.zeros(MAX_LEN, DIM)
+        position = torch.arange(0, MAX_LEN).unsqueeze(1)
+        div_term = (torch.arange(0, DIM, 2) * -(math.log(10000.0) / DIM)).exp()
         pe[:, 0::2] = (position * div_term).sin()
         pe[:, 1::2] = (position * div_term).cos()
         pe = pe.unsqueeze(0)
@@ -65,7 +64,7 @@ class RelPositionalEncoding(nn.Module):
             Tensor: Encoded tensor (batch, time, `*`).
             Tensor: Positional embedding tensor (1, time, `*`).
         """
-        x *= self.xscale
+        x *= XSCALE
         return x, self.pe[:, : x.size(1)]
 
     @patch_call(forward)

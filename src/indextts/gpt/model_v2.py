@@ -5,7 +5,6 @@ import torch.nn.functional as F
 import transformers
 from torch import Tensor, nn
 
-from indextts.config import UnifiedVoiceConfig
 from indextts.gpt.conformer_encoder import ConformerEncoder
 from indextts.gpt.inference import GPT2InferenceModel
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
@@ -14,6 +13,28 @@ from indextts.util import patch_call, unwrap
 
 if TYPE_CHECKING:
     from indextts.accel import AccelInferenceEngine
+
+DIM: Final = 512
+N_LATENT: Final = 32
+VOICE_DIM: Final = 1280
+
+MAX_MEL_TOKENS: Final = 1815
+START_MEL_TOKEN: Final = 8192
+STOP_MEL_TOKEN: Final = START_MEL_TOKEN + 1
+NUMBER_MEL_CODES: Final = STOP_MEL_TOKEN + 1
+
+MAX_TEXT_TOKENS: Final = 600
+START_TEXT_TOKEN: Final = 0
+STOP_TEXT_TOKEN: Final = START_TEXT_TOKEN + 1
+NUMBER_TEXT_TOKENS: Final = 12000
+
+MAX_MEL_SEQ_LEN: Final = MAX_MEL_TOKENS + 3
+MAX_TEXT_SEQ_LEN: Final = MAX_TEXT_TOKENS + 2
+SEQ_LENGTH: Final = MAX_MEL_SEQ_LEN + MAX_TEXT_SEQ_LEN
+HEADS: Final = 20
+"""Number of attention heads in the GPT transformer."""
+LAYERS: Final = 24
+"""Number of transformer layers in the GPT stack."""
 
 
 class UnifiedVoice(nn.Module):
@@ -50,14 +71,7 @@ class UnifiedVoice(nn.Module):
     """Learned positional embeddings for the mel-code segment."""
     text_pos_embedding: LearnedPositionEmbeddings
     """Learned positional embeddings for the text segment."""
-    heads: Final = 20
-    """Number of attention heads in the GPT transformer."""
-    layers: Final = 24
-    """Number of transformer layers in the GPT stack."""
-    max_mel_tokens: int
-    """Maximum mel-code tokens supported (used to size positional embeddings / generation limits)."""
-    max_text_tokens: int
-    """Maximum text tokens supported (used to size positional embeddings / padding logic)."""
+
     cond_mask_pad: nn.ConstantPad1d
     """Pads the conditioning attention mask to account for inserted conditioning latents."""
     conditioning_encoder: ConformerEncoder
@@ -70,70 +84,59 @@ class UnifiedVoice(nn.Module):
     """Perceiver resampler that reduces emotion conditioning to a single latent token."""
     perceiver_encoder: PerceiverResampler
     """Perceiver resampler that reduces speech conditioning to `condition_num_latent` latent tokens."""
-    cfg: UnifiedVoiceConfig
-    """Model configuration (token ids, vocab sizes, architecture hyperparameters, limits)."""
-    dim: Final = 1280
-    """Model hidden dimension (GPT embedding size)."""
     use_accel: bool
     """Whether to use the acceleration engine (if available)."""
 
-    def __init__(
-        self, cfg: UnifiedVoiceConfig, condition_num_latent: int = 32, use_accel: bool = False, dim: int = 1280
-    ) -> None:
+    def __init__(self, use_accel: bool = False) -> None:
         """
         Args:
             layers: Number of layers in transformer stack.
-            heads: Number of transformer heads. Must be divisible by 1280. Recommend 1280//64
+            heads: Number of transformer heads. Must be divisible by VOICE_DIM. Recommend VOICE_DIM//64
             max_text_tokens: Maximum number of text tokens that will be encountered by model.
             max_mel_tokens: Maximum number of MEL tokens that will be encountered by model.
         """
         super().__init__()
-        self.cfg = cfg
-        self.max_mel_tokens = cfg.max_mel_tokens
-        self.max_text_tokens = cfg.max_text_tokens
-        self.cond_mask_pad = nn.ConstantPad1d((condition_num_latent, 0), True)
+        self.cond_mask_pad = nn.ConstantPad1d((N_LATENT, 0), True)
         self.emo_cond_mask_pad = nn.ConstantPad1d((1, 0), True)
-        self.conditioning_encoder = ConformerEncoder(dim=512, linear_units=2048, attention_heads=8, num_blocks=6)
-        self.perceiver_encoder = PerceiverResampler(dim, heads=8, num_latents=condition_num_latent)
+        self.conditioning_encoder = ConformerEncoder(linear_units=2048, attention_heads=8, num_blocks=6)
+        self.perceiver_encoder = PerceiverResampler(VOICE_DIM, heads=8, num_latents=N_LATENT)
 
-        self.emo_conditioning_encoder = ConformerEncoder(dim=512, linear_units=1024, attention_heads=4, num_blocks=4)
+        self.emo_conditioning_encoder = ConformerEncoder(linear_units=1024, attention_heads=4, num_blocks=4)
         self.emo_perceiver_encoder = PerceiverResampler(1024, heads=4, num_latents=1)
 
-        self.emo_layer = nn.Linear(dim, dim)
-        self.emovec_layer = nn.Linear(1024, dim)
+        self.emo_layer = nn.Linear(VOICE_DIM, VOICE_DIM)
+        self.emovec_layer = nn.Linear(1024, VOICE_DIM)
 
-        self.text_embedding = nn.Embedding(cfg.number_text_tokens + 1, dim)
-        self.mel_embedding = nn.Embedding(cfg.number_mel_codes, dim)
-        max_mel_seq_len = self.max_mel_tokens + 3
-        max_text_seq_len = self.max_text_tokens + 2
+        self.text_embedding = nn.Embedding(NUMBER_TEXT_TOKENS + 1, VOICE_DIM)
+        self.mel_embedding = nn.Embedding(NUMBER_MEL_CODES, VOICE_DIM)
 
         self.gpt = transformers.GPT2Model(
             transformers.GPT2Config(
                 vocab_size=256,  # Unused.
-                n_positions=max_mel_seq_len + max_text_seq_len,
-                n_ctx=max_mel_seq_len + max_text_seq_len,
-                n_embd=dim,
-                n_layer=self.layers,
-                n_head=self.heads,
+                n_positions=SEQ_LENGTH,
+                n_ctx=SEQ_LENGTH,
+                n_embd=VOICE_DIM,
+                n_layer=LAYERS,
+                n_head=HEADS,
             )
         )
         # Override the built in positional embeddings
         del self.gpt.wpe
 
         def wpe_override(x: Tensor) -> Tensor:
-            return torch.zeros((x.shape[0], x.shape[1], dim), device=x.device)
+            return torch.zeros((x.shape[0], x.shape[1], VOICE_DIM), device=x.device)
 
         self.gpt.wpe = cast(nn.Embedding, wpe_override)
         # Built-in token embeddings are unused.
         del self.gpt.wte
-        self.mel_pos_embedding = LearnedPositionEmbeddings(max_mel_seq_len)
-        self.text_pos_embedding = LearnedPositionEmbeddings(max_text_seq_len)
+        self.mel_pos_embedding = LearnedPositionEmbeddings(MAX_MEL_SEQ_LEN)
+        self.text_pos_embedding = LearnedPositionEmbeddings(MAX_TEXT_SEQ_LEN)
 
-        self.final_norm = nn.LayerNorm(dim)
-        self.text_head = nn.Linear(dim, cfg.number_text_tokens + 1)
-        self.mel_head = nn.Linear(dim, cfg.number_mel_codes)
+        self.final_norm = nn.LayerNorm(VOICE_DIM)
+        self.text_head = nn.Linear(VOICE_DIM, NUMBER_TEXT_TOKENS + 1)
+        self.mel_head = nn.Linear(VOICE_DIM, NUMBER_MEL_CODES)
 
-        self.speed_emb = nn.Embedding(2, dim)
+        self.speed_emb = nn.Embedding(2, VOICE_DIM)
         self.speed_emb.weight.data.normal_(std=0.0)
 
         # Initialize the embeddings per the GPT-2 scheme
@@ -145,14 +148,13 @@ class UnifiedVoice(nn.Module):
         self.accel_engine = None  # Will be initialized in post_init_gpt2_config
 
     def post_init_gpt2_config(self, half: bool) -> None:
-        seq_length = self.max_mel_tokens + self.max_text_tokens + 2
         gpt_config = transformers.GPT2Config(
-            vocab_size=self.cfg.number_mel_codes,
-            n_positions=seq_length,
-            n_ctx=seq_length,
-            n_embd=self.dim,
-            n_layer=self.layers,
-            n_head=self.heads,
+            vocab_size=NUMBER_MEL_CODES,
+            n_positions=SEQ_LENGTH,
+            n_ctx=SEQ_LENGTH,
+            n_embd=VOICE_DIM,
+            n_layer=LAYERS,
+            n_head=HEADS,
         )
 
         if self.use_accel and torch.cuda.is_available():
@@ -177,9 +179,9 @@ class UnifiedVoice(nn.Module):
             self.accel_engine = AccelInferenceEngine(
                 model=accel_gpt.cuda().eval(),
                 lm_head=lm_head_with_norm,
-                num_layers=self.layers,
-                num_heads=self.heads,
-                head_dim=self.dim // self.heads,
+                num_layers=LAYERS,
+                num_heads=HEADS,
+                head_dim=VOICE_DIM // HEADS,
                 block_size=256,
                 num_blocks=16,  # Reduce to save memory (16*256 = 4096 tokens capacity)
             )
@@ -202,11 +204,11 @@ class UnifiedVoice(nn.Module):
         If return_latent is specified, loss & logits are not computed or returned. Only the predicted latents are returned.
         """
 
-        text_inputs = F.pad(text_inputs, (1, 0), value=self.cfg.start_text_token)
-        text_inputs = F.pad(text_inputs, (0, 1), value=self.cfg.stop_text_token)
+        text_inputs = F.pad(text_inputs, (1, 0), value=START_TEXT_TOKEN)
+        text_inputs = F.pad(text_inputs, (0, 1), value=STOP_TEXT_TOKEN)
 
-        mel_codes = F.pad(mel_codes, (1, 0), value=self.cfg.start_mel_token)
-        mel_codes = F.pad(mel_codes, (0, 1), value=self.cfg.stop_mel_token)
+        mel_codes = F.pad(mel_codes, (1, 0), value=START_MEL_TOKEN)
+        mel_codes = F.pad(mel_codes, (0, 1), value=STOP_MEL_TOKEN)
 
         mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding(mel_codes.shape[1])
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding(text_inputs.shape[1])
@@ -243,11 +245,11 @@ class UnifiedVoice(nn.Module):
         attention_masks: list[Tensor] = []
         target_len = latent.shape[1] + inputs.shape[1] + 2
         for i, row in enumerate(inputs):
-            valid_mask = (row != self.cfg.stop_text_token) & (row != self.cfg.start_text_token)
+            valid_mask = (row != STOP_TEXT_TOKEN) & (row != START_TEXT_TOKEN)
 
             text_input = row[valid_mask]
-            text_input = F.pad(text_input, (1, 0), value=self.cfg.start_text_token)
-            text_input = F.pad(text_input, (0, 1), value=self.cfg.stop_text_token)
+            text_input = F.pad(text_input, (1, 0), value=START_TEXT_TOKEN)
+            text_input = F.pad(text_input, (0, 1), value=STOP_TEXT_TOKEN)
             text_input_pos = torch.arange(text_input.size(-1), device=inputs.device)
 
             text_emb = self.text_embedding(text_input) + self.text_pos_embedding.emb(text_input_pos)
@@ -271,7 +273,7 @@ class UnifiedVoice(nn.Module):
         mel_embedding_batch = torch.stack(batched_mel_emb)
         attention_mask = torch.stack(attention_masks)
         fake_inputs = inputs.new_ones((mel_embedding_batch.shape[0], mel_embedding_batch.shape[1] + 1))
-        fake_inputs[:, -1] = self.cfg.start_mel_token
+        fake_inputs[:, -1] = START_MEL_TOKEN
         return fake_inputs, mel_embedding_batch, attention_mask
 
     def combine_latents(self, speech_conditioning_latent: Tensor, emo_vec: Tensor, text_inputs: Tensor) -> Tensor:
@@ -291,7 +293,7 @@ class UnifiedVoice(nn.Module):
         text_inputs: Tensor,
         *,
         emo_vec: Tensor,
-        max_generate_length: int | None = None,
+        max_generate_length: int,
         **hf_generate_kwargs: object,
     ) -> Tensor:
         """
@@ -306,11 +308,7 @@ class UnifiedVoice(nn.Module):
         inputs_ids, inputs_embeds, attention_mask = self.prepare_gpt_inputs(conds_latent, text_inputs)
         self.inference_model.cached_mel_emb = inputs_embeds
         trunc_index = inputs_ids.shape[1]
-        max_length = (
-            (trunc_index + self.max_mel_tokens - 1)
-            if max_generate_length is None
-            else trunc_index + max_generate_length
-        )
+        max_length = trunc_index + max_generate_length
 
         # Use accel engine if available (single sequence only)
         if self.accel_engine is not None:
@@ -319,7 +317,7 @@ class UnifiedVoice(nn.Module):
                 max_new_tokens=max_length - trunc_index,
                 attention_mask=attention_mask,
                 temperature=cast(float, hf_generate_kwargs.get("temperature", 1)),
-                stop_tokens=[self.cfg.stop_mel_token],
+                stop_tokens=[STOP_MEL_TOKEN],
                 tts_embeddings=inputs_embeds,  # [pad][cond][text] embeddings (87 tokens, NO start_mel_token)
                 tts_mel_embedding=self.inference_model.embeddings,  # mel_embedding layer
                 tts_text_pos_embedding=self.inference_model.text_pos_embedding,  # text_pos_embedding layer
@@ -327,9 +325,9 @@ class UnifiedVoice(nn.Module):
         else:
             output = self.inference_model.generate(
                 inputs_ids,
-                bos_token_id=self.cfg.start_mel_token,
-                pad_token_id=self.cfg.stop_mel_token,
-                eos_token_id=self.cfg.stop_mel_token,
+                bos_token_id=START_MEL_TOKEN,
+                pad_token_id=STOP_MEL_TOKEN,
+                eos_token_id=STOP_MEL_TOKEN,
                 attention_mask=attention_mask,
                 max_length=max_length,
                 **hf_generate_kwargs,  # pyright: ignore

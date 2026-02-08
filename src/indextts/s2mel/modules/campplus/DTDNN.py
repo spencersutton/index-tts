@@ -9,6 +9,8 @@ from torch import Tensor, nn
 import indextts.s2mel.modules.campplus.layers as layers
 from indextts.util import patch_call
 
+STYLE_DIM = 192
+
 
 class _FCM(nn.Module):
     in_planes: int
@@ -70,7 +72,7 @@ class CAMPPlus(nn.Module):
         self.xvector.add_module("out_nonlinear", layers.get_nonlinear(channels))
 
         self.xvector.add_module("stats", layers.StatsPool())
-        self.xvector.add_module("dense", layers.DenseLayer(channels * 2, 192))
+        self.xvector.add_module("dense", layers.DenseLayer(channels * 2, STYLE_DIM))
 
         for m in self.modules():
             if isinstance(m, (nn.Conv1d, nn.Linear)):

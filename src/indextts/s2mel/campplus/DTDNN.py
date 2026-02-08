@@ -6,18 +6,20 @@ from typing import override
 import torch.nn.functional as F
 from torch import Tensor, nn
 
-import indextts.s2mel.modules.campplus.layers as layers
+import indextts.s2mel.campplus.layers as layers
 from indextts.util import patch_call
+
+STYLE_DIM = 192
 
 
 class _FCM(nn.Module):
-    in_planes: int
-    conv1: nn.Conv2d
     bn1: nn.BatchNorm2d
+    bn2: nn.BatchNorm2d
+    conv1: nn.Conv2d
+    conv2: nn.Conv2d
+    in_planes: int
     layer1: nn.Sequential
     layer2: nn.Sequential
-    conv2: nn.Conv2d
-    bn2: nn.BatchNorm2d
     out_channels: int
 
     def __init__(self, m_channels: int = 32) -> None:
@@ -70,7 +72,7 @@ class CAMPPlus(nn.Module):
         self.xvector.add_module("out_nonlinear", layers.get_nonlinear(channels))
 
         self.xvector.add_module("stats", layers.StatsPool())
-        self.xvector.add_module("dense", layers.DenseLayer(channels * 2, 192))
+        self.xvector.add_module("dense", layers.DenseLayer(channels * 2, STYLE_DIM))
 
         for m in self.modules():
             if isinstance(m, (nn.Conv1d, nn.Linear)):

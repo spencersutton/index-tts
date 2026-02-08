@@ -9,11 +9,10 @@ import transformers
 from torch import Tensor
 
 from bigvgan import BigVGANInference as BigVGAN
-from indextts.config import UnifiedVoiceConfig
 from indextts.gpt.model_v2 import UnifiedVoice
-from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
-from indextts.s2mel.modules.flow_matching import CFM
-from indextts.s2mel.modules.length_regulator import InterpolateRegulator
+from indextts.s2mel.campplus.DTDNN import CAMPPlus
+from indextts.s2mel.flow_matching import CFM
+from indextts.s2mel.length_regulator import InterpolateRegulator
 from indextts.util import Timer
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.repcodec_model import RepCodec
@@ -28,7 +27,7 @@ def extract_features() -> transformers.SeamlessM4TFeatureExtractor:
     return model
 
 
-def gpt(device: torch.device, cfg: UnifiedVoiceConfig, use_accel: bool, use_fp16: bool) -> UnifiedVoice:
+def gpt(device: torch.device, use_accel: bool, use_fp16: bool) -> UnifiedVoice:
     with Timer() as t:
         path = CHECKPOINT_DIR / "gpt.safetensors"
         if not path.exists():
@@ -39,7 +38,7 @@ def gpt(device: torch.device, cfg: UnifiedVoiceConfig, use_accel: bool, use_fp16
         data = safetensors.torch.load_file(path, device=str(device))
 
         with torch.device("meta"):
-            model = UnifiedVoice(cfg=cfg, use_accel=use_accel)
+            model = UnifiedVoice(use_accel=use_accel)
         model.load_state_dict(data, assign=True)
 
         if use_fp16:
@@ -115,7 +114,7 @@ def _get_s2mel_checkpoint() -> dict[str, dict[str, dict[str, Tensor]]]:
     return cast(dict[str, dict[str, dict[str, Tensor]]], torch.load(path, map_location="cpu", weights_only=False))
 
 
-def cfm(device: torch.device, dim: int = 512, in_channels: int = 80) -> CFM:
+def cfm(device: torch.device) -> CFM:
     with Timer() as t:
         path = CHECKPOINT_DIR / "cfm.safetensors"
         if not path.exists():
@@ -130,14 +129,14 @@ def cfm(device: torch.device, dim: int = 512, in_channels: int = 80) -> CFM:
         else:
             data = safetensors.torch.load_file(path, device=str(device))
         with torch.device("meta"):
-            model = CFM(dim=dim, in_channels=in_channels)
+            model = CFM()
         model.load_state_dict(data, assign=True)
 
     print(f">> CFM weights restored in {t:.2f} seconds from: {path}")
     return model.eval()
 
 
-def length_regulator(device: torch.device, dim: int = 512) -> InterpolateRegulator:
+def length_regulator(device: torch.device) -> InterpolateRegulator:
     with Timer() as t:
         path = CHECKPOINT_DIR / "length_regulator.safetensors"
         if not path.exists():
@@ -148,7 +147,7 @@ def length_regulator(device: torch.device, dim: int = 512) -> InterpolateRegulat
             safetensors.torch.save_file(data, path)
         data = safetensors.torch.load_file(path, device=str(device))
         with torch.device("meta"):
-            model = InterpolateRegulator(dim)
+            model = InterpolateRegulator()
         model.load_state_dict(data, assign=True)
 
     print(f">> Length Regulator weights restored in {t:.2f} seconds from: {path}")

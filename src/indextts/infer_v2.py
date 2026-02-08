@@ -17,20 +17,23 @@ from torchcodec.encoders import AudioEncoder
 
 import indextts.load as load
 from bigvgan.inference import BigVGANInference
-from indextts.config import IndexTTSConfig
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.qwen import QwenEmotion
-from indextts.s2mel.modules import CFM, CAMPPlus, InterpolateRegulator, mel_spectrogram
-from indextts.s2mel.modules.audio import N_MELS, SAMPLING_RATE
+from indextts.s2mel import CFM, CAMPPlus, InterpolateRegulator, mel_spectrogram
+from indextts.s2mel.audio import N_MELS, SAMPLING_RATE
 from indextts.util import Timer
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.repcodec_model import RepCodec
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
-MAX_AUDIO_LENGTH_SECONDS = 15
 EMO_NUM = [3, 17, 2, 8, 4, 5, 10, 24]
+MAX_AUDIO_LENGTH_SECONDS = 15
 WIDEBAND_SR = 16000
+
+MAX_MEL_TOKENS: Final = 1815
+START_MEL_TOKEN: Final = 8192
+STOP_MEL_TOKEN: Final = START_MEL_TOKEN + 1
 
 
 def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
@@ -70,13 +73,11 @@ def _load_and_cut_audio(path: Path, sample_rate: int | None = None) -> tuple[Ten
 
 
 class IndexTTS2:
-    cfg: Final = IndexTTSConfig()
     dtype: torch.dtype
     device: torch.device
     use_fp16: bool
     use_cuda_kernel: bool
     use_accel: bool
-    stop_mel_token: int
 
     emo_matrix: tuple[Tensor, ...]
     spk_matrix: tuple[Tensor, ...]
@@ -131,7 +132,7 @@ class IndexTTS2:
         self.dtype = torch.float16 if self.use_fp16 else torch.get_default_dtype()
         self.use_accel = use_accel
 
-        self.gpt = load.gpt(self.device, self.cfg.gpt, self.use_accel, self.use_fp16)
+        self.gpt = load.gpt(self.device, self.use_accel, self.use_fp16)
         self.semantic_model = load.semantic_model(self.device)
         self.semantic_mean, self.semantic_std = load.semantic_stats(self.device)
         self.semantic_codec = load.semantic_codec(self.device)
@@ -140,8 +141,6 @@ class IndexTTS2:
         self.tokenizer = load.tokenizer(self.normalizer)
         self.cfm = load.cfm(self.device)
         self.length_regulator = load.length_regulator(self.device)
-
-        self.stop_mel_token = self.cfg.gpt.stop_mel_token
 
         self.gpt.post_init_gpt2_config(half=self.use_fp16)
 
@@ -188,7 +187,6 @@ class IndexTTS2:
         use_random: bool = False,
         do_sample: bool = True,
         length_penalty: float = 0.0,
-        max_mel_tokens: int = 1500,
         num_beams: int = 3,
         repetition_penalty: float = 10.0,
         temperature: float = 0.8,
@@ -239,7 +237,6 @@ class IndexTTS2:
             more_segment_before,
             do_sample,
             length_penalty,
-            max_mel_tokens,
             num_beams,
             repetition_penalty,
             temperature,
@@ -269,7 +266,6 @@ class IndexTTS2:
         quick_streaming_tokens: int = 0,
         do_sample: bool = True,
         length_penalty: float = 0.0,
-        max_mel_tokens: int = 1500,
         num_beams: int = 3,
         repetition_penalty: float = 10.0,
         temperature: float = 0.8,
@@ -334,21 +330,19 @@ class IndexTTS2:
                         length_penalty=length_penalty,
                         num_beams=num_beams,
                         repetition_penalty=repetition_penalty,
-                        max_generate_length=max_mel_tokens,
+                        max_generate_length=MAX_MEL_TOKENS,
                     )
 
-                if not has_warned and (codes[:, -1] != self.stop_mel_token).any():
+                if not has_warned and (codes[:, -1] != STOP_MEL_TOKEN).any():
                     warnings.warn(
-                        f"WARN: generation stopped due to exceeding `max_mel_tokens` ({max_mel_tokens}). "
+                        f"WARN: generation stopped due to exceeding `MAX_MEL_TOKENS` ({MAX_MEL_TOKENS}). "
                         + f"Input text tokens: {text_tokens.shape[1]}. "
-                        + f"Consider reducing `max_text_tokens_per_segment`({max_text_tokens_per_segment}) or increasing `max_mel_tokens`.",
+                        + f"Consider reducing `max_text_tokens_per_segment`({max_text_tokens_per_segment}) or increasing `MAX_MEL_TOKENS`.",
                         category=RuntimeWarning,
                     )
                     has_warned = True
 
-                code_lens = [
-                    x.tolist().index(self.stop_mel_token) if self.stop_mel_token in x else len(x) for x in codes
-                ]
+                code_lens = [x.tolist().index(STOP_MEL_TOKEN) if STOP_MEL_TOKEN in x else len(x) for x in codes]
                 codes = codes[:, : max(code_lens)]
 
                 with s2mel_time:
@@ -450,7 +444,7 @@ class IndexTTS2:
         mel = mel_spectrogram(audio_22k)
         feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(self.device), num_mel_bins=N_MELS)
         feat -= feat.mean(dim=0, keepdim=True)  # feat2: Another filter energy group feature [922, 80]
-        style = self.campplus_model(feat.unsqueeze(0))  # Global style of the reference audio [1, 192]
+        style = self.campplus_model(feat.unsqueeze(0))  # Global style of the reference audio [1, STYLE_DIM]
 
         inputs = cast(
             Mapping[str, Tensor],

@@ -12,8 +12,8 @@ def _clamp(value: float, min_val: float, max_val: float) -> float:
     return max(min(value, max_val), min_val)
 
 
-prompt: Final = "文本情感分类"
-cn_key_to_en: Final[Mapping[str, str]] = {
+PROMPT: Final = "文本情感分类"
+CN_KEY_TO_EN: Final[Mapping[str, str]] = {
     "高兴": "happy",
     "愤怒": "angry",
     "悲伤": "sad",
@@ -27,8 +27,8 @@ cn_key_to_en: Final[Mapping[str, str]] = {
     "惊讶": "surprised",
     "自然": "calm",
 }
-desired_vector_order: Final[Sequence[str]] = ["高兴", "愤怒", "悲伤", "恐惧", "反感", "低落", "惊讶", "自然"]
-melancholic_words: Final[Collection[str]] = {
+DESIRED_VECTOR_ORDER: Final[Sequence[str]] = ["高兴", "愤怒", "悲伤", "恐惧", "反感", "低落", "惊讶", "自然"]
+MELANCHOLIC_WORDS: Final[Collection[str]] = {
     # emotion text phrases that will force QwenEmotion's "悲伤" (sad) detection
     # to become "低落" (melancholic) instead, to fix limitations mentioned above.
     "低落",
@@ -38,8 +38,8 @@ melancholic_words: Final[Collection[str]] = {
     "depressed",
     "gloomy",
 }
-max_score: Final = 1.2
-min_score: Final = 0.0
+MAX_SCORE: Final = 1.2
+MIN_SCORE: Final = 0.0
 
 
 class QwenEmotion:
@@ -61,8 +61,8 @@ class QwenEmotion:
         # - clamp all values to the allowed min/max range
         # - use 0.0 for any values that were missing in `content`
         emotion_dict = {
-            cn_key_to_en[cn_key]: _clamp(content.get(cn_key, 0.0), min_score, max_score)
-            for cn_key in desired_vector_order
+            CN_KEY_TO_EN[cn_key]: _clamp(content.get(cn_key, 0.0), MIN_SCORE, MAX_SCORE)
+            for cn_key in DESIRED_VECTOR_ORDER
         }
 
         # default to a calm/neutral voice if all emotion vectors were empty
@@ -73,7 +73,7 @@ class QwenEmotion:
         return emotion_dict
 
     def inference(self, text_input: str) -> dict[str, float]:
-        messages = [{"role": "system", "content": f"{prompt}"}, {"role": "user", "content": f"{text_input}"}]
+        messages = [{"role": "system", "content": f"{PROMPT}"}, {"role": "user", "content": f"{text_input}"}]
         text = self.tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True, enable_thinking=False
         )
@@ -110,7 +110,7 @@ class QwenEmotion:
         # if we detect any of the IndexTTS "melancholic" words, we swap those vectors
         # to encode the "sad" emotion as "melancholic" (instead of sadness).
         text_input_lower = text_input.lower()
-        if any(word in text_input_lower for word in melancholic_words):
+        if any(word in text_input_lower for word in MELANCHOLIC_WORDS):
             content["悲伤"], content["低落"] = content.get("低落", 0.0), content.get("悲伤", 0.0)
 
         return self.convert(content)

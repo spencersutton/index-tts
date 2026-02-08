@@ -3,8 +3,8 @@
 
 from typing import override
 
-import torch
 import torch.nn as nn
+from torch import Tensor
 
 from bigvgan.activations import Snake
 from bigvgan.alias_free_activation.torch.resample import DownSample1d, UpSample1d
@@ -15,7 +15,6 @@ class Activation1d(nn.Module):
     act: Snake
     down_ratio: int
     downsample: DownSample1d
-    # fused: bool
     up_ratio: int
     upsample: UpSample1d
 
@@ -28,6 +27,7 @@ class Activation1d(nn.Module):
         down_kernel_size: int = 12,
     ) -> None:
         super().__init__()
+
         self.up_ratio = up_ratio
         self.down_ratio = down_ratio
         self.act = activation
@@ -36,7 +36,7 @@ class Activation1d(nn.Module):
 
     # x: [B,C,T]
     @override
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         x = self.upsample(x)
         x = self.act(x)
         return self.downsample(x)

@@ -22,34 +22,9 @@ _PUNCTUATION_MARKS_TOKENS: Final[Sequence[str]] = [
     "▁...",  # ellipsis
 ]
 
-
 _CJK_RANGE_PATTERN: Final = (
     r"([\u1100-\u11ff\u2e80-\ua4cf\ua840-\uD7AF\uF900-\uFAFF\uFE30-\uFE4F\uFF65-\uFFDC\U00020000-\U0002FFFF])"
 )
-
-
-def _tokenize_by_CJK_char(line: str, do_upper_case: bool = True) -> str:
-    """
-    Tokenize a line of text with CJK char.
-
-    Note: All return charaters will be upper case.
-
-    Example:
-      input = "你好世界是 hello world 的中文"
-      output = "你 好 世 界 是 HELLO WORLD 的 中 文"
-
-    Args:
-      line:
-        The input text.
-
-    Return:
-
-      A new string tokenize by CJK char.
-    """
-    # The CJK ranges is from https://github.com/alvations/nltk/blob/79eed6ddea0d0a2c212c1060b477fc268fec4d4b/nltk/tokenize/util.py
-    chars = re.split(_CJK_RANGE_PATTERN, line.strip())
-    return " ".join([w.strip().upper() if do_upper_case else w.strip() for w in chars if w.strip()])
-
 
 _PINYIN_TONE_PATTERN: Final = r"(?<![a-z])((?:[bpmfdtnlgkhjqxzcsryw]|[zcs]h)?(?:[aeiouüv]|[ae]i|u[aio]|ao|ou|i[aue]|[uüv]e|[uvü]ang?|uai|[aeiuv]n|[aeio]ng|ia[no]|i[ao]ng)|ng|er)([1-5])"
 """
@@ -116,6 +91,29 @@ _CHAR_REP_MAP: Final[Mapping[str, str]] = {
     ":": ",",
 }
 _ZH_CHAR_REP_MAP: Final[Mapping[str, str]] = {"$": ".", **_CHAR_REP_MAP}
+
+
+def _tokenize_by_CJK_char(line: str, do_upper_case: bool = True) -> str:
+    """
+    Tokenize a line of text with CJK char.
+
+    Note: All return charaters will be upper case.
+
+    Example:
+      input = "你好世界是 hello world 的中文"
+      output = "你 好 世 界 是 HELLO WORLD 的 中 文"
+
+    Args:
+      line:
+        The input text.
+
+    Return:
+
+      A new string tokenize by CJK char.
+    """
+    # The CJK ranges is from https://github.com/alvations/nltk/blob/79eed6ddea0d0a2c212c1060b477fc268fec4d4b/nltk/tokenize/util.py
+    chars = re.split(_CJK_RANGE_PATTERN, line.strip())
+    return " ".join([w.strip().upper() if do_upper_case else w.strip() for w in chars if w.strip()])
 
 
 class TextNormalizer:

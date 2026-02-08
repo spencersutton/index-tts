@@ -51,16 +51,16 @@ class TDNNLayer(nn.Module):
 class _CAMLayer(nn.Module):
     linear_local: nn.Conv1d
     linear1: nn.Conv1d
-    relu: nn.ReLU
     linear2: nn.Conv1d
+    relu: nn.ReLU
     sigmoid: nn.Sigmoid
 
     def __init__(self, dilation: int) -> None:
         super().__init__()
         self.linear_local = nn.Conv1d(128, 32, 3, padding=dilation, dilation=dilation, bias=False)
         self.linear1 = nn.Conv1d(128, 64, 1)
-        self.relu = nn.ReLU(inplace=True)
         self.linear2 = nn.Conv1d(64, 32, 1)
+        self.relu = nn.ReLU(inplace=True)
         self.sigmoid = nn.Sigmoid()
 
     @override
@@ -83,17 +83,17 @@ class _CAMLayer(nn.Module):
 
 
 class _CAMDenseTDNNLayer(nn.Module):
-    nonlinear1: nn.Sequential
-    linear1: nn.Conv1d
-    nonlinear2: nn.Sequential
     cam_layer: _CAMLayer
+    linear1: nn.Conv1d
+    nonlinear1: nn.Sequential
+    nonlinear2: nn.Sequential
 
     def __init__(self, in_channels: int, dilation: int) -> None:
         super().__init__()
-        self.nonlinear1 = get_nonlinear(in_channels)
-        self.linear1 = nn.Conv1d(in_channels, 128, 1, bias=False)
-        self.nonlinear2 = get_nonlinear(128)
         self.cam_layer = _CAMLayer(dilation=dilation)
+        self.linear1 = nn.Conv1d(in_channels, 128, 1, bias=False)
+        self.nonlinear1 = get_nonlinear(in_channels)
+        self.nonlinear2 = get_nonlinear(128)
 
     def bn_function(self, x: Tensor) -> Tensor:
         return self.linear1(self.nonlinear1(x))
@@ -125,13 +125,13 @@ class CAMDenseTDNNBlock(nn.ModuleList):
 
 
 class TransitLayer(nn.Module):
-    nonlinear: nn.Sequential
     linear: nn.Conv1d
+    nonlinear: nn.Sequential
 
     def __init__(self, in_channels: int, out_channels: int, bias: bool = True) -> None:
         super().__init__()
-        self.nonlinear = get_nonlinear(in_channels)
         self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
+        self.nonlinear = get_nonlinear(in_channels)
 
     @override
     def forward(self, x: Tensor) -> Tensor:
@@ -150,7 +150,7 @@ class DenseLayer(nn.Module):
         super().__init__()
         self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
 
-        modules: OrderedDict[str, nn.Module] = OrderedDict({"batchnorm": nn.BatchNorm1d(out_channels, affine=False)})
+        modules = OrderedDict({"batchnorm": nn.BatchNorm1d(out_channels, affine=False)})
         self.nonlinear = nn.Sequential(modules)
 
     @override
@@ -166,18 +166,18 @@ class DenseLayer(nn.Module):
 
 
 class BasicResBlock(nn.Module):
-    conv1: nn.Conv2d
     bn1: nn.BatchNorm2d
-    conv2: nn.Conv2d
     bn2: nn.BatchNorm2d
+    conv1: nn.Conv2d
+    conv2: nn.Conv2d
     shortcut: nn.Sequential
 
     def __init__(self, stride: Literal[1, 2] = 1, m_channels: int = 32) -> None:
         super().__init__()
-        self.conv1 = nn.Conv2d(m_channels, m_channels, kernel_size=3, stride=(stride, 1), padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(m_channels)
-        self.conv2 = nn.Conv2d(m_channels, m_channels, kernel_size=3, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(m_channels)
+        self.conv1 = nn.Conv2d(m_channels, m_channels, kernel_size=3, stride=(stride, 1), padding=1, bias=False)
+        self.conv2 = nn.Conv2d(m_channels, m_channels, kernel_size=3, padding=1, bias=False)
 
         self.shortcut = nn.Sequential()
         if stride != 1:

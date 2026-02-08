@@ -2,7 +2,7 @@
 #   LICENSE is in incl_licenses directory.
 
 import math
-from typing import TYPE_CHECKING, override
+from typing import override
 
 import torch
 import torch.nn as nn
@@ -16,7 +16,7 @@ from indextts.util import patch_call
 # This code is adopted from adefossez's julius.lowpass.LowPassFilters under the MIT License
 # https://adefossez.github.io/julius/julius/lowpass.html
 #   LICENSE is in incl_licenses directory.
-def kaiser_sinc_filter1d(cutoff: float, half_width: float, kernel_size: int) -> Float[torch.Tensor, "1 1 kernel_size"]:
+def kaiser_sinc_filter1d(cutoff: float, half_width: float, kernel_size: int) -> Float[Tensor, "1 1 kernel_size"]:
     even = kernel_size % 2 == 0
     half_size = kernel_size // 2
 
@@ -29,6 +29,7 @@ def kaiser_sinc_filter1d(cutoff: float, half_width: float, kernel_size: int) -> 
         beta = 0.5842 * (A - 21) ** 0.4 + 0.07886 * (A - 21.0)
     else:
         beta = 0.0
+
     window = torch.kaiser_window(kernel_size, beta=beta, periodic=False)
 
     # ratio = 0.5/cutoff -> 2 * cutoff = 1 / ratio
@@ -39,54 +40,44 @@ def kaiser_sinc_filter1d(cutoff: float, half_width: float, kernel_size: int) -> 
     if cutoff == 0:
         filter_ = torch.zeros_like(time)
     else:
-        filter_ = 2 * cutoff * window * torch.sinc(2 * cutoff * time)
+        filter_ = 2 * cutoff * window * (2 * cutoff * time).sinc()
         """
         Normalize filter to have sum = 1, otherwise we will have a small leakage of the constant component in the input signal.
         """
-        filter_ = filter_ / filter_.sum()
+        filter_ /= filter_.sum()
         filter_ = filter_.view(1, 1, kernel_size)
 
     return filter_
 
 
 class LowPassFilter1d(nn.Module):
-    if TYPE_CHECKING:
-        filter: torch.Tensor = torch.empty()
+    filter: Tensor
+    kernel_size: int
+    padding: tuple[int, int]
+    stride: int
 
-    def __init__(
-        self,
-        cutoff: float = 0.5,
-        half_width: float = 0.6,
-        stride: int = 1,
-        padding: bool = True,
-        padding_mode: str = "replicate",
-        kernel_size: int = 12,
-    ) -> None:
+    def __init__(self, cutoff: float = 0.5, half_width: float = 0.6, stride: int = 1, kernel_size: int = 12) -> None:
         """
         kernel_size should be even number for stylegan3 setup, in this implementation, odd number is also possible.
         """
         super().__init__()
+
         if cutoff < -0.0:
             raise ValueError("Minimum cutoff must be larger than zero.")
         if cutoff > 0.5:
             raise ValueError("A cutoff above 0.5 does not make sense.")
-        self.kernel_size: int = kernel_size
-        self.even: bool = kernel_size % 2 == 0
-        self.pad_left: int = kernel_size // 2 - int(self.even)
-        self.pad_right: int = kernel_size // 2
-        self.stride: int = stride
-        self.padding: bool = padding
-        self.padding_mode: str = padding_mode
+        self.kernel_size = kernel_size
+        self.padding = ((kernel_size - 1) // 2, kernel_size // 2)
+        self.stride = stride
         filter = kaiser_sinc_filter1d(cutoff, half_width, kernel_size)
-        self.register_buffer("filter", filter)
+        self.filter = nn.Buffer(filter)
 
     # Input [B, C, T]
     @override
     def forward(self, x: Tensor) -> Tensor:
         _, C, _ = x.shape
 
-        if self.padding:
-            x = F.pad(x, (self.pad_left, self.pad_right), mode=self.padding_mode)
+        x = F.pad(x, self.padding, mode="replicate")
         return F.conv1d(x, self.filter.expand(C, -1, -1), stride=self.stride, groups=C)
 
     @patch_call(forward)

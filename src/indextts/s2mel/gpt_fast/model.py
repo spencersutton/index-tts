@@ -12,20 +12,25 @@ from torch.nn import functional as F
 
 from indextts.util import patch_call
 
+BLOCK_SIZE = 16384
+DIM = 512
+N_HEAD: int = 8
+N_LAYER: int = 13
+
 
 class _AdaptiveLayerNorm(nn.Module):
     """Adaptive Layer Normalization"""
 
     dim: int
-    project_layer: nn.Linear
     norm: _RMSNorm
+    project_layer: nn.Linear
 
     def __init__(self, dim: int) -> None:
         super().__init__()
 
         self.dim = dim
-        self.project_layer = nn.Linear(dim, 2 * dim)
         self.norm = _RMSNorm(dim=dim)
+        self.project_layer = nn.Linear(dim, 2 * dim)
 
     @override
     def forward(self, input: Tensor, embedding: Tensor) -> Tensor:
@@ -37,38 +42,31 @@ class _AdaptiveLayerNorm(nn.Module):
 
 
 class Transformer(nn.Module):
+    head_dim: int
     layers: nn.ModuleList[_TransformerBlock]
     norm: _AdaptiveLayerNorm
-    n_layer: int
-    block_size: int
-    head_dim: int
 
-    def __init__(self, block_size: int, dim: int, n_head: int = 8, n_layer: int = 13) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
-        self.n_layer = n_layer
-        self.block_size = block_size
-        self.head_dim = dim // n_head
+        self.head_dim = DIM // N_HEAD
 
-        self.layers = nn.ModuleList(_TransformerBlock(dim=dim) for _ in range(n_layer))
-        self.norm = _AdaptiveLayerNorm(dim=dim)
+        self.layers = nn.ModuleList(_TransformerBlock(dim=DIM) for _ in range(N_LAYER))
+        self.norm = _AdaptiveLayerNorm(dim=DIM)
 
     @cached_property[Tensor]
     def freqs_cis(self) -> Tensor:
-        dtype = self.norm.project_layer.weight.dtype
-        device = self.norm.project_layer.weight.device
-
-        freq_seq = torch.arange(0, self.head_dim, 2, device=device)
+        freq_seq = torch.arange(0, self.head_dim, 2)
         inv_freq = (10000 ** (freq_seq / self.head_dim)).reciprocal()
-        t = torch.arange(self.block_size, device=device, dtype=dtype)
+        t = torch.arange(BLOCK_SIZE)
         angles = t.outer(inv_freq)
         freqs_cis = torch.polar(torch.ones_like(angles), angles)
         return torch.view_as_real(freqs_cis)
 
     @override
     def forward(self, x: Tensor, c: Tensor, input_pos: Tensor) -> Tensor:
-        freqs_cis = self.freqs_cis[input_pos]
-        mid = self.n_layer // 2
+        freqs_cis = self.freqs_cis.to(x.device)[input_pos]
+        mid = N_LAYER // 2
         skip_stack: list[Tensor] = []
         for i, layer in enumerate(self.layers):
             skip_in_x = skip_stack.pop() if i > mid else None
@@ -82,12 +80,12 @@ class Transformer(nn.Module):
 
 
 class _TransformerBlock(nn.Module):
+    attention_norm: _AdaptiveLayerNorm
     attention: _Attention
+    dim: int
     feed_forward: _FeedForward
     ffn_norm: _AdaptiveLayerNorm
-    attention_norm: _AdaptiveLayerNorm
     skip_in_linear: nn.Linear
-    dim: int
 
     def __init__(self, dim: int) -> None:
         super().__init__()
@@ -113,11 +111,11 @@ class _TransformerBlock(nn.Module):
 
 
 class _Attention(nn.Module):
-    wqkv: nn.Linear
-    wo: nn.Linear
     dim: int
-    n_head: int
     head_dim: int
+    n_head: int
+    wo: nn.Linear
+    wqkv: nn.Linear
 
     def __init__(self, dim: int, n_head: int = 8) -> None:
         super().__init__()
@@ -199,28 +197,12 @@ class _RMSNorm(nn.Module):
 
 
 def _apply_rotary_emb(x: Tensor, freqs_cis: Tensor) -> Tensor:
-    """Apply rotary embeddings to a (B, T, H, D) tensor.
+    x_shaped = x.view(*x.shape[:-1], -1, 2)
+    freqs_cis = freqs_cis.view(1, x_shaped.size(1), 1, x_shaped.size(3), 2)
+    x0, x1 = x_shaped[..., 0], x_shaped[..., 1]
+    f0, f1 = freqs_cis[..., 0], freqs_cis[..., 1]
 
-    This implementation is intentionally allocation-light:
-    - avoids `torch.stack(...).flatten(...)` (extra intermediate)
-    - uses fused `addcmul_` where possible
+    out1 = x0 * f0 - x1 * f1
+    out2 = x1 * f0 + x0 * f1
 
-    `freqs_cis` is expected to contain real/imag parts in the final dimension (size 2),
-    and is reshaped for broadcasting over batch and heads.
-    """
-
-    # Reshape to pairs so we can apply complex rotation on the last dimension.
-    # Shape: (B, T, H, D/2, 2)
-    xshaped = x.reshape(*x.shape[:-1], -1, 2)
-    freqs_cis = freqs_cis.view(1, xshaped.size(1), 1, xshaped.size(3), 2)
-
-    # out[..., 0] = x0 * f0 - x1 * f1
-    # out[..., 1] = x1 * f0 + x0 * f1
-    out = torch.empty_like(xshaped)
-    torch.mul(xshaped[..., 0], freqs_cis[..., 0], out=out[..., 0])
-    out[..., 0].addcmul_(xshaped[..., 1], freqs_cis[..., 1], value=-1.0)
-    torch.mul(xshaped[..., 1], freqs_cis[..., 0], out=out[..., 1])
-    out[..., 1].addcmul_(xshaped[..., 0], freqs_cis[..., 1], value=1.0)
-
-    out = out.flatten(3)
-    return out.type_as(x)
+    return torch.stack((out1, out2), dim=-1).flatten(3).type_as(x)

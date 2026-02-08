@@ -2,7 +2,7 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-from typing import override
+from typing import Final, override
 
 import einops
 import torch
@@ -11,6 +11,16 @@ from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
 from indextts.util import patch_call, unwrap
+
+CODEBOOK_SIZE: Final = 8192
+EPSILON: Final = 1e-6
+IN_CHANNELS: Final = 1024
+IN_FEATURES: Final = 384
+INTERMEDIATE_DIM: Final = 2048
+KERNEL_SIZE = 7
+LATENT_DIM: Final = 8
+N_LAYERS: Final = 12
+OUT_FEATURES: Final = 1024
 
 
 def _init_weights(m: nn.Module) -> None:
@@ -23,7 +33,7 @@ class _ConvNeXtBlock(nn.Module):
     """ConvNeXt Block adapted from https://github.com/facebookresearch/ConvNeXt to 1D audio signal.
 
     Args:
-        dim (int): Number of input channels.
+        IN_FEATURES (int): Number of input channels.
         intermediate_dim (int): Dimensionality of the intermediate layer.
         layer_scale_init_value (float, optional): Initial value for the layer scale. None means no scaling.
             Defaults to None.
@@ -31,19 +41,22 @@ class _ConvNeXtBlock(nn.Module):
 
     act: nn.GELU
     dwconv: nn.Conv1d
+    gamma: nn.Parameter
     norm: nn.LayerNorm
     pwconv1: nn.Linear
     pwconv2: nn.Linear
-    gamma: nn.Parameter
 
-    def __init__(self, dim: int = 384, intermediate_dim: int = 2048) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.dwconv = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv
-        self.norm = nn.LayerNorm(dim, eps=1e-6)
-        self.pwconv1 = nn.Linear(dim, intermediate_dim)  # pointwise/1x1 convs, implemented with linear layers
+
         self.act = nn.GELU()
-        self.pwconv2 = nn.Linear(intermediate_dim, dim)
-        self.gamma = nn.Parameter(1 / 12 * torch.ones(dim))
+        self.dwconv = nn.Conv1d(
+            IN_FEATURES, IN_FEATURES, kernel_size=KERNEL_SIZE, padding=KERNEL_SIZE // 2, groups=IN_FEATURES
+        )  # depthwise conv
+        self.gamma = nn.Parameter(1 / N_LAYERS * torch.ones(IN_FEATURES))
+        self.norm = nn.LayerNorm(IN_FEATURES, eps=EPSILON)
+        self.pwconv1 = nn.Linear(IN_FEATURES, INTERMEDIATE_DIM)  # pointwise/1x1 convs, implemented with linear layers
+        self.pwconv2 = nn.Linear(INTERMEDIATE_DIM, IN_FEATURES)
 
     @override
     def forward(self, x: Tensor) -> Tensor:
@@ -68,17 +81,19 @@ class _VocosBackbone(nn.Module):
     Vocos backbone module built with ConvNeXt blocks. Supports additional conditioning with Adaptive Layer Normalization
     """
 
-    embed: nn.Conv1d
-    norm: nn.LayerNorm
     convnext: nn.ModuleList[_ConvNeXtBlock]
+    embed: nn.Conv1d
     final_layer_norm: nn.LayerNorm
+    norm: nn.LayerNorm
 
-    def __init__(self, in_channels: int, out_channels: int, n_layers: int = 12) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.embed = nn.Conv1d(in_channels, out_channels, kernel_size=7, padding=3)
-        self.norm = nn.LayerNorm(out_channels, eps=1e-6)
-        self.convnext = nn.ModuleList([_ConvNeXtBlock() for _ in range(n_layers)])
-        self.final_layer_norm = nn.LayerNorm(out_channels, eps=1e-6)
+
+        self.convnext = nn.ModuleList([_ConvNeXtBlock() for _ in range(N_LAYERS)])
+        self.embed = nn.Conv1d(OUT_FEATURES, IN_FEATURES, kernel_size=KERNEL_SIZE, padding=KERNEL_SIZE // 2)
+        self.final_layer_norm = nn.LayerNorm(IN_FEATURES, eps=EPSILON)
+        self.norm = nn.LayerNorm(IN_FEATURES, eps=EPSILON)
+
         self.apply(_init_weights)
 
     @override
@@ -95,16 +110,16 @@ class _VocosBackbone(nn.Module):
 
 
 class _FactorizedVectorQuantize(nn.Module):
+    codebook: nn.Embedding
     in_project: nn.Conv1d
     out_project: nn.Conv1d
-    codebook: nn.Embedding
 
-    def __init__(self, in_channels: int = 1024, latent_dim: int = 8, codebook_size: int = 8192) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
-        self.in_project = weight_norm(nn.Conv1d(in_channels, latent_dim, kernel_size=1))
-        self.out_project = weight_norm(nn.Conv1d(latent_dim, in_channels, kernel_size=1))
-        self.codebook = nn.Embedding(codebook_size, latent_dim)
+        self.codebook = nn.Embedding(CODEBOOK_SIZE, LATENT_DIM)
+        self.in_project = weight_norm(nn.Conv1d(IN_CHANNELS, LATENT_DIM, kernel_size=1))
+        self.out_project = weight_norm(nn.Conv1d(LATENT_DIM, IN_CHANNELS, kernel_size=1))
 
     @override
     def forward(self, z: Tensor) -> Tensor:
@@ -157,8 +172,8 @@ class _FactorizedVectorQuantize(nn.Module):
 
 
 class RepCodec(nn.Module):
-    quantizer: _FactorizedVectorQuantize
     encoder: nn.Sequential
+    quantizer: _FactorizedVectorQuantize
 
     @staticmethod
     def _remap_weights(_module: object, state_dict: dict[str, object], *_args: object) -> None:
@@ -166,11 +181,11 @@ class RepCodec(nn.Module):
             new_k = k.replace("quantizer.quantizers.0", "quantizer")
             state_dict[new_k] = state_dict.pop(k)
 
-    def __init__(self, in_features: int = 384, out_features: int = 1024) -> None:
+    def __init__(self) -> None:
         super().__init__()
         self.register_load_state_dict_pre_hook(self._remap_weights)
 
-        self.encoder = nn.Sequential(_VocosBackbone(out_features, in_features), nn.Linear(in_features, out_features))
+        self.encoder = nn.Sequential(_VocosBackbone(), nn.Linear(IN_FEATURES, OUT_FEATURES))
         self.quantizer = _FactorizedVectorQuantize()
 
         self.apply(_init_weights)

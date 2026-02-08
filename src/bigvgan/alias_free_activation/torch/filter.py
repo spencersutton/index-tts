@@ -16,7 +16,7 @@ from indextts.util import patch_call
 # This code is adopted from adefossez's julius.lowpass.LowPassFilters under the MIT License
 # https://adefossez.github.io/julius/julius/lowpass.html
 #   LICENSE is in incl_licenses directory.
-def kaiser_sinc_filter1d(cutoff: float, half_width: float, kernel_size: int) -> Float[torch.Tensor, "1 1 kernel_size"]:
+def kaiser_sinc_filter1d(cutoff: float, half_width: float, kernel_size: int) -> Float[Tensor, "1 1 kernel_size"]:
     even = kernel_size % 2 == 0
     half_size = kernel_size // 2
 
@@ -29,6 +29,7 @@ def kaiser_sinc_filter1d(cutoff: float, half_width: float, kernel_size: int) -> 
         beta = 0.5842 * (A - 21) ** 0.4 + 0.07886 * (A - 21.0)
     else:
         beta = 0.0
+
     window = torch.kaiser_window(kernel_size, beta=beta, periodic=False)
 
     # ratio = 0.5/cutoff -> 2 * cutoff = 1 / ratio
@@ -39,18 +40,18 @@ def kaiser_sinc_filter1d(cutoff: float, half_width: float, kernel_size: int) -> 
     if cutoff == 0:
         filter_ = torch.zeros_like(time)
     else:
-        filter_ = 2 * cutoff * window * torch.sinc(2 * cutoff * time)
+        filter_ = 2 * cutoff * window * (2 * cutoff * time).sinc()
         """
         Normalize filter to have sum = 1, otherwise we will have a small leakage of the constant component in the input signal.
         """
-        filter_ = filter_ / filter_.sum()
+        filter_ /= filter_.sum()
         filter_ = filter_.view(1, 1, kernel_size)
 
     return filter_
 
 
 class LowPassFilter1d(nn.Module):
-    filter: torch.Tensor
+    filter: Tensor
     kernel_size: int
     padding: tuple[int, int]
     stride: int

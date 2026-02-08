@@ -13,15 +13,21 @@ from indextts.util import patch_call
 
 class UpSample1d(nn.Module):
     filter: Tensor
+    kernel_size: int
+    pad_left: int
+    pad_right: int
+    pad: int
+    ratio: int
+    stride: int
 
     def __init__(self, ratio: int = 2, kernel_size: int | None = None) -> None:
         super().__init__()
-        self.ratio: int = ratio
-        self.kernel_size: int = int(6 * ratio // 2) * 2 if kernel_size is None else kernel_size
-        self.stride: int = ratio
-        self.pad: int = self.kernel_size // ratio - 1
-        self.pad_left: int = self.pad * self.stride + (self.kernel_size - self.stride) // 2
-        self.pad_right: int = self.pad * self.stride + (self.kernel_size - self.stride + 1) // 2
+
+        self.ratio = ratio
+        self.kernel_size = kernel_size or (6 * ratio // 2) * 2
+        self.stride = ratio
+        self.pad = self.kernel_size // ratio - 1
+        self.pad_left, self.pad_right = (self.pad * ratio + (self.kernel_size - ratio + k) // 2 for k in (0, 1))
         filter = kaiser_sinc_filter1d(cutoff=0.5 / ratio, half_width=0.6 / ratio, kernel_size=self.kernel_size)
         self.filter = nn.Buffer(filter)
 

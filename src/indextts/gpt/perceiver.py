@@ -8,6 +8,8 @@ from torch import Tensor, nn
 
 from indextts.util import patch_call
 
+DIM_CONTEXT = 512
+
 
 class _Attention(nn.Module):
     to_kv: nn.Linear
@@ -113,17 +115,17 @@ class PerceiverResampler(nn.Module):
     layers: nn.ModuleList[nn.ModuleList[_Attention | nn.Sequential]]
     norm: _RMSNorm
 
-    def __init__(self, dim: int, num_latents: int = 32, heads: int = 8, depth: int = 2, dim_context: int = 512) -> None:
+    def __init__(self, dim: int, num_latents: int = 32, heads: int = 8) -> None:
         super().__init__()
 
-        self.proj_context = nn.Linear(dim_context, dim)
+        self.proj_context = nn.Linear(DIM_CONTEXT, dim)
 
         self.latents = nn.Parameter(torch.randn(num_latents, dim))
         nn.init.normal_(self.latents, std=0.02)
 
         self.layers = nn.ModuleList()
         dim_inner = int(dim * 4 / 3)
-        for _ in range(depth):
+        for _ in range(2):
             layer = nn.ModuleList((
                 _Attention(dim=dim, heads=heads),
                 nn.Sequential(nn.Linear(dim, dim_inner * 2), _GEGLU(), nn.Linear(dim_inner, dim)),

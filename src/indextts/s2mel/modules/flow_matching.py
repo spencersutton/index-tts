@@ -7,20 +7,20 @@ from tqdm import tqdm
 from indextts.s2mel.modules.diffusion_transformer import DiT
 
 CFG_RATE: Final = 0.7
+CHANNELS = 80
+DIFFUSION_STEPS: Final = 25
+DIM = 512
 
 
 class CFM(nn.Module):
-    diffusion_steps: Final = 25
     criterion: nn.L1Loss
     estimator: DiT
-    in_channels: int
 
-    def __init__(self, dim: int, in_channels: int = 80) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
-        self.in_channels = in_channels
         self.criterion = nn.L1Loss()
-        self.estimator = DiT(dim=dim, in_channels=in_channels)
+        self.estimator = DiT()
 
     @torch.inference_mode()
     def inference(self, mu: Tensor, prompt: Tensor, style: Tensor) -> Tensor:
@@ -28,19 +28,19 @@ class CFM(nn.Module):
 
         Args:
             mu (Tensor): semantic info of reference audio and altered audio
-                shape: (batch_size, mel_timesteps(795+1069), 512)
+                shape: (batch_size, mel_timesteps(795+1069), DIM)
             prompt (Tensor): reference mel
                 shape: (batch_size, 80, 795)
             style (Tensor): reference global style
-                shape: (batch_size, 192)
+                shape: (batch_size, STYLE_DIM)
 
         Returns:
             sample: generated mel-spectrogram
                 shape: (batch_size, 80, mel_timesteps)
         """
         B, T, _ = mu.shape
-        x = torch.randn([B, self.in_channels, T], device=mu.device)
-        t_span: Final = torch.linspace(0, 1, self.diffusion_steps + 1, device=mu.device)
+        x = torch.randn([B, CHANNELS, T], device=mu.device)
+        t_span: Final = torch.linspace(0, 1, DIFFUSION_STEPS + 1, device=mu.device)
 
         prompt_len: Final = prompt.size(-1)
 

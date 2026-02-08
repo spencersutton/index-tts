@@ -10,12 +10,12 @@ from indextts.util import patch_call
 
 
 class GPT2InferenceModel(transformers.GPT2PreTrainedModel, transformers.GenerationMixin):
+    cached_mel_emb: Tensor | None = None
     embeddings: nn.Embedding
     final_norm: nn.Module
     lm_head: nn.Sequential
     text_pos_embedding: LearnedPositionEmbeddings
     transformer: transformers.GPT2Model
-    cached_mel_emb: Tensor | None = None
 
     def __init__(
         self,
@@ -27,12 +27,12 @@ class GPT2InferenceModel(transformers.GPT2PreTrainedModel, transformers.Generati
         linear: nn.Module,
     ) -> None:
         super().__init__(config)
-        # Note: the argument named `text_pos_emb` here actually represents the mel position embedding
-        self.transformer = gpt
-        self.text_pos_embedding = text_pos_emb
+
         self.embeddings = embeddings
         self.final_norm = norm
         self.lm_head = nn.Sequential(norm, linear)
+        self.text_pos_embedding = text_pos_emb
+        self.transformer = gpt
 
     @override
     def prepare_inputs_for_generation(

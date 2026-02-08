@@ -12,6 +12,9 @@ from torch.nn import functional as F
 
 from indextts.util import patch_call
 
+DIM = 512
+BLOCK_SIZE = 16384
+
 
 class _AdaptiveLayerNorm(nn.Module):
     """Adaptive Layer Normalization"""
@@ -36,28 +39,28 @@ class _AdaptiveLayerNorm(nn.Module):
     def __call__(self) -> None: ...
 
 
+N_HEAD: int = 8
+N_LAYER: int = 13
+
+
 class Transformer(nn.Module):
-    block_size: int
     head_dim: int
     layers: nn.ModuleList[_TransformerBlock]
-    n_layer: int
     norm: _AdaptiveLayerNorm
 
-    def __init__(self, block_size: int, dim: int, n_head: int = 8, n_layer: int = 13) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
-        self.n_layer = n_layer
-        self.block_size = block_size
-        self.head_dim = dim // n_head
+        self.head_dim = DIM // N_HEAD
 
-        self.layers = nn.ModuleList(_TransformerBlock(dim=dim) for _ in range(n_layer))
-        self.norm = _AdaptiveLayerNorm(dim=dim)
+        self.layers = nn.ModuleList(_TransformerBlock(dim=DIM) for _ in range(N_LAYER))
+        self.norm = _AdaptiveLayerNorm(dim=DIM)
 
     @cached_property[Tensor]
     def freqs_cis(self) -> Tensor:
         freq_seq = torch.arange(0, self.head_dim, 2)
         inv_freq = (10000 ** (freq_seq / self.head_dim)).reciprocal()
-        t = torch.arange(self.block_size)
+        t = torch.arange(BLOCK_SIZE)
         angles = t.outer(inv_freq)
         freqs_cis = torch.polar(torch.ones_like(angles), angles)
         return torch.view_as_real(freqs_cis)
@@ -65,7 +68,7 @@ class Transformer(nn.Module):
     @override
     def forward(self, x: Tensor, c: Tensor, input_pos: Tensor) -> Tensor:
         freqs_cis = self.freqs_cis.to(x.device)[input_pos]
-        mid = self.n_layer // 2
+        mid = N_LAYER // 2
         skip_stack: list[Tensor] = []
         for i, layer in enumerate(self.layers):
             skip_in_x = skip_stack.pop() if i > mid else None

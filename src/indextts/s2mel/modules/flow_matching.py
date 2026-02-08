@@ -6,9 +6,10 @@ from tqdm import tqdm
 
 from indextts.s2mel.modules.diffusion_transformer import DiT
 
+CFG_RATE: Final = 0.7
+
 
 class CFM(nn.Module):
-    cfg_rate: Final = 0.7
     diffusion_steps: Final = 25
     criterion: nn.L1Loss
     estimator: DiT
@@ -18,7 +19,6 @@ class CFM(nn.Module):
         super().__init__()
 
         self.in_channels = in_channels
-
         self.criterion = nn.L1Loss()
         self.estimator = DiT(dim=dim, in_channels=in_channels)
 
@@ -61,7 +61,7 @@ class CFM(nn.Module):
             dphi_dt, cfg_dphi_dt = stacked_dphi_dt.chunk(2)
 
             # Apply CFG formula
-            dphi_dt = (1.0 + self.cfg_rate) * dphi_dt - self.cfg_rate * cfg_dphi_dt
+            dphi_dt = (1.0 + CFG_RATE) * dphi_dt - CFG_RATE * cfg_dphi_dt
 
             dt = t_span[step] - t_span[step - 1]
             x += dt * dphi_dt

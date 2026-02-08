@@ -17,8 +17,8 @@ class _AdaptiveLayerNorm(nn.Module):
     """Adaptive Layer Normalization"""
 
     dim: int
-    project_layer: nn.Linear
     norm: _RMSNorm
+    project_layer: nn.Linear
 
     def __init__(self, dim: int) -> None:
         super().__init__()
@@ -37,11 +37,11 @@ class _AdaptiveLayerNorm(nn.Module):
 
 
 class Transformer(nn.Module):
-    layers: nn.ModuleList[_TransformerBlock]
-    norm: _AdaptiveLayerNorm
-    n_layer: int
     block_size: int
     head_dim: int
+    layers: nn.ModuleList[_TransformerBlock]
+    n_layer: int
+    norm: _AdaptiveLayerNorm
 
     def __init__(self, block_size: int, dim: int, n_head: int = 8, n_layer: int = 13) -> None:
         super().__init__()
@@ -55,19 +55,16 @@ class Transformer(nn.Module):
 
     @cached_property[Tensor]
     def freqs_cis(self) -> Tensor:
-        dtype = self.norm.project_layer.weight.dtype
-        device = self.norm.project_layer.weight.device
-
-        freq_seq = torch.arange(0, self.head_dim, 2, device=device)
+        freq_seq = torch.arange(0, self.head_dim, 2)
         inv_freq = (10000 ** (freq_seq / self.head_dim)).reciprocal()
-        t = torch.arange(self.block_size, device=device, dtype=dtype)
+        t = torch.arange(self.block_size)
         angles = t.outer(inv_freq)
         freqs_cis = torch.polar(torch.ones_like(angles), angles)
         return torch.view_as_real(freqs_cis)
 
     @override
     def forward(self, x: Tensor, c: Tensor, input_pos: Tensor) -> Tensor:
-        freqs_cis = self.freqs_cis[input_pos]
+        freqs_cis = self.freqs_cis.to(x.device)[input_pos]
         mid = self.n_layer // 2
         skip_stack: list[Tensor] = []
         for i, layer in enumerate(self.layers):
@@ -82,12 +79,12 @@ class Transformer(nn.Module):
 
 
 class _TransformerBlock(nn.Module):
+    attention_norm: _AdaptiveLayerNorm
     attention: _Attention
+    dim: int
     feed_forward: _FeedForward
     ffn_norm: _AdaptiveLayerNorm
-    attention_norm: _AdaptiveLayerNorm
     skip_in_linear: nn.Linear
-    dim: int
 
     def __init__(self, dim: int) -> None:
         super().__init__()
@@ -113,11 +110,11 @@ class _TransformerBlock(nn.Module):
 
 
 class _Attention(nn.Module):
-    wqkv: nn.Linear
-    wo: nn.Linear
     dim: int
-    n_head: int
     head_dim: int
+    n_head: int
+    wo: nn.Linear
+    wqkv: nn.Linear
 
     def __init__(self, dim: int, n_head: int = 8) -> None:
         super().__init__()

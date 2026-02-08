@@ -20,8 +20,8 @@ class SConv1d(nn.Module):
     Conv1d layer with built-in handling of asymmetric padding and normalization.
     """
 
-    kernel_size: int
     conv: nn.Conv1d
+    kernel_size: int
 
     @staticmethod
     def _remap_weights(_module: object, state_dict: dict[str, object], *_args: object) -> None:

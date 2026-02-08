@@ -33,15 +33,15 @@ class RelPositionMultiHeadedAttention(nn.Module):
         n_feat (int): The number of features.
     """
 
-    linear_pos: nn.Linear
-    pos_bias_u: nn.Parameter
-    pos_bias_v: nn.Parameter
     d_k: int
     h: int
-    linear_q: nn.Linear
     linear_k: nn.Linear
-    linear_v: nn.Linear
     linear_out: nn.Linear
+    linear_pos: nn.Linear
+    linear_q: nn.Linear
+    linear_v: nn.Linear
+    pos_bias_u: nn.Parameter
+    pos_bias_v: nn.Parameter
 
     def __init__(self, n_head: int, n_feat: int) -> None:
         super().__init__()

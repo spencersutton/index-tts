@@ -1,9 +1,8 @@
 # Adapted from https://github.com/junjun3518/alias-free-torch under the Apache License 2.0
 #   LICENSE is in incl_licenses directory.
 
-from typing import TYPE_CHECKING, override
+from typing import override
 
-import torch
 import torch.nn as nn
 from torch import Tensor
 from torch.nn import functional as F
@@ -13,8 +12,7 @@ from indextts.util import patch_call
 
 
 class UpSample1d(nn.Module):
-    if TYPE_CHECKING:
-        filter: torch.Tensor = torch.empty()
+    filter: Tensor
 
     def __init__(self, ratio: int = 2, kernel_size: int | None = None) -> None:
         super().__init__()
@@ -25,7 +23,7 @@ class UpSample1d(nn.Module):
         self.pad_left: int = self.pad * self.stride + (self.kernel_size - self.stride) // 2
         self.pad_right: int = self.pad * self.stride + (self.kernel_size - self.stride + 1) // 2
         filter = kaiser_sinc_filter1d(cutoff=0.5 / ratio, half_width=0.6 / ratio, kernel_size=self.kernel_size)
-        self.register_buffer("filter", filter)
+        self.filter = nn.Buffer(filter)
 
     # x: [B, C, T]
     @override

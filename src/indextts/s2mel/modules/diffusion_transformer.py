@@ -1,5 +1,5 @@
 import math
-from typing import TYPE_CHECKING, override
+from typing import override
 
 import torch
 from torch import Tensor, nn
@@ -24,8 +24,7 @@ class _TimestepEmbedder(nn.Module):
     Embeds scalar timesteps into vector representations.
     """
 
-    if TYPE_CHECKING:
-        freqs: Tensor = torch.empty(0)
+    freqs: Tensor
     mlp: nn.Sequential
 
     def __init__(self, dim: int) -> None:
@@ -34,7 +33,7 @@ class _TimestepEmbedder(nn.Module):
 
         half = dim // 4
         freqs = (-math.log(10000) * torch.arange(half).float() / half).exp()
-        self.register_buffer("freqs", freqs)
+        self.freqs = nn.Buffer(freqs)
 
     def timestep_embedding(self, t: Tensor) -> Tensor:
         """
@@ -83,19 +82,18 @@ class _FinalLayer(nn.Module):
 
 
 class DiT(nn.Module):
-    if TYPE_CHECKING:
-        input_pos: Tensor = torch.empty(0)
-    transformer: Transformer
     cond_projection: nn.Linear
-    t_embedder: _TimestepEmbedder
-    t_embedder2: _TimestepEmbedder
+    cond_x_merge_linear: nn.Linear
     conv1: nn.Linear
     conv2: nn.Conv1d
-    wavenet: WaveNet
     final_layer: _FinalLayer
+    input_pos: Tensor
     res_projection: nn.Linear
     skip_linear: nn.Linear
-    cond_x_merge_linear: nn.Linear
+    t_embedder: _TimestepEmbedder
+    t_embedder2: _TimestepEmbedder
+    transformer: Transformer
+    wavenet: WaveNet
 
     def __init__(self, dim: int, in_channels: int, block_size: int = 16384, style_encoder_dim: int = 192) -> None:
         super().__init__()
@@ -106,7 +104,7 @@ class DiT(nn.Module):
         self.t_embedder = _TimestepEmbedder(dim=dim)
 
         input_pos = torch.arange(block_size)
-        self.register_buffer("input_pos", input_pos)
+        self.input_pos = nn.Buffer(input_pos)
 
         self.t_embedder2 = _TimestepEmbedder(dim=dim)
         self.conv1 = nn.Linear(dim, dim)

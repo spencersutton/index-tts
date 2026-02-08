@@ -27,14 +27,12 @@ class _TimestepEmbedder(nn.Module):
         self.mlp = nn.Sequential(nn.Linear(dim // 2, dim), nn.SiLU(), nn.Linear(dim, dim))
 
         half = dim // 4
-        freqs = (-math.log(10000) * torch.arange(half).float() / half).exp()
-        self.freqs = nn.Buffer(freqs)
+        self.freqs = nn.Buffer((-math.log(10000) * torch.arange(half).float() / half).exp())
 
     @override
     def forward(self, t: Tensor) -> Tensor:
         args = 1000 * t[:, None] * self.freqs[None]
-        t_freq = torch.cat([args.cos(), args.sin()], dim=-1)
-        return self.mlp(t_freq)
+        return self.mlp(torch.cat([args.cos(), args.sin()], dim=-1))
 
     @patch_call(forward)
     def __call__(self) -> None: ...
@@ -58,8 +56,7 @@ class _FinalLayer(nn.Module):
     @override
     def forward(self, x: Tensor, c: Tensor) -> Tensor:
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
-        x = self.norm_final(x) * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
-        return self.linear(x)
+        return self.linear(self.norm_final(x) * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1))
 
     @patch_call(forward)
     def __call__(self) -> None: ...
@@ -106,19 +103,16 @@ class DiT(nn.Module):
 
         x_in = torch.cat([x, prompt_x, cond], dim=-1)
         x_in = torch.cat([x_in, style[:, None, :].repeat(1, T, 1)], dim=-1)
-
         x_in = self.cond_x_merge_linear(x_in)
 
-        input_pos = self.input_pos[: x_in.size(1)]
-        x_res = self.transformer.__call__(x_in, t1.unsqueeze(1), input_pos)
-
+        x_res = self.input_pos[: x_in.size(1)]
+        x_res = self.transformer.__call__(x_in, t1.unsqueeze(1), x_res)
         x_res = self.skip_linear(torch.cat([x_res, x], dim=-1))
+
+        t2 = self.t_embedder2.__call__(t).unsqueeze(2)
         x = self.conv1.__call__(x_res).mT
-        t2 = self.t_embedder2.__call__(t)
-
-        x = self.wavenet.__call__(x, g=t2.unsqueeze(2)).mT + self.res_projection(x_res)
+        x = self.wavenet.__call__(x, g=t2).mT + self.res_projection(x_res)
         x = self.final_layer.__call__(x, t1).mT
-
         return self.conv2(x)
 
     @patch_call(forward)

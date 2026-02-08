@@ -16,18 +16,18 @@ GRAPH_BS: Final[Sequence[int]] = [1, 2, 4, 8]
 
 class AccelInferenceEngine:
     _tts_prompt_len: int = 0
-    graph_pool: object | None = None
-    model: GPT2AccelModel
-    lm_head: nn.Sequential | None
     block_size: int
-    num_blocks: int
+    current_sequences: list[Seq]
+    graph_captured: bool = False
+    graph_pool: object | None = None
+    graph_vars: dict[str, Tensor] | None = None
+    graphs: dict[int, torch.cuda.CUDAGraph]
     hidden_size: int
     kv_manager: KVCacheManager
+    lm_head: nn.Sequential | None
+    model: GPT2AccelModel
+    num_blocks: int
     sampler: _Sampler
-    current_sequences: list[Seq]
-    graphs: dict[int, torch.cuda.CUDAGraph]
-    graph_vars: dict[str, Tensor] | None = None
-    graph_captured: bool = False
 
     def __init__(
         self,

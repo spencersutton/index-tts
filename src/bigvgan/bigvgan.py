@@ -21,24 +21,32 @@ from torch.nn.utils import remove_weight_norm, weight_norm
 
 import bigvgan.activations as activations
 from bigvgan.alias_free_activation.torch.act import Activation1d as TorchActivation1d
-from bigvgan.utils import get_padding, init_weights
 from indextts.util import patch_call
+
+
+def init_weights(m: nn.Module, mean: float = 0.0, std: float = 0.01) -> None:
+    if isinstance(m, (nn.Conv1d, nn.Conv2d, nn.Conv3d, nn.ConvTranspose1d, nn.ConvTranspose2d, nn.ConvTranspose3d)):
+        m.weight.data.normal_(mean, std)
+
+
+def get_padding(kernel_size: int, dilation: int = 1) -> int:
+    return (kernel_size * dilation - dilation) // 2
 
 
 @dataclass
 class HParams:
-    resblock_kernel_sizes: list[int]
-    resblock_dilation_sizes: list[tuple[int, int, int]]
-    resblock: str
-    upsample_rates: list[int]
-    upsample_kernel_sizes: list[int]
-    upsample_initial_channel: int
-    num_mels: int
     activation: str
+    num_mels: int
+    resblock_dilation_sizes: list[tuple[int, int, int]]
+    resblock_kernel_sizes: list[int]
+    resblock: str
     snake_logscale: bool
+    upsample_initial_channel: int
+    upsample_kernel_sizes: list[int]
+    upsample_rates: list[int]
     use_bias_at_final: bool = True
-    use_tanh_at_final: bool = True
     use_cuda_kernel: bool = False
+    use_tanh_at_final: bool = True
 
 
 def load_hparams_from_json(path: Path) -> HParams:

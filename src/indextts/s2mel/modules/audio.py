@@ -1,3 +1,5 @@
+from typing import Final
+
 import torch
 import torch.nn.functional as F
 import torchaudio.functional as AF
@@ -8,21 +10,21 @@ N_MELS = 80
 SAMPLING_RATE = 22050
 
 
-mel = AF.melscale_fbanks(
+mel: Final = AF.melscale_fbanks(
     n_freqs=N_FFT // 2 + 1,
-    f_min=0.0,
-    f_max=SAMPLING_RATE / 2.0,
-    n_mels=80,
+    f_min=0,
+    f_max=SAMPLING_RATE / 2,
+    n_mels=N_MELS,
     sample_rate=SAMPLING_RATE,
     norm="slaney",
     mel_scale="slaney",
 ).mT
 
-window = torch.hann_window(1024)
+window: Final = torch.hann_window(1024)
+padding: Final = (N_FFT - (N_FFT // 4)) // 2
 
 
 def mel_spectrogram(y: Tensor) -> Tensor:
-    padding = (N_FFT - 256) // 2
     y = F.pad(y.unsqueeze(1), (padding, padding), mode="reflect").squeeze(1)
 
     spec = torch.view_as_real(y.stft(N_FFT, window=window, center=False, onesided=True, return_complex=True))

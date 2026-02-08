@@ -9,9 +9,10 @@ from indextts.s2mel.modules.diffusion_transformer import DiT
 
 class CFM(nn.Module):
     cfg_rate: Final = 0.7
-    in_channels: int
+    diffusion_steps: Final = 25
     criterion: nn.L1Loss
     estimator: DiT
+    in_channels: int
 
     def __init__(self, dim: int, in_channels: int = 80) -> None:
         super().__init__()
@@ -38,43 +39,23 @@ class CFM(nn.Module):
                 shape: (batch_size, 80, mel_timesteps)
         """
         B, T, _ = mu.shape
-        z = torch.randn([B, self.in_channels, T], device=mu.device)
-        t_span = torch.linspace(0, 1, 26, device=mu.device)
-        return self.solve_euler(z, prompt, mu, style, t_span)
+        x = torch.randn([B, self.in_channels, T], device=mu.device)
+        t_span: Final = torch.linspace(0, 1, self.diffusion_steps + 1, device=mu.device)
 
-    def solve_euler(self, x: Tensor, prompt: Tensor, mu: Tensor, style: Tensor, t_span: Tensor) -> Tensor:
-        """
-        Fixed euler solver for ODEs.
-        Args:
-            x (Tensor): random noise
-            t_span (Tensor): n_timesteps interpolated
-                shape: (n_timesteps + 1,)
-            mu (Tensor): semantic info of reference audio and altered audio
-                shape: (batch_size, mel_timesteps(795+1069), 512)
-            x_lens (Tensor): mel frames output
-                shape: (batch_size, mel_timesteps)
-            prompt (Tensor): reference mel
-                shape: (batch_size, 80, 795)
-            style (Tensor): reference global style
-                shape: (batch_size, 192)
-        """
-        t = t_span[0]
-
-        prompt_len = prompt.size(-1)
-        prompt_x = torch.zeros_like(x)
-        prompt_x[..., :prompt_len] = prompt[..., :prompt_len]
-        x[..., :prompt_len] = 0
+        prompt_len: Final = prompt.size(-1)
 
         # Stack original and CFG (null) inputs for batched processing
-        stacked_prompt_x = torch.cat([prompt_x, torch.zeros_like(prompt_x)])
-        stacked_style = torch.cat([style, torch.zeros_like(style)])
-        stacked_mu = torch.cat([mu, torch.zeros_like(mu)])
+        prompt_x = torch.zeros_like(x)
+        prompt_x[..., :prompt_len] = prompt[..., :prompt_len]
+        prompt_x = torch.cat([prompt_x, torch.zeros_like(prompt_x)])
+        style = torch.cat([style, torch.zeros_like(style)])
+        mu = torch.cat([mu, torch.zeros_like(mu)])
 
+        x[..., :prompt_len] = 0
+        t = t_span[0]
         for step in tqdm(range(1, len(t_span))):
             # Perform a single forward pass for both original and CFG inputs
-            stacked_dphi_dt = self.estimator.__call__(
-                torch.cat([x, x]), stacked_prompt_x, torch.stack([t, t]), stacked_style, stacked_mu
-            )
+            stacked_dphi_dt = self.estimator.__call__(torch.cat([x, x]), prompt_x, torch.stack([t, t]), style, mu)
 
             # Split the output back into the original and CFG components
             dphi_dt, cfg_dphi_dt = stacked_dphi_dt.chunk(2)

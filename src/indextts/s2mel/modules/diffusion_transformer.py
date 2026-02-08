@@ -9,11 +9,6 @@ from indextts.s2mel.modules.gpt_fast.model import Transformer
 from indextts.s2mel.modules.wavenet import WaveNet
 from indextts.util import patch_call
 
-
-def modulate(x: Tensor, shift: Tensor, scale: Tensor) -> Tensor:
-    return x * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
-
-
 #################################################################################
 #               Embedding Layers for Timesteps and Class Labels                 #
 #################################################################################
@@ -35,21 +30,10 @@ class _TimestepEmbedder(nn.Module):
         freqs = (-math.log(10000) * torch.arange(half).float() / half).exp()
         self.freqs = nn.Buffer(freqs)
 
-    def timestep_embedding(self, t: Tensor) -> Tensor:
-        """
-        Create sinusoidal timestep embeddings.
-        :param t: a 1-D Tensor of N indices, one per batch element.
-                          These may be fractional.
-        :return: an (N, D) Tensor of positional embeddings.
-        """
-        # https://github.com/openai/glide-text2im/blob/main/glide_text2im/nn.py
-
-        args = 1000 * t[:, None] * self.freqs[None]
-        return torch.cat([args.cos(), args.sin()], dim=-1)
-
     @override
     def forward(self, t: Tensor) -> Tensor:
-        t_freq = self.timestep_embedding(t)
+        args = 1000 * t[:, None] * self.freqs[None]
+        t_freq = torch.cat([args.cos(), args.sin()], dim=-1)
         return self.mlp(t_freq)
 
     @patch_call(forward)
@@ -61,9 +45,9 @@ class _FinalLayer(nn.Module):
     The final layer of DiT.
     """
 
-    norm_final: nn.LayerNorm
-    linear: nn.Linear
     adaLN_modulation: nn.Sequential
+    linear: nn.Linear
+    norm_final: nn.LayerNorm
 
     def __init__(self, dim: int) -> None:
         super().__init__()
@@ -74,7 +58,7 @@ class _FinalLayer(nn.Module):
     @override
     def forward(self, x: Tensor, c: Tensor) -> Tensor:
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
-        x = modulate(self.norm_final(x), shift, scale)
+        x = self.norm_final(x) * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
         return self.linear(x)
 
     @patch_call(forward)
@@ -98,24 +82,16 @@ class DiT(nn.Module):
     def __init__(self, dim: int, in_channels: int, block_size: int = 16384, style_encoder_dim: int = 192) -> None:
         super().__init__()
         self.transformer = Transformer(dim=512, block_size=block_size)
-
         self.cond_projection = nn.Linear(dim, dim)  # continuous content
-
         self.t_embedder = _TimestepEmbedder(dim=dim)
-
-        input_pos = torch.arange(block_size)
-        self.input_pos = nn.Buffer(input_pos)
-
+        self.input_pos = nn.Buffer(torch.arange(block_size))
         self.t_embedder2 = _TimestepEmbedder(dim=dim)
         self.conv1 = nn.Linear(dim, dim)
         self.conv2 = nn.Conv1d(dim, in_channels, kernel_size=1)
         self.wavenet = WaveNet(dim)
         self.final_layer = _FinalLayer(dim=dim)
-        # residual connection from tranformer output to final output
         self.res_projection = nn.Linear(dim, dim)
-
         self.skip_linear = nn.Linear(dim + in_channels, dim)
-
         self.cond_x_merge_linear = nn.Linear(dim + in_channels * 2 + style_encoder_dim, dim)
 
     @override

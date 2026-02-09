@@ -16,4 +16,4 @@ rsync --info=NAME -rc -C --exclude='.serena' -f ':- .gitignore' ${LOCAL_DIR} ${R
 ssh -t ${REMOTE_HOST} "INDEXTTS_DEBUG_MODE=1 time ${UV_CMD} run --directory ${REMOTE_DIR} indextts -v ${VOICE_FILE} '${TEXT}' --force -o ${OUTPUT_FILE} --profile"
 mkdir -p ${LOCAL_DIR}/outputs
 rsync --info=NAME -a ${REMOTE_TARGET}/outputs/gen.wav ${LOCAL_DIR}/outputs/gen.wav
-rsync --info=NAME -az "${REMOTE_TARGET}/outputs/profile_*.html" ${LOCAL_DIR}/outputs/
+rsync --info=NAME -az "${REMOTE_TARGET}/outputs/profile_*.*" ${LOCAL_DIR}/outputs/

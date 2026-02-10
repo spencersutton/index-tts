@@ -427,7 +427,7 @@ class IndexTTS2:
         )
         assert not isinstance(vq_emb, tuple) and vq_emb.hidden_states is not None
         feat = vq_emb.hidden_states[17]  # (B, T, C)
-        mean, std = load.semantic_stats()
+        mean, std = load.semantic_stats(input_features.device)
         return (feat - mean) / std
 
     def _set_gr_progress(self, value: float, desc: str) -> None:

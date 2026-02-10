@@ -12,6 +12,4 @@ def test_infer_v2_loads_all_cached_modules() -> None:
     _ = tts.bigvgan
     _ = tts.semantic_codec
     _ = tts.semantic_model
-    _ = tts.semantic_mean
-    _ = tts.semantic_std
     _ = tts.extract_features

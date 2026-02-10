@@ -100,9 +100,7 @@ class IndexTTS2:
     length_regulator: InterpolateRegulator
     normalizer: Final = TextNormalizer()
     semantic_codec: RepCodec
-    semantic_mean: Tensor
     semantic_model: transformers.Wav2Vec2BertModel
-    semantic_std: Tensor
     tokenizer: TextTokenizer
 
     @cached_property[QwenEmotion]
@@ -136,7 +134,6 @@ class IndexTTS2:
 
         self.gpt = load.gpt(self.device, self.use_accel, self.use_fp16)
         self.semantic_model = load.semantic_model(self.device)
-        self.semantic_mean, self.semantic_std = load.semantic_stats(self.device)
         self.semantic_codec = load.semantic_codec(self.device)
         self.bigvgan = load.bigvgan(self.device, self.use_cuda_kernel)
         self.campplus_model = load.campplus_model(self.device)
@@ -430,7 +427,8 @@ class IndexTTS2:
         )
         assert not isinstance(vq_emb, tuple) and vq_emb.hidden_states is not None
         feat = vq_emb.hidden_states[17]  # (B, T, C)
-        return (feat - self.semantic_mean) / self.semantic_std
+        mean, std = load.semantic_stats()
+        return (feat - mean) / std
 
     def _set_gr_progress(self, value: float, desc: str) -> None:
         if self.gr_progress is not None:

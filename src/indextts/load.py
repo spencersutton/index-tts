@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+from functools import cache
 from pathlib import Path
 from typing import cast
 
@@ -98,6 +99,7 @@ def semantic_model(device: torch.device) -> transformers.Wav2Vec2BertModel:
     return model
 
 
+@cache
 def semantic_stats(device: torch.device) -> tuple[Tensor, Tensor]:
     with Timer() as t:
         path = hf.hf_hub_download("amphion/dualcodec", "w2vbert2_mean_var_stats_emilia.pt")

@@ -399,7 +399,7 @@ class IndexTTS2:
     def _extract_emotion_features(self, prompt: Path) -> Tensor:
         print(">> extracting emotion features from prompt:", prompt)
         audio, _ = _load_and_cut_audio(prompt, sample_rate=WIDEBAND_SR)
-        inputs = self.extract_features(audio.numpy(), sampling_rate=WIDEBAND_SR, return_tensors="pt")
+        inputs = self.extract_features(audio, sampling_rate=WIDEBAND_SR, return_tensors="pt")
         inputs = cast(Mapping[str, Tensor], inputs.to(self.device))
         return self._get_emb(inputs["input_features"], inputs["attention_mask"])
 

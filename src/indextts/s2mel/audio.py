@@ -5,9 +5,10 @@ import torch.nn.functional as F
 import torchaudio.functional as AF
 from torch import Tensor
 
-N_FFT = 1024
-N_MELS = 80
-SAMPLING_RATE = 22050
+N_FFT: Final = 1024
+N_MELS: Final = 80
+PADDING: Final = (N_FFT - (N_FFT // 4)) // 2
+SAMPLING_RATE: Final = 22050
 
 
 mel: Final = AF.melscale_fbanks(
@@ -21,11 +22,10 @@ mel: Final = AF.melscale_fbanks(
 ).mT
 
 window: Final = torch.hann_window(N_FFT)
-padding: Final = (N_FFT - (N_FFT // 4)) // 2
 
 
 def mel_spectrogram(y: Tensor) -> Tensor:
-    y = F.pad(y.unsqueeze(1), (padding, padding), mode="reflect").squeeze(1)
+    y = F.pad(y.unsqueeze(1), (PADDING, PADDING), mode="reflect").squeeze(1)
 
     spec = torch.view_as_real(y.stft(N_FFT, window=window, center=False, onesided=True, return_complex=True))
     spec = (spec.square().sum(-1) + 1e-9).sqrt()

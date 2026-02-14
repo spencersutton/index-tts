@@ -1,11 +1,11 @@
-from typing import override
+from typing import Final, override
 
 from torch import Tensor, nn
 from torch.nn import functional as F
 
 from indextts.util import patch_call
 
-DIM = 512
+DIM: Final = 512
 
 
 class InterpolateRegulator(nn.Module):

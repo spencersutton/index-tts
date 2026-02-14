@@ -9,8 +9,8 @@ DIM: Final = 512
 
 
 class InterpolateRegulator(nn.Module):
-    model: nn.Sequential
     content_in_proj: nn.Linear
+    model: nn.Sequential
 
     def __init__(self) -> None:
         super().__init__()

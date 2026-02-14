@@ -49,16 +49,17 @@ class _TDNNLayer(nn.Module):
 class _CAMLayer(nn.Module):
     linear_local: nn.Conv1d
     linear1: nn.Conv1d
-    relu: nn.ReLU
     linear2: nn.Conv1d
+    relu: nn.ReLU
     sigmoid: nn.Sigmoid
 
     def __init__(self, dilation: int) -> None:
         super().__init__()
+
         self.linear_local = nn.Conv1d(128, 32, 3, padding=dilation, dilation=dilation, bias=False)
         self.linear1 = nn.Conv1d(128, 64, 1)
-        self.relu = nn.ReLU(inplace=True)
         self.linear2 = nn.Conv1d(64, 32, 1)
+        self.relu = nn.ReLU(inplace=True)
         self.sigmoid = nn.Sigmoid()
 
     @override
@@ -81,17 +82,17 @@ class _CAMLayer(nn.Module):
 
 
 class _CAMDenseTDNNLayer(nn.Module):
-    nonlinear1: nn.Sequential
-    linear1: nn.Conv1d
-    nonlinear2: nn.Sequential
     cam_layer: _CAMLayer
+    linear1: nn.Conv1d
+    nonlinear1: nn.Sequential
+    nonlinear2: nn.Sequential
 
     def __init__(self, in_channels: int, dilation: int) -> None:
         super().__init__()
-        self.nonlinear1 = _get_nonlinear(in_channels)
-        self.linear1 = nn.Conv1d(in_channels, 128, 1, bias=False)
-        self.nonlinear2 = _get_nonlinear(128)
         self.cam_layer = _CAMLayer(dilation=dilation)
+        self.linear1 = nn.Conv1d(in_channels, 128, 1, bias=False)
+        self.nonlinear1 = _get_nonlinear(in_channels)
+        self.nonlinear2 = _get_nonlinear(128)
 
     def bn_function(self, x: Tensor) -> Tensor:
         return self.linear1(self.nonlinear1(x))
@@ -126,10 +127,10 @@ class _TransitLayer(nn.Module):
     nonlinear: nn.Sequential
     linear: nn.Conv1d
 
-    def __init__(self, in_channels: int, out_channels: int, bias: bool = True) -> None:
+    def __init__(self, in_channels: int) -> None:
         super().__init__()
         self.nonlinear = _get_nonlinear(in_channels)
-        self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
+        self.linear = nn.Conv1d(in_channels, in_channels // 2, 1, bias=False)
 
     @override
     def forward(self, x: Tensor) -> Tensor:
@@ -144,11 +145,11 @@ class _DenseLayer(nn.Module):
     linear: nn.Conv1d
     nonlinear: nn.Sequential
 
-    def __init__(self, in_channels: int, out_channels: int, bias: bool = False) -> None:
+    def __init__(self, in_channels: int) -> None:
         super().__init__()
-        self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
+        self.linear = nn.Conv1d(in_channels, STYLE_DIM, 1, bias=False)
 
-        modules = OrderedDict({"batchnorm": nn.BatchNorm1d(out_channels, affine=False)})
+        modules = OrderedDict({"batchnorm": nn.BatchNorm1d(STYLE_DIM, affine=False)})
         self.nonlinear = nn.Sequential(modules)
 
     @override
@@ -195,17 +196,15 @@ class _BasicResBlock(nn.Module):
 
 
 class _FCM(nn.Module):
-    in_planes: int
-    conv1: nn.Conv2d
     bn1: nn.BatchNorm2d
+    bn2: nn.BatchNorm2d
+    conv1: nn.Conv2d
+    conv2: nn.Conv2d
     layer1: nn.Sequential
     layer2: nn.Sequential
-    conv2: nn.Conv2d
-    bn2: nn.BatchNorm2d
 
     def __init__(self, channels: int = 32) -> None:
         super().__init__()
-        self.in_planes = channels
         self.conv1 = nn.Conv2d(1, channels, kernel_size=3, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(channels)
         self.layer1 = nn.Sequential(*[_BasicResBlock(x) for x in (2, 1)])
@@ -245,13 +244,12 @@ class CAMPPlus(nn.Module):
             block = _CAMDenseTDNNBlock(num_layers=num_layers, in_channels=channels, dilation=dilation)
             self.xvector.add_module(f"block{i + 1}", block)
             channels += num_layers * 32
-            self.xvector.add_module(f"transit{i + 1}", _TransitLayer(channels, channels // 2, bias=False))
+            self.xvector.add_module(f"transit{i + 1}", _TransitLayer(channels))
             channels //= 2
 
         self.xvector.add_module("out_nonlinear", _get_nonlinear(channels))
-
         self.xvector.add_module("stats", _StatsPool())
-        self.xvector.add_module("dense", _DenseLayer(channels * 2, STYLE_DIM))
+        self.xvector.add_module("dense", _DenseLayer(channels * 2))
 
         for m in self.modules():
             if isinstance(m, (nn.Conv1d, nn.Linear)):

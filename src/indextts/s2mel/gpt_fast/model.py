@@ -13,9 +13,11 @@ from torch.nn import functional as F
 from indextts.util import patch_call
 
 DIM = 512
-BLOCK_SIZE = 16384
+BLOCK_SIZE = 2**14
 N_HEAD: int = 8
 N_LAYER: int = 13
+
+HEAD_DIM = DIM // N_HEAD
 
 
 class _AdaptiveLayerNorm(nn.Module):
@@ -69,16 +71,11 @@ class _TransformerBlock(nn.Module):
 
 
 class _Attention(nn.Module):
-    head_dim: int
-    n_head: int
     wo: nn.Linear
     wqkv: nn.Linear
 
-    def __init__(self, n_head: int = 8) -> None:
+    def __init__(self) -> None:
         super().__init__()
-
-        self.n_head = n_head
-        self.head_dim = DIM // n_head
 
         # key, query, value projections for all heads, but in a batch
         self.wqkv = nn.Linear(DIM, DIM * 3, bias=False)
@@ -90,9 +87,9 @@ class _Attention(nn.Module):
 
         query_key_value = self.wqkv(x)
         q, k, v = query_key_value.split(DIM, dim=-1)
-        q = q.view(bsz, seq_len, self.n_head, self.head_dim)
-        k = k.view(bsz, seq_len, self.n_head, self.head_dim)
-        v = v.view(bsz, seq_len, self.n_head, self.head_dim)
+        q = q.view(bsz, seq_len, N_HEAD, HEAD_DIM)
+        k = k.view(bsz, seq_len, N_HEAD, HEAD_DIM)
+        v = v.view(bsz, seq_len, N_HEAD, HEAD_DIM)
 
         q = _apply_rotary_emb(q, freqs_cis)
         k = _apply_rotary_emb(k, freqs_cis)

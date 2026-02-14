@@ -12,10 +12,13 @@ from torch.nn.utils.parametrizations import weight_norm
 
 from indextts.util import patch_call, unwrap
 
+CODEBOOK_SIZE: Final = 8192
 EPSILON: Final = 1e-6
+IN_CHANNELS: Final = 1024
 IN_FEATURES: Final = 384
 INTERMEDIATE_DIM: Final = 2048
 KERNEL_SIZE = 7
+LATENT_DIM: Final = 8
 N_LAYERS: Final = 12
 OUT_FEATURES: Final = 1024
 
@@ -101,11 +104,6 @@ class _VocosBackbone(nn.Module):
 
     @patch_call(forward)
     def __call__(self) -> None: ...
-
-
-IN_CHANNELS: Final = 1024
-LATENT_DIM: Final = 8
-CODEBOOK_SIZE: Final = 8192
 
 
 class _FactorizedVectorQuantize(nn.Module):

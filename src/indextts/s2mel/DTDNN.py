@@ -34,7 +34,7 @@ class _TDNNLayer(nn.Module):
 
     def __init__(self, in_channels: int) -> None:
         super().__init__()
-        self.linear = nn.Conv1d(in_channels, 128, 5, stride=2, padding=2, bias=False)
+        self.linear = nn.Conv1d(in_channels, 128, kernel_size=5, stride=2, padding=2, bias=False)
         self.nonlinear = _get_nonlinear(128)
 
     @override

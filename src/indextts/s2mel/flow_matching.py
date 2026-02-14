@@ -19,8 +19,6 @@ KERNEL_SIZE: Final = 5
 N_LAYERS: Final = 8
 STYLE_DIM: Final = 192
 
-DIM_2: Final = 2 * DIM
-
 
 class _SConv1d(nn.Module):
     """
@@ -61,11 +59,11 @@ class _WaveNet(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        self.cond_layer = _SConv1d(DIM_2 * N_LAYERS, 1)
-        layers = [_SConv1d(DIM_2, KERNEL_SIZE) for _ in range(N_LAYERS)]
+        self.cond_layer = _SConv1d(DIM * 2 * N_LAYERS, 1)
+        layers = [_SConv1d(DIM * 2, KERNEL_SIZE) for _ in range(N_LAYERS)]
         self.in_layers = nn.ModuleList(layers)
 
-        layers = [_SConv1d(DIM_2, 1) for _ in range(N_LAYERS - 1)]
+        layers = [_SConv1d(DIM * 2, 1) for _ in range(N_LAYERS - 1)]
         layers.append(_SConv1d(DIM, 1))
         self.res_skip_layers = nn.ModuleList(layers)
 
@@ -76,8 +74,8 @@ class _WaveNet(nn.Module):
         g = self.cond_layer(g)
 
         for i in range(N_LAYERS):
-            offset = i * DIM_2
-            g_l = g[:, offset : offset + DIM_2, :]
+            offset = i * DIM * 2
+            g_l = g[:, offset : offset + DIM * 2, :]
 
             x_in = self.in_layers[i].__call__(x)
             t_act_part, s_act_part = (x_in + g_l).split(DIM, dim=1)

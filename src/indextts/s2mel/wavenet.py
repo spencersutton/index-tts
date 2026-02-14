@@ -2,30 +2,62 @@ from typing import Final, override
 
 import torch
 from torch import Tensor, nn
+from torch.nn import functional as F
+from torch.nn.utils.parametrizations import weight_norm
 
-from indextts.s2mel.modules.encodec import SConv1d
 from indextts.util import patch_call
 
 DIM: Final = 512
-N_LAYERS: Final = 8
-KERNEL_SIZE: Final = 5
 DIM_2: Final = 2 * DIM
+KERNEL_SIZE: Final = 5
+N_LAYERS: Final = 8
+
+
+class _SConv1d(nn.Module):
+    """
+    Conv1d layer with built-in handling of asymmetric padding and normalization.
+    """
+
+    conv: nn.Conv1d
+    kernel_size: int
+
+    @staticmethod
+    def _remap_weights(_module: object, state_dict: dict[str, object], *_args: object) -> None:
+        for k in list(state_dict.keys()):
+            new_k = k.replace("conv.conv", "conv")
+            state_dict[new_k] = state_dict.pop(k)
+
+    def __init__(self, out_channels: int, kernel_size: int) -> None:
+        super().__init__()
+        self.register_load_state_dict_pre_hook(self._remap_weights)
+
+        self.kernel_size = kernel_size
+        self.conv = weight_norm(nn.Conv1d(DIM, out_channels, kernel_size))
+
+    @override
+    def forward(self, x: Tensor) -> Tensor:
+        if self.kernel_size > 1:
+            x = F.pad(x, (2, 2), "reflect")
+        return self.conv(x)
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
 
 class WaveNet(nn.Module):
-    cond_layer: SConv1d
-    in_layers: nn.ModuleList[SConv1d]
-    res_skip_layers: nn.ModuleList[SConv1d]
+    cond_layer: _SConv1d
+    in_layers: nn.ModuleList[_SConv1d]
+    res_skip_layers: nn.ModuleList[_SConv1d]
 
     def __init__(self) -> None:
         super().__init__()
 
-        self.cond_layer = SConv1d(DIM_2 * N_LAYERS, 1)
-        layers = [SConv1d(DIM_2, KERNEL_SIZE) for _ in range(N_LAYERS)]
+        self.cond_layer = _SConv1d(DIM_2 * N_LAYERS, 1)
+        layers = [_SConv1d(DIM_2, KERNEL_SIZE) for _ in range(N_LAYERS)]
         self.in_layers = nn.ModuleList(layers)
 
-        layers = [SConv1d(DIM_2, 1) for _ in range(N_LAYERS - 1)]
-        layers.append(SConv1d(DIM, 1))
+        layers = [_SConv1d(DIM_2, 1) for _ in range(N_LAYERS - 1)]
+        layers.append(_SConv1d(DIM, 1))
         self.res_skip_layers = nn.ModuleList(layers)
 
     @override

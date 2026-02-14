@@ -14,6 +14,8 @@ from indextts.util import patch_call
 
 DIM = 512
 BLOCK_SIZE = 16384
+N_HEAD: int = 8
+N_LAYER: int = 13
 
 
 class _AdaptiveLayerNorm(nn.Module):
@@ -37,10 +39,6 @@ class _AdaptiveLayerNorm(nn.Module):
 
     @patch_call(forward)
     def __call__(self) -> None: ...
-
-
-N_HEAD: int = 8
-N_LAYER: int = 13
 
 
 class Transformer(nn.Module):

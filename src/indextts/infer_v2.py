@@ -255,7 +255,7 @@ class IndexTTS2:
         spk_audio_prompt: Path,
         text: str,
         output_path: Path,
-        emo_audio_prompt: Path | None = None,
+        emo_audio_prompt: Path,
         emo_alpha: float = 1.0,
         emo_vector: Sequence[float] | None = None,
         use_random: bool = False,

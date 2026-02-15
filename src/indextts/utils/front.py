@@ -2,7 +2,7 @@ import re
 import sys
 import traceback
 import warnings
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, cast
@@ -53,6 +53,9 @@ Matches common English 's contractions, intended only for replacement with "is".
 Does not match all instances of 's (e.g., possessives).
 """
 
+_EMAIL_PATTERN: Final = re.compile(r"^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]+$")
+_PINYIN_TONE_REGEX: Final = re.compile(_PINYIN_TONE_PATTERN, re.IGNORECASE)
+
 _CHAR_REP_MAP: Final[Mapping[str, str]] = {
     "：": ",",
     "；": ",",
@@ -91,6 +94,8 @@ _CHAR_REP_MAP: Final[Mapping[str, str]] = {
     ":": ",",
 }
 _ZH_CHAR_REP_MAP: Final[Mapping[str, str]] = {"$": ".", **_CHAR_REP_MAP}
+_CHAR_REP_REGEX: Final = re.compile("|".join(re.escape(p) for p in _CHAR_REP_MAP))
+_ZH_CHAR_REP_REGEX: Final = re.compile("|".join(re.escape(p) for p in _ZH_CHAR_REP_MAP))
 
 
 def _tokenize_by_CJK_char(line: str, do_upper_case: bool = True) -> str:
@@ -145,17 +150,13 @@ class TextNormalizer:
     @staticmethod
     def _match_email(email: str) -> bool:
         # Regex for basic email matching: alphanumerics@alphanumerics.alphas
-        pattern = r"^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]+$"
-        return re.match(pattern, email) is not None
+        return _EMAIL_PATTERN.match(email) is not None
 
     def _use_chinese(self, s: str) -> bool:
         has_chinese = bool(re.search(r"[\u4e00-\u9fff]", s))
         has_alpha = bool(re.search(r"[a-zA-Z]", s))
         is_email = TextNormalizer._match_email(s)
-        if has_chinese or not has_alpha or is_email:
-            return True
-
-        return bool(re.search(_PINYIN_TONE_PATTERN, s, re.IGNORECASE))
+        return has_chinese or not has_alpha or is_email or bool(re.search(_PINYIN_TONE_PATTERN, s, re.IGNORECASE))
 
     def load(self) -> None:
         if self._zh_normalizer is not None and self._en_normalizer is not None:
@@ -183,11 +184,15 @@ class TextNormalizer:
         if not self._zh_normalizer or not self._en_normalizer:
             print("Error, text normalizer is not initialized !!!")
             return ""
-        if self._use_chinese(text):
-            text = re.sub(_ENGLISH_CONTRACTION_PATTERN, r"\1 is", text, flags=re.IGNORECASE)
-            # Apply glossary terms (highest priority, before all protections)
-            if self.enable_glossary:
-                text = self._apply_glossary_terms(text, lang="zh")
+        use_chinese = self._use_chinese(text)
+        tech_list: Sequence[str] | None = None
+        text = re.sub(_ENGLISH_CONTRACTION_PATTERN, r"\1 is", text, flags=re.IGNORECASE)
+
+        # Apply glossary terms (highest priority, before all protections)
+        if self.enable_glossary:
+            text = self._apply_glossary_terms(text, lang="zh" if use_chinese else "en")
+
+        if use_chinese:
             # Protect technical terms (e.g., GPT-5-nano) to prevent incorrect processing by the Chinese normalizer
             replaced_text, tech_list = TextNormalizer._save_tech_terms(text.rstrip())
             replaced_text, pinyin_list = TextNormalizer._save_pinyin_tones(replaced_text)
@@ -202,27 +207,51 @@ class TextNormalizer:
             result = TextNormalizer._restore_names(result, original_name_list)
             # Restore pinyin tones
             result = TextNormalizer._restore_pinyin_tones(result, pinyin_list)
-            # Restore technical terms
-            result = TextNormalizer._restore_tech_terms(result, tech_list)
-            pattern = re.compile("|".join(re.escape(p) for p in _ZH_CHAR_REP_MAP))
-            result = pattern.sub(lambda x: _ZH_CHAR_REP_MAP[x.group()], result)
+            pattern = _ZH_CHAR_REP_REGEX
+            replacement_map = _ZH_CHAR_REP_MAP
         else:
             try:
-                text = re.sub(_ENGLISH_CONTRACTION_PATTERN, r"\1 is", text, flags=re.IGNORECASE)
-                # Apply glossary terms (highest priority, before all protections)
-                if self.enable_glossary:
-                    text = self._apply_glossary_terms(text, lang="en")
                 # Protect technical terms (e.g., GPT-5-Nano) to prevent incorrect processing by the English normalizer
                 replaced_text, tech_list = TextNormalizer._save_tech_terms(text)
                 result = self._en_normalizer.normalize(replaced_text)
-                # Restore technical terms
-                result = TextNormalizer._restore_tech_terms(result, tech_list)
             except Exception:
                 result = text
                 print(traceback.format_exc())
-            pattern = re.compile("|".join(re.escape(p) for p in _CHAR_REP_MAP))
-            result = pattern.sub(lambda x: _CHAR_REP_MAP[x.group()], result)
-        return result
+            pattern = _CHAR_REP_REGEX
+            replacement_map = _CHAR_REP_MAP
+
+        # Restore technical terms (shared by both Chinese and English flows)
+        result = TextNormalizer._restore_tech_terms(result, tech_list)
+        return pattern.sub(lambda x: replacement_map[x.group()], result)
+
+    @staticmethod
+    def _unique_in_order(items: Iterable[str]) -> list[str]:
+        return list(dict.fromkeys(items))
+
+    @staticmethod
+    def _replace_items_with_placeholders(original_text: str, items: Sequence[str], prefix: str) -> str:
+        transformed_text = original_text
+        for i, item in enumerate(items):
+            suffix = chr(ord("a") + i)
+            transformed_text = transformed_text.replace(item, f"<{prefix}_{suffix}>")
+        return transformed_text
+
+    @staticmethod
+    def _restore_placeholders(
+        normalized_text: str,
+        original_items: Sequence[str] | None,
+        prefix: str,
+        transform: Callable[[str], str] | None = None,
+    ) -> str:
+        if not original_items:
+            return normalized_text
+
+        transformed_text = normalized_text
+        for i, item in enumerate(original_items):
+            suffix = chr(ord("a") + i)
+            replacement = transform(item) if transform else item
+            transformed_text = transformed_text.replace(f"<{prefix}_{suffix}>", replacement)
+        return transformed_text
 
     @staticmethod
     def _correct_pinyin(pinyin: str) -> str:
@@ -245,16 +274,11 @@ class TextNormalizer:
         Example: 克里斯托弗·诺兰 -> <n_a>
         """
         # Names
-        original_name_list = cast(list[str], _NAME_PATTERN.findall(original_text))
+        original_name_matches = cast(list[str], _NAME_PATTERN.findall(original_text))
+        original_name_list = TextNormalizer._unique_in_order("".join(n) for n in original_name_matches)
         if len(original_name_list) == 0:
             return (original_text, None)
-        original_name_list = list({"".join(n) for n in original_name_list})
-        transformed_text = original_text
-        # Replace placeholders <n_a>, <n_b>, ...
-        for i, name in enumerate(original_name_list):
-            number = chr(ord("a") + i)
-            transformed_text = transformed_text.replace(name, f"<n_{number}>")
-
+        transformed_text = TextNormalizer._replace_items_with_placeholders(original_text, original_name_list, "n")
         return transformed_text, original_name_list
 
     @staticmethod
@@ -263,15 +287,7 @@ class TextNormalizer:
         Restore person names back to the original text.
         Example: <n_a> -> original_name_list[0]
         """
-        if not original_name_list or len(original_name_list) == 0:
-            return normalized_text
-
-        transformed_text = normalized_text
-        # Replace placeholders <n_a>, <n_b>, ...
-        for i, name in enumerate(original_name_list):
-            number = chr(ord("a") + i)
-            transformed_text = transformed_text.replace(f"<n_{number}>", name)
-        return transformed_text
+        return TextNormalizer._restore_placeholders(normalized_text, original_name_list, "n")
 
     @staticmethod
     def _save_tech_terms(original_text: str) -> tuple[str, list[str] | None]:
@@ -304,7 +320,7 @@ class TextNormalizer:
         Replace placeholder <H> back to hyphen '-'.
         Also remove any extra whitespace the normalizer may have added around the placeholder.
         """
-        if not original_tech_list or len(original_tech_list) == 0:
+        if not original_tech_list:
             return normalized_text
 
         # Remove optional whitespace around <H>, then restore to '-'.
@@ -341,7 +357,7 @@ class TextNormalizer:
         for term in sorted_terms:
             term_value = self.term_glossary[term]
             if isinstance(term_value, dict):
-                replacement = term_value.get(lang, term_value.get(lang, term))
+                replacement = term_value.get(lang, term)
             else:
                 replacement = term_value
             # Case-insensitive replacement via regex.
@@ -391,17 +407,13 @@ class TextNormalizer:
         Example: xuan4 -> <pinyin_a>
         """
         # Initial+final + tone digit.
-        origin_pinyin_pattern = re.compile(_PINYIN_TONE_PATTERN, re.IGNORECASE)
-        original_pinyin_list = cast(list[str], re.findall(origin_pinyin_pattern, original_text))
+        original_pinyin_matches = cast(list[tuple[str, str]], _PINYIN_TONE_REGEX.findall(original_text))
+        original_pinyin_list = TextNormalizer._unique_in_order("".join(p) for p in original_pinyin_matches)
         if len(original_pinyin_list) == 0:
             return (original_text, None)
-        original_pinyin_list = list({"".join(p) for p in original_pinyin_list})
-        transformed_text = original_text
-        # Replace with placeholders <pinyin_a>, <pinyin_b>, ...
-        for i, pinyin in enumerate(original_pinyin_list):
-            number = chr(ord("a") + i)
-            transformed_text = transformed_text.replace(pinyin, f"<pinyin_{number}>")
-
+        transformed_text = TextNormalizer._replace_items_with_placeholders(
+            original_text, original_pinyin_list, "pinyin"
+        )
         return transformed_text, original_pinyin_list
 
     @staticmethod
@@ -410,16 +422,9 @@ class TextNormalizer:
         Restore pinyin tone digits (1-5) back to the original pinyin.
         Example: <pinyin_a> -> original_pinyin_list[0]
         """
-        if not original_pinyin_list or len(original_pinyin_list) == 0:
-            return normalized_text
-
-        transformed_text = normalized_text
-        # Replace placeholders <pinyin_a>, <pinyin_b>, ...
-        for i, pinyin in enumerate(original_pinyin_list):
-            number = chr(ord("a") + i)
-            pinyin = TextNormalizer._correct_pinyin(pinyin)
-            transformed_text = transformed_text.replace(f"<pinyin_{number}>", pinyin)
-        return transformed_text
+        return TextNormalizer._restore_placeholders(
+            normalized_text, original_pinyin_list, "pinyin", transform=TextNormalizer._correct_pinyin
+        )
 
 
 class TextTokenizer:

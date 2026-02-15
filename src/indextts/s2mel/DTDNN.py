@@ -13,8 +13,7 @@ STYLE_DIM = 192
 
 
 def _get_nonlinear(channels: int) -> nn.Sequential:
-    modules = OrderedDict({"batchnorm": nn.BatchNorm1d(channels), "relu": nn.ReLU(inplace=True)})
-    return nn.Sequential(modules)
+    return nn.Sequential(OrderedDict({"batchnorm": nn.BatchNorm1d(channels), "relu": nn.ReLU(inplace=True)}))
 
 
 class _StatsPool(nn.Module):
@@ -89,6 +88,7 @@ class _CAMDenseTDNNLayer(nn.Module):
 
     def __init__(self, in_channels: int, dilation: int) -> None:
         super().__init__()
+
         self.cam_layer = _CAMLayer(dilation=dilation)
         self.linear1 = nn.Conv1d(in_channels, 128, 1, bias=False)
         self.nonlinear1 = _get_nonlinear(in_channels)
@@ -154,7 +154,7 @@ class _DenseLayer(nn.Module):
 
     @override
     def forward(self, x: Tensor) -> Tensor:
-        if len(x.shape) == 2:
+        if x.dim() == 2:
             x = self.linear(x.unsqueeze(dim=-1)).squeeze(dim=-1)
         else:
             x = self.linear(x)
@@ -165,18 +165,19 @@ class _DenseLayer(nn.Module):
 
 
 class _BasicResBlock(nn.Module):
-    conv1: nn.Conv2d
     bn1: nn.BatchNorm2d
-    conv2: nn.Conv2d
     bn2: nn.BatchNorm2d
+    conv1: nn.Conv2d
+    conv2: nn.Conv2d
     shortcut: nn.Sequential
 
     def __init__(self, stride: Literal[1, 2] = 1, channels: int = 32) -> None:
         super().__init__()
-        self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, stride=(stride, 1), padding=1, bias=False)
+
         self.bn1 = nn.BatchNorm2d(channels)
-        self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(channels)
+        self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, stride=(stride, 1), padding=1, bias=False)
+        self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding=1, bias=False)
 
         self.shortcut = nn.Sequential()
         if stride != 1:

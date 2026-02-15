@@ -1,7 +1,7 @@
 # Copyright 3D-Speaker (https://github.com/alibaba-damo-academy/3D-Speaker). All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
 from collections import OrderedDict
-from typing import Final, Literal, override
+from typing import Literal, override
 
 import torch
 import torch.nn.functional as F
@@ -62,17 +62,16 @@ class _CAMLayer(nn.Module):
     @override
     def forward(self, x: Tensor) -> Tensor:
         y = self.linear_local(x)
-        context = x.mean(-1, keepdim=True) + self.seg_pooling(x)
-        context = self.relu(self.linear1(context))
-        m = self.sigmoid(self.linear2(context))
-        return y * m
+        pool = F.avg_pool1d(x, kernel_size=x.shape[-1], ceil_mode=True).repeat_interleave(x.shape[-1], dim=-1)[
+            ..., : x.shape[-1]
+        ]
 
-    def seg_pooling(self, x: Tensor) -> Tensor:
-        seg_len: Final = 100
-        seg = F.avg_pool1d(x, kernel_size=seg_len, stride=seg_len, ceil_mode=True)
-        shape = seg.shape
-        seg = seg.unsqueeze(-1).expand(*shape, seg_len).reshape(*shape[:-1], -1)
-        return seg[..., : x.shape[-1]]
+        context = x.mean(-1, keepdim=True) + pool
+        context = self.linear1(context)
+        context = self.relu(context)
+        context = self.linear2(context)
+        m = self.sigmoid(context)
+        return y * m
 
     @patch_call(forward)
     def __call__(self) -> None: ...

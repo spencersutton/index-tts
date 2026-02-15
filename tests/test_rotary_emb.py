@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor
 
-from indextts.s2mel.modules.gpt_fast.model import _apply_rotary_emb  # pyright: ignore[reportPrivateUsage]
+from indextts.s2mel.gpt_fast.model import _apply_rotary_emb  # pyright: ignore[reportPrivateUsage]
 
 
 def _apply_rotary_emb_reference(x: Tensor, freqs_cis: Tensor) -> Tensor:

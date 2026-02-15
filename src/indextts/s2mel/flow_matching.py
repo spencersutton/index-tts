@@ -7,7 +7,7 @@ from torch.nn import functional as F
 from torch.nn.utils.parametrizations import weight_norm
 from tqdm import tqdm
 
-from indextts.s2mel.modules.gpt_fast.model import Transformer
+from indextts.s2mel.gpt_fast.model import Transformer
 from indextts.util import patch_call
 
 BLOCK_SIZE: Final = 16384

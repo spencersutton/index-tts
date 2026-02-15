@@ -1,7 +1,7 @@
 import os
 import random
 import warnings
-from collections.abc import Callable, Generator, Mapping, Sequence
+from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from functools import cached_property, lru_cache
 from pathlib import Path
 from typing import Final, cast
@@ -10,6 +10,7 @@ import huggingface_hub as hf
 import torch
 import torch.nn.functional as F
 import torchaudio
+import torchaudio.functional as AF
 import transformers
 from torch import Tensor
 from torchcodec.decoders import AudioDecoder
@@ -17,7 +18,6 @@ from torchcodec.encoders import AudioEncoder
 
 import indextts.load as load
 from bigvgan.inference import BigVGANInference
-from indextts.config import IndexTTSConfig
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.qwen import QwenEmotion
 from indextts.s2mel import CFM, CAMPPlus, InterpolateRegulator, mel_spectrogram
@@ -28,28 +28,28 @@ from indextts.utils.repcodec_model import RepCodec
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
-EMO_NUM = [3, 17, 2, 8, 4, 5, 10, 24]
-MAX_AUDIO_LENGTH_SECONDS = 15
-WIDEBAND_SR = 16000
+EMO_NUM: Final = (3, 17, 2, 8, 4, 5, 10, 24)
+MAX_AUDIO_LENGTH_SECONDS: Final = 15
+WIDEBAND_SR: Final = 16000
 
 MAX_MEL_TOKENS: Final = 1815
 START_MEL_TOKEN: Final = 8192
 STOP_MEL_TOKEN: Final = START_MEL_TOKEN + 1
 
 
-def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
+def normalize_emo_vec(vector: Iterable[float]) -> list[float]:
     # apply biased emotion factors for better user experience,
     # by de-emphasizing emotions that can cause strange results
 
     # [happy, angry, sad, afraid, disgusted, melancholic, surprised, calm]
-    biases = [0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625]
-    vector = [vec * bias for vec, bias in zip(vector, biases)]
+    biases = (0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625)
+    vector = (vec * bias for vec, bias in zip(vector, biases))
 
     # the total emotion sum must be 0.8 or less
     total = sum(vector)
     if total > 0.8:
         scale_factor = 0.8 / total
-        vector = [vec * scale_factor for vec in vector]
+        vector = (vec * scale_factor for vec in vector)
 
     return list(vector)
 
@@ -59,9 +59,8 @@ def _get_silence_interval(size: int, interval_silence: int) -> Tensor:
 
 
 def _load_and_cut_audio(path: Path, sample_rate: int | None = None) -> tuple[Tensor, int]:
-    samples = AudioDecoder(path, num_channels=1, sample_rate=sample_rate).get_samples_played_in_range(
-        0, MAX_AUDIO_LENGTH_SECONDS
-    )
+    decoder = AudioDecoder(path, num_channels=1, sample_rate=sample_rate)
+    samples = decoder.get_samples_played_in_range(0, MAX_AUDIO_LENGTH_SECONDS)
     audio = samples.data
     sample_rate = samples.sample_rate
 
@@ -74,7 +73,6 @@ def _load_and_cut_audio(path: Path, sample_rate: int | None = None) -> tuple[Ten
 
 
 class IndexTTS2:
-    cfg: Final = IndexTTSConfig()
     dtype: torch.dtype
     device: torch.device
     use_fp16: bool
@@ -387,10 +385,11 @@ class IndexTTS2:
     def _generate_voice_conversion(
         self, code_lens: list[int], prompt_condition: Tensor, style: Tensor, ref_mel: Tensor, codes: Tensor
     ) -> Tensor:
-        semantic_inference = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1)).mT
-        target_lengths = (torch.tensor(code_lens, device=self.device) * 1.72).long().max().item()
+        codes = codes.unsqueeze(1)
+        semantic_inference = self.semantic_codec.vq2emb(codes).mT
+        target_len = int(max(code_lens) * 1.72)
 
-        cond = self.length_regulator.__call__(semantic_inference, ylens=int(target_lengths))
+        cond = self.length_regulator.__call__(semantic_inference, ylens=target_len)
         cond = torch.cat([prompt_condition, cond], dim=1)
         target = self.cfm.inference(cond, ref_mel, style)
         return target[:, :, ref_mel.size(-1) :]
@@ -398,6 +397,7 @@ class IndexTTS2:
     @lru_cache(5)  # noqa: B019
     def _extract_emotion_features(self, prompt: Path) -> Tensor:
         print(">> extracting emotion features from prompt:", prompt)
+
         audio, _ = _load_and_cut_audio(prompt, sample_rate=WIDEBAND_SR)
         inputs = self.extract_features(audio, sampling_rate=WIDEBAND_SR, return_tensors="pt")
         inputs = cast(Mapping[str, Tensor], inputs.to(self.device))
@@ -438,8 +438,8 @@ class IndexTTS2:
     def _extract_audio_features(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         print(">> extracting audio features from prompt:", prompt)
         audio, sr = _load_and_cut_audio(prompt)
-        audio_16k = torchaudio.functional.resample(audio, sr, WIDEBAND_SR)
-        audio_22k = torchaudio.functional.resample(audio, sr, SAMPLING_RATE)
+        audio_16k = AF.resample(audio, sr, WIDEBAND_SR)
+        audio_22k = AF.resample(audio, sr, SAMPLING_RATE)
 
         mel = mel_spectrogram(audio_22k)
         feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(self.device), num_mel_bins=N_MELS)
@@ -452,5 +452,6 @@ class IndexTTS2:
         )
 
         embedding = self._get_emb(inputs["input_features"], inputs["attention_mask"])
-        prompt_condition = self.length_regulator.__call__(self.semantic_codec.quantize(embedding), ylens=mel.size(2))
+        quantized_emb = self.semantic_codec.quantize(embedding)
+        prompt_condition = self.length_regulator.__call__(quantized_emb, ylens=mel.size(2))
         return prompt_condition, style, mel, embedding

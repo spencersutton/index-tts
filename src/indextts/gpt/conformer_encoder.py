@@ -8,6 +8,8 @@ from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
 from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
 from indextts.util import patch_call
 
+DIM = 512
+
 
 def make_pad_mask(lengths: Tensor, max_len: int = 0) -> Tensor:
     """Make mask tensor containing indices of padded part.
@@ -202,9 +204,6 @@ class _ConformerEncoderLayer(nn.Module):
 
     @patch_call(forward)
     def __call__(self) -> None: ...
-
-
-DIM = 512
 
 
 class ConformerEncoder(nn.Module):

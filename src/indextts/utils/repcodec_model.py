@@ -102,16 +102,16 @@ class _VocosBackbone(nn.Module):
 
 
 class _FactorizedVectorQuantize(nn.Module):
+    codebook: nn.Embedding
     in_project: nn.Conv1d
     out_project: nn.Conv1d
-    codebook: nn.Embedding
 
     def __init__(self) -> None:
         super().__init__()
 
+        self.codebook = nn.Embedding(CODEBOOK_SIZE, LATENT_DIM)
         self.in_project = weight_norm(nn.Conv1d(IN_CHANNELS, LATENT_DIM, kernel_size=1))
         self.out_project = weight_norm(nn.Conv1d(LATENT_DIM, IN_CHANNELS, kernel_size=1))
-        self.codebook = nn.Embedding(CODEBOOK_SIZE, LATENT_DIM)
 
     @override
     def forward(self, z: Tensor) -> Tensor:
@@ -185,4 +185,7 @@ class RepCodec(nn.Module):
 
     def quantize(self, x: Tensor) -> Tensor:
         x = self.encoder(x.mT).mT
-        return self.quantizer(x).mT
+        return self.quantizer.__call__(x).mT
+
+    def vq2emb(self, vq: Tensor) -> Tensor:
+        return self.quantizer.vq2emb(vq)

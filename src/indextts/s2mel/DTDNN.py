@@ -55,7 +55,7 @@ class _CAMLayer(nn.Module):
     def __init__(self, dilation: int) -> None:
         super().__init__()
 
-        self.linear_local = nn.Conv1d(128, 32, 3, padding=dilation, dilation=dilation, bias=False)
+        self.linear_local = nn.Conv1d(128, 32, kernel_size=3, padding=dilation, dilation=dilation, bias=False)
         self.linear1 = nn.Conv1d(128, 64, 1)
         self.linear2 = nn.Conv1d(64, 32, 1)
         self.relu = nn.ReLU(inplace=True)
@@ -233,24 +233,25 @@ class CAMPPlus(nn.Module):
     head: _FCM
     xvector: nn.Sequential
 
-    def __init__(self, channels: int = 32) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
-        self.head = _FCM(channels=channels)
+        self.head = _FCM(channels=32)
 
-        modules = OrderedDict({"tdnn": _TDNNLayer(channels * 10)})
-        self.xvector = nn.Sequential(modules)
-        channels = 128
-        for i, (num_layers, dilation) in enumerate(zip((12, 24, 16), (1, 2, 2))):
-            block = _CAMDenseTDNNBlock(num_layers=num_layers, in_channels=channels, dilation=dilation)
-            self.xvector.add_module(f"block{i + 1}", block)
-            channels += num_layers * 32
-            self.xvector.add_module(f"transit{i + 1}", _TransitLayer(channels))
-            channels //= 2
-
-        self.xvector.add_module("out_nonlinear", _get_nonlinear(channels))
-        self.xvector.add_module("stats", _StatsPool())
-        self.xvector.add_module("dense", _DenseLayer(channels * 2))
+        self.xvector = nn.Sequential(
+            OrderedDict({
+                "tdnn": _TDNNLayer(320),
+                "block1": _CAMDenseTDNNBlock(num_layers=12, in_channels=128, dilation=1),
+                "transit1": _TransitLayer(512),
+                "block2": _CAMDenseTDNNBlock(num_layers=24, in_channels=256, dilation=2),
+                "transit2": _TransitLayer(1024),
+                "block3": _CAMDenseTDNNBlock(num_layers=16, in_channels=512, dilation=2),
+                "transit3": _TransitLayer(1024),
+                "out_nonlinear": _get_nonlinear(512),
+                "stats": _StatsPool(),
+                "dense": _DenseLayer(1024),
+            })
+        )
 
         for m in self.modules():
             if isinstance(m, (nn.Conv1d, nn.Linear)):

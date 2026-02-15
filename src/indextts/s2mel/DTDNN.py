@@ -9,8 +9,6 @@ from torch import Tensor, nn
 
 from indextts.util import patch_call
 
-STYLE_DIM = 192
-
 
 def _get_nonlinear(channels: int) -> nn.Sequential:
     return nn.Sequential(OrderedDict({"batchnorm": nn.BatchNorm1d(channels), "relu": nn.ReLU(inplace=True)}))
@@ -31,9 +29,9 @@ class _TDNNLayer(nn.Module):
     linear: nn.Conv1d
     nonlinear: nn.Sequential
 
-    def __init__(self, in_channels: int) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.linear = nn.Conv1d(in_channels, 128, kernel_size=5, stride=2, padding=2, bias=False)
+        self.linear = nn.Conv1d(320, 128, kernel_size=5, stride=2, padding=2, bias=False)
         self.nonlinear = _get_nonlinear(128)
 
     @override
@@ -109,6 +107,7 @@ class _CAMDenseTDNNLayer(nn.Module):
 class _CAMDenseTDNNBlock(nn.ModuleList):
     def __init__(self, num_layers: int, in_channels: int, dilation: int) -> None:
         super().__init__()
+
         for i in range(num_layers):
             layer = _CAMDenseTDNNLayer(in_channels=in_channels + i * 32, dilation=dilation)
             self.add_module(f"tdnnd{i + 1}", layer)
@@ -145,11 +144,11 @@ class _DenseLayer(nn.Module):
     linear: nn.Conv1d
     nonlinear: nn.Sequential
 
-    def __init__(self, in_channels: int) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.linear = nn.Conv1d(in_channels, STYLE_DIM, 1, bias=False)
+        self.linear = nn.Conv1d(1024, 192, 1, bias=False)
 
-        modules = OrderedDict({"batchnorm": nn.BatchNorm1d(STYLE_DIM, affine=False)})
+        modules = OrderedDict({"batchnorm": nn.BatchNorm1d(192, affine=False)})
         self.nonlinear = nn.Sequential(modules)
 
     @override
@@ -171,18 +170,18 @@ class _BasicResBlock(nn.Module):
     conv2: nn.Conv2d
     shortcut: nn.Sequential
 
-    def __init__(self, stride: Literal[1, 2] = 1, channels: int = 32) -> None:
+    def __init__(self, stride: Literal[1, 2] = 1) -> None:
         super().__init__()
 
-        self.bn1 = nn.BatchNorm2d(channels)
-        self.bn2 = nn.BatchNorm2d(channels)
-        self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, stride=(stride, 1), padding=1, bias=False)
-        self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(32)
+        self.bn2 = nn.BatchNorm2d(32)
+        self.conv1 = nn.Conv2d(32, 32, kernel_size=3, stride=(stride, 1), padding=1, bias=False)
+        self.conv2 = nn.Conv2d(32, 32, kernel_size=3, padding=1, bias=False)
 
         self.shortcut = nn.Sequential()
         if stride != 1:
             self.shortcut = nn.Sequential(
-                nn.Conv2d(channels, channels, kernel_size=1, stride=(stride, 1), bias=False), nn.BatchNorm2d(channels)
+                nn.Conv2d(32, 32, kernel_size=1, stride=(stride, 1), bias=False), nn.BatchNorm2d(32)
             )
 
     @override
@@ -204,15 +203,15 @@ class _FCM(nn.Module):
     layer1: nn.Sequential
     layer2: nn.Sequential
 
-    def __init__(self, channels: int = 32) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.conv1 = nn.Conv2d(1, channels, kernel_size=3, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(channels)
+
+        self.bn1 = nn.BatchNorm2d(32)
+        self.bn2 = nn.BatchNorm2d(32)
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1, bias=False)
+        self.conv2 = nn.Conv2d(32, 32, kernel_size=3, stride=(2, 1), padding=1, bias=False)
         self.layer1 = nn.Sequential(*[_BasicResBlock(x) for x in (2, 1)])
         self.layer2 = nn.Sequential(*[_BasicResBlock(x) for x in (2, 1)])
-
-        self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, stride=(2, 1), padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(channels)
 
     @override
     def forward(self, x: Tensor) -> Tensor:
@@ -236,11 +235,10 @@ class CAMPPlus(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        self.head = _FCM(channels=32)
-
+        self.head = _FCM()
         self.xvector = nn.Sequential(
             OrderedDict({
-                "tdnn": _TDNNLayer(320),
+                "tdnn": _TDNNLayer(),
                 "block1": _CAMDenseTDNNBlock(num_layers=12, in_channels=128, dilation=1),
                 "transit1": _TransitLayer(512),
                 "block2": _CAMDenseTDNNBlock(num_layers=24, in_channels=256, dilation=2),
@@ -249,7 +247,7 @@ class CAMPPlus(nn.Module):
                 "transit3": _TransitLayer(1024),
                 "out_nonlinear": _get_nonlinear(512),
                 "stats": _StatsPool(),
-                "dense": _DenseLayer(1024),
+                "dense": _DenseLayer(),
             })
         )
 

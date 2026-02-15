@@ -91,13 +91,12 @@ class _CAMDenseTDNNLayer(nn.Module):
         self.nonlinear1 = _get_nonlinear(in_channels)
         self.nonlinear2 = _get_nonlinear(128)
 
-    def bn_function(self, x: Tensor) -> Tensor:
-        return self.linear1(self.nonlinear1(x))
-
     @override
     def forward(self, x: Tensor) -> Tensor:
-        x = self.bn_function(x)
-        return self.cam_layer(self.nonlinear2(x))
+        x = self.nonlinear1(x)
+        x = self.linear1(x)
+        x = self.nonlinear2(x)
+        return self.cam_layer.__call__(x)
 
     @patch_call(forward)
     def __call__(self) -> None: ...

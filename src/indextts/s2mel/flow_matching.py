@@ -106,8 +106,8 @@ class _TimestepEmbedder(nn.Module):
         super().__init__()
         self.mlp = nn.Sequential(nn.Linear(DIM // 2, DIM), nn.SiLU(), nn.Linear(DIM, DIM))
 
-        half = DIM // 4
-        self.freqs = nn.Buffer((-math.log(10000) * torch.arange(half).float() / half).exp())
+        half = DIM / 4
+        self.freqs = nn.Buffer((torch.arange(half) * -math.log(10000) / half).exp())
 
     @override
     def forward(self, t: Tensor) -> Tensor:
@@ -136,7 +136,8 @@ class _FinalLayer(nn.Module):
     @override
     def forward(self, x: Tensor, c: Tensor) -> Tensor:
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
-        return self.linear(self.norm_final(x) * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1))
+        x = self.norm_final(x)
+        return self.linear(x * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1))
 
     @patch_call(forward)
     def __call__(self) -> None: ...
@@ -192,7 +193,8 @@ class _DiT(nn.Module):
 
         t2 = self.t_embedder2.__call__(t).unsqueeze(2)
         x = self.conv1(x_res).mT
-        x = self.wavenet.__call__(x, g=t2).mT + self.res_projection(x_res)
+        x_res = self.res_projection(x_res)
+        x = self.wavenet.__call__(x, g=t2).mT + x_res
         x = self.final_layer.__call__(x, t1).mT
         return self.conv2(x)
 

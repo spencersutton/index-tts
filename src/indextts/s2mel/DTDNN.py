@@ -31,6 +31,7 @@ class _TDNNLayer(nn.Module):
 
     def __init__(self) -> None:
         super().__init__()
+
         self.linear = nn.Conv1d(320, 128, kernel_size=5, stride=2, padding=2, bias=False)
         self.nonlinear = _get_nonlinear(128)
 
@@ -62,9 +63,8 @@ class _CAMLayer(nn.Module):
     @override
     def forward(self, x: Tensor) -> Tensor:
         y = self.linear_local(x)
-        pool = F.avg_pool1d(x, kernel_size=x.shape[-1], ceil_mode=True).repeat_interleave(x.shape[-1], dim=-1)[
-            ..., : x.shape[-1]
-        ]
+        pool = F.avg_pool1d(x, kernel_size=x.shape[-1], ceil_mode=True)
+        pool = pool.repeat_interleave(x.shape[-1], dim=-1)[..., : x.shape[-1]]
 
         context = x.mean(-1, keepdim=True) + pool
         context = self.linear1(context)
@@ -121,13 +121,14 @@ class _CAMDenseTDNNBlock(nn.ModuleList):
 
 
 class _TransitLayer(nn.Module):
-    nonlinear: nn.Sequential
     linear: nn.Conv1d
+    nonlinear: nn.Sequential
 
     def __init__(self, in_channels: int) -> None:
         super().__init__()
-        self.nonlinear = _get_nonlinear(in_channels)
+
         self.linear = nn.Conv1d(in_channels, in_channels // 2, 1, bias=False)
+        self.nonlinear = _get_nonlinear(in_channels)
 
     @override
     def forward(self, x: Tensor) -> Tensor:
@@ -258,7 +259,7 @@ class CAMPPlus(nn.Module):
     @override
     def forward(self, x: Tensor) -> Tensor:
         x = x.permute(0, 2, 1)  # (B,T,F) => (B,F,T)
-        x = self.head(x)
+        x = self.head.__call__(x)
         return self.xvector(x)
 
     @patch_call(forward)

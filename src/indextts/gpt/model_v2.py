@@ -47,9 +47,9 @@ class UnifiedVoice(nn.Module):
         accel_engine: AccelInferenceEngine | None
         """Optional accelerated generation engine (CUDA/flash-attn path, initialized lazily)."""
 
-    emo_layer: nn.Linear
+    emo_projection: nn.Linear
     """Final projection applied to the emotion vector in the GPT embedding space (dim -> dim)."""
-    emovec_layer: nn.Linear
+    emo_latent_projection: nn.Linear
     """Projects the emotion-conditioning latent (1024-d) into the GPT embedding space (1024 -> dim)."""
     final_norm: nn.LayerNorm
     """LayerNorm applied to transformer hidden states before projecting to logits."""
@@ -61,7 +61,7 @@ class UnifiedVoice(nn.Module):
     """Output projection from hidden size (dim) to the mel-code vocabulary size."""
     text_head: nn.Linear
     """Output projection from hidden size (dim) to the text vocabulary size."""
-    speed_emb: nn.Embedding
+    control_emb: nn.Embedding
     """Embeddings for speed/control tokens that are appended to the conditioning prefix."""
     mel_embedding: nn.Embedding
     """Token embedding table for mel-code ids."""
@@ -104,8 +104,8 @@ class UnifiedVoice(nn.Module):
         self.emo_conditioning_encoder = ConformerEncoder(linear_units=1024, attention_heads=4, num_blocks=4)
         self.emo_perceiver_encoder = PerceiverResampler(1024, heads=4, num_latents=1)
 
-        self.emo_layer = nn.Linear(VOICE_DIM, VOICE_DIM)
-        self.emovec_layer = nn.Linear(1024, VOICE_DIM)
+        self.emo_projection = nn.Linear(VOICE_DIM, VOICE_DIM)
+        self.emo_latent_projection = nn.Linear(1024, VOICE_DIM)
 
         self.text_embedding = nn.Embedding(NUMBER_TEXT_TOKENS + 1, VOICE_DIM)
         self.mel_embedding = nn.Embedding(NUMBER_MEL_CODES, VOICE_DIM)
@@ -123,10 +123,10 @@ class UnifiedVoice(nn.Module):
         # Override the built in positional embeddings
         del self.gpt.wpe
 
-        def wpe_override(x: Tensor) -> Tensor:
+        def zero_position_embedding(x: Tensor) -> Tensor:
             return torch.zeros((x.shape[0], x.shape[1], VOICE_DIM), device=x.device)
 
-        self.gpt.wpe = cast(nn.Embedding, wpe_override)
+        self.gpt.wpe = cast(nn.Embedding, zero_position_embedding)
         # Built-in token embeddings are unused.
         del self.gpt.wte
         self.mel_pos_embedding = LearnedPositionEmbeddings(MAX_MEL_SEQ_LEN)
@@ -136,8 +136,8 @@ class UnifiedVoice(nn.Module):
         self.text_head = nn.Linear(VOICE_DIM, NUMBER_TEXT_TOKENS + 1)
         self.mel_head = nn.Linear(VOICE_DIM, NUMBER_MEL_CODES)
 
-        self.speed_emb = nn.Embedding(2, VOICE_DIM)
-        self.speed_emb.weight.data.normal_(std=0.0)
+        self.control_emb = nn.Embedding(2, VOICE_DIM)
+        self.control_emb.weight.data.normal_(std=0.0)
 
         # Initialize the embeddings per the GPT-2 scheme
         embeddings = [self.text_embedding, self.mel_embedding]
@@ -213,37 +213,37 @@ class UnifiedVoice(nn.Module):
         mel_emb = self.mel_embedding(mel_codes) + self.mel_pos_embedding.__call__(mel_codes.shape[1])
         text_emb = self.text_embedding(text_inputs) + self.text_pos_embedding.__call__(text_inputs.shape[1])
 
-        conds = self.combine_latents(speech_conditioning_latent, emo_vec, text_inputs)
+        cond_emb = self.combine_latents(speech_conditioning_latent, emo_vec, text_inputs)
         output = self.gpt(
-            inputs_embeds=torch.cat([conds, text_emb, mel_emb], dim=1), return_dict=True, output_attentions=False
+            inputs_embeds=torch.cat([cond_emb, text_emb, mel_emb], dim=1), return_dict=True, output_attentions=False
         )
         assert not isinstance(output, tuple)
 
-        offset = conds.shape[1]
-        enc = unwrap(output.last_hidden_state)[:, offset:]
-        enc = self.final_norm(enc)
+        offset = cond_emb.shape[1]
+        hidden_states = unwrap(output.last_hidden_state)[:, offset:]
+        hidden_states = self.final_norm(hidden_states)
 
         # Despite the name, these are not logits. Strip off the two tokens added by this forward pass.
-        return enc[:, -mel_emb.shape[1] : -2]
+        return hidden_states[:, -mel_emb.shape[1] : -2]
 
-    def prepare_gpt_inputs(self, latent: Tensor, inputs: Tensor) -> tuple[Tensor, Tensor, Tensor]:
+    def prepare_gpt_inputs(self, cond_latent: Tensor, inputs: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         """
         Prepare the inputs for the GPT2InferenceModel to generate.
         Args:
-            conds_latent: (B, 32, dim) audio conditioning embedding by `get_conditioning()`
+            cond_latent: (B, 32, dim) audio conditioning embedding by `get_conditioning()`
             text_inputs: (B, L)
         Returns:
             input_ids: (B, s+1) the input ids for the GPT2InferenceModel.generate()
             inputs_embeds: (B, s+1, dim) the input embeddings for the GPT2InferenceModel.forward()
             attention_mask: (B, s+1) the attention mask for the GPT2InferenceModel.generate()
         """
-        is_single_condition = latent.ndim == 3 and latent.shape[0] == 1
-        assert is_single_condition or latent.shape[0] == inputs.shape[0], (
-            f"batch size mismatch: {latent.shape[0]} vs {inputs.shape[0]}"
+        is_single_condition = cond_latent.ndim == 3 and cond_latent.shape[0] == 1
+        assert is_single_condition or cond_latent.shape[0] == inputs.shape[0], (
+            f"batch size mismatch: {cond_latent.shape[0]} vs {inputs.shape[0]}"
         )
-        batched_mel_emb: list[Tensor] = []
+        batched_input_emb: list[Tensor] = []
         attention_masks: list[Tensor] = []
-        target_len = latent.shape[1] + inputs.shape[1] + 2
+        target_len = cond_latent.shape[1] + inputs.shape[1] + 2
         for i, row in enumerate(inputs):
             valid_mask = (row != STOP_TEXT_TOKEN) & (row != START_TEXT_TOKEN)
 
@@ -255,7 +255,7 @@ class UnifiedVoice(nn.Module):
             text_emb = self.text_embedding(text_input) + self.text_pos_embedding.emb(text_input_pos)
 
             # concatenate [conditional latents][text embeddings]
-            conds_text_emb = [latent.squeeze(0) if is_single_condition else latent[i], text_emb]
+            cond_text_emb = [cond_latent.squeeze(0) if is_single_condition else cond_latent[i], text_emb]
 
             # +1 for the start_mel_token
             attention_mask = inputs.new_ones(target_len + 1)
@@ -265,24 +265,24 @@ class UnifiedVoice(nn.Module):
 
             # pad left of [cond][text] -> [pad][cond][text]
             if padding > 0:
-                pad = inputs.new_zeros((padding, latent.size(-1)))  # [p, dim]
-                conds_text_emb.insert(0, pad)
+                pad = inputs.new_zeros((padding, cond_latent.size(-1)))  # [p, dim]
+                cond_text_emb.insert(0, pad)
                 attention_mask[:padding] = 0
-            batched_mel_emb.append(torch.cat(conds_text_emb))
+            batched_input_emb.append(torch.cat(cond_text_emb))
             attention_masks.append(attention_mask)
-        mel_embedding_batch = torch.stack(batched_mel_emb)
+        input_emb_batch = torch.stack(batched_input_emb)
         attention_mask = torch.stack(attention_masks)
-        fake_inputs = inputs.new_ones((mel_embedding_batch.shape[0], mel_embedding_batch.shape[1] + 1))
-        fake_inputs[:, -1] = START_MEL_TOKEN
-        return fake_inputs, mel_embedding_batch, attention_mask
+        dummy_input_ids = inputs.new_ones((input_emb_batch.shape[0], input_emb_batch.shape[1] + 1))
+        dummy_input_ids[:, -1] = START_MEL_TOKEN
+        return dummy_input_ids, input_emb_batch, attention_mask
 
     def combine_latents(self, speech_conditioning_latent: Tensor, emo_vec: Tensor, text_inputs: Tensor) -> Tensor:
-        template = text_inputs.new_zeros(text_inputs.shape[0])
+        batch_size = text_inputs.shape[0]
         return torch.cat(
             (
                 speech_conditioning_latent + emo_vec.unsqueeze(1),
-                self.speed_emb(torch.ones_like(template)).unsqueeze(1),
-                self.speed_emb(torch.zeros_like(template)).unsqueeze(1),
+                self.control_emb(torch.ones(batch_size, device=text_inputs.device, dtype=torch.long)).unsqueeze(1),
+                self.control_emb(torch.zeros(batch_size, device=text_inputs.device, dtype=torch.long)).unsqueeze(1),
             ),
             dim=1,
         )
@@ -304,17 +304,17 @@ class UnifiedVoice(nn.Module):
             max_generate_length: limit the number of generated tokens
             hf_generate_kwargs: kwargs for `GPT2InferenceModel.generate(**hf_generate_kwargs)`
         """
-        conds_latent = self.combine_latents(speech_conditioning_latent, emo_vec, text_inputs)
-        inputs_ids, inputs_embeds, attention_mask = self.prepare_gpt_inputs(conds_latent, text_inputs)
+        combined_cond = self.combine_latents(speech_conditioning_latent, emo_vec, text_inputs)
+        input_ids, inputs_embeds, attention_mask = self.prepare_gpt_inputs(combined_cond, text_inputs)
         self.inference_model.cached_mel_emb = inputs_embeds
-        trunc_index = inputs_ids.shape[1]
-        max_length = trunc_index + max_generate_length
+        prompt_len = input_ids.shape[1]
+        max_length = prompt_len + max_generate_length
 
         # Use accel engine if available (single sequence only)
         if self.accel_engine is not None:
             output = self.accel_engine.generate(
-                inputs_ids,  # fake input_ids (all 1s + start_mel_token)
-                max_new_tokens=max_length - trunc_index,
+                input_ids,  # fake input_ids (all 1s + start_mel_token)
+                max_new_tokens=max_length - prompt_len,
                 attention_mask=attention_mask,
                 temperature=cast(float, hf_generate_kwargs.get("temperature", 1)),
                 stop_tokens=[STOP_MEL_TOKEN],
@@ -324,7 +324,7 @@ class UnifiedVoice(nn.Module):
             )
         else:
             output = self.inference_model.generate(
-                inputs_ids,
+                input_ids,
                 bos_token_id=START_MEL_TOKEN,
                 pad_token_id=STOP_MEL_TOKEN,
                 eos_token_id=STOP_MEL_TOKEN,
@@ -332,22 +332,22 @@ class UnifiedVoice(nn.Module):
                 max_length=max_length,
                 **hf_generate_kwargs,  # pyright: ignore
             )
-        return output[:, trunc_index:]  # pyright: ignore[reportUnknownVariableType]
+        return output[:, prompt_len:]  # pyright: ignore[reportUnknownVariableType]
 
     def process_speech_condition(self, condition: Tensor) -> Tensor:
         if condition.ndim == 2:
             condition = condition.unsqueeze(0)
 
-        input, mask = self.conditioning_encoder.__call__(condition)
+        encoder_output, mask = self.conditioning_encoder.__call__(condition)
         mask = self.cond_mask_pad(mask.squeeze(1))
-        return self.perceiver_encoder(input, mask)
+        return self.perceiver_encoder(encoder_output, mask)
 
     def get_emo_vec(self, latent: Tensor) -> Tensor:
-        input, mask = self.emo_conditioning_encoder.__call__(latent)
+        encoder_output, mask = self.emo_conditioning_encoder.__call__(latent)
         mask = self.emo_cond_mask_pad(mask.squeeze(1))
-        conds = self.emo_perceiver_encoder(input, mask)
-        vector = self.emovec_layer(conds.squeeze(1))
-        return self.emo_layer(vector)
+        emo_latent = self.emo_perceiver_encoder(encoder_output, mask)
+        emo_embedding = self.emo_latent_projection(emo_latent.squeeze(1))
+        return self.emo_projection(emo_embedding)
 
     @patch_call(forward)
     def __call__(self) -> None: ...

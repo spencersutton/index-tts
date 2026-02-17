@@ -12,10 +12,7 @@ from indextts.util import patch_call
 
 
 def get_nonlinear(channels: int) -> nn.Sequential:
-    modules: OrderedDict[str, nn.Module] = OrderedDict({
-        "batchnorm": nn.BatchNorm1d(channels),
-        "relu": nn.ReLU(inplace=True),
-    })
+    modules = OrderedDict({"batchnorm": nn.BatchNorm1d(channels), "relu": nn.ReLU(inplace=True)})
     return nn.Sequential(modules)
 
 
@@ -150,7 +147,7 @@ class DenseLayer(nn.Module):
         super().__init__()
         self.linear = nn.Conv1d(in_channels, out_channels, 1, bias=bias)
 
-        modules: OrderedDict[str, nn.Module] = OrderedDict({"batchnorm": nn.BatchNorm1d(out_channels, affine=False)})
+        modules = OrderedDict({"batchnorm": nn.BatchNorm1d(out_channels, affine=False)})
         self.nonlinear = nn.Sequential(modules)
 
     @override

@@ -65,9 +65,7 @@ class PositionalEncoding(torch.nn.Module):
         x = x * self.xscale + pos_emb
         return self.dropout(x), self.dropout(pos_emb)
 
-    def position_encoding(
-        self, offset: int | torch.Tensor, size: int, apply_dropout: bool = True
-    ) -> torch.Tensor:
+    def position_encoding(self, offset: int | torch.Tensor, size: int, apply_dropout: bool = True) -> torch.Tensor:
         """For getting encoding in a streaming fashion
 
         Attention!!!!!

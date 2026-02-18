@@ -27,9 +27,7 @@ class ScheduledSampler(Sampler):
 
     def __init__(self, concat_dataset, batch_size, holistic_shuffle, logger=None, type="train"):
         if not isinstance(concat_dataset, ConcatDataset):
-            raise ValueError(
-                f"concat_dataset must be an instance of ConcatDataset, but got {type(concat_dataset)}"
-            )
+            raise ValueError(f"concat_dataset must be an instance of ConcatDataset, but got {type(concat_dataset)}")
         if not isinstance(batch_size, int):
             raise ValueError(f"batch_size must be an integer, but got {type(batch_size)}")
         if not isinstance(holistic_shuffle, bool):

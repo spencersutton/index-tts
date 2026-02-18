@@ -12,7 +12,6 @@
 
 """Normalization modules."""
 
-
 import einops
 import torch
 from torch import nn

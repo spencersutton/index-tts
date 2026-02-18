@@ -670,9 +670,13 @@ class GenerationMixin:
         # exception: Donut checkpoints have task-specific decoder starts and don't expect a BOS token. Note that the
         # original checkpoints can't be detected through `self.__class__.__name__.lower()`, needing custom logic.
         # See: https://github.com/huggingface/transformers/pull/31470
-        elif "donut" in self.__class__.__name__.lower() or (
-            self.config.model_type == "vision-encoder-decoder" and "donut" in self.config.encoder.model_type.lower()
-        ) or self.config.model_type in ["whisper"]:
+        elif (
+            "donut" in self.__class__.__name__.lower()
+            or (
+                self.config.model_type == "vision-encoder-decoder" and "donut" in self.config.encoder.model_type.lower()
+            )
+            or self.config.model_type in ["whisper"]
+        ):
             pass
         # user input but doesn't start with decoder_start_token_id -> prepend decoder_start_token_id (and adjust
         # decoder_attention_mask if provided)
@@ -4439,8 +4443,7 @@ def _split(data, full_batch_size: int, num_hidden_layers: int, split_size: int =
             ]
 
         return [
-            tuple(sub_tensor[i : i + split_size] for sub_tensor in data)
-            for i in range(0, full_batch_size, split_size)
+            tuple(sub_tensor[i : i + split_size] for sub_tensor in data) for i in range(0, full_batch_size, split_size)
         ]
     raise TypeError(f"Unexpected attribute type: {type(data)}")
 

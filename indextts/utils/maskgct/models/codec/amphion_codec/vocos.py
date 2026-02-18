@@ -429,11 +429,7 @@ class ConvNeXtBlock(nn.Module):
     """
 
     def __init__(
-        self,
-        dim: int,
-        intermediate_dim: int,
-        layer_scale_init_value: float,
-        adanorm_num_embeddings: int | None = None,
+        self, dim: int, intermediate_dim: int, layer_scale_init_value: float, adanorm_num_embeddings: int | None = None
     ):
         super().__init__()
         self.dwconv = nn.Conv1d(dim, dim, kernel_size=7, padding=3, groups=dim)  # depthwise conv

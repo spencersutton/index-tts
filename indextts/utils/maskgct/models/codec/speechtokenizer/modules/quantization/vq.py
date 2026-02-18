@@ -71,9 +71,7 @@ class ResidualVectorQuantizer(nn.Module):
             threshold_ema_dead_code=self.threshold_ema_dead_code,
         )
 
-    def forward(
-        self, x: torch.Tensor, n_q: int | None = None, layers: list | None = None
-    ) -> QuantizedResult:
+    def forward(self, x: torch.Tensor, n_q: int | None = None, layers: list | None = None) -> QuantizedResult:
         """Residual vector quantization on the given input tensor.
         Args:
             x (torch.Tensor): Input tensor.

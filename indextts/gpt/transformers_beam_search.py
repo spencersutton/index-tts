@@ -980,9 +980,7 @@ class BeamHypotheses:
         if self.length_penalty > 0.0:
             if self.max_length <= decoder_prompt_len:
                 raise ValueError("max_length is not larger than decoder prompt length")
-            highest_attainable_score = (
-                best_sum_logprobs / (self.max_length - decoder_prompt_len) ** self.length_penalty
-            )
+            highest_attainable_score = best_sum_logprobs / (self.max_length - decoder_prompt_len) ** self.length_penalty
         # the opposite logic applies here (max `highest_attainable_score` from `cur_len`)
         else:
             highest_attainable_score = best_sum_logprobs / (cur_len - decoder_prompt_len) ** self.length_penalty

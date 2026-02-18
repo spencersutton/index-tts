@@ -116,9 +116,7 @@ class NormConv1d(nn.Module):
     to provide a uniform interface across normalization approaches.
     """
 
-    def __init__(
-        self, *args, causal: bool = False, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs
-    ):
+    def __init__(self, *args, causal: bool = False, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs):
         super().__init__()
         self.conv = apply_parametrization_norm(nn.Conv1d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.conv, causal, norm, **norm_kwargs)
@@ -152,9 +150,7 @@ class NormConvTranspose1d(nn.Module):
     to provide a uniform interface across normalization approaches.
     """
 
-    def __init__(
-        self, *args, causal: bool = False, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs
-    ):
+    def __init__(self, *args, causal: bool = False, norm: str = "none", norm_kwargs: dict[str, tp.Any] = {}, **kwargs):
         super().__init__()
         self.convtr = apply_parametrization_norm(nn.ConvTranspose1d(*args, **kwargs), norm)
         self.norm = get_norm_module(self.convtr, causal, norm, **norm_kwargs)

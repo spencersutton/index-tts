@@ -16,7 +16,6 @@
 
 """Subsampling layer definition."""
 
-
 import torch
 
 

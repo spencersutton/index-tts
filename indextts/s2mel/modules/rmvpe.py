@@ -122,8 +122,6 @@ class STFT(torch.nn.Module):
         return reconstruction
 
 
-
-
 class BiGRU(nn.Module):
     def __init__(self, input_features, hidden_features, num_layers):
         super().__init__()

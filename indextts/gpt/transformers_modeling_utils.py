@@ -1289,9 +1289,7 @@ class ModuleUtilsMixin:
             self.warnings_issued["estimate_tokens"] = True
         return 0
 
-    def floating_point_ops(
-        self, input_dict: dict[str, torch.Tensor | Any], exclude_embeddings: bool = True
-    ) -> int:
+    def floating_point_ops(self, input_dict: dict[str, torch.Tensor | Any], exclude_embeddings: bool = True) -> int:
         """
         Get number of (optionally, non-embeddings) floating-point operations for the forward and backward passes of a
         batch with this transformer model. Default approximation neglects the quadratic dependency on the number of
@@ -3639,34 +3637,69 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
             pretrained_model_name_or_path = str(pretrained_model_name_or_path)
             is_local = pathlib.Path(pretrained_model_name_or_path).is_dir()
             if is_local:
-                if from_tf and pathlib.Path(os.path.join(pretrained_model_name_or_path, subfolder, TF_WEIGHTS_NAME + ".index")).is_file():
+                if (
+                    from_tf
+                    and pathlib.Path(
+                        os.path.join(pretrained_model_name_or_path, subfolder, TF_WEIGHTS_NAME + ".index")
+                    ).is_file()
+                ):
                     # Load from a TF 1.0 checkpoint in priority if from_tf
                     archive_file = os.path.join(pretrained_model_name_or_path, subfolder, TF_WEIGHTS_NAME + ".index")
-                elif from_tf and pathlib.Path(os.path.join(pretrained_model_name_or_path, subfolder, TF2_WEIGHTS_NAME)).is_file():
+                elif (
+                    from_tf
+                    and pathlib.Path(os.path.join(pretrained_model_name_or_path, subfolder, TF2_WEIGHTS_NAME)).is_file()
+                ):
                     # Load from a TF 2.0 checkpoint in priority if from_tf
                     archive_file = os.path.join(pretrained_model_name_or_path, subfolder, TF2_WEIGHTS_NAME)
-                elif from_flax and pathlib.Path(os.path.join(pretrained_model_name_or_path, subfolder, FLAX_WEIGHTS_NAME)).is_file():
+                elif (
+                    from_flax
+                    and pathlib.Path(
+                        os.path.join(pretrained_model_name_or_path, subfolder, FLAX_WEIGHTS_NAME)
+                    ).is_file()
+                ):
                     # Load from a Flax checkpoint in priority if from_flax
                     archive_file = os.path.join(pretrained_model_name_or_path, subfolder, FLAX_WEIGHTS_NAME)
-                elif use_safetensors is not False and pathlib.Path(os.path.join(pretrained_model_name_or_path, subfolder, _add_variant(SAFE_WEIGHTS_NAME, variant))).is_file():
+                elif (
+                    use_safetensors is not False
+                    and pathlib.Path(
+                        os.path.join(pretrained_model_name_or_path, subfolder, _add_variant(SAFE_WEIGHTS_NAME, variant))
+                    ).is_file()
+                ):
                     # Load from a safetensors checkpoint
                     archive_file = os.path.join(
                         pretrained_model_name_or_path, subfolder, _add_variant(SAFE_WEIGHTS_NAME, variant)
                     )
-                elif use_safetensors is not False and pathlib.Path(os.path.join(
-                        pretrained_model_name_or_path, subfolder, _add_variant(SAFE_WEIGHTS_INDEX_NAME, variant)
-                    )).is_file():
+                elif (
+                    use_safetensors is not False
+                    and pathlib.Path(
+                        os.path.join(
+                            pretrained_model_name_or_path, subfolder, _add_variant(SAFE_WEIGHTS_INDEX_NAME, variant)
+                        )
+                    ).is_file()
+                ):
                     # Load from a sharded safetensors checkpoint
                     archive_file = os.path.join(
                         pretrained_model_name_or_path, subfolder, _add_variant(SAFE_WEIGHTS_INDEX_NAME, variant)
                     )
                     is_sharded = True
-                elif not use_safetensors and pathlib.Path(os.path.join(pretrained_model_name_or_path, subfolder, _add_variant(WEIGHTS_NAME, variant))).is_file():
+                elif (
+                    not use_safetensors
+                    and pathlib.Path(
+                        os.path.join(pretrained_model_name_or_path, subfolder, _add_variant(WEIGHTS_NAME, variant))
+                    ).is_file()
+                ):
                     # Load from a PyTorch checkpoint
                     archive_file = os.path.join(
                         pretrained_model_name_or_path, subfolder, _add_variant(WEIGHTS_NAME, variant)
                     )
-                elif not use_safetensors and pathlib.Path(os.path.join(pretrained_model_name_or_path, subfolder, _add_variant(WEIGHTS_INDEX_NAME, variant))).is_file():
+                elif (
+                    not use_safetensors
+                    and pathlib.Path(
+                        os.path.join(
+                            pretrained_model_name_or_path, subfolder, _add_variant(WEIGHTS_INDEX_NAME, variant)
+                        )
+                    ).is_file()
+                ):
                     # Load from a sharded PyTorch checkpoint
                     archive_file = os.path.join(
                         pretrained_model_name_or_path, subfolder, _add_variant(WEIGHTS_INDEX_NAME, variant)
@@ -3674,7 +3707,9 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                     is_sharded = True
                 # At this stage we don't have a weight file so we will raise an error.
                 elif not use_safetensors and (
-                    pathlib.Path(os.path.join(pretrained_model_name_or_path, subfolder, TF_WEIGHTS_NAME + ".index")).is_file()
+                    pathlib.Path(
+                        os.path.join(pretrained_model_name_or_path, subfolder, TF_WEIGHTS_NAME + ".index")
+                    ).is_file()
                     or pathlib.Path(os.path.join(pretrained_model_name_or_path, subfolder, TF2_WEIGHTS_NAME)).is_file()
                 ):
                     raise OSError(
@@ -3682,7 +3717,12 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
                         f" {pretrained_model_name_or_path} but there is a file for TensorFlow weights. Use"
                         " `from_tf=True` to load this model from those weights."
                     )
-                elif not use_safetensors and pathlib.Path(os.path.join(pretrained_model_name_or_path, subfolder, FLAX_WEIGHTS_NAME)).is_file():
+                elif (
+                    not use_safetensors
+                    and pathlib.Path(
+                        os.path.join(pretrained_model_name_or_path, subfolder, FLAX_WEIGHTS_NAME)
+                    ).is_file()
+                ):
                     raise OSError(
                         f"Error no file named {_add_variant(WEIGHTS_NAME, variant)} found in directory"
                         f" {pretrained_model_name_or_path} but there is a file for Flax weights. Use `from_flax=True`"
@@ -4970,9 +5010,7 @@ class PoolerStartLogits(nn.Module):
         super().__init__()
         self.dense = nn.Linear(config.hidden_size, 1)
 
-    def forward(
-        self, hidden_states: torch.FloatTensor, p_mask: torch.FloatTensor | None = None
-    ) -> torch.FloatTensor:
+    def forward(self, hidden_states: torch.FloatTensor, p_mask: torch.FloatTensor | None = None) -> torch.FloatTensor:
         """
         Args:
             hidden_states (`torch.FloatTensor` of shape `(batch_size, seq_len, hidden_size)`):
@@ -5330,9 +5368,7 @@ class SequenceSummary(nn.Module):
         if hasattr(config, "summary_last_dropout") and config.summary_last_dropout > 0:
             self.last_dropout = nn.Dropout(config.summary_last_dropout)
 
-    def forward(
-        self, hidden_states: torch.FloatTensor, cls_index: torch.LongTensor | None = None
-    ) -> torch.FloatTensor:
+    def forward(self, hidden_states: torch.FloatTensor, cls_index: torch.LongTensor | None = None) -> torch.FloatTensor:
         """
         Compute a single vector summary of a sequence hidden states.
 

@@ -220,7 +220,7 @@ class ConditioningEncoder(nn.Module):
         if self.mean:
             return h.mean(dim=2)
         return h
-            # return h[:, :, 0]
+        # return h[:, :, 0]
 
 
 class LearnedPositionEmbeddings(nn.Module):

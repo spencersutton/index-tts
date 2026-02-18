@@ -12,10 +12,13 @@ from torch.nn.utils.parametrizations import weight_norm
 
 from indextts.util import patch_call, unwrap
 
+CODEBOOK_SIZE: Final = 8192
 EPSILON: Final = 1e-6
+IN_CHANNELS: Final = 1024
 IN_FEATURES: Final = 384
 INTERMEDIATE_DIM: Final = 2048
 KERNEL_SIZE = 7
+LATENT_DIM: Final = 8
 N_LAYERS: Final = 12
 OUT_FEATURES: Final = 1024
 
@@ -38,21 +41,22 @@ class _ConvNeXtBlock(nn.Module):
 
     act: nn.GELU
     dwconv: nn.Conv1d
+    gamma: nn.Parameter
     norm: nn.LayerNorm
     pwconv1: nn.Linear
     pwconv2: nn.Linear
-    gamma: nn.Parameter
 
     def __init__(self) -> None:
         super().__init__()
+
+        self.act = nn.GELU()
         self.dwconv = nn.Conv1d(
             IN_FEATURES, IN_FEATURES, kernel_size=KERNEL_SIZE, padding=KERNEL_SIZE // 2, groups=IN_FEATURES
         )  # depthwise conv
+        self.gamma = nn.Parameter(1 / N_LAYERS * torch.ones(IN_FEATURES))
         self.norm = nn.LayerNorm(IN_FEATURES, eps=EPSILON)
         self.pwconv1 = nn.Linear(IN_FEATURES, INTERMEDIATE_DIM)  # pointwise/1x1 convs, implemented with linear layers
-        self.act = nn.GELU()
         self.pwconv2 = nn.Linear(INTERMEDIATE_DIM, IN_FEATURES)
-        self.gamma = nn.Parameter(1 / N_LAYERS * torch.ones(IN_FEATURES))
 
     @override
     def forward(self, x: Tensor) -> Tensor:
@@ -77,17 +81,19 @@ class _VocosBackbone(nn.Module):
     Vocos backbone module built with ConvNeXt blocks. Supports additional conditioning with Adaptive Layer Normalization
     """
 
-    embed: nn.Conv1d
-    norm: nn.LayerNorm
     convnext: nn.ModuleList[_ConvNeXtBlock]
+    embed: nn.Conv1d
     final_layer_norm: nn.LayerNorm
+    norm: nn.LayerNorm
 
     def __init__(self) -> None:
         super().__init__()
-        self.embed = nn.Conv1d(OUT_FEATURES, IN_FEATURES, kernel_size=KERNEL_SIZE, padding=KERNEL_SIZE // 2)
-        self.norm = nn.LayerNorm(IN_FEATURES, eps=EPSILON)
+
         self.convnext = nn.ModuleList([_ConvNeXtBlock() for _ in range(N_LAYERS)])
+        self.embed = nn.Conv1d(OUT_FEATURES, IN_FEATURES, kernel_size=KERNEL_SIZE, padding=KERNEL_SIZE // 2)
         self.final_layer_norm = nn.LayerNorm(IN_FEATURES, eps=EPSILON)
+        self.norm = nn.LayerNorm(IN_FEATURES, eps=EPSILON)
+
         self.apply(_init_weights)
 
     @override
@@ -103,22 +109,17 @@ class _VocosBackbone(nn.Module):
     def __call__(self) -> None: ...
 
 
-IN_CHANNELS: Final = 1024
-LATENT_DIM: Final = 8
-CODEBOOK_SIZE: Final = 8192
-
-
 class _FactorizedVectorQuantize(nn.Module):
+    codebook: nn.Embedding
     in_project: nn.Conv1d
     out_project: nn.Conv1d
-    codebook: nn.Embedding
 
     def __init__(self) -> None:
         super().__init__()
 
+        self.codebook = nn.Embedding(CODEBOOK_SIZE, LATENT_DIM)
         self.in_project = weight_norm(nn.Conv1d(IN_CHANNELS, LATENT_DIM, kernel_size=1))
         self.out_project = weight_norm(nn.Conv1d(LATENT_DIM, IN_CHANNELS, kernel_size=1))
-        self.codebook = nn.Embedding(CODEBOOK_SIZE, LATENT_DIM)
 
     @override
     def forward(self, z: Tensor) -> Tensor:

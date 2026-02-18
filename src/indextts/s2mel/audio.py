@@ -9,7 +9,6 @@ N_FFT = 1024
 N_MELS = 80
 SAMPLING_RATE = 22050
 
-
 mel: Final = AF.melscale_fbanks(
     n_freqs=N_FFT // 2 + 1,
     f_min=0,
@@ -20,8 +19,8 @@ mel: Final = AF.melscale_fbanks(
     mel_scale="slaney",
 ).mT
 
-window: Final = torch.hann_window(N_FFT)
 padding: Final = (N_FFT - (N_FFT // 4)) // 2
+window: Final = torch.hann_window(N_FFT)
 
 
 def mel_spectrogram(y: Tensor) -> Tensor:

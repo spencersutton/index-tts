@@ -13,13 +13,13 @@ STYLE_DIM = 192
 
 
 class _FCM(nn.Module):
-    in_planes: int
-    conv1: nn.Conv2d
     bn1: nn.BatchNorm2d
+    bn2: nn.BatchNorm2d
+    conv1: nn.Conv2d
+    conv2: nn.Conv2d
+    in_planes: int
     layer1: nn.Sequential
     layer2: nn.Sequential
-    conv2: nn.Conv2d
-    bn2: nn.BatchNorm2d
     out_channels: int
 
     def __init__(self, m_channels: int = 32) -> None:

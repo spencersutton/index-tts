@@ -56,6 +56,7 @@ class _FinalLayer(nn.Module):
 
     def __init__(self) -> None:
         super().__init__()
+
         self.norm_final = nn.LayerNorm(DIM, elementwise_affine=False, eps=1e-6)
         self.linear = weight_norm(nn.Linear(DIM, DIM))
         self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(DIM, 2 * DIM))
@@ -85,18 +86,19 @@ class DiT(nn.Module):
 
     def __init__(self) -> None:
         super().__init__()
-        self.transformer = Transformer()
+
         self.cond_projection = nn.Linear(DIM, DIM)  # continuous content
-        self.t_embedder = _TimestepEmbedder()
-        self.input_pos = nn.Buffer(torch.arange(BLOCK_SIZE))
-        self.t_embedder2 = _TimestepEmbedder()
+        self.cond_x_merge_linear = nn.Linear(DIM + CHANNELS * 2 + STYLE_DIM, DIM)
         self.conv1 = nn.Linear(DIM, DIM)
         self.conv2 = nn.Conv1d(DIM, CHANNELS, kernel_size=1)
-        self.wavenet = WaveNet()
         self.final_layer = _FinalLayer()
+        self.input_pos = nn.Buffer(torch.arange(BLOCK_SIZE))
         self.res_projection = nn.Linear(DIM, DIM)
         self.skip_linear = nn.Linear(DIM + CHANNELS, DIM)
-        self.cond_x_merge_linear = nn.Linear(DIM + CHANNELS * 2 + STYLE_DIM, DIM)
+        self.t_embedder = _TimestepEmbedder()
+        self.t_embedder2 = _TimestepEmbedder()
+        self.transformer = Transformer()
+        self.wavenet = WaveNet()
 
     @override
     def forward(self, x: Tensor, prompt_x: Tensor, t: Tensor, style: Tensor, cond: Tensor) -> Tensor:

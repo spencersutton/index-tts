@@ -20,8 +20,8 @@ from bigvgan.inference import BigVGANInference
 from indextts.config import IndexTTSConfig
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.qwen import QwenEmotion
-from indextts.s2mel.modules import CFM, CAMPPlus, InterpolateRegulator, mel_spectrogram
-from indextts.s2mel.modules.audio import N_MELS, SAMPLING_RATE
+from indextts.s2mel import CFM, CAMPPlus, InterpolateRegulator, mel_spectrogram
+from indextts.s2mel.audio import N_MELS, SAMPLING_RATE
 from indextts.util import Timer
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.repcodec_model import RepCodec

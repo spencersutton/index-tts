@@ -4,7 +4,7 @@ import torch
 from torch import Tensor, nn
 from tqdm import tqdm
 
-from indextts.s2mel.modules.diffusion_transformer import DiT
+from indextts.s2mel.diffusion_transformer import DiT
 
 CFG_RATE: Final = 0.7
 CHANNELS = 80

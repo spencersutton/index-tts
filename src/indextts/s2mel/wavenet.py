@@ -3,7 +3,7 @@ from typing import Final, override
 import torch
 from torch import Tensor, nn
 
-from indextts.s2mel.modules.encodec import SConv1d
+from indextts.s2mel.encodec import SConv1d
 from indextts.util import patch_call
 
 DIM: Final = 512

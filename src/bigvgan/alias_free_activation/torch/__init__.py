@@ -5,10 +5,4 @@ from .act import Activation1d
 from .filter import LowPassFilter1d, kaiser_sinc_filter1d
 from .resample import DownSample1d, UpSample1d
 
-__all__ = [
-    "Activation1d",
-    "DownSample1d",
-    "LowPassFilter1d",
-    "UpSample1d",
-    "kaiser_sinc_filter1d",
-]
+__all__ = ["Activation1d", "DownSample1d", "LowPassFilter1d", "UpSample1d", "kaiser_sinc_filter1d"]

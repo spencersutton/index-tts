@@ -5,8 +5,8 @@ import torch
 from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
-from indextts.s2mel.modules.gpt_fast.model import Transformer
-from indextts.s2mel.modules.wavenet import WaveNet
+from indextts.s2mel.gpt_fast.model import Transformer
+from indextts.s2mel.wavenet import WaveNet
 from indextts.util import patch_call
 
 #################################################################################

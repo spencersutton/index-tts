@@ -10,9 +10,9 @@ from torch import Tensor
 
 from bigvgan import BigVGANInference as BigVGAN
 from indextts.gpt.model_v2 import UnifiedVoice
-from indextts.s2mel.modules.campplus.DTDNN import CAMPPlus
-from indextts.s2mel.modules.flow_matching import CFM
-from indextts.s2mel.modules.length_regulator import InterpolateRegulator
+from indextts.s2mel.campplus.DTDNN import CAMPPlus
+from indextts.s2mel.flow_matching import CFM
+from indextts.s2mel.length_regulator import InterpolateRegulator
 from indextts.util import Timer
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.repcodec_model import RepCodec

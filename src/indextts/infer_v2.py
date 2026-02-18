@@ -17,7 +17,6 @@ from torchcodec.encoders import AudioEncoder
 
 import indextts.load as load
 from bigvgan.inference import BigVGANInference
-from indextts.config import IndexTTSConfig
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.qwen import QwenEmotion
 from indextts.s2mel import CFM, CAMPPlus, InterpolateRegulator, mel_spectrogram
@@ -74,7 +73,6 @@ def _load_and_cut_audio(path: Path, sample_rate: int | None = None) -> tuple[Ten
 
 
 class IndexTTS2:
-    cfg: Final = IndexTTSConfig()
     dtype: torch.dtype
     device: torch.device
     use_fp16: bool

@@ -27,9 +27,9 @@ from indextts.utils.repcodec_model import RepCodec
 
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
-EMO_NUM = [3, 17, 2, 8, 4, 5, 10, 24]
-MAX_AUDIO_LENGTH_SECONDS = 15
-WIDEBAND_SR = 16000
+EMO_NUM: Final[Sequence[int]] = (3, 17, 2, 8, 4, 5, 10, 24)
+MAX_AUDIO_LENGTH_SECONDS: Final = 15
+WIDEBAND_SR: Final = 16000
 
 MAX_MEL_TOKENS: Final = 1815
 START_MEL_TOKEN: Final = 8192
@@ -73,11 +73,11 @@ def _load_and_cut_audio(path: Path, sample_rate: int | None = None) -> tuple[Ten
 
 
 class IndexTTS2:
-    dtype: torch.dtype
     device: torch.device
-    use_fp16: bool
-    use_cuda_kernel: bool
+    dtype: torch.dtype
     use_accel: bool
+    use_cuda_kernel: bool
+    use_fp16: bool
 
     emo_matrix: tuple[Tensor, ...]
     spk_matrix: tuple[Tensor, ...]
@@ -128,7 +128,7 @@ class IndexTTS2:
             torch.device(device) if device else torch.accelerator.current_accelerator() or torch.get_default_device()
         )
         self.use_cuda_kernel = use_cuda_kernel and str(self.device).startswith("cuda")
-        self.use_fp16 = use_fp16 and self.device not in ["cpu", "mps"]
+        self.use_fp16 = use_fp16 and self.device not in ("cpu", "mps")
         self.dtype = torch.float16 if self.use_fp16 else torch.get_default_dtype()
         self.use_accel = use_accel
 

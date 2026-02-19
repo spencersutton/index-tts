@@ -11,7 +11,7 @@ from indextts.accel.kv_manager import KVCacheManager, Seq
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.util import patch_call, unwrap
 
-GRAPH_BS: Final[Sequence[int]] = [1, 2, 4, 8]
+GRAPH_BS: Final[Sequence[int]] = (1, 2, 4, 8)
 
 
 class AccelInferenceEngine:

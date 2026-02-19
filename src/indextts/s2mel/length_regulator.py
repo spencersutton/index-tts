@@ -5,22 +5,20 @@ from torch.nn import functional as F
 
 from indextts.util import patch_call
 
-DIM = 512
-
 
 class InterpolateRegulator(nn.Module):
     model: nn.Sequential
     content_in_proj: nn.Linear
 
-    def __init__(self) -> None:
+    def __init__(self, dim: int = 512) -> None:
         super().__init__()
 
         self.model = nn.Sequential()
         for _ in range(4):
-            self.model.extend([nn.Conv1d(DIM, DIM, kernel_size=3, padding=1), nn.GroupNorm(1, DIM), nn.Mish()])
-        self.model.append(nn.Conv1d(DIM, DIM, kernel_size=1))
+            self.model.extend([nn.Conv1d(dim, dim, kernel_size=3, padding=1), nn.GroupNorm(1, dim), nn.Mish()])
+        self.model.append(nn.Conv1d(dim, dim, kernel_size=1))
 
-        self.content_in_proj = nn.Linear(DIM * 2, DIM)
+        self.content_in_proj = nn.Linear(dim * 2, dim)
 
     @override
     def forward(self, x: Tensor, ylens: int) -> Tensor:

@@ -6,11 +6,6 @@ from tqdm import tqdm
 
 from indextts.s2mel.diffusion_transformer import DiT
 
-CFG_RATE: Final = 0.7
-CHANNELS = 80
-DIFFUSION_STEPS: Final = 25
-DIM = 512
-
 
 class CFM(nn.Module):
     criterion: nn.L1Loss
@@ -23,24 +18,27 @@ class CFM(nn.Module):
         self.estimator = DiT()
 
     @torch.inference_mode()
-    def inference(self, mu: Tensor, prompt: Tensor, style: Tensor) -> Tensor:
+    def inference(
+        self, mu: Tensor, prompt: Tensor, style: Tensor, diffusion_steps: int = 25, cfg_rate: float = 0.7
+    ) -> Tensor:
         """Forward diffusion
 
         Args:
             mu (Tensor): semantic info of reference audio and altered audio
-                shape: (batch_size, mel_timesteps(795+1069), DIM)
+                shape: (batch_size, mel_timesteps(795 + 1069), 512)
             prompt (Tensor): reference mel
                 shape: (batch_size, 80, 795)
             style (Tensor): reference global style
-                shape: (batch_size, STYLE_DIM)
+                shape: (batch_size, 192)
 
         Returns:
             sample: generated mel-spectrogram
                 shape: (batch_size, 80, mel_timesteps)
         """
         B, T, _ = mu.shape
-        x = torch.randn([B, CHANNELS, T], device=mu.device)
-        t_span: Final = torch.linspace(0, 1, DIFFUSION_STEPS + 1, device=mu.device)
+        assert prompt.size(1) == 80
+        x = torch.randn([B, prompt.size(1), T], device=mu.device)
+        t_span: Final = torch.linspace(0, 1, diffusion_steps + 1, device=mu.device)
 
         prompt_len: Final = prompt.size(-1)
 
@@ -61,7 +59,7 @@ class CFM(nn.Module):
             dphi_dt, cfg_dphi_dt = stacked_dphi_dt.chunk(2)
 
             # Apply CFG formula
-            dphi_dt = (1.0 + CFG_RATE) * dphi_dt - CFG_RATE * cfg_dphi_dt
+            dphi_dt = (1.0 + cfg_rate) * dphi_dt - cfg_rate * cfg_dphi_dt
 
             dt = t_span[step] - t_span[step - 1]
             x += dt * dphi_dt

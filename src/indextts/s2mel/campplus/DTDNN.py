@@ -9,8 +9,6 @@ from torch import Tensor, nn
 import indextts.s2mel.campplus.layers as layers
 from indextts.util import patch_call
 
-STYLE_DIM = 192
-
 
 class _FCM(nn.Module):
     bn1: nn.BatchNorm2d
@@ -37,10 +35,14 @@ class _FCM(nn.Module):
     @override
     def forward(self, x: Tensor) -> Tensor:
         x = x.unsqueeze(1)
-        out = F.relu(self.bn1(self.conv1(x)))
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = F.relu(out)
         out = self.layer1(out)
         out = self.layer2(out)
-        out = F.relu(self.bn2(self.conv2(out)))
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = F.relu(out)
 
         shape = out.shape
         return out.reshape(shape[0], shape[1] * shape[2], shape[3])
@@ -53,7 +55,7 @@ class CAMPPlus(nn.Module):
     head: _FCM
     xvector: nn.Sequential
 
-    def __init__(self) -> None:
+    def __init__(self, style_dim: int = 192) -> None:
         super().__init__()
 
         self.head = _FCM()
@@ -65,14 +67,14 @@ class CAMPPlus(nn.Module):
         for i, (num_layers, dilation) in enumerate(zip((12, 24, 16), (1, 2, 2))):
             block = layers.CAMDenseTDNNBlock(num_layers=num_layers, in_channels=channels, dilation=dilation)
             self.xvector.add_module(f"block{i + 1}", block)
-            channels += num_layers * 32
+            channels += num_layers * layers.CAMDenseTDNNBlock.growth_rate
             self.xvector.add_module(f"transit{i + 1}", layers.TransitLayer(channels, channels // 2, bias=False))
             channels //= 2
 
         self.xvector.add_module("out_nonlinear", layers.get_nonlinear(channels))
 
         self.xvector.add_module("stats", layers.StatsPool())
-        self.xvector.add_module("dense", layers.DenseLayer(channels * 2, STYLE_DIM))
+        self.xvector.add_module("dense", layers.DenseLayer(channels * 2, style_dim))
 
         for m in self.modules():
             if isinstance(m, (nn.Conv1d, nn.Linear)):

@@ -3,19 +3,13 @@
 
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
-from functools import cached_property
-from typing import override
+from typing import ClassVar, override
 
 import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
 from indextts.util import patch_call
-
-BLOCK_SIZE = 16384
-DIM = 512
-N_HEAD: int = 8
-N_LAYER: int = 13
 
 
 class _AdaptiveLayerNorm(nn.Module):
@@ -42,31 +36,31 @@ class _AdaptiveLayerNorm(nn.Module):
 
 
 class Transformer(nn.Module):
+    block_size: ClassVar[int] = 2**14
+
+    freqs_cis: Tensor
     head_dim: int
     layers: nn.ModuleList[_TransformerBlock]
     norm: _AdaptiveLayerNorm
 
-    def __init__(self) -> None:
+    def __init__(self, dim: int = 512, n_head: int = 8, n_layer: int = 13) -> None:
         super().__init__()
 
-        self.head_dim = DIM // N_HEAD
+        self.head_dim = dim // n_head
 
-        self.layers = nn.ModuleList(_TransformerBlock(dim=DIM) for _ in range(N_LAYER))
-        self.norm = _AdaptiveLayerNorm(dim=DIM)
+        self.layers = nn.ModuleList(_TransformerBlock(dim=dim) for _ in range(n_layer))
+        self.norm = _AdaptiveLayerNorm(dim=dim)
 
-    @cached_property[Tensor]
-    def freqs_cis(self) -> Tensor:
         freq_seq = torch.arange(0, self.head_dim, 2)
-        inv_freq = (10000 ** (freq_seq / self.head_dim)).reciprocal()
-        t = torch.arange(BLOCK_SIZE)
-        angles = t.outer(inv_freq)
+        inv_freq = 1 / (10000 ** (freq_seq / self.head_dim))
+        angles = torch.arange(self.block_size).outer(inv_freq)
         freqs_cis = torch.polar(torch.ones_like(angles), angles)
-        return torch.view_as_real(freqs_cis)
+        self.freqs_cis = nn.Buffer(torch.view_as_real(freqs_cis), persistent=False)
 
     @override
     def forward(self, x: Tensor, c: Tensor, input_pos: Tensor) -> Tensor:
-        freqs_cis = self.freqs_cis.to(x.device)[input_pos]
-        mid = N_LAYER // 2
+        freqs_cis = self.freqs_cis[input_pos]
+        mid = len(self.layers) // 2
         skip_stack: list[Tensor] = []
         for i, layer in enumerate(self.layers):
             skip_in_x = skip_stack.pop() if i > mid else None

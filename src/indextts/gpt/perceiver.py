@@ -1,4 +1,5 @@
 # Adapted from https://github.com/lucidrains/naturalspeech2-pytorch/blob/659bec7f7543e7747e809e950cc2f84242fbeec7/naturalspeech2_pytorch/naturalspeech2_pytorch.py#L532
+import math
 from typing import override
 
 import torch
@@ -7,8 +8,6 @@ from einops import rearrange, repeat
 from torch import Tensor, nn
 
 from indextts.util import patch_call
-
-DIM_CONTEXT = 512
 
 
 class _Attention(nn.Module):
@@ -88,7 +87,7 @@ class _RMSNorm(nn.Module):
     def __init__(self, dim: int) -> None:
         super().__init__()
 
-        self.scale = dim**0.5
+        self.scale = math.sqrt(dim)
         self.gamma = nn.Parameter(torch.ones(dim))
 
     @override
@@ -115,10 +114,10 @@ class PerceiverResampler(nn.Module):
     layers: nn.ModuleList[nn.ModuleList[_Attention | nn.Sequential]]
     norm: _RMSNorm
 
-    def __init__(self, dim: int, num_latents: int = 32, heads: int = 8) -> None:
+    def __init__(self, dim_context: int, dim: int, num_latents: int, heads: int) -> None:
         super().__init__()
 
-        self.proj_context = nn.Linear(DIM_CONTEXT, dim)
+        self.proj_context = nn.Linear(dim_context, dim)
 
         self.latents = nn.Parameter(torch.randn(num_latents, dim))
         nn.init.normal_(self.latents, std=0.02)

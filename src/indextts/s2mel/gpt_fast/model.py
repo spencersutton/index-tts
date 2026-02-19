@@ -3,19 +3,14 @@
 
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
-from functools import cached_property
-from typing import override
+from functools import cache
+from typing import ClassVar, override
 
 import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
 from indextts.util import patch_call
-
-BLOCK_SIZE = 16384
-DIM = 512
-N_HEAD: int = 8
-N_LAYER: int = 13
 
 
 class _AdaptiveLayerNorm(nn.Module):
@@ -29,7 +24,7 @@ class _AdaptiveLayerNorm(nn.Module):
         super().__init__()
 
         self.dim = dim
-        self.norm = _RMSNorm(dim=dim)
+        self.norm = _RMSNorm(dim)
         self.project_layer = nn.Linear(dim, 2 * dim)
 
     @override
@@ -41,32 +36,35 @@ class _AdaptiveLayerNorm(nn.Module):
     def __call__(self) -> None: ...
 
 
+@cache
+def _compute_frequencies(device: torch.device, block_size: int, heads: int) -> Tensor:
+    freq_seq = torch.arange(0, heads, 2)
+    inv_freq = 1 / (10000 ** (freq_seq / heads))
+    angles = torch.arange(block_size).outer(inv_freq)
+    freqs_cis = torch.polar(torch.ones_like(angles), angles)
+    return torch.view_as_real(freqs_cis).to(device)
+
+
 class Transformer(nn.Module):
+    block_size: ClassVar[int] = 2**14
+
     head_dim: int
     layers: nn.ModuleList[_TransformerBlock]
     norm: _AdaptiveLayerNorm
 
-    def __init__(self) -> None:
+    def __init__(self, dim: int, n_head: int = 8, n_layer: int = 13) -> None:
         super().__init__()
 
-        self.head_dim = DIM // N_HEAD
+        self.head_dim = dim // n_head
 
-        self.layers = nn.ModuleList(_TransformerBlock(dim=DIM) for _ in range(N_LAYER))
-        self.norm = _AdaptiveLayerNorm(dim=DIM)
-
-    @cached_property[Tensor]
-    def freqs_cis(self) -> Tensor:
-        freq_seq = torch.arange(0, self.head_dim, 2)
-        inv_freq = (10000 ** (freq_seq / self.head_dim)).reciprocal()
-        t = torch.arange(BLOCK_SIZE)
-        angles = t.outer(inv_freq)
-        freqs_cis = torch.polar(torch.ones_like(angles), angles)
-        return torch.view_as_real(freqs_cis)
+        self.layers = nn.ModuleList(_TransformerBlock(dim) for _ in range(n_layer))
+        self.norm = _AdaptiveLayerNorm(dim)
 
     @override
     def forward(self, x: Tensor, c: Tensor, input_pos: Tensor) -> Tensor:
-        freqs_cis = self.freqs_cis.to(x.device)[input_pos]
-        mid = N_LAYER // 2
+        computed_frequencies = _compute_frequencies(x.device, self.block_size, self.head_dim)
+        freqs_cis = computed_frequencies[input_pos]
+        mid = len(self.layers) // 2
         skip_stack: list[Tensor] = []
         for i, layer in enumerate(self.layers):
             skip_in_x = skip_stack.pop() if i > mid else None
@@ -91,10 +89,10 @@ class _TransformerBlock(nn.Module):
         super().__init__()
 
         self.dim = dim
-        self.attention = _Attention(dim=dim)
-        self.feed_forward = _FeedForward(dim=dim)
-        self.ffn_norm = _AdaptiveLayerNorm(dim=dim)
-        self.attention_norm = _AdaptiveLayerNorm(dim=dim)
+        self.attention = _Attention(dim)
+        self.feed_forward = _FeedForward(dim)
+        self.ffn_norm = _AdaptiveLayerNorm(dim)
+        self.attention_norm = _AdaptiveLayerNorm(dim)
         self.skip_in_linear = nn.Linear(dim * 2, dim)
 
     @override
@@ -125,8 +123,8 @@ class _Attention(nn.Module):
         self.head_dim = dim // n_head
 
         # key, query, value projections for all heads, but in a batch
-        self.wqkv = nn.Linear(self.dim, self.dim * 3, bias=False)
-        self.wo = nn.Linear(self.dim, self.dim, bias=False)
+        self.wqkv = nn.Linear(dim, dim * 3, bias=False)
+        self.wo = nn.Linear(dim, dim, bias=False)
 
     @override
     def forward(self, x: Tensor, freqs_cis: Tensor) -> Tensor:

@@ -3,8 +3,7 @@
 
 from typing import override
 
-import torch.nn as nn
-from torch import Tensor
+from torch import Tensor, nn
 from torch.nn import functional as F
 
 from bigvgan.alias_free_activation.torch.filter import LowPassFilter1d, kaiser_sinc_filter1d

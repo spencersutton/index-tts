@@ -5,10 +5,9 @@ import math
 from typing import override
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from jaxtyping import Float
-from torch import Tensor
+from torch import Tensor, nn
 
 from indextts.util import patch_call
 

@@ -14,12 +14,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Self, cast, override
 
 import torch
-import torch.nn as nn
 from huggingface_hub import PyTorchModelHubMixin, hf_hub_download
+from torch import nn
 from torch.nn import Conv1d, ConvTranspose1d
 from torch.nn.utils import remove_weight_norm, weight_norm
 
-import bigvgan.activations as activations
+from bigvgan import activations
 from bigvgan.alias_free_activation.torch.act import Activation1d as TorchActivation1d
 from indextts.util import patch_call
 
@@ -154,9 +154,9 @@ class AMPBlock1(torch.nn.Module):
         return x
 
     def remove_weight_norm(self) -> None:
-        for l in self.convs1:  # noqa: E741
+        for l in self.convs1:
             remove_weight_norm(l)
-        for l in self.convs2:  # noqa: E741
+        for l in self.convs2:
             remove_weight_norm(l)
 
 
@@ -236,7 +236,7 @@ class AMPBlock2(torch.nn.Module):
     def __call__(self) -> None: ...
 
     def remove_weight_norm(self) -> None:
-        for l in self.convs:  # noqa: E741
+        for l in self.convs:
             remove_weight_norm(l)
 
 
@@ -391,16 +391,15 @@ class BigVGAN(
     def remove_weight_norm(self) -> None:
         try:
             print("Removing weight norm...")
-            for l in self.ups:  # noqa: E741
+            for l in self.ups:
                 for l_i in l:
                     remove_weight_norm(l_i)
-            for l in self.resblocks:  # noqa: E741
+            for l in self.resblocks:
                 l.remove_weight_norm()
             remove_weight_norm(self.conv_pre)
             remove_weight_norm(self.conv_post)
         except ValueError:
             print("[INFO] Model already removed weight norm. Skipping!")
-            pass
 
     # Additional methods for huggingface_hub support
     def _save_pretrained(self, save_directory: Path) -> None:

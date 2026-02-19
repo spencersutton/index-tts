@@ -51,15 +51,16 @@ class Transformer(nn.Module):
         self.layers = nn.ModuleList(_TransformerBlock(dim=dim) for _ in range(n_layer))
         self.norm = _AdaptiveLayerNorm(dim=dim)
 
-        freq_seq = torch.arange(0, self.head_dim, 2)
-        inv_freq = 1 / (10000 ** (freq_seq / self.head_dim))
-        angles = torch.arange(self.block_size).outer(inv_freq)
-        freqs_cis = torch.polar(torch.ones_like(angles), angles)
-        self.freqs_cis = nn.Buffer(torch.view_as_real(freqs_cis), persistent=False)
+        with torch.device("cpu"):
+            freq_seq = torch.arange(0, self.head_dim, 2)
+            inv_freq = 1 / (10000 ** (freq_seq / self.head_dim))
+            angles = torch.arange(self.block_size).outer(inv_freq)
+            freqs_cis = torch.polar(torch.ones_like(angles), angles)
+            self.freqs_cis = torch.view_as_real(freqs_cis)
 
     @override
     def forward(self, x: Tensor, c: Tensor, input_pos: Tensor) -> Tensor:
-        freqs_cis = self.freqs_cis[input_pos]
+        freqs_cis = self.freqs_cis.to(x.device)[input_pos]
         mid = len(self.layers) // 2
         skip_stack: list[Tensor] = []
         for i, layer in enumerate(self.layers):

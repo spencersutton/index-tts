@@ -113,7 +113,7 @@ class PerceiverResampler(nn.Module):
     layers: nn.ModuleList[nn.ModuleList[_Attention | nn.Sequential]]
     norm: _RMSNorm
 
-    def __init__(self, dim: int, num_latents: int, heads: int, dim_context: int = 512) -> None:
+    def __init__(self, dim_context: int, dim: int, num_latents: int, heads: int) -> None:
         super().__init__()
 
         self.proj_context = nn.Linear(dim_context, dim)

@@ -50,7 +50,7 @@ class _PositionwiseFeedForward(nn.Module):
     w_1: nn.Linear
     w_2: nn.Linear
 
-    def __init__(self, hidden_units: int, activation: nn.SiLU, dim: int = 512) -> None:
+    def __init__(self, hidden_units: int, activation: nn.SiLU, dim: int) -> None:
         """Construct a PositionwiseFeedForward object."""
         super().__init__()
 
@@ -84,7 +84,7 @@ class _ConvolutionModule(nn.Module):
     pointwise_conv1: nn.Conv1d
     pointwise_conv2: nn.Conv1d
 
-    def __init__(self, activation: nn.SiLU, dim: int = 512) -> None:
+    def __init__(self, activation: nn.SiLU, dim: int) -> None:
         """Construct an ConvolutionModule object.
         Args:
             channels (int): The number of channels of conv layers.
@@ -164,7 +164,7 @@ class _ConformerEncoderLayer(nn.Module):
         self_attn: RelPositionMultiHeadedAttention,
         feed_forward: _PositionwiseFeedForward,
         conv_module: _ConvolutionModule,
-        dim: int = 512,
+        dim: int,
     ) -> None:
         """Construct an EncoderLayer object."""
         super().__init__()
@@ -216,7 +216,7 @@ class ConformerEncoder(nn.Module):
     embed: Conv2dSubsampling2
     encoders: nn.ModuleList[_ConformerEncoderLayer]
 
-    def __init__(self, attention_heads: int, linear_units: int, num_blocks: int, dim: int = 512) -> None:
+    def __init__(self, dim: int, attention_heads: int, linear_units: int, num_blocks: int) -> None:
         """
         Args:
             attention_heads (int): the number of heads of multi head attention
@@ -227,13 +227,13 @@ class ConformerEncoder(nn.Module):
         """
         super().__init__()
 
-        self.embed = Conv2dSubsampling2()
+        self.embed = Conv2dSubsampling2(dim)
         self.after_norm = nn.LayerNorm(dim)
         activation = nn.SiLU()
 
         self.encoders = nn.ModuleList([
             _ConformerEncoderLayer(
-                RelPositionMultiHeadedAttention(attention_heads),
+                RelPositionMultiHeadedAttention(dim, attention_heads),
                 _PositionwiseFeedForward(linear_units, activation=activation, dim=dim),
                 _ConvolutionModule(activation, dim=dim),
                 dim=dim,

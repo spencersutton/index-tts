@@ -18,7 +18,7 @@ class _TimestepEmbedder(nn.Module):
     freqs: Tensor
     mlp: nn.Sequential
 
-    def __init__(self, dim: int = 512) -> None:
+    def __init__(self, dim: int) -> None:
         super().__init__()
         self.mlp = nn.Sequential(nn.Linear(dim // 2, dim), nn.SiLU(), nn.Linear(dim, dim))
 
@@ -43,7 +43,7 @@ class _FinalLayer(nn.Module):
     linear: nn.Linear
     norm_final: nn.LayerNorm
 
-    def __init__(self, dim: int = 512) -> None:
+    def __init__(self, dim: int) -> None:
         super().__init__()
 
         self.norm_final = nn.LayerNorm(dim, elementwise_affine=False, eps=1e-6)
@@ -73,21 +73,21 @@ class DiT(nn.Module):
     transformer: Transformer
     wavenet: WaveNet
 
-    def __init__(self, dim: int = 512, channels: int = 80, style_dim: int = 192, block_size: int = 2**14) -> None:
+    def __init__(self, dim: int, channels: int = 80, style_dim: int = 192, block_size: int = 2**14) -> None:
         super().__init__()
 
         self.cond_projection = nn.Linear(dim, dim)  # continuous content
         self.cond_x_merge_linear = nn.Linear(dim + channels * 2 + style_dim, dim)
         self.conv1 = nn.Linear(dim, dim)
         self.conv2 = nn.Conv1d(dim, channels, kernel_size=1)
-        self.final_layer = _FinalLayer(dim=dim)
+        self.final_layer = _FinalLayer(dim)
         self.input_pos = nn.Buffer(torch.arange(block_size))
         self.res_projection = nn.Linear(dim, dim)
         self.skip_linear = nn.Linear(dim + channels, dim)
-        self.t_embedder = _TimestepEmbedder(dim=dim)
-        self.t_embedder2 = _TimestepEmbedder(dim=dim)
-        self.transformer = Transformer(dim=dim)
-        self.wavenet = WaveNet(dim=dim)
+        self.t_embedder = _TimestepEmbedder(dim)
+        self.t_embedder2 = _TimestepEmbedder(dim)
+        self.transformer = Transformer(dim)
+        self.wavenet = WaveNet(dim)
 
     @override
     def forward(self, x: Tensor, prompt_x: Tensor, t: Tensor, style: Tensor, cond: Tensor) -> Tensor:

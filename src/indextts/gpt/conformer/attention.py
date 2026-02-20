@@ -42,7 +42,7 @@ class RelPositionMultiHeadedAttention(nn.Module):
     pos_bias_u: nn.Parameter
     pos_bias_v: nn.Parameter
 
-    def __init__(self, n_head: int, dim: int = 512) -> None:
+    def __init__(self, dim: int, n_head: int) -> None:
         super().__init__()
 
         assert dim % n_head == 0

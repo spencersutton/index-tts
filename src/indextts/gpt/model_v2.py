@@ -85,7 +85,7 @@ class UnifiedVoice(nn.Module):
     layers: ClassVar[int] = 24
     """Number of transformer layers in the GPT stack."""
 
-    def __init__(self, n_latent: int = 32, use_accel: bool = False) -> None:
+    def __init__(self, dim: int, n_latent: int = 32, use_accel: bool = False) -> None:
         """
         Args:
             layers: Number of layers in transformer stack.
@@ -96,11 +96,11 @@ class UnifiedVoice(nn.Module):
         super().__init__()
         self.cond_mask_pad = nn.ConstantPad1d((n_latent, 0), True)
         self.emo_cond_mask_pad = nn.ConstantPad1d((1, 0), True)
-        self.conditioning_encoder = ConformerEncoder(linear_units=2048, attention_heads=8, num_blocks=6)
-        self.perceiver_encoder = PerceiverResampler(self.voice_dim, heads=8, num_latents=n_latent)
+        self.conditioning_encoder = ConformerEncoder(dim, linear_units=2048, attention_heads=8, num_blocks=6)
+        self.perceiver_encoder = PerceiverResampler(dim, self.voice_dim, heads=8, num_latents=n_latent)
 
-        self.emo_conditioning_encoder = ConformerEncoder(linear_units=1024, attention_heads=4, num_blocks=4)
-        self.emo_perceiver_encoder = PerceiverResampler(1024, heads=4, num_latents=1)
+        self.emo_conditioning_encoder = ConformerEncoder(dim, linear_units=1024, attention_heads=4, num_blocks=4)
+        self.emo_perceiver_encoder = PerceiverResampler(dim, 1024, heads=4, num_latents=1)
 
         self.emo_layer = nn.Linear(self.voice_dim, self.voice_dim)
         self.emovec_layer = nn.Linear(1024, self.voice_dim)

@@ -40,7 +40,7 @@ class RelPositionalEncoding(nn.Module):
     pe: Tensor
     dim: int
 
-    def __init__(self, dim: int = 512, max_len: int = 5000) -> None:
+    def __init__(self, dim: int, max_len: int = 5000) -> None:
         """Construct an PositionalEncoding object."""
         super().__init__()
 

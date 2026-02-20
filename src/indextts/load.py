@@ -27,7 +27,7 @@ def extract_features() -> transformers.SeamlessM4TFeatureExtractor:
     return model
 
 
-def gpt(device: torch.device, use_accel: bool, use_fp16: bool) -> UnifiedVoice:
+def gpt(device: torch.device, dim: int, use_accel: bool, use_fp16: bool) -> UnifiedVoice:
     with Timer() as t:
         path = CHECKPOINT_DIR / "gpt.safetensors"
         if not path.exists():
@@ -38,7 +38,7 @@ def gpt(device: torch.device, use_accel: bool, use_fp16: bool) -> UnifiedVoice:
         data = safetensors.torch.load_file(path, device=str(device))
 
         with torch.device("meta"):
-            model = UnifiedVoice(use_accel=use_accel)
+            model = UnifiedVoice(dim, use_accel=use_accel)
         model.load_state_dict(data, assign=True)
 
         if use_fp16:
@@ -114,7 +114,7 @@ def _get_s2mel_checkpoint() -> dict[str, dict[str, dict[str, Tensor]]]:
     return cast(dict[str, dict[str, dict[str, Tensor]]], torch.load(path, map_location="cpu", weights_only=False))
 
 
-def cfm(device: torch.device) -> CFM:
+def cfm(device: torch.device, dim: int) -> CFM:
     with Timer() as t:
         path = CHECKPOINT_DIR / "cfm.safetensors"
         if not path.exists():
@@ -129,14 +129,14 @@ def cfm(device: torch.device) -> CFM:
         else:
             data = safetensors.torch.load_file(path, device=str(device))
         with torch.device("meta"):
-            model = CFM()
+            model = CFM(dim)
         model.load_state_dict(data, assign=True)
 
     print(f">> CFM weights restored in {t:.2f} seconds from: {path}")
     return model.eval()
 
 
-def length_regulator(device: torch.device) -> InterpolateRegulator:
+def length_regulator(device: torch.device, dim: int) -> InterpolateRegulator:
     with Timer() as t:
         path = CHECKPOINT_DIR / "length_regulator.safetensors"
         if not path.exists():
@@ -147,7 +147,7 @@ def length_regulator(device: torch.device) -> InterpolateRegulator:
             safetensors.torch.save_file(data, path)
         data = safetensors.torch.load_file(path, device=str(device))
         with torch.device("meta"):
-            model = InterpolateRegulator()
+            model = InterpolateRegulator(dim)
         model.load_state_dict(data, assign=True)
 
     print(f">> Length Regulator weights restored in {t:.2f} seconds from: {path}")
@@ -162,7 +162,3 @@ def bigvgan(device: torch.device, use_cuda_kernel: bool) -> BigVGAN:
 
     print(f">> bigvgan weights restored in {t:.2f} seconds.")
     return model
-
-
-if __name__ == "__main__":
-    x = cfm(torch.device("cpu"))

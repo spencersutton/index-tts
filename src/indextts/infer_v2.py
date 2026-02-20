@@ -132,15 +132,15 @@ class IndexTTS2:
         self.dtype = torch.float16 if self.use_fp16 else torch.get_default_dtype()
         self.use_accel = use_accel
 
-        self.gpt = load.gpt(self.device, self.use_accel, self.use_fp16)
+        self.gpt = load.gpt(self.device, 512, self.use_accel, self.use_fp16)
         self.semantic_model = load.semantic_model(self.device)
         self.semantic_mean, self.semantic_std = load.semantic_stats(self.device)
         self.semantic_codec = load.semantic_codec(self.device)
         self.bigvgan = load.bigvgan(self.device, self.use_cuda_kernel)
         self.campplus_model = load.campplus_model(self.device)
         self.tokenizer = load.tokenizer(self.normalizer)
-        self.cfm = load.cfm(self.device)
-        self.length_regulator = load.length_regulator(self.device)
+        self.cfm = load.cfm(self.device, dim=512)
+        self.length_regulator = load.length_regulator(self.device, dim=512)
 
         self.gpt.post_init_gpt2_config(half=self.use_fp16)
 

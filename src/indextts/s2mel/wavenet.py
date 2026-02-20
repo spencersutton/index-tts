@@ -13,17 +13,17 @@ class WaveNet(nn.Module):
     res_skip_layers: nn.ModuleList[SConv1d]
     dim: int
 
-    def __init__(self, dim: int = 512, n_layers: int = 8, kernel_size: int = 5) -> None:
+    def __init__(self, dim: int, n_layers: int = 8, kernel_size: int = 5) -> None:
         super().__init__()
 
         self.dim = dim
 
-        self.cond_layer = SConv1d(dim * 2 * n_layers, 1)
-        layers = [SConv1d(dim * 2, kernel_size=kernel_size) for _ in range(n_layers)]
+        self.cond_layer = SConv1d(dim, dim * 2 * n_layers, 1)
+        layers = [SConv1d(dim, dim * 2, kernel_size=kernel_size) for _ in range(n_layers)]
         self.in_layers = nn.ModuleList(layers)
 
-        layers = [SConv1d(dim * 2, 1) for _ in range(n_layers - 1)]
-        layers.append(SConv1d(dim, 1))
+        layers = [SConv1d(dim, dim * 2, 1) for _ in range(n_layers - 1)]
+        layers.append(SConv1d(dim, dim, 1))
         self.res_skip_layers = nn.ModuleList(layers)
 
     @override

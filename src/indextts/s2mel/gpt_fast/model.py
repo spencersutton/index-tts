@@ -23,7 +23,7 @@ class _AdaptiveLayerNorm(nn.Module):
         super().__init__()
 
         self.dim = dim
-        self.norm = _RMSNorm(dim=dim)
+        self.norm = _RMSNorm(dim)
         self.project_layer = nn.Linear(dim, 2 * dim)
 
     @override
@@ -43,13 +43,13 @@ class Transformer(nn.Module):
     layers: nn.ModuleList[_TransformerBlock]
     norm: _AdaptiveLayerNorm
 
-    def __init__(self, dim: int = 512, n_head: int = 8, n_layer: int = 13) -> None:
+    def __init__(self, dim: int, n_head: int = 8, n_layer: int = 13) -> None:
         super().__init__()
 
         self.head_dim = dim // n_head
 
-        self.layers = nn.ModuleList(_TransformerBlock(dim=dim) for _ in range(n_layer))
-        self.norm = _AdaptiveLayerNorm(dim=dim)
+        self.layers = nn.ModuleList(_TransformerBlock(dim) for _ in range(n_layer))
+        self.norm = _AdaptiveLayerNorm(dim)
 
         with torch.device("cpu"):
             freq_seq = torch.arange(0, self.head_dim, 2)
@@ -86,10 +86,10 @@ class _TransformerBlock(nn.Module):
         super().__init__()
 
         self.dim = dim
-        self.attention = _Attention(dim=dim)
-        self.feed_forward = _FeedForward(dim=dim)
-        self.ffn_norm = _AdaptiveLayerNorm(dim=dim)
-        self.attention_norm = _AdaptiveLayerNorm(dim=dim)
+        self.attention = _Attention(dim)
+        self.feed_forward = _FeedForward(dim)
+        self.ffn_norm = _AdaptiveLayerNorm(dim)
+        self.attention_norm = _AdaptiveLayerNorm(dim)
         self.skip_in_linear = nn.Linear(dim * 2, dim)
 
     @override

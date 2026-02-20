@@ -11,11 +11,11 @@ class CFM(nn.Module):
     criterion: nn.L1Loss
     estimator: DiT
 
-    def __init__(self) -> None:
+    def __init__(self, dim: int) -> None:
         super().__init__()
 
         self.criterion = nn.L1Loss()
-        self.estimator = DiT()
+        self.estimator = DiT(dim)
 
     @torch.inference_mode()
     def inference(

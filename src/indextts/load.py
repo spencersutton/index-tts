@@ -1,3 +1,6 @@
+import logging
+import os
+import warnings
 from collections.abc import Mapping
 from pathlib import Path
 from typing import cast
@@ -18,6 +21,44 @@ from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.repcodec_model import RepCodec
 
 CHECKPOINT_DIR = Path("./checkpoints")
+
+
+def _configure_cuda_linker_env() -> None:
+    """Ensure the linker can resolve -lcuda for AOTInductor compilation."""
+    real_lib_candidates = (Path("/usr/lib/x86_64-linux-gnu/libcuda.so.1"), Path("/usr/lib/wsl/lib/libcuda.so.1"))
+    real_libcuda = next((p for p in real_lib_candidates if p.exists()), None)
+    if real_libcuda is None:
+        raise RuntimeError(
+            "libcuda.so.1 was not found. Install an NVIDIA driver package that provides libcuda "
+            "(for Ubuntu typically libnvidia-compute-<driver-version>)."
+        )
+
+    # Prefer real driver directories, and add CUDA stubs as a secondary fallback.
+    search_dirs = [Path("/usr/lib/x86_64-linux-gnu"), Path("/usr/lib/wsl/lib"), Path("/usr/local/cuda/lib64/stubs")]
+
+    if not any((d / "libcuda.so").exists() for d in search_dirs if d.exists()):
+        # Create a user-space linker shim for environments exposing only libcuda.so.1.
+        shim_dir = Path.home() / ".cache" / "indextts" / "cuda-link"
+        shim_dir.mkdir(parents=True, exist_ok=True)
+        shim_lib = shim_dir / "libcuda.so"
+
+        if shim_lib.exists() or shim_lib.is_symlink():
+            shim_lib.unlink()
+        shim_lib.symlink_to(real_libcuda)
+        search_dirs.insert(0, shim_dir)
+
+    def _prepend_env_path(key: str, entries: list[Path]) -> None:
+        existing = os.environ.get(key, "")
+        existing_parts = [part for part in existing.split(":") if part]
+        new_parts = [str(entry) for entry in entries if entry.exists()]
+        merged: list[str] = []
+        for part in [*new_parts, *existing_parts]:
+            if part not in merged:
+                merged.append(part)
+        os.environ[key] = ":".join(merged)
+
+    _prepend_env_path("LIBRARY_PATH", search_dirs)
+    _prepend_env_path("LD_LIBRARY_PATH", search_dirs)
 
 
 def extract_features() -> transformers.SeamlessM4TFeatureExtractor:
@@ -162,3 +203,43 @@ def bigvgan(device: torch.device, use_cuda_kernel: bool) -> BigVGAN:
 
     print(f">> bigvgan weights restored in {t:.2f} seconds.")
     return model
+
+
+if __name__ == "__main__":
+    from torch import _inductor as inductor
+
+    # NOTE:
+    # AOTInductor export currently hits mixed-dtype addmm failures when exporting
+    # this model in fp16 (`Float` activations vs `Half` weights). Runtime inference
+    # uses autocast, but export/compile here traces a raw forward pass.
+    # Export in fp32 for a stable compile artifact.
+    # Reduce matmul precision warning noise while improving TensorCore throughput.
+    torch.set_float32_matmul_precision("high")
+    if hasattr(torch, "_inductor") and hasattr(inductor, "config"):
+        inductor.config.max_autotune = False
+        inductor.config.max_autotune_gemm = False
+    logging.getLogger("inductor.utils").setLevel(logging.ERROR)
+
+    device = torch.device("cuda")
+    gpt_model = gpt(device, 512, use_accel=True, use_fp16=False)
+    warnings.filterwarnings("ignore", module=r".*copyreg", lineno=104, category=FutureWarning)
+    with Timer() as t, device:
+        export_module = torch.export.export(
+            gpt_model,
+            args=(
+                torch.zeros(1, 32, UnifiedVoice.voice_dim),
+                torch.zeros(1, 16, dtype=torch.long),
+                torch.zeros(1, 32, dtype=torch.long),
+                torch.zeros(1, UnifiedVoice.voice_dim),
+            ),
+        )
+    print(f">> GPT model exported in {t:.2f} seconds.")
+
+    with Timer() as t:
+        _configure_cuda_linker_env()
+        output_path = inductor.aoti_compile_and_package(
+            export_module,
+            package_path="gpt_package.pt2",
+            inductor_configs={"max_autotune": False, "max_autotune_gemm": False},
+        )
+    print(f"Model compiled to: {output_path} in {t:.2f} seconds.")

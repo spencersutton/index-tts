@@ -48,7 +48,7 @@ def gpt(device: torch.device, dim: int, use_accel: bool, use_compiled: bool = Tr
             print(f"Loading compiled GPT model from {aoti_load_package}")
             model = inductor.aoti_load_package(aoti_load_package)
             print(f">> Compiled GPT model loaded in {t:.2f} seconds from: {aoti_load_package}")
-            return model
+            return cast(UnifiedVoice, model)  # type: ignore
         path = CHECKPOINT_DIR / "gpt.safetensors"
 
         if not path.exists():
@@ -209,6 +209,8 @@ if __name__ == "__main__":
 
     with Timer() as t:
         output_path = inductor.aoti_compile_and_package(
-            export_module, package_path=GPT_PATH, inductor_configs={"max_autotune": False, "max_autotune_gemm": False}
+            export_module,
+            package_path=str(GPT_PATH),
+            inductor_configs={"max_autotune": False, "max_autotune_gemm": False},
         )
     print(f"Model compiled to: {output_path} in {t:.2f} seconds.")

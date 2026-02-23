@@ -3,8 +3,7 @@
 
 from typing import override
 
-import torch.nn as nn
-from torch import Tensor
+from torch import Tensor, nn
 
 from bigvgan.activations import Snake
 from bigvgan.alias_free_activation.torch.resample import DownSample1d, UpSample1d

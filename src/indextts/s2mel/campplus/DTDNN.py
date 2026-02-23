@@ -6,7 +6,7 @@ from typing import override
 import torch.nn.functional as F
 from torch import Tensor, nn
 
-import indextts.s2mel.campplus.layers as layers
+from indextts.s2mel.campplus import layers
 from indextts.util import patch_call
 
 

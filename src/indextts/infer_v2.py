@@ -15,8 +15,8 @@ from torch import Tensor
 from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
 
-import indextts.load as load
 from bigvgan.inference import BigVGANInference
+from indextts import load
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.qwen import QwenEmotion
 from indextts.s2mel import CFM, CAMPPlus, InterpolateRegulator, mel_spectrogram

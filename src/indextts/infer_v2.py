@@ -17,7 +17,7 @@ from torchcodec.encoders import AudioEncoder
 
 from bigvgan.inference import BigVGANInference
 from indextts import load
-from indextts.gpt.model_v2 import UnifiedVoice
+from indextts.gpt.model_v2 import UnifiedVoice, post_init_gpt2_config
 from indextts.qwen import QwenEmotion
 from indextts.s2mel import CFM, CAMPPlus, InterpolateRegulator, mel_spectrogram
 from indextts.s2mel.audio import N_MELS, SAMPLING_RATE
@@ -77,7 +77,6 @@ class IndexTTS2:
     dtype: torch.dtype
     use_accel: bool
     use_cuda_kernel: bool
-    use_fp16: bool
 
     emo_matrix: tuple[Tensor, ...]
     spk_matrix: tuple[Tensor, ...]
@@ -109,7 +108,6 @@ class IndexTTS2:
 
     def __init__(
         self,
-        use_fp16: bool = False,
         device: str | None = None,
         use_cuda_kernel: bool = False,
         use_accel: bool = False,
@@ -117,7 +115,6 @@ class IndexTTS2:
     ) -> None:
         """
         Args:
-            use_fp16 (bool): whether to use fp16.
             device (str | None): device to use (e.g., 'cuda:0', 'cpu'). If None, it will be set automatically based on the availability of CUDA or MPS.
             use_cuda_kernel (None | bool): whether to use BigVGan custom fused activation CUDA kernel, only for CUDA device.
             use_accel (bool): whether to use acceleration engine for GPT2 or not.
@@ -128,11 +125,10 @@ class IndexTTS2:
             torch.device(device) if device else torch.accelerator.current_accelerator() or torch.get_default_device()
         )
         self.use_cuda_kernel = use_cuda_kernel and str(self.device).startswith("cuda")
-        self.use_fp16 = use_fp16 and self.device not in ("cpu", "mps")
-        self.dtype = torch.float16 if self.use_fp16 else torch.get_default_dtype()
+        self.dtype = torch.get_default_dtype()
         self.use_accel = use_accel
 
-        self.gpt = load.gpt(self.device, 512, self.use_accel, self.use_fp16)
+        self.gpt = load.gpt(self.device, 512, self.use_accel)
         self.semantic_model = load.semantic_model(self.device)
         self.semantic_mean, self.semantic_std = load.semantic_stats(self.device)
         self.semantic_codec = load.semantic_codec(self.device)
@@ -142,7 +138,7 @@ class IndexTTS2:
         self.cfm = load.cfm(self.device, dim=512)
         self.length_regulator = load.length_regulator(self.device, dim=512)
 
-        self.gpt.post_init_gpt2_config(half=self.use_fp16)
+        post_init_gpt2_config(self.gpt)
 
         if self.use_cuda_kernel:
             # preload the CUDA kernel for BigVGAN
@@ -211,7 +207,7 @@ class IndexTTS2:
             # in the main inference process later, so we must pre-calculate
             # their new strengths here based on the alpha instead!
             emo_vector_scale = max(0.0, min(1.0, emo_alpha))
-            if emo_vector_scale != 1.0:
+            if emo_vector_scale != 1.0:  # noqa: RUF069
                 # scale each vector and truncate to 4 decimals (for nicer printing)
                 emo_vector = [int(x * emo_vector_scale * 10000) / 10000 for x in emo_vector]
                 print(f"scaled emotion vectors to {emo_vector_scale}x: {emo_vector}")

@@ -21,7 +21,6 @@ def main() -> None:
         default="checkpoints/config.yaml",
         help="Path to the config file. Default is 'checkpoints/config.yaml'",
     )
-    parser.add_argument("--fp16", action="store_true", default=False, help="Use FP16 for inference if available")
     parser.add_argument(
         "-f", "--force", action="store_true", default=False, help="Force to overwrite the output file if it exists"
     )
@@ -75,7 +74,6 @@ def main() -> None:
             args.device = "mps"
         else:
             args.device = "cpu"
-            args.fp16 = False  # Disable FP16 on CPU
             print("WARNING: Running on CPU may be slow.")
 
     print("Importing IndexTTS2...")
@@ -86,7 +84,7 @@ def main() -> None:
         profiler.start()
 
     print("Initializing IndexTTS2...")
-    tts = IndexTTS2(use_fp16=args.fp16, device=args.device, use_accel=args.use_accel)
+    tts = IndexTTS2(device=args.device, use_accel=args.use_accel)
     print("Start inference...")
     tts.infer(output_path=output_path, spk_audio_prompt=voice_file, text=args.text.strip())
 

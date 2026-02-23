@@ -7,6 +7,7 @@ from typing import cast
 import huggingface_hub as hf
 import safetensors.torch
 import torch
+import torch._inductor.codecache  # noqa: F401 # pyright: ignore[reportUnusedImport]
 import transformers
 from torch import Tensor
 
@@ -20,6 +21,7 @@ from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.repcodec_model import RepCodec
 
 CHECKPOINT_DIR = Path("./checkpoints")
+GPT_PATH = CHECKPOINT_DIR / "gpt_compiled.pt2"
 
 
 def extract_features() -> transformers.SeamlessM4TFeatureExtractor:
@@ -29,9 +31,26 @@ def extract_features() -> transformers.SeamlessM4TFeatureExtractor:
     return model
 
 
-def gpt(device: torch.device, dim: int, use_accel: bool, use_fp16: bool) -> UnifiedVoice:
+def gpt(device: torch.device, dim: int, use_accel: bool, use_compiled: bool = True) -> UnifiedVoice:
+    import torch
+
     with Timer() as t:
+        aoti_load_package = GPT_PATH
+        assert aoti_load_package.exists(), (
+            f"Compiled GPT model not found at {aoti_load_package}. Please run the load script to compile the model first."
+        )
+        if aoti_load_package.exists() and use_compiled:
+            # Torch 2.10+ does not always attach this submodule eagerly, but the
+            # PT2 archive loader references torch._inductor.codecache directly.
+            # Importing it once ensures the attribute is available for AOTI load.
+            from torch import _inductor as inductor
+
+            print(f"Loading compiled GPT model from {aoti_load_package}")
+            model = inductor.aoti_load_package(aoti_load_package)
+            print(f">> Compiled GPT model loaded in {t:.2f} seconds from: {aoti_load_package}")
+            return model
         path = CHECKPOINT_DIR / "gpt.safetensors"
+
         if not path.exists():
             pt_path = hf.hf_hub_download("IndexTeam/IndexTTS-2", filename="gpt.pth")
             data = cast(dict[str, Tensor], torch.load(pt_path, map_location="cpu"))
@@ -42,9 +61,6 @@ def gpt(device: torch.device, dim: int, use_accel: bool, use_fp16: bool) -> Unif
         with torch.device("meta"):
             model = UnifiedVoice(dim, use_accel=use_accel)
         model.load_state_dict(data, assign=True)
-
-        if use_fp16:
-            model = model.half()
 
     print(f">> GPT weights restored in {t:.2f} seconds from: {path}")
     return model.eval()
@@ -169,11 +185,6 @@ def bigvgan(device: torch.device, use_cuda_kernel: bool) -> BigVGAN:
 if __name__ == "__main__":
     from torch import _inductor as inductor
 
-    # NOTE:
-    # AOTInductor export currently hits mixed-dtype addmm failures when exporting
-    # this model in fp16 (`Float` activations vs `Half` weights). Runtime inference
-    # uses autocast, but export/compile here traces a raw forward pass.
-    # Export in fp32 for a stable compile artifact.
     # Reduce matmul precision warning noise while improving TensorCore throughput.
     torch.set_float32_matmul_precision("high")
     if hasattr(torch, "_inductor") and hasattr(inductor, "config"):
@@ -182,7 +193,7 @@ if __name__ == "__main__":
     logging.getLogger("_inductor.utils").setLevel(logging.ERROR)
 
     device = torch.device("cuda")
-    gpt_model = gpt(device, 512, use_accel=True, use_fp16=False)
+    gpt_model = gpt(device, 512, use_accel=False, use_compiled=False)
     warnings.filterwarnings("ignore", module=r".*copyreg", lineno=104, category=FutureWarning)
     with Timer() as t, device:
         export_module = torch.export.export(
@@ -198,8 +209,6 @@ if __name__ == "__main__":
 
     with Timer() as t:
         output_path = inductor.aoti_compile_and_package(
-            export_module,
-            package_path="gpt_package.pt2",
-            inductor_configs={"max_autotune": False, "max_autotune_gemm": False},
+            export_module, package_path=GPT_PATH, inductor_configs={"max_autotune": False, "max_autotune_gemm": False}
         )
     print(f"Model compiled to: {output_path} in {t:.2f} seconds.")

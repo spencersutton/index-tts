@@ -145,52 +145,6 @@ class UnifiedVoice(nn.Module):
         self.use_accel = use_accel
         self.accel_engine = None  # Will be initialized in post_init_gpt2_config
 
-    def post_init_gpt2_config(self, half: bool) -> None:
-        gpt_config = transformers.GPT2Config(
-            vocab_size=NUMBER_MEL_CODES,
-            n_positions=SEQ_LENGTH,
-            n_ctx=SEQ_LENGTH,
-            n_embd=self.voice_dim,
-            n_layer=self.layers,
-            n_head=self.heads,
-        )
-
-        if self.use_accel and torch.cuda.is_available():
-            # Check if flash attention is available
-            try:
-                import flash_attn  # noqa: F401  # pyright: ignore
-            except ImportError as err:
-                raise ImportError(
-                    "flash_attn is required for acceleration but not installed. Please install from https://github.com/Dao-AILab/flash-attention/releases/"
-                ) from err
-
-            from indextts.accel import AccelInferenceEngine, GPT2AccelModel
-
-            # Create accel model
-            accel_gpt = GPT2AccelModel(gpt_config)
-            accel_gpt.load_state_dict(self.gpt.state_dict(), strict=False)
-
-            if half:
-                accel_gpt = accel_gpt.half()
-
-            lm_head_with_norm = nn.Sequential(self.final_norm, self.mel_head)
-            self.accel_engine = AccelInferenceEngine(
-                model=accel_gpt.cuda().eval(),
-                lm_head=lm_head_with_norm,
-                num_layers=self.layers,
-                num_heads=self.heads,
-                head_dim=self.voice_dim // self.heads,
-                block_size=256,
-                num_blocks=16,  # Reduce to save memory (16*256 = 4096 tokens capacity)
-            )
-            print("acceleration engine initialized")
-        self.inference_model = GPT2InferenceModel(
-            gpt_config, self.gpt, self.mel_pos_embedding, self.mel_embedding, self.final_norm, self.mel_head
-        )
-        self.inference_model = self.inference_model.eval()
-
-        self.gpt.wte = self.mel_embedding
-
     @override
     def forward(
         self, speech_conditioning_latent: Tensor, text_inputs: Tensor, mel_codes: Tensor, emo_vec: Tensor
@@ -349,3 +303,47 @@ class UnifiedVoice(nn.Module):
 
     @patch_call(forward)
     def __call__(self) -> None: ...
+
+
+def post_init_gpt2_config(model: UnifiedVoice) -> None:
+    gpt_config = transformers.GPT2Config(
+        vocab_size=NUMBER_MEL_CODES,
+        n_positions=SEQ_LENGTH,
+        n_ctx=SEQ_LENGTH,
+        n_embd=model.voice_dim,
+        n_layer=model.layers,
+        n_head=model.heads,
+    )
+
+    if model.use_accel and torch.cuda.is_available():
+        # Check if flash attention is available
+        try:
+            import flash_attn  # noqa: F401  # pyright: ignore
+        except ImportError as err:
+            raise ImportError(
+                "flash_attn is required for acceleration but not installed. Please install from https://github.com/Dao-AILab/flash-attention/releases/"
+            ) from err
+
+        from indextts.accel import AccelInferenceEngine, GPT2AccelModel
+
+        # Create accel model
+        accel_gpt = GPT2AccelModel(gpt_config)
+        accel_gpt.load_state_dict(model.gpt.state_dict(), strict=False)
+
+        lm_head_with_norm = nn.Sequential(model.final_norm, model.mel_head)
+        model.accel_engine = AccelInferenceEngine(
+            model=accel_gpt.cuda().eval(),
+            lm_head=lm_head_with_norm,
+            num_layers=model.layers,
+            num_heads=model.heads,
+            head_dim=model.voice_dim // model.heads,
+            block_size=256,
+            num_blocks=16,  # Reduce to save memory (16*256 = 4096 tokens capacity)
+        )
+        print("acceleration engine initialized")
+    model.inference_model = GPT2InferenceModel(
+        gpt_config, model.gpt, model.mel_pos_embedding, model.mel_embedding, model.final_norm, model.mel_head
+    )
+    model.inference_model = model.inference_model.eval()
+
+    model.gpt.wte = model.mel_embedding

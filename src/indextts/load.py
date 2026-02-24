@@ -7,7 +7,7 @@ import safetensors.torch
 import torch
 import torch._inductor.codecache  # noqa: F401 # pyright: ignore[reportUnusedImport]
 import transformers
-from torch import Tensor
+from torch import Tensor, nn
 
 from bigvgan import BigVGANInference as BigVGAN
 from indextts.gpt.model_v2 import UnifiedVoice
@@ -22,40 +22,40 @@ CHECKPOINT_DIR = Path("./checkpoints")
 GPT_PATH = CHECKPOINT_DIR / "gpt_compiled.pt2"
 
 
-def feature_extractor() -> transformers.SeamlessM4TFeatureExtractor:
-    return transformers.SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
-
-
-def gpt(device: torch.device, use_accel: bool) -> UnifiedVoice:
-    import torch
-
-    with Timer() as t:
-        path = CHECKPOINT_DIR / "gpt.safetensors"
-        data = safetensors.torch.load_file(path, device=str(device))
-
-        with torch.device("meta"):
-            model = UnifiedVoice(use_accel=use_accel)
-        model.load_state_dict(data, assign=True)
-
-    print(f">> GPT weights restored in {t:.2f} seconds from: {path}")
+def _restore_model_weights[T: nn.Module](module: type[T], device: torch.device, name: str) -> T:
+    path = CHECKPOINT_DIR / name
+    print(f">> Restoring {name} weights from: {path} to {device}...")
+    data = safetensors.torch.load_file(path, device=str(device))
+    with torch.device("meta"):
+        model = module()
+    model.load_state_dict(data, assign=True)
     return model.eval()
 
 
-def campplus_model(device: torch.device) -> CAMPPlus:
+def load_feature_extractor() -> transformers.SeamlessM4TFeatureExtractor:
+    return transformers.SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
+
+
+def load_unified_voice(device: torch.device) -> UnifiedVoice:
+    return _restore_model_weights(UnifiedVoice, device, "gpt.safetensors")
+
+
+def load_campplus(device: torch.device) -> CAMPPlus:
     with Timer() as t:
         path = hf.hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
-        data = cast(Mapping[str, object], torch.load(path, map_location=device))
+        data = torch.load(path, map_location=device)
+        data = cast(Mapping[str, object], data)
 
         with torch.device("meta"):
             model = CAMPPlus()
         model.load_state_dict(data, assign=True)
-        model = model.eval().to(device)
+        model = model.eval()
 
     print(f">> campplus_model weights restored in {t:.2f} seconds from: {path}")
     return model
 
 
-def tokenizer(normalizer: TextNormalizer) -> TextTokenizer:
+def load_tokenizer(normalizer: TextNormalizer) -> TextTokenizer:
     with Timer() as t:
         path = Path(hf.hf_hub_download("IndexTeam/IndexTTS-2", "bpe.model"))
         tokenizer = TextTokenizer(path, normalizer)
@@ -64,19 +64,11 @@ def tokenizer(normalizer: TextNormalizer) -> TextTokenizer:
     return tokenizer
 
 
-def semantic_codec(device: torch.device) -> RepCodec:
-    with Timer() as t:
-        path = CHECKPOINT_DIR / "semantic_codec.safetensors"
-
-        with torch.device("meta"):
-            model = RepCodec()
-        data = safetensors.torch.load_file(path, device=str(device))
-        model.load_state_dict(data, assign=True)
-    print(f">> semantic_codec weights restored from: {path} in {t:.2f} seconds")
-    return model.eval()
+def load_semantic_codec(device: torch.device) -> RepCodec:
+    return _restore_model_weights(RepCodec, device, "semantic_codec.safetensors")
 
 
-def semantic_model(device: torch.device) -> transformers.Wav2Vec2BertModel:
+def load_semantic_model(device: torch.device) -> transformers.Wav2Vec2BertModel:
     with Timer() as t:
         model = transformers.Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0")
         model = model.eval().to(device)
@@ -84,10 +76,11 @@ def semantic_model(device: torch.device) -> transformers.Wav2Vec2BertModel:
     return model
 
 
-def semantic_stats(device: torch.device) -> tuple[Tensor, Tensor]:
+def load_semantic_stats(device: torch.device) -> tuple[Tensor, Tensor]:
     with Timer() as t:
         path = hf.hf_hub_download("amphion/dualcodec", "w2vbert2_mean_var_stats_emilia.pt")
-        data = cast(dict[str, Tensor], torch.load(path))
+        data = torch.load(path)
+        data = cast(dict[str, Tensor], data)
         mean = data["mean"].to(device)
         std = data["var"].sqrt().to(device)
 
@@ -95,31 +88,15 @@ def semantic_stats(device: torch.device) -> tuple[Tensor, Tensor]:
     return mean, std
 
 
-def cfm(device: torch.device) -> CFM:
-    with Timer() as t:
-        path = CHECKPOINT_DIR / "cfm.safetensors"
-        data = safetensors.torch.load_file(path, device=str(device))
-        with torch.device("meta"):
-            model = CFM()
-        model.load_state_dict(data, assign=True)
-
-    print(f">> CFM weights restored in {t:.2f} seconds from: {path}")
-    return model.eval()
+def load_cfm(device: torch.device) -> CFM:
+    return _restore_model_weights(CFM, device, "cfm.safetensors")
 
 
-def length_regulator(device: torch.device) -> InterpolateRegulator:
-    with Timer() as t:
-        path = CHECKPOINT_DIR / "length_regulator.safetensors"
-        data = safetensors.torch.load_file(path, device=str(device))
-        with torch.device("meta"):
-            model = InterpolateRegulator()
-        model.load_state_dict(data, assign=True)
-
-    print(f">> Length Regulator weights restored in {t:.2f} seconds from: {path}")
-    return model.eval()
+def load_length_regulator(device: torch.device) -> InterpolateRegulator:
+    return _restore_model_weights(InterpolateRegulator, device, "length_regulator.safetensors")
 
 
-def bigvgan(device: torch.device, use_cuda_kernel: bool) -> BigVGAN:
+def load_bigvgan(device: torch.device, use_cuda_kernel: bool) -> BigVGAN:
     with Timer() as t:
         model = BigVGAN.from_pretrained("nvidia/bigvgan_v2_22khz_80band_256x", use_cuda_kernel=use_cuda_kernel)
         model.remove_weight_norm()

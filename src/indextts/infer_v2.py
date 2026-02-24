@@ -92,7 +92,7 @@ class IndexTTS2:
     bigvgan: BigVGANInference
     campplus_model: CAMPPlus
     cfm: CFM
-    extract_features: Final = load.extract_features()
+    extract_features: Final = load.feature_extractor()
     gpt: UnifiedVoice
     length_regulator: InterpolateRegulator
     normalizer: Final = TextNormalizer()
@@ -128,15 +128,15 @@ class IndexTTS2:
         self.dtype = torch.get_default_dtype()
         self.use_accel = use_accel
 
-        self.gpt = load.gpt(self.device, 512, self.use_accel)
+        self.gpt = load.gpt(self.device, self.use_accel)
         self.semantic_model = load.semantic_model(self.device)
         self.semantic_mean, self.semantic_std = load.semantic_stats(self.device)
         self.semantic_codec = load.semantic_codec(self.device)
         self.bigvgan = load.bigvgan(self.device, self.use_cuda_kernel)
         self.campplus_model = load.campplus_model(self.device)
         self.tokenizer = load.tokenizer(self.normalizer)
-        self.cfm = load.cfm(self.device, dim=512)
-        self.length_regulator = load.length_regulator(self.device, dim=512)
+        self.cfm = load.cfm(self.device)
+        self.length_regulator = load.length_regulator(self.device)
 
         post_init_gpt2_config(self.gpt)
 

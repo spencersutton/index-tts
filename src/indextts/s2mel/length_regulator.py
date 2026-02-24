@@ -10,7 +10,7 @@ class InterpolateRegulator(nn.Module):
     model: nn.Sequential
     content_in_proj: nn.Linear
 
-    def __init__(self, dim: int) -> None:
+    def __init__(self, dim: int = 512) -> None:
         super().__init__()
 
         self.model = nn.Sequential()

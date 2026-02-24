@@ -1,5 +1,3 @@
-import logging
-import warnings
 from collections.abc import Mapping
 from pathlib import Path
 from typing import cast
@@ -24,42 +22,19 @@ CHECKPOINT_DIR = Path("./checkpoints")
 GPT_PATH = CHECKPOINT_DIR / "gpt_compiled.pt2"
 
 
-def extract_features() -> transformers.SeamlessM4TFeatureExtractor:
-    with Timer() as t:
-        model = transformers.SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
-    print(f">> feature extractor restored in {t:.2f} seconds")
-    return model
+def feature_extractor() -> transformers.SeamlessM4TFeatureExtractor:
+    return transformers.SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
 
 
-def gpt(device: torch.device, dim: int, use_accel: bool, use_compiled: bool = True) -> UnifiedVoice:
+def gpt(device: torch.device, use_accel: bool) -> UnifiedVoice:
     import torch
 
     with Timer() as t:
-        aoti_load_package = GPT_PATH
-        assert aoti_load_package.exists(), (
-            f"Compiled GPT model not found at {aoti_load_package}. Please run the load script to compile the model first."
-        )
-        if aoti_load_package.exists() and use_compiled:
-            # Torch 2.10+ does not always attach this submodule eagerly, but the
-            # PT2 archive loader references torch._inductor.codecache directly.
-            # Importing it once ensures the attribute is available for AOTI load.
-            from torch import _inductor as inductor
-
-            print(f"Loading compiled GPT model from {aoti_load_package}")
-            model = inductor.aoti_load_package(aoti_load_package)
-            print(f">> Compiled GPT model loaded in {t:.2f} seconds from: {aoti_load_package}")
-            return cast(UnifiedVoice, model)  # type: ignore
         path = CHECKPOINT_DIR / "gpt.safetensors"
-
-        if not path.exists():
-            pt_path = hf.hf_hub_download("IndexTeam/IndexTTS-2", filename="gpt.pth")
-            data = cast(dict[str, Tensor], torch.load(pt_path, map_location="cpu"))
-            safetensors.torch.save_file(data, path)
-
         data = safetensors.torch.load_file(path, device=str(device))
 
         with torch.device("meta"):
-            model = UnifiedVoice(dim, use_accel=use_accel)
+            model = UnifiedVoice(use_accel=use_accel)
         model.load_state_dict(data, assign=True)
 
     print(f">> GPT weights restored in {t:.2f} seconds from: {path}")
@@ -92,13 +67,6 @@ def tokenizer(normalizer: TextNormalizer) -> TextTokenizer:
 def semantic_codec(device: torch.device) -> RepCodec:
     with Timer() as t:
         path = CHECKPOINT_DIR / "semantic_codec.safetensors"
-        if not path.exists():
-            cache_path = hf.hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
-            cache_data = safetensors.torch.load_file(cache_path)
-            for k in list(cache_data.keys()):
-                if k.startswith("decoder."):
-                    del cache_data[k]
-            safetensors.torch.save_file(cache_data, path)
 
         with torch.device("meta"):
             model = RepCodec()
@@ -127,45 +95,24 @@ def semantic_stats(device: torch.device) -> tuple[Tensor, Tensor]:
     return mean, std
 
 
-def _get_s2mel_checkpoint() -> dict[str, dict[str, dict[str, Tensor]]]:
-    path = hf.hf_hub_download("IndexTeam/IndexTTS-2", "s2mel.pth")
-    return cast(dict[str, dict[str, dict[str, Tensor]]], torch.load(path, map_location="cpu", weights_only=False))
-
-
-def cfm(device: torch.device, dim: int) -> CFM:
+def cfm(device: torch.device) -> CFM:
     with Timer() as t:
         path = CHECKPOINT_DIR / "cfm.safetensors"
-        if not path.exists():
-            data = _get_s2mel_checkpoint()
-            data = data["net"]["cfm"]
-            del data["estimator.x_embedder.bias"]
-            del data["estimator.x_embedder.weight_g"]
-            del data["estimator.x_embedder.weight_v"]
-            del data["estimator.cond_embedder.weight"]
-            del data["estimator.content_mask_embedder.weight"]
-            safetensors.torch.save_file(data, path)
-        else:
-            data = safetensors.torch.load_file(path, device=str(device))
+        data = safetensors.torch.load_file(path, device=str(device))
         with torch.device("meta"):
-            model = CFM(dim)
+            model = CFM()
         model.load_state_dict(data, assign=True)
 
     print(f">> CFM weights restored in {t:.2f} seconds from: {path}")
     return model.eval()
 
 
-def length_regulator(device: torch.device, dim: int) -> InterpolateRegulator:
+def length_regulator(device: torch.device) -> InterpolateRegulator:
     with Timer() as t:
         path = CHECKPOINT_DIR / "length_regulator.safetensors"
-        if not path.exists():
-            data = _get_s2mel_checkpoint()
-            data = data["net"]["length_regulator"]
-            del data["embedding.weight"]
-            del data["mask_token"]
-            safetensors.torch.save_file(data, path)
         data = safetensors.torch.load_file(path, device=str(device))
         with torch.device("meta"):
-            model = InterpolateRegulator(dim)
+            model = InterpolateRegulator()
         model.load_state_dict(data, assign=True)
 
     print(f">> Length Regulator weights restored in {t:.2f} seconds from: {path}")
@@ -183,34 +130,72 @@ def bigvgan(device: torch.device, use_cuda_kernel: bool) -> BigVGAN:
 
 
 if __name__ == "__main__":
-    from torch import _inductor as inductor
+    path = CHECKPOINT_DIR / "gpt.safetensors"
 
-    # Reduce matmul precision warning noise while improving TensorCore throughput.
-    torch.set_float32_matmul_precision("high")
-    if hasattr(torch, "_inductor") and hasattr(inductor, "config"):
-        inductor.config.max_autotune = False
-        inductor.config.max_autotune_gemm = False
-    logging.getLogger("_inductor.utils").setLevel(logging.ERROR)
+    if not path.exists():
+        pt_path = hf.hf_hub_download("IndexTeam/IndexTTS-2", filename="gpt.pth")
+        data = torch.load(pt_path, map_location="cpu")
+        data = cast(dict[str, Tensor], data)
+        safetensors.torch.save_file(data, path)
 
-    device = torch.device("cuda")
-    gpt_model = gpt(device, 512, use_accel=False, use_compiled=False)
-    warnings.filterwarnings("ignore", module=r".*copyreg", lineno=104, category=FutureWarning)
-    with Timer() as t, device:
-        export_module = torch.export.export(
-            gpt_model,
-            args=(
-                torch.zeros(1, 32, UnifiedVoice.voice_dim),
-                torch.zeros(1, 16, dtype=torch.long),
-                torch.zeros(1, 32, dtype=torch.long),
-                torch.zeros(1, UnifiedVoice.voice_dim),
-            ),
-        )
-    print(f">> GPT model exported in {t:.2f} seconds.")
+    path = CHECKPOINT_DIR / "semantic_codec.safetensors"
+    if not path.exists():
+        pt_path = hf.hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
+        data = safetensors.torch.load_file(pt_path)
+        for k in list(data.keys()):
+            if k.startswith("decoder."):
+                del data[k]
+        safetensors.torch.save_file(data, path)
 
-    with Timer() as t:
-        output_path = inductor.aoti_compile_and_package(
-            export_module,
-            package_path=str(GPT_PATH),
-            inductor_configs={"max_autotune": False, "max_autotune_gemm": False},
-        )
-    print(f"Model compiled to: {output_path} in {t:.2f} seconds.")
+    path = hf.hf_hub_download("IndexTeam/IndexTTS-2", "s2mel.pth")
+    s2mel_data = torch.load(path, map_location="cpu", weights_only=False)
+    s2mel_data = cast(dict[str, dict[str, dict[str, Tensor]]], s2mel_data)
+    path = CHECKPOINT_DIR / "length_regulator.safetensors"
+    if not path.exists():
+        data = s2mel_data["net"]["length_regulator"]
+        del data["embedding.weight"]
+        del data["mask_token"]
+        safetensors.torch.save_file(data, path)
+
+    path = CHECKPOINT_DIR / "cfm.safetensors"
+    if not path.exists():
+        data = s2mel_data["net"]["cfm"]
+        del data["estimator.x_embedder.bias"]
+        del data["estimator.x_embedder.weight_g"]
+        del data["estimator.x_embedder.weight_v"]
+        del data["estimator.cond_embedder.weight"]
+        del data["estimator.content_mask_embedder.weight"]
+        safetensors.torch.save_file(data, path)
+
+# if __name__ == "__main__":
+#     from torch import _inductor as inductor
+
+#     # Reduce matmul precision warning noise while improving TensorCore throughput.
+#     torch.set_float32_matmul_precision("high")
+#     if hasattr(torch, "_inductor") and hasattr(inductor, "config"):
+#         inductor.config.max_autotune = False
+#         inductor.config.max_autotune_gemm = False
+#     logging.getLogger("_inductor.utils").setLevel(logging.ERROR)
+
+#     device = torch.device("cuda")
+#     gpt_model = gpt(device, 512, use_accel=False)
+#     warnings.filterwarnings("ignore", module=r".*copyreg", lineno=104, category=FutureWarning)
+#     with Timer() as t, device:
+#         export_module = torch.export.export(
+#             gpt_model,
+#             args=(
+#                 torch.zeros(1, 32, UnifiedVoice.voice_dim),
+#                 torch.zeros(1, 16, dtype=torch.long),
+#                 torch.zeros(1, 32, dtype=torch.long),
+#                 torch.zeros(1, UnifiedVoice.voice_dim),
+#             ),
+#         )
+#     print(f">> GPT model exported in {t:.2f} seconds.")
+
+#     with Timer() as t:
+#         output_path = inductor.aoti_compile_and_package(
+#             export_module,
+#             package_path=str(GPT_PATH),
+#             inductor_configs={"max_autotune": False, "max_autotune_gemm": False},
+#         )
+#     print(f"Model compiled to: {output_path} in {t:.2f} seconds.")

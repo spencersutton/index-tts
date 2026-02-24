@@ -85,7 +85,7 @@ class UnifiedVoice(nn.Module):
     layers: ClassVar[int] = 24
     """Number of transformer layers in the GPT stack."""
 
-    def __init__(self, dim: int, n_latent: int = 32, use_accel: bool = False) -> None:
+    def __init__(self, dim: int = 512, n_latent: int = 32, use_accel: bool = False) -> None:
         """
         Args:
             layers: Number of layers in transformer stack.

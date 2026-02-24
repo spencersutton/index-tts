@@ -11,7 +11,7 @@ class CFM(nn.Module):
     criterion: nn.L1Loss
     estimator: DiT
 
-    def __init__(self, dim: int) -> None:
+    def __init__(self, dim: int = 512) -> None:
         super().__init__()
 
         self.criterion = nn.L1Loss()

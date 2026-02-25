@@ -1,4 +1,3 @@
-from collections.abc import Mapping
 from pathlib import Path
 from typing import cast
 
@@ -17,7 +16,14 @@ from indextts.util import Timer
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.repcodec_model import RepCodec
 
+type TensorDict = dict[str, Tensor]
+
 CHECKPOINT_DIR = Path("./checkpoints")
+CAMPPLUS_FILE = "campplus_cn_common.safetensors"
+SEMANTIC_CODEC_FILE = "semantic_codec.safetensors"
+GPT_FILE = "gpt.safetensors"
+CFM_FILE = "cfm.safetensors"
+LENGTH_REGULATOR_FILE = "length_regulator.safetensors"
 
 
 def _restore_model_weights[T: nn.Module](module: type[T], device: torch.device, name: str) -> T:
@@ -35,22 +41,11 @@ def load_feature_extractor() -> transformers.SeamlessM4TFeatureExtractor:
 
 
 def load_unified_voice(device: torch.device) -> UnifiedVoice:
-    return _restore_model_weights(UnifiedVoice, device, "gpt.safetensors")
+    return _restore_model_weights(UnifiedVoice, device, GPT_FILE)
 
 
 def load_campplus(device: torch.device) -> CAMPPlus:
-    with Timer() as t:
-        path = hf.hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin")
-        data = torch.load(path, map_location=device)
-        data = cast(Mapping[str, object], data)
-
-        with torch.device("meta"):
-            model = CAMPPlus()
-        model.load_state_dict(data, assign=True)
-        model = model.eval()
-
-    print(f">> campplus_model weights restored in {t:.2f} seconds from: {path}")
-    return model
+    return _restore_model_weights(CAMPPlus, device, CAMPPLUS_FILE)
 
 
 def load_tokenizer(normalizer: TextNormalizer) -> TextTokenizer:
@@ -63,7 +58,7 @@ def load_tokenizer(normalizer: TextNormalizer) -> TextTokenizer:
 
 
 def load_semantic_codec(device: torch.device) -> RepCodec:
-    return _restore_model_weights(RepCodec, device, "semantic_codec.safetensors")
+    return _restore_model_weights(RepCodec, device, SEMANTIC_CODEC_FILE)
 
 
 def load_semantic_model(device: torch.device) -> transformers.Wav2Vec2BertModel:
@@ -78,7 +73,7 @@ def load_semantic_stats(device: torch.device) -> tuple[Tensor, Tensor]:
     with Timer() as t:
         path = hf.hf_hub_download("amphion/dualcodec", "w2vbert2_mean_var_stats_emilia.pt")
         data = torch.load(path)
-        data = cast(dict[str, Tensor], data)
+        data = cast(TensorDict, data)
         mean = data["mean"].to(device)
         std = data["var"].sqrt().to(device)
 
@@ -87,11 +82,11 @@ def load_semantic_stats(device: torch.device) -> tuple[Tensor, Tensor]:
 
 
 def load_cfm(device: torch.device) -> CFM:
-    return _restore_model_weights(CFM, device, "cfm.safetensors")
+    return _restore_model_weights(CFM, device, CFM_FILE)
 
 
 def load_length_regulator(device: torch.device) -> InterpolateRegulator:
-    return _restore_model_weights(InterpolateRegulator, device, "length_regulator.safetensors")
+    return _restore_model_weights(InterpolateRegulator, device, LENGTH_REGULATOR_FILE)
 
 
 def load_bigvgan(device: torch.device, use_cuda_kernel: bool) -> BigVGAN:
@@ -105,15 +100,14 @@ def load_bigvgan(device: torch.device, use_cuda_kernel: bool) -> BigVGAN:
 
 
 if __name__ == "__main__":
-    path = CHECKPOINT_DIR / "gpt.safetensors"
-
+    path = CHECKPOINT_DIR / GPT_FILE
     if not path.exists():
         pt_path = hf.hf_hub_download("IndexTeam/IndexTTS-2", filename="gpt.pth")
         data = torch.load(pt_path, map_location="cpu")
-        data = cast(dict[str, Tensor], data)
+        data = cast(TensorDict, data)
         safetensors.torch.save_file(data, path)
 
-    path = CHECKPOINT_DIR / "semantic_codec.safetensors"
+    path = CHECKPOINT_DIR / SEMANTIC_CODEC_FILE
     if not path.exists():
         pt_path = hf.hf_hub_download("amphion/MaskGCT", filename="semantic_codec/model.safetensors")
         data = safetensors.torch.load_file(pt_path)
@@ -122,12 +116,12 @@ if __name__ == "__main__":
                 del data[k]
         safetensors.torch.save_file(data, path)
 
-    lr_path = CHECKPOINT_DIR / "length_regulator.safetensors"
-    cfm_path = CHECKPOINT_DIR / "cfm.safetensors"
+    lr_path = CHECKPOINT_DIR / LENGTH_REGULATOR_FILE
+    cfm_path = CHECKPOINT_DIR / CFM_FILE
     if not lr_path.exists() or not cfm_path.exists():
         path = hf.hf_hub_download("IndexTeam/IndexTTS-2", "s2mel.pth")
         s2mel_data = torch.load(path, map_location="cpu", weights_only=False)
-        s2mel_data = cast(dict[str, dict[str, dict[str, Tensor]]], s2mel_data)
+        s2mel_data = cast(dict[str, dict[str, TensorDict]], s2mel_data)
         if not lr_path.exists():
             data = s2mel_data["net"]["length_regulator"]
             del data["embedding.weight"]
@@ -142,3 +136,10 @@ if __name__ == "__main__":
             del data["estimator.cond_embedder.weight"]
             del data["estimator.content_mask_embedder.weight"]
             safetensors.torch.save_file(data, cfm_path)
+
+    path = CHECKPOINT_DIR / CAMPPLUS_FILE
+    if not path.exists():
+        pt_path = hf.hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin", local_dir=CHECKPOINT_DIR)
+        data = torch.load(pt_path, map_location="cpu")
+        data = cast(TensorDict, data)
+        safetensors.torch.save_file(data, path)

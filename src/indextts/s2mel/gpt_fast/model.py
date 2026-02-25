@@ -3,6 +3,7 @@
 
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
+from functools import cache
 from typing import ClassVar, override
 
 import torch
@@ -35,10 +36,18 @@ class _AdaptiveLayerNorm(nn.Module):
     def __call__(self) -> None: ...
 
 
+@cache
+def _compute_frequencies(device: torch.device, block_size: int, heads: int) -> Tensor:
+    freq_seq = torch.arange(0, heads, 2)
+    inv_freq = 1 / (10000 ** (freq_seq / heads))
+    angles = torch.arange(block_size).outer(inv_freq)
+    freqs_cis = torch.polar(torch.ones_like(angles), angles)
+    return torch.view_as_real(freqs_cis).to(device)
+
+
 class Transformer(nn.Module):
     block_size: ClassVar[int] = 2**14
 
-    freqs_cis: Tensor
     head_dim: int
     layers: nn.ModuleList[_TransformerBlock]
     norm: _AdaptiveLayerNorm
@@ -51,16 +60,10 @@ class Transformer(nn.Module):
         self.layers = nn.ModuleList(_TransformerBlock(dim) for _ in range(n_layer))
         self.norm = _AdaptiveLayerNorm(dim)
 
-        with torch.device("cpu"):
-            freq_seq = torch.arange(0, self.head_dim, 2)
-            inv_freq = 1 / (10000 ** (freq_seq / self.head_dim))
-            angles = torch.arange(self.block_size).outer(inv_freq)
-            freqs_cis = torch.polar(torch.ones_like(angles), angles)
-            self.freqs_cis = torch.view_as_real(freqs_cis)
-
     @override
     def forward(self, x: Tensor, c: Tensor, input_pos: Tensor) -> Tensor:
-        freqs_cis = self.freqs_cis.to(x.device)[input_pos]
+        computed_frequencies = _compute_frequencies(x.device, self.block_size, self.head_dim)
+        freqs_cis = computed_frequencies[input_pos]
         mid = len(self.layers) // 2
         skip_stack: list[Tensor] = []
         for i, layer in enumerate(self.layers):

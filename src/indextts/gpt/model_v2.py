@@ -86,13 +86,6 @@ class UnifiedVoice(nn.Module):
     """Number of transformer layers in the GPT stack."""
 
     def __init__(self, dim: int = 512, n_latent: int = 32, use_accel: bool = False) -> None:
-        """
-        Args:
-            layers: Number of layers in transformer stack.
-            heads: Number of transformer heads. Must be divisible by 1280. Recommend 1280//64
-            max_text_tokens: Maximum number of text tokens that will be encountered by model.
-            max_mel_tokens: Maximum number of MEL tokens that will be encountered by model.
-        """
         super().__init__()
 
         self.cond_mask_pad = nn.ConstantPad1d((n_latent, 0), True)

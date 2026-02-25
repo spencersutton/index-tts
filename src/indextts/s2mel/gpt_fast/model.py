@@ -120,8 +120,8 @@ class _Attention(nn.Module):
         self.head_dim = dim // n_head
 
         # key, query, value projections for all heads, but in a batch
-        self.wqkv = nn.Linear(self.dim, self.dim * 3, bias=False)
-        self.wo = nn.Linear(self.dim, self.dim, bias=False)
+        self.wqkv = nn.Linear(dim, dim * 3, bias=False)
+        self.wo = nn.Linear(dim, dim, bias=False)
 
     @override
     def forward(self, x: Tensor, freqs_cis: Tensor) -> Tensor:

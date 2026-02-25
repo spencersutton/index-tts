@@ -5,7 +5,6 @@ from typing import cast
 import huggingface_hub as hf
 import safetensors.torch
 import torch
-import torch._inductor.codecache  # pyright: ignore[reportUnusedImport]
 import transformers
 from torch import Tensor, nn
 
@@ -19,7 +18,6 @@ from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.repcodec_model import RepCodec
 
 CHECKPOINT_DIR = Path("./checkpoints")
-GPT_PATH = CHECKPOINT_DIR / "gpt_compiled.pt2"
 
 
 def _restore_model_weights[T: nn.Module](module: type[T], device: torch.device, name: str) -> T:
@@ -144,20 +142,3 @@ if __name__ == "__main__":
             del data["estimator.cond_embedder.weight"]
             del data["estimator.content_mask_embedder.weight"]
             safetensors.torch.save_file(data, cfm_path)
-
-    # Reduce matmul precision warning noise while improving TensorCore throughput.
-    torch.set_float32_matmul_precision("high")
-
-    compiled_cfm_path = CHECKPOINT_DIR / "cfm_compiled.pt2"
-    if not compiled_cfm_path.exists():
-        cfm_model = load_cfm(torch.device("cpu"))
-        export_module = torch.export.export(
-            cfm_model, args=(torch.randn(1, 80, 512), torch.randn(1, 80, 80), torch.randn(1, 192))
-        )
-
-        output_path = torch._inductor.aoti_compile_and_package(
-            export_module,
-            package_path=str(compiled_cfm_path),
-            inductor_configs={"max_autotune": False, "max_autotune_gemm": False},
-        )
-        print(f"CFM model compiled to: {output_path}")

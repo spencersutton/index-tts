@@ -1,10 +1,11 @@
-from typing import Final, cast
+from typing import Final, cast, override
 
 import torch
 from torch import Tensor, nn
 from tqdm import tqdm
 
 from indextts.s2mel.diffusion_transformer import DiT
+from indextts.util import patch_call
 
 
 class CFM(nn.Module):
@@ -18,7 +19,8 @@ class CFM(nn.Module):
         self.estimator = DiT(dim)
 
     @torch.inference_mode()
-    def inference(
+    @override
+    def forward(
         self, mu: Tensor, prompt: Tensor, style: Tensor, diffusion_steps: int = 25, cfg_rate: float = 0.7
     ) -> Tensor:
         """Forward diffusion
@@ -69,6 +71,9 @@ class CFM(nn.Module):
             x[:, :, :prompt_len] = 0
 
         return x
+
+    @patch_call(forward)
+    def __call__(self) -> None: ...
 
     def enable_torch_compile(self) -> None:
         """Enable torch.compile optimization for the estimator model.

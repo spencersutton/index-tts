@@ -5,7 +5,7 @@ from typing import cast
 import huggingface_hub as hf
 import safetensors.torch
 import torch
-import torch._inductor.codecache  # noqa: F401 # pyright: ignore[reportUnusedImport]
+import torch._inductor.codecache  # pyright: ignore[reportUnusedImport]
 import transformers
 from torch import Tensor, nn
 
@@ -145,35 +145,19 @@ if __name__ == "__main__":
             del data["estimator.content_mask_embedder.weight"]
             safetensors.torch.save_file(data, cfm_path)
 
-# if __name__ == "__main__":
-#     from torch import _inductor as inductor
+    # Reduce matmul precision warning noise while improving TensorCore throughput.
+    torch.set_float32_matmul_precision("high")
 
-#     # Reduce matmul precision warning noise while improving TensorCore throughput.
-#     torch.set_float32_matmul_precision("high")
-#     if hasattr(torch, "_inductor") and hasattr(inductor, "config"):
-#         inductor.config.max_autotune = False
-#         inductor.config.max_autotune_gemm = False
-#     logging.getLogger("_inductor.utils").setLevel(logging.ERROR)
+    compiled_cfm_path = CHECKPOINT_DIR / "cfm_compiled.pt2"
+    if not compiled_cfm_path.exists():
+        cfm_model = load_cfm(torch.device("cpu"))
+        export_module = torch.export.export(
+            cfm_model, args=(torch.randn(1, 80, 512), torch.randn(1, 80, 80), torch.randn(1, 192))
+        )
 
-#     device = torch.device("cuda")
-#     gpt_model = gpt(device, 512, use_accel=False)
-#     warnings.filterwarnings("ignore", module=r".*copyreg", lineno=104, category=FutureWarning)
-#     with Timer() as t, device:
-#         export_module = torch.export.export(
-#             gpt_model,
-#             args=(
-#                 torch.zeros(1, 32, UnifiedVoice.voice_dim),
-#                 torch.zeros(1, 16, dtype=torch.long),
-#                 torch.zeros(1, 32, dtype=torch.long),
-#                 torch.zeros(1, UnifiedVoice.voice_dim),
-#             ),
-#         )
-#     print(f">> GPT model exported in {t:.2f} seconds.")
-
-#     with Timer() as t:
-#         output_path = inductor.aoti_compile_and_package(
-#             export_module,
-#             package_path=str(GPT_PATH),
-#             inductor_configs={"max_autotune": False, "max_autotune_gemm": False},
-#         )
-#     print(f"Model compiled to: {output_path} in {t:.2f} seconds.")
+        output_path = torch._inductor.aoti_compile_and_package(
+            export_module,
+            package_path=str(compiled_cfm_path),
+            inductor_configs={"max_autotune": False, "max_autotune_gemm": False},
+        )
+        print(f"CFM model compiled to: {output_path}")

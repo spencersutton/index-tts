@@ -389,7 +389,7 @@ class IndexTTS2:
 
         cond = self.length_regulator.__call__(semantic_inference, ylens=int(target_lengths))
         cond = torch.cat([prompt_condition, cond], dim=1)
-        target = self.cfm.inference(cond, ref_mel, style)
+        target = self.cfm.__call__(cond, ref_mel, style)
         return target[:, :, ref_mel.size(-1) :]
 
     @lru_cache(5)  # noqa: B019

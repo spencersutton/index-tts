@@ -124,25 +124,26 @@ if __name__ == "__main__":
                 del data[k]
         safetensors.torch.save_file(data, path)
 
-    path = hf.hf_hub_download("IndexTeam/IndexTTS-2", "s2mel.pth")
-    s2mel_data = torch.load(path, map_location="cpu", weights_only=False)
-    s2mel_data = cast(dict[str, dict[str, dict[str, Tensor]]], s2mel_data)
-    path = CHECKPOINT_DIR / "length_regulator.safetensors"
-    if not path.exists():
-        data = s2mel_data["net"]["length_regulator"]
-        del data["embedding.weight"]
-        del data["mask_token"]
-        safetensors.torch.save_file(data, path)
+    lr_path = CHECKPOINT_DIR / "length_regulator.safetensors"
+    cfm_path = CHECKPOINT_DIR / "cfm.safetensors"
+    if not lr_path.exists() or not cfm_path.exists():
+        path = hf.hf_hub_download("IndexTeam/IndexTTS-2", "s2mel.pth")
+        s2mel_data = torch.load(path, map_location="cpu", weights_only=False)
+        s2mel_data = cast(dict[str, dict[str, dict[str, Tensor]]], s2mel_data)
+        if not lr_path.exists():
+            data = s2mel_data["net"]["length_regulator"]
+            del data["embedding.weight"]
+            del data["mask_token"]
+            safetensors.torch.save_file(data, lr_path)
 
-    path = CHECKPOINT_DIR / "cfm.safetensors"
-    if not path.exists():
-        data = s2mel_data["net"]["cfm"]
-        del data["estimator.x_embedder.bias"]
-        del data["estimator.x_embedder.weight_g"]
-        del data["estimator.x_embedder.weight_v"]
-        del data["estimator.cond_embedder.weight"]
-        del data["estimator.content_mask_embedder.weight"]
-        safetensors.torch.save_file(data, path)
+        if not cfm_path.exists():
+            data = s2mel_data["net"]["cfm"]
+            del data["estimator.x_embedder.bias"]
+            del data["estimator.x_embedder.weight_g"]
+            del data["estimator.x_embedder.weight_v"]
+            del data["estimator.cond_embedder.weight"]
+            del data["estimator.content_mask_embedder.weight"]
+            safetensors.torch.save_file(data, cfm_path)
 
 # if __name__ == "__main__":
 #     from torch import _inductor as inductor

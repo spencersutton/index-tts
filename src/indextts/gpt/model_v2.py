@@ -94,6 +94,7 @@ class UnifiedVoice(nn.Module):
             max_mel_tokens: Maximum number of MEL tokens that will be encountered by model.
         """
         super().__init__()
+
         self.cond_mask_pad = nn.ConstantPad1d((n_latent, 0), True)
         self.emo_cond_mask_pad = nn.ConstantPad1d((1, 0), True)
         self.conditioning_encoder = ConformerEncoder(dim, linear_units=2048, attention_heads=8, num_blocks=6)

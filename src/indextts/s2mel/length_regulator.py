@@ -1,5 +1,6 @@
 from typing import override
 
+import torch
 from torch import Tensor, nn
 from torch.nn import functional as F
 
@@ -32,3 +33,14 @@ class InterpolateRegulator(nn.Module):
 
     @patch_call(forward)
     def __call__(self) -> None: ...
+
+
+if __name__ == "__main__":
+    torch.onnx.export(
+        InterpolateRegulator().eval(),
+        (torch.randn(1, 10, 1024), 20),
+        "length_regulator.onnx",
+        input_names=["x", "ylens"],
+        output_names=["output"],
+        dynamic_shapes={"x": {1: torch.export.Dim("input_length")}, "ylens": None},
+    )

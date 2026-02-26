@@ -1,4 +1,5 @@
 # Adapted from https://github.com/lucidrains/naturalspeech2-pytorch/blob/659bec7f7543e7747e809e950cc2f84242fbeec7/naturalspeech2_pytorch/naturalspeech2_pytorch.py#L532
+import math
 from typing import override
 
 import torch
@@ -86,7 +87,7 @@ class _RMSNorm(nn.Module):
     def __init__(self, dim: int) -> None:
         super().__init__()
 
-        self.scale = dim**0.5
+        self.scale = math.sqrt(dim)
         self.gamma = nn.Parameter(torch.ones(dim))
 
     @override

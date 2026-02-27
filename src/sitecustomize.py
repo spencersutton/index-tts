@@ -2,6 +2,7 @@ import re
 import site
 import sys
 from pathlib import Path
+from types import TracebackType
 
 import rich.traceback
 
@@ -16,9 +17,9 @@ _ANSI_ESCAPE = re.compile(r"\x1b\[[0-9;]*[mK]")
 _rich_excepthook = sys.excepthook
 
 
-def _excepthook(exc_type, exc_value, exc_tb):
-    if exc_value is not None and exc_value.args:
-        exc_value.args = tuple(_ANSI_ESCAPE.sub("", arg) if isinstance(arg, str) else arg for arg in exc_value.args)
+def _excepthook(exc_type: type[BaseException], exc_value: BaseException, exc_tb: TracebackType) -> None:
+    if exc_value.args:
+        exc_value.args = tuple(_ANSI_ESCAPE.sub("", arg) if isinstance(arg, str) else arg for arg in exc_value.args)  # pyright: ignore[reportAny]
     _rich_excepthook(exc_type, exc_value, exc_tb)
 
 

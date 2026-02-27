@@ -172,7 +172,7 @@ class DenseLayer(nn.Module):
 
     @override
     @beartype
-    def forward(self, x: Float[Tensor, "batch in_channels time"]) -> Float[Tensor, "batch out_channels time"]:
+    def forward(self, x: Float[Tensor, "batch in_channels"]) -> Float[Tensor, "batch out_channels"]:
         if len(x.shape) == 2:
             x = self.linear(x.unsqueeze(dim=-1)).squeeze(dim=-1)
         else:

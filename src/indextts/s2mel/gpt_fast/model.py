@@ -68,10 +68,7 @@ class Transformer(nn.Module):
     @override
     @beartype
     def forward(
-        self,
-        x: Float[Tensor, "batch seq dim"],
-        c: Float[Tensor, "batch 1 dim"],
-        input_pos: Int[Tensor, "seq"],
+        self, x: Float[Tensor, "batch seq dim"], c: Float[Tensor, "batch 1 dim"], input_pos: Int[Tensor, "seq"]
     ) -> Float[Tensor, "batch seq dim"]:
         computed_frequencies = _compute_frequencies(x.device, self.block_size, self.head_dim)
         freqs_cis = computed_frequencies[input_pos]
@@ -220,7 +217,7 @@ class _RMSNorm(nn.Module):
 
 @beartype
 def _apply_rotary_emb(
-    x: Float[Tensor, "batch seq heads head_half_2"], freqs_cis: Float[Tensor, "1 seq 1 head_half 2"]
+    x: Float[Tensor, "batch seq heads head_half_2"], freqs_cis: Float[Tensor, "seq head_half 2"]
 ) -> Float[Tensor, "batch seq heads head_half_2"]:
     x_shaped = x.view(*x.shape[:-1], -1, 2)
     freqs_cis = freqs_cis.view(1, x_shaped.size(1), 1, x_shaped.size(3), 2)

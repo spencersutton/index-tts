@@ -392,7 +392,7 @@ class IndexTTS2:
         prompt_condition: Float[Tensor, "batch prompt_time cond_dim"],
         style: Float[Tensor, "batch style_dim"],
         ref_mel: Float[Tensor, "batch mel_bins ref_time"],
-        codes: Int[Tensor, "1 batch time"],
+        codes: Int[Tensor, "batch time"],
     ) -> Float[Tensor, "batch mel_bins time"]:
         semantic_inference = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1)).mT
         target_lengths = (torch.tensor(code_lens, device=self.device) * 1.72).long().max().item()

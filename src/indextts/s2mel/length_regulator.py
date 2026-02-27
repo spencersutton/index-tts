@@ -1,6 +1,8 @@
 from typing import override
 
 import torch
+from beartype import beartype
+from jaxtyping import Float
 from torch import Tensor, nn
 from torch.nn import functional as F
 
@@ -22,7 +24,8 @@ class InterpolateRegulator(nn.Module):
         self.content_in_proj = nn.Linear(dim * 2, dim)
 
     @override
-    def forward(self, x: Tensor, ylens: int) -> Tensor:
+    @beartype
+    def forward(self, x: Float[Tensor, "batch time_in in_dim"], ylens: int) -> Float[Tensor, "batch time_out dim"]:
         """Project to channels, resample in time, then refine and mask."""
         x = self.content_in_proj(x)  # (B, T, C)
 

@@ -11,6 +11,8 @@ import torch
 import torch.nn.functional as F
 import torchaudio
 import transformers
+from beartype import beartype
+from jaxtyping import Float, Int
 from torch import Tensor
 from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
@@ -53,11 +55,13 @@ def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
     return list(vector)
 
 
-def _get_silence_interval(size: int, interval_silence: int) -> Tensor:
+@beartype
+def _get_silence_interval(size: int, interval_silence: int) -> Float[Tensor, "batch samples"]:
     return torch.zeros(size, (SAMPLING_RATE * interval_silence) // 1000)
 
 
-def _load_and_cut_audio(path: Path, sample_rate: int | None = None) -> tuple[Tensor, int]:
+@beartype
+def _load_and_cut_audio(path: Path, sample_rate: int | None = None) -> tuple[Float[Tensor, "1 samples"], int]:
     samples = AudioDecoder(path, num_channels=1, sample_rate=sample_rate).get_samples_played_in_range(
         0, MAX_AUDIO_LENGTH_SECONDS
     )
@@ -381,9 +385,15 @@ class IndexTTS2:
             wav_data = wav_data.numpy().T
             yield (SAMPLING_RATE, wav_data)
 
+    @beartype
     def _generate_voice_conversion(
-        self, code_lens: list[int], prompt_condition: Tensor, style: Tensor, ref_mel: Tensor, codes: Tensor
-    ) -> Tensor:
+        self,
+        code_lens: list[int],
+        prompt_condition: Float[Tensor, "batch prompt_time cond_dim"],
+        style: Float[Tensor, "batch style_dim"],
+        ref_mel: Float[Tensor, "batch mel_bins ref_time"],
+        codes: Int[Tensor, "1 batch time"],
+    ) -> Float[Tensor, "batch mel_bins time"]:
         semantic_inference = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1)).mT
         target_lengths = (torch.tensor(code_lens, device=self.device) * 1.72).long().max().item()
 
@@ -400,7 +410,13 @@ class IndexTTS2:
         inputs = cast(Mapping[str, Tensor], inputs.to(self.device))
         return self._get_emb(inputs["input_features"], inputs["attention_mask"])
 
-    def _generate_emotion_matrix(self, weight_vector: Tensor, style: Tensor, use_random: bool = False) -> Tensor:
+    @beartype
+    def _generate_emotion_matrix(
+        self,
+        weight_vector: Float[Tensor, "num_emotions"],
+        style: Float[Tensor, "batch style_dim"],
+        use_random: bool = False,
+    ) -> Float[Tensor, "batch style_dim"]:
         if use_random:
             index = [random.randint(0, x - 1) for x in EMO_NUM]
         else:
@@ -418,7 +434,10 @@ class IndexTTS2:
         return data.split(EMO_NUM)
 
     @torch.inference_mode()
-    def _get_emb(self, input_features: Tensor, attention_mask: Tensor) -> Tensor:
+    @beartype
+    def _get_emb(
+        self, input_features: Float[Tensor, "batch time n_mels"], attention_mask: Int[Tensor, "batch time"]
+    ) -> Float[Tensor, "batch time dim"]:
         vq_emb = self.semantic_model(
             input_features=input_features, attention_mask=attention_mask, output_hidden_states=True
         )

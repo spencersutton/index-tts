@@ -4,7 +4,9 @@ from typing import no_type_check, override
 import torch
 import triton  # type: ignore
 import triton.language as tl  # type: ignore
+from beartype import beartype
 from flash_attn import flash_attn_varlen_func, flash_attn_with_kvcache  # type: ignore
+from jaxtyping import Float, Int
 from torch import Tensor, nn
 
 from indextts.util import patch_call
@@ -83,7 +85,14 @@ def store_kvcache_kernel(
         d_offset += BLOCK_SIZE
 
 
-def store_kvcache(key: Tensor, value: Tensor, k_cache: Tensor, v_cache: Tensor, slot_mapping: Tensor) -> None:
+@beartype
+def store_kvcache(
+    key: Float[Tensor, "tokens num_heads head_dim"],
+    value: Float[Tensor, "tokens num_heads head_dim"],
+    k_cache: Float[Tensor, "num_blocks block_size num_heads head_dim"],
+    v_cache: Float[Tensor, "num_blocks block_size num_heads head_dim"],
+    slot_mapping: Int[Tensor, "tokens"],
+) -> None:
     N, num_heads, head_dim = key.shape
     D = num_heads * head_dim
     assert key.stride(-1) == 1 and value.stride(-1) == 1
@@ -110,7 +119,13 @@ class Attention(nn.Module):
         self.k_cache = self.v_cache = torch.tensor([])
 
     @override
-    def forward(self, q: Tensor, k: Tensor, v: Tensor) -> Tensor:
+    @beartype
+    def forward(
+        self,
+        q: Float[Tensor, "tokens num_heads head_dim"],
+        k: Float[Tensor, "tokens num_heads head_dim"],
+        v: Float[Tensor, "tokens num_heads head_dim"],
+    ) -> Float[Tensor, "tokens num_heads head_dim"]:
         context = get_forward_context()
         k_cache, v_cache = self.k_cache, self.v_cache
 

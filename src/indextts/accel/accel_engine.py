@@ -3,6 +3,8 @@ from collections.abc import Sequence
 from typing import Final, cast
 
 import torch
+from beartype import beartype
+from jaxtyping import Float, Int
 from torch import Tensor, nn
 
 from indextts.accel.attention import ForwardContext, get_forward_context, reset_forward_context, set_forward_context
@@ -67,7 +69,8 @@ class AccelInferenceEngine:
         self.current_sequences = []
         self.graphs = {}
 
-    def _prepare_prefill(self, requests: Sequence[Seq]) -> tuple[Tensor, Tensor]:
+    @beartype
+    def _prepare_prefill(self, requests: Sequence[Seq]) -> tuple[Int[Tensor, "tokens"], Int[Tensor, "tokens"]]:
         input_ids_list: list[int] = []
         positions_list: list[int] = []
         cu_seqlens_q_list = [0]
@@ -119,7 +122,8 @@ class AccelInferenceEngine:
 
         return input_ids, positions
 
-    def _prepare_decode(self, requests: Sequence[Seq]) -> tuple[Tensor, Tensor]:
+    @beartype
+    def _prepare_decode(self, requests: Sequence[Seq]) -> tuple[Int[Tensor, "batch"], Int[Tensor, "batch"]]:
         if not requests:
             raise RuntimeError("FATAL: No requests provided to _prepare_decode!")
 
@@ -158,7 +162,8 @@ class AccelInferenceEngine:
 
         return input_ids, positions
 
-    def _prepare_sample(self, requests: list[Seq], temperature: float) -> Tensor:
+    @beartype
+    def _prepare_sample(self, requests: list[Seq], temperature: float) -> Float[Tensor, "batch"]:
         temperatures = [temperature] * len(requests)
         return torch.tensor(temperatures, dtype=torch.float32, pin_memory=True).cuda(non_blocking=True)
 
@@ -230,14 +235,15 @@ class AccelInferenceEngine:
         }
         print(f"CUDA graphs captured for batch sizes: {GRAPH_BS}")
 
+    @beartype
     def _run_decode_with_graph(
         self,
-        input_ids: Tensor,
-        positions: Tensor,
+        input_ids: Int[Tensor, "batch"],
+        positions: Int[Tensor, "batch"],
         context: ForwardContext,
         tts_mel_embedding: nn.Embedding | None = None,
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,
-    ) -> Tensor:
+    ) -> Float[Tensor, "batch hidden_size"]:
         bs = input_ids.size(0)
 
         if not self.graphs:
@@ -286,17 +292,18 @@ class AccelInferenceEngine:
 
         return graph_vars["outputs"][:bs]
 
+    @beartype
     def generate(
         self,
-        input_ids: Tensor,
+        input_ids: Int[Tensor, "batch seq"],
         stop_tokens: list[int],
-        attention_mask: Tensor,
-        tts_embeddings: Tensor,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
-        tts_mel_embedding: nn.Embedding,  # TTS: mel_embedding layer
-        tts_text_pos_embedding: LearnedPositionEmbeddings,  # TTS: text_pos_embedding layer
+        attention_mask: Int[Tensor, "batch seq"],
+        tts_embeddings: Float[Tensor, "batch prompt_len hidden_size"],
+        tts_mel_embedding: nn.Embedding,
+        tts_text_pos_embedding: LearnedPositionEmbeddings,
         max_new_tokens: int = 100,
         temperature: float = 1.0,
-    ) -> Tensor:
+    ) -> Int[Tensor, "batch total_len"]:
         """
         Generate tokens.
 
@@ -515,7 +522,9 @@ class _Sampler(nn.Module):
         super().__init__()
 
     @torch.compile
-    def forward(self, logits: Tensor, temperatures: Tensor) -> Tensor:
+    def forward(
+        self, logits: Float[Tensor, "batch vocab"], temperatures: Float[Tensor, "batch"]
+    ) -> Int[Tensor, "batch"]:
         logits = logits.float().div_(temperatures.unsqueeze(dim=1))
         probs = logits.softmax(dim=-1)
         return probs.div_(torch.empty_like(probs).exponential_(1).clamp_min_(1e-10)).argmax(dim=-1)

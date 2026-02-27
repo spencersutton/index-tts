@@ -2,6 +2,8 @@ import math
 from typing import override
 
 import torch
+from beartype import beartype
+from jaxtyping import Float
 from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
@@ -26,7 +28,8 @@ class _TimestepEmbedder(nn.Module):
         self.freqs = nn.Buffer((-math.log(10000) * torch.arange(half) / half).exp())
 
     @override
-    def forward(self, t: Tensor) -> Tensor:
+    @beartype
+    def forward(self, t: Float[Tensor, "batch"]) -> Float[Tensor, "batch dim"]:
         args = 1000 * t[:, None] * self.freqs[None]
         return self.mlp(torch.cat([args.cos(), args.sin()], dim=-1))
 
@@ -51,7 +54,10 @@ class _FinalLayer(nn.Module):
         self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(dim, 2 * dim))
 
     @override
-    def forward(self, x: Tensor, c: Tensor) -> Tensor:
+    @beartype
+    def forward(
+        self, x: Float[Tensor, "batch time dim"], c: Float[Tensor, "batch dim"]
+    ) -> Float[Tensor, "batch time dim"]:
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         return self.linear(self.norm_final(x) * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1))
 
@@ -90,7 +96,15 @@ class DiT(nn.Module):
         self.wavenet = WaveNet(dim)
 
     @override
-    def forward(self, x: Tensor, prompt_x: Tensor, t: Tensor, style: Tensor, cond: Tensor) -> Tensor:
+    @beartype
+    def forward(
+        self,
+        x: Float[Tensor, "batch mel_bins time"],
+        prompt_x: Float[Tensor, "batch mel_bins prompt_time"],
+        t: Float[Tensor, "batch"],
+        style: Float[Tensor, "batch style_dim"],
+        cond: Float[Tensor, "batch total_time cond_dim"],
+    ) -> Float[Tensor, "batch mel_bins time"]:
         T = x.size(2)
 
         t1 = self.t_embedder.__call__(t)

@@ -5,6 +5,8 @@ import huggingface_hub as hf
 import safetensors.torch
 import torch
 import transformers
+from beartype import beartype
+from jaxtyping import Float
 from torch import Tensor, nn
 
 from bigvgan import BigVGANInference as BigVGAN
@@ -69,7 +71,8 @@ def load_semantic_model(device: torch.device) -> transformers.Wav2Vec2BertModel:
     return model
 
 
-def load_semantic_stats(device: torch.device) -> tuple[Tensor, Tensor]:
+@beartype
+def load_semantic_stats(device: torch.device) -> tuple[Float[Tensor, "dim"], Float[Tensor, "dim"]]:
     with Timer() as t:
         path = hf.hf_hub_download("amphion/dualcodec", "w2vbert2_mean_var_stats_emilia.pt")
         data = torch.load(path)

@@ -3,6 +3,8 @@ from typing import Final
 import torch
 import torch.nn.functional as F
 import torchaudio.functional as AF
+from beartype import beartype
+from jaxtyping import Float
 from torch import Tensor
 
 N_FFT = 1024
@@ -23,7 +25,8 @@ PADDING: Final = (N_FFT - (N_FFT // 4)) // 2
 WINDOW: Final = torch.hann_window(N_FFT)
 
 
-def mel_spectrogram(y: Tensor) -> Tensor:
+@beartype
+def mel_spectrogram(y: Float[Tensor, "batch samples"]) -> Float[Tensor, "batch n_mels time"]:
     y = F.pad(y.unsqueeze(1), (PADDING, PADDING), mode="reflect").squeeze(1)
 
     spec = torch.view_as_real(y.stft(N_FFT, window=WINDOW, center=False, onesided=True, return_complex=True))

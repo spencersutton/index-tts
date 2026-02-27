@@ -1,6 +1,8 @@
 from typing import Final, cast, override
 
 import torch
+from beartype import beartype
+from jaxtyping import Float
 from torch import Tensor, nn
 from tqdm import tqdm
 
@@ -20,9 +22,15 @@ class CFM(nn.Module):
 
     @torch.inference_mode()
     @override
+    @beartype
     def forward(
-        self, mu: Tensor, prompt: Tensor, style: Tensor, diffusion_steps: int = 25, cfg_rate: float = 0.7
-    ) -> Tensor:
+        self,
+        mu: Float[Tensor, "batch total_time cond_dim"],
+        prompt: Float[Tensor, "batch mel_bins prompt_time"],
+        style: Float[Tensor, "batch style_dim"],
+        diffusion_steps: int = 25,
+        cfg_rate: float = 0.7,
+    ) -> Float[Tensor, "batch mel_bins time"]:
         """Forward diffusion
 
         Args:

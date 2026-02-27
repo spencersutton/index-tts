@@ -7,6 +7,8 @@ from typing import override
 import einops
 import torch
 import torch.nn.functional as F
+from beartype import beartype
+from jaxtyping import Float, Int
 from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
@@ -51,7 +53,8 @@ class _ConvNeXtBlock(nn.Module):
         self.pwconv2 = nn.Linear(intermediate_dim, in_features)
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    @beartype
+    def forward(self, x: Float[Tensor, "batch channels time"]) -> Float[Tensor, "batch channels time"]:
         residual = x
         x = self.dwconv(x)
         x = x.mT  # (B, C, T) -> (B, T, C)
@@ -93,7 +96,8 @@ class _VocosBackbone(nn.Module):
         self.apply(_init_weights)
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    @beartype
+    def forward(self, x: Float[Tensor, "batch out_features time"]) -> Float[Tensor, "batch in_features time"]:
         x = self.embed(x)
         x = self.norm(x.mT)
         x = x.mT
@@ -118,7 +122,8 @@ class _FactorizedVectorQuantize(nn.Module):
         self.out_project = weight_norm(nn.Conv1d(latent_dim, in_channels, kernel_size=1))
 
     @override
-    def forward(self, z: Tensor) -> Tensor:
+    @beartype
+    def forward(self, z: Float[Tensor, "batch in_channels time"]) -> Float[Tensor, "batch in_channels time"]:
         """
         Parameters
         ----------
@@ -138,10 +143,12 @@ class _FactorizedVectorQuantize(nn.Module):
 
         return self.out_project(z_q)
 
-    def decode_code(self, embed_id: Tensor) -> Tensor:
+    @beartype
+    def decode_code(self, embed_id: Int[Tensor, "batch time"]) -> Float[Tensor, "batch latent_dim time"]:
         return F.embedding(embed_id, self.codebook.weight).mT
 
-    def decode_latents(self, latents: Tensor) -> Tensor:
+    @beartype
+    def decode_latents(self, latents: Float[Tensor, "batch latent_dim time"]) -> Float[Tensor, "batch latent_dim time"]:
         encodings = einops.rearrange(latents, "b d t -> (b t) d")
         codebook = self.codebook.weight
 
@@ -159,7 +166,8 @@ class _FactorizedVectorQuantize(nn.Module):
         indices = einops.rearrange((-dist).max(1)[1], "(b t) -> b t", b=latents.size(0))
         return self.decode_code(indices)
 
-    def vq2emb(self, vq: Tensor) -> Tensor:
+    @beartype
+    def vq2emb(self, vq: Int[Tensor, "1 batch time"]) -> Float[Tensor, "batch in_channels time"]:
         emb = self.decode_code(vq[0])
         return self.out_project(emb)
 
@@ -186,7 +194,8 @@ class RepCodec(nn.Module):
 
         self.apply(_init_weights)
 
-    def quantize(self, x: Tensor) -> Tensor:
+    @beartype
+    def quantize(self, x: Float[Tensor, "batch time in_features"]) -> Float[Tensor, "batch time in_channels"]:
         x = self.encoder(x.mT).mT
 
         return self.quantizer(x).mT

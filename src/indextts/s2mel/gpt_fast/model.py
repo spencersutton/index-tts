@@ -7,6 +7,8 @@ from functools import cache
 from typing import ClassVar, override
 
 import torch
+from beartype import beartype
+from jaxtyping import Float, Int
 from torch import Tensor, nn
 from torch.nn import functional as F
 
@@ -28,7 +30,10 @@ class _AdaptiveLayerNorm(nn.Module):
         self.project_layer = nn.Linear(dim, 2 * dim)
 
     @override
-    def forward(self, input: Tensor, embedding: Tensor) -> Tensor:
+    @beartype
+    def forward(
+        self, input: Float[Tensor, "batch seq dim"], embedding: Float[Tensor, "batch 1 dim"]
+    ) -> Float[Tensor, "batch seq dim"]:
         weight, bias = self.project_layer(embedding).split(self.dim, dim=-1)
         return weight * self.norm.__call__(input) + bias
 
@@ -37,7 +42,7 @@ class _AdaptiveLayerNorm(nn.Module):
 
 
 @cache
-def _compute_frequencies(device: torch.device, block_size: int, heads: int) -> Tensor:
+def _compute_frequencies(device: torch.device, block_size: int, heads: int) -> Float[Tensor, "block_size head_half 2"]:
     freq_seq = torch.arange(0, heads, 2)
     inv_freq = 1 / (10000 ** (freq_seq / heads))
     angles = torch.arange(block_size).outer(inv_freq)
@@ -61,7 +66,13 @@ class Transformer(nn.Module):
         self.norm = _AdaptiveLayerNorm(dim)
 
     @override
-    def forward(self, x: Tensor, c: Tensor, input_pos: Tensor) -> Tensor:
+    @beartype
+    def forward(
+        self,
+        x: Float[Tensor, "batch seq dim"],
+        c: Float[Tensor, "batch 1 dim"],
+        input_pos: Int[Tensor, "seq"],
+    ) -> Float[Tensor, "batch seq dim"]:
         computed_frequencies = _compute_frequencies(x.device, self.block_size, self.head_dim)
         freqs_cis = computed_frequencies[input_pos]
         mid = len(self.layers) // 2
@@ -96,7 +107,14 @@ class _TransformerBlock(nn.Module):
         self.skip_in_linear = nn.Linear(dim * 2, dim)
 
     @override
-    def forward(self, x: Tensor, c: Tensor, freqs_cis: Tensor, skip_in_x: Tensor | None = None) -> Tensor:
+    @beartype
+    def forward(
+        self,
+        x: Float[Tensor, "batch seq dim"],
+        c: Float[Tensor, "batch 1 dim"],
+        freqs_cis: Float[Tensor, "seq head_half 2"],
+        skip_in_x: Float[Tensor, "batch seq dim"] | None = None,
+    ) -> Float[Tensor, "batch seq dim"]:
         if skip_in_x is not None:
             x = self.skip_in_linear(torch.cat([x, skip_in_x], dim=-1))
         norm = self.attention_norm.__call__(x, c)
@@ -127,7 +145,10 @@ class _Attention(nn.Module):
         self.wo = nn.Linear(dim, dim, bias=False)
 
     @override
-    def forward(self, x: Tensor, freqs_cis: Tensor) -> Tensor:
+    @beartype
+    def forward(
+        self, x: Float[Tensor, "batch seq dim"], freqs_cis: Float[Tensor, "seq head_half 2"]
+    ) -> Float[Tensor, "batch seq dim"]:
         bsz, seq_len, _ = x.shape
 
         query_key_value = self.wqkv(x)
@@ -167,7 +188,8 @@ class _FeedForward(nn.Module):
         self.w2 = nn.Linear(dim * 3, dim, bias=False)
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    @beartype
+    def forward(self, x: Float[Tensor, "batch seq dim"]) -> Float[Tensor, "batch seq dim"]:
         return self.w2(F.silu(self.w1(x)) * self.w3(x))
 
     @patch_call(forward)
@@ -183,18 +205,23 @@ class _RMSNorm(nn.Module):
         self.weight = nn.Parameter(torch.ones(dim))
 
     @staticmethod
-    def _norm(x: Tensor) -> Tensor:
+    @beartype
+    def _norm(x: Float[Tensor, "batch seq dim"]) -> Float[Tensor, "batch seq dim"]:
         return x * (x.square().mean(dim=-1, keepdim=True) + 1e-5).rsqrt()
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    @beartype
+    def forward(self, x: Float[Tensor, "batch seq dim"]) -> Float[Tensor, "batch seq dim"]:
         return self._norm(x) * self.weight
 
     @patch_call(forward)
     def __call__(self) -> None: ...
 
 
-def _apply_rotary_emb(x: Tensor, freqs_cis: Tensor) -> Tensor:
+@beartype
+def _apply_rotary_emb(
+    x: Float[Tensor, "batch seq heads head_half_2"], freqs_cis: Float[Tensor, "1 seq 1 head_half 2"]
+) -> Float[Tensor, "batch seq heads head_half_2"]:
     x_shaped = x.view(*x.shape[:-1], -1, 2)
     freqs_cis = freqs_cis.view(1, x_shaped.size(1), 1, x_shaped.size(3), 2)
     x0, x1 = x_shaped[..., 0], x_shaped[..., 1]

@@ -6,6 +6,8 @@ from typing import ClassVar, Final, override
 
 import torch
 import torch.nn.functional as F
+from beartype import beartype
+from jaxtyping import Float
 from torch import Tensor, nn
 
 from indextts.util import patch_call
@@ -21,7 +23,8 @@ def get_nonlinear(channels: int) -> nn.Sequential:
 
 class StatsPool(nn.Module):
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    @beartype
+    def forward(self, x: Float[Tensor, "batch channels time"]) -> Float[Tensor, "batch channels_2x"]:
         mean = x.mean(dim=-1)
         std = x.std(dim=-1, unbiased=True)
         return torch.cat([mean, std], dim=-1)
@@ -41,7 +44,8 @@ class TDNNLayer(nn.Module):
         self.nonlinear = get_nonlinear(out_channels)
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    @beartype
+    def forward(self, x: Float[Tensor, "batch in_channels time"]) -> Float[Tensor, "batch out_channels time"]:
         x = self.linear(x)
         return self.nonlinear(x)
 
@@ -67,14 +71,16 @@ class _CAMLayer(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    @beartype
+    def forward(self, x: Float[Tensor, "batch channels time"]) -> Float[Tensor, "batch out_channels time"]:
         y = self.linear_local(x)
         context = x.mean(-1, keepdim=True) + self.seg_pooling(x)
         context = self.relu(self.linear1(context))
         m = self.sigmoid(self.linear2(context))
         return y * m
 
-    def seg_pooling(self, x: Tensor) -> Tensor:
+    @beartype
+    def seg_pooling(self, x: Float[Tensor, "batch channels time"]) -> Float[Tensor, "batch channels time"]:
         seg_len: Final = 100
         seg = F.avg_pool1d(x, kernel_size=seg_len, stride=seg_len, ceil_mode=True)
         shape = seg.shape
@@ -99,11 +105,13 @@ class _CAMDenseTDNNLayer(nn.Module):
         self.nonlinear1 = get_nonlinear(in_channels)
         self.nonlinear2 = get_nonlinear(bn_channels)
 
-    def bn_function(self, x: Tensor) -> Tensor:
+    @beartype
+    def bn_function(self, x: Float[Tensor, "batch in_channels time"]) -> Float[Tensor, "batch bn_channels time"]:
         return self.linear1(self.nonlinear1(x))
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    @beartype
+    def forward(self, x: Float[Tensor, "batch in_channels time"]) -> Float[Tensor, "batch cam_out_channels time"]:
         x = self.bn_function(x)
         return self.cam_layer(self.nonlinear2(x))
 
@@ -122,7 +130,8 @@ class CAMDenseTDNNBlock(nn.ModuleList):
             self.add_module(f"tdnnd{i + 1}", layer)
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    @beartype
+    def forward(self, x: Float[Tensor, "batch channels time"]) -> Float[Tensor, "batch channels_out time"]:
         for layer in self:
             x = torch.cat([x, layer(x)], dim=1)
         return x
@@ -141,7 +150,8 @@ class TransitLayer(nn.Module):
         self.nonlinear = get_nonlinear(in_channels)
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    @beartype
+    def forward(self, x: Float[Tensor, "batch in_channels time"]) -> Float[Tensor, "batch out_channels time"]:
         x = self.nonlinear(x)
         return self.linear(x)
 
@@ -161,7 +171,8 @@ class DenseLayer(nn.Module):
         self.nonlinear = nn.Sequential(modules)
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    @beartype
+    def forward(self, x: Float[Tensor, "batch in_channels time"]) -> Float[Tensor, "batch out_channels time"]:
         if len(x.shape) == 2:
             x = self.linear(x.unsqueeze(dim=-1)).squeeze(dim=-1)
         else:
@@ -193,7 +204,8 @@ class BasicResBlock(nn.Module):
             )
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    @beartype
+    def forward(self, x: Float[Tensor, "batch planes freq time"]) -> Float[Tensor, "batch planes freq_out time"]:
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
         out += self.shortcut(x)

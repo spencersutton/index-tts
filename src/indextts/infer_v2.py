@@ -1,3 +1,4 @@
+import logging
 import os
 import random
 import warnings
@@ -11,6 +12,8 @@ import torch
 import torch.nn.functional as F
 import torchaudio
 import transformers
+from beartype import beartype
+from jaxtyping import Float, Int
 from torch import Tensor
 from torchcodec.decoders import AudioDecoder
 from torchcodec.encoders import AudioEncoder
@@ -25,6 +28,8 @@ from indextts.util import Timer
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.repcodec_model import RepCodec
 
+logger = logging.getLogger(__name__)
+
 os.environ["HF_HUB_CACHE"] = "./checkpoints/hf_cache"
 
 EMO_NUM: Final[Sequence[int]] = (3, 17, 2, 8, 4, 5, 10, 24)
@@ -35,6 +40,15 @@ MAX_MEL_TOKENS: Final = 1815
 START_MEL_TOKEN: Final = 8192
 STOP_MEL_TOKEN: Final = START_MEL_TOKEN + 1
 
+# Maximum total weight allowed across all emotion vector components.
+# Emotion vectors whose components sum above this are scaled down proportionally.
+EMO_MAX_WEIGHT_SUM: Final = 0.8
+
+# Progress-bar checkpoints for the synthesis loop.
+# Synthesis occupies the range [_PROGRESS_SYNTH_START, _PROGRESS_SYNTH_START + _PROGRESS_SYNTH_SPAN].
+_PROGRESS_SYNTH_START: Final = 0.2
+_PROGRESS_SYNTH_SPAN: Final = 0.7
+
 
 def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
     # apply biased emotion factors for better user experience,
@@ -44,27 +58,30 @@ def normalize_emo_vec(vector: Sequence[float]) -> list[float]:
     biases = [0.9375, 0.875, 1.0, 1.0, 0.9375, 0.9375, 0.6875, 0.5625]
     vector = [vec * bias for vec, bias in zip(vector, biases)]
 
-    # the total emotion sum must be 0.8 or less
+    # the total emotion sum must be EMO_MAX_WEIGHT_SUM or less
     total = sum(vector)
-    if total > 0.8:
-        scale_factor = 0.8 / total
+    if total > EMO_MAX_WEIGHT_SUM:
+        scale_factor = EMO_MAX_WEIGHT_SUM / total
         vector = [vec * scale_factor for vec in vector]
 
     return list(vector)
 
 
-def _get_silence_interval(size: int, interval_silence: int) -> Tensor:
+@beartype
+def _get_silence_interval(size: int, interval_silence: int) -> Float[Tensor, "batch samples"]:
     return torch.zeros(size, (SAMPLING_RATE * interval_silence) // 1000)
 
 
-def _load_and_cut_audio(path: Path, sample_rate: int | None = None) -> tuple[Tensor, int]:
+@beartype
+def _load_and_cut_audio(path: Path, sample_rate: int | None = None) -> tuple[Float[Tensor, "1 samples"], int]:
     samples = AudioDecoder(path, num_channels=1, sample_rate=sample_rate).get_samples_played_in_range(
         0, MAX_AUDIO_LENGTH_SECONDS
     )
     audio = samples.data
     sample_rate = samples.sample_rate
 
-    assert audio.dim() == 2 and audio.size(0) == 1, f"Only mono audio is supported. Got shape: {audio.shape}"
+    if audio.dim() != 2 or audio.size(0) != 1:
+        raise ValueError(f"Only mono audio is supported. Got shape: {audio.shape}")
     max_audio_samples = MAX_AUDIO_LENGTH_SECONDS * sample_rate
 
     if audio.shape[1] > max_audio_samples:
@@ -86,8 +103,6 @@ class IndexTTS2:
     # Progress reference display (optional)
     gr_progress: Callable[..., None] | None = None
     model_version: float = 2.0
-
-    has_warned: bool = False
 
     bigvgan: BigVGANInference
     campplus_model: CAMPPlus
@@ -145,17 +160,16 @@ class IndexTTS2:
             try:
                 from bigvgan.alias_free_activation.cuda import activation1d
 
-                print(">> Preload custom CUDA kernel for BigVGAN", activation1d.anti_alias_activation_cuda)
+                logger.info(">> Preload custom CUDA kernel for BigVGAN: %s", activation1d.anti_alias_activation_cuda)
             except Exception as e:
-                print(">> Failed to load custom CUDA kernel for BigVGAN. Falling back to torch.")
-                print(f"{e!r}")
+                logger.warning(">> Failed to load custom CUDA kernel for BigVGAN. Falling back to torch. %r", e)
                 self.use_cuda_kernel = False
 
         # Enable torch.compile optimization if requested
         if use_torch_compile:
-            print(">> Enabling torch.compile optimization")
+            logger.info(">> Enabling torch.compile optimization")
             self.cfm.enable_torch_compile()
-            print(">> torch.compile optimization enabled successfully")
+            logger.info(">> torch.compile optimization enabled successfully")
 
         self.spk_matrix = self._get_matrix("feat1.pt")
         self.emo_matrix = self._get_matrix("feat2.pt")
@@ -164,7 +178,7 @@ class IndexTTS2:
         self.glossary_path = Path("checkpoints") / "glossary.yaml"
         if self.glossary_path.exists():
             self.normalizer.load_glossary_from_yaml(self.glossary_path)
-            print(">> Glossary loaded from:", self.glossary_path)
+            logger.info(">> Glossary loaded from: %s", self.glossary_path)
 
     def infer(
         self,
@@ -177,7 +191,7 @@ class IndexTTS2:
         emo_vector: Sequence[float] | None = None,
         interval_silence: int = 200,
         max_text_tokens_per_segment: int = 120,
-        more_segment_before: int = 0,
+        quick_streaming_tokens: int = 0,
         stream_return: bool = False,
         use_emo_text: bool = False,
         use_random: bool = False,
@@ -189,6 +203,22 @@ class IndexTTS2:
         top_k: int = 30,
         top_p: float = 0.8,
     ) -> Path | Generator[Tensor] | None:
+        # --- input validation ---
+        if not (0.0 <= emo_alpha <= 1.0):
+            raise ValueError(f"emo_alpha must be in [0.0, 1.0], got {emo_alpha}")
+        if interval_silence < 0:
+            raise ValueError(f"interval_silence must be >= 0 ms, got {interval_silence}")
+        if num_beams < 1:
+            raise ValueError(f"num_beams must be >= 1, got {num_beams}")
+        if temperature <= 0.0:
+            raise ValueError(f"temperature must be > 0.0, got {temperature}")
+        if top_k < 0:
+            raise ValueError(f"top_k must be >= 0, got {top_k}")
+        if not (0.0 < top_p <= 1.0):
+            raise ValueError(f"top_p must be in (0.0, 1.0], got {top_p}")
+        if not text or not text.strip():
+            raise ValueError("text must be a non-empty string")
+
         if use_emo_text or emo_vector is not None:
             # we're using a text or emotion vector guidance; so we must remove
             # "emotion reference voice", to ensure we use correct emotion mixing!
@@ -198,25 +228,25 @@ class IndexTTS2:
             # automatically generate emotion vectors from text prompt
             emo_text = emo_text or text  # use main text prompt
             emo_dict = self.qwen_emo.inference(emo_text)
-            print(f"detected emotion vectors from text: {emo_dict}")
+            logger.info("detected emotion vectors from text: %s", emo_dict)
             # convert ordered dict to list of vectors; the order is VERY important!
             emo_vector = list(emo_dict.values())
 
         if emo_vector is not None:
-            # we have emotion vectors; they can'T be blended via alpha mixing
+            # we have emotion vectors; they can't be blended via alpha mixing
             # in the main inference process later, so we must pre-calculate
             # their new strengths here based on the alpha instead!
             emo_vector_scale = max(0.0, min(1.0, emo_alpha))
             if emo_vector_scale != 1.0:  # noqa: RUF069
                 # scale each vector and truncate to 4 decimals (for nicer printing)
-                emo_vector = [int(x * emo_vector_scale * 10000) / 10000 for x in emo_vector]
-                print(f"scaled emotion vectors to {emo_vector_scale}x: {emo_vector}")
+                emo_vector = [int(x * emo_vector_scale * 10_000) / 10_000 for x in emo_vector]
+                logger.info("scaled emotion vectors to %sx: %s", emo_vector_scale, emo_vector)
 
         if emo_audio_prompt is None:
             # we are not using any external "emotion reference voice"; use
             # speaker's voice as the main emotion reference audio.
             emo_audio_prompt = spk_audio_prompt
-            # must always use alpha=1.0 when we don'T have an external reference voice
+            # must always use alpha=1.0 when we don't have an external reference voice
             emo_alpha = 1.0
 
         gen = self._infer_generator(
@@ -224,25 +254,25 @@ class IndexTTS2:
             text,
             output_path,
             emo_audio_prompt,
-            emo_alpha,
-            emo_vector,
-            use_random,
-            interval_silence,
-            max_text_tokens_per_segment,
-            stream_return,
-            more_segment_before,
-            do_sample,
-            length_penalty,
-            num_beams,
-            repetition_penalty,
-            temperature,
-            top_k,
-            top_p,
+            emo_alpha=emo_alpha,
+            emo_vector=emo_vector,
+            use_random=use_random,
+            interval_silence=interval_silence,
+            max_text_tokens_per_segment=max_text_tokens_per_segment,
+            stream_return=stream_return,
+            quick_streaming_tokens=quick_streaming_tokens,
+            do_sample=do_sample,
+            length_penalty=length_penalty,
+            num_beams=num_beams,
+            repetition_penalty=repetition_penalty,
+            temperature=temperature,
+            top_k=top_k,
+            top_p=top_p,
         )
         if stream_return:
             return gen
         try:
-            return next(iter(gen))  # pyright: ignore[reportReturnType]
+            return next(gen)  # pyright: ignore[reportReturnType]
         except IndexError:
             return None
 
@@ -268,7 +298,7 @@ class IndexTTS2:
         top_k: int = 30,
         top_p: float = 0.8,
     ) -> Generator[Tensor]:
-        print(">> starting inference...")
+        logger.info(">> starting inference...")
         self._set_gr_progress(0.0, "starting inference...")
         inference_timer = Timer()
         inference_timer.start()
@@ -306,7 +336,8 @@ class IndexTTS2:
         has_warned = False
         for seg_idx, sent in enumerate(segments):
             self._set_gr_progress(
-                0.2 + 0.7 * seg_idx / len(segments), f"speech synthesis {seg_idx + 1}/{len(segments)}..."
+                _PROGRESS_SYNTH_START + _PROGRESS_SYNTH_SPAN * seg_idx / len(segments),
+                f"speech synthesis {seg_idx + 1}/{len(segments)}...",
             )
 
             text_tokens = self.tokenizer.convert_tokens_to_ids(sent)
@@ -342,12 +373,10 @@ class IndexTTS2:
                 codes = codes[:, : max(code_lens)]
 
                 with s2mel_time:
-                    voice_conversion_target = self._generate_voice_conversion(
-                        code_lens, prompt_condition, style, ref_mel, codes
-                    )
+                    generated_mel = self._generate_mel_from_codes(code_lens, prompt_condition, style, ref_mel, codes)
 
                 with bigvgan_time:
-                    wav = self.bigvgan(voice_conversion_target.float()).squeeze().unsqueeze(0).squeeze(1)
+                    wav = self.bigvgan(generated_mel.float()).squeeze().unsqueeze(0).squeeze(1)
 
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
@@ -362,18 +391,18 @@ class IndexTTS2:
         wav = torch.cat(wavs, dim=1)
         wav_length = wav.shape[-1] / SAMPLING_RATE
 
-        print(f">> gpt_gen_time: {gpt_gen_time:.2f} seconds")
-        print(f">> s2mel_time: {s2mel_time:.2f} seconds")
-        print(f">> bigvgan_time: {bigvgan_time:.2f} seconds")
-        print(f">> Total inference time: {inference_timer:.2f} seconds")
-        print(f">> Generated audio length: {wav_length:.2f} seconds")
-        print(f">> RTF: {inference_timer.elapsed / wav_length:.4f}")
+        logger.info(">> gpt_gen_time:   %.2f seconds", gpt_gen_time.elapsed)
+        logger.info(">> s2mel_time:     %.2f seconds", s2mel_time.elapsed)
+        logger.info(">> bigvgan_time:   %.2f seconds", bigvgan_time.elapsed)
+        logger.info(">> Total inference time: %.2f seconds", inference_timer.elapsed)
+        logger.info(">> Generated audio length: %.2f seconds", wav_length)
+        logger.info(">> RTF: %.4f", inference_timer.elapsed / wav_length)
 
         wav = wav.cpu()
         if output_path:
             # Save audio directly to the specified path
             AudioEncoder(wav, sample_rate=SAMPLING_RATE).to_file(output_path)
-            print(">> wav file saved to:", output_path)
+            logger.info(">> wav file saved to: %s", output_path)
             yield output_path  # pyright: ignore[reportReturnType]
         else:
             # Return in a format compatible with Gradio
@@ -381,9 +410,15 @@ class IndexTTS2:
             wav_data = wav_data.numpy().T
             yield (SAMPLING_RATE, wav_data)
 
-    def _generate_voice_conversion(
-        self, code_lens: list[int], prompt_condition: Tensor, style: Tensor, ref_mel: Tensor, codes: Tensor
-    ) -> Tensor:
+    @beartype
+    def _generate_mel_from_codes(
+        self,
+        code_lens: list[int],
+        prompt_condition: Float[Tensor, "batch prompt_time cond_dim"],
+        style: Float[Tensor, "batch style_dim"],
+        ref_mel: Float[Tensor, "batch mel_bins ref_time"],
+        codes: Int[Tensor, "batch time"],
+    ) -> Float[Tensor, "batch mel_bins time"]:
         semantic_inference = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1)).mT
         target_lengths = (torch.tensor(code_lens, device=self.device) * 1.72).long().max().item()
 
@@ -394,19 +429,25 @@ class IndexTTS2:
 
     @lru_cache(5)  # noqa: B019
     def _extract_emotion_features(self, prompt: Path) -> Tensor:
-        print(">> extracting emotion features from prompt:", prompt)
+        logger.info(">> extracting emotion features from prompt: %s", prompt)
         audio, _ = _load_and_cut_audio(prompt, sample_rate=WIDEBAND_SR)
         inputs = self.extract_features(audio.numpy(), sampling_rate=WIDEBAND_SR, return_tensors="pt")
         inputs = cast(Mapping[str, Tensor], inputs.to(self.device))
         return self._get_emb(inputs["input_features"], inputs["attention_mask"])
 
-    def _generate_emotion_matrix(self, weight_vector: Tensor, style: Tensor, use_random: bool = False) -> Tensor:
+    @beartype
+    def _generate_emotion_matrix(
+        self,
+        weight_vector: Float[Tensor, "num_emotions"],
+        style: Float[Tensor, "batch style_dim"],
+        use_random: bool = False,
+    ) -> Float[Tensor, "batch style_dim"]:
         if use_random:
-            index = [random.randint(0, x - 1) for x in EMO_NUM]
+            indices = [random.randint(0, x - 1) for x in EMO_NUM]
         else:
-            index = [int(F.cosine_similarity(style, x).argmax()) for x in self.spk_matrix]
+            indices = [int(F.cosine_similarity(style, x).argmax()) for x in self.spk_matrix]
 
-        matrix = [x[index].unsqueeze(0) for index, x in zip(index, self.emo_matrix)]
+        matrix = [x[i].unsqueeze(0) for i, x in zip(indices, self.emo_matrix)]
         matrix = torch.cat(matrix)
         matrix = weight_vector.unsqueeze(1) * matrix
         matrix = matrix.sum(dim=0)
@@ -418,11 +459,15 @@ class IndexTTS2:
         return data.split(EMO_NUM)
 
     @torch.inference_mode()
-    def _get_emb(self, input_features: Tensor, attention_mask: Tensor) -> Tensor:
+    @beartype
+    def _get_emb(
+        self, input_features: Float[Tensor, "batch time n_mels"], attention_mask: Int[Tensor, "batch time"]
+    ) -> Float[Tensor, "batch time dim"]:
         vq_emb = self.semantic_model(
             input_features=input_features, attention_mask=attention_mask, output_hidden_states=True
         )
-        assert not isinstance(vq_emb, tuple) and vq_emb.hidden_states is not None
+        if isinstance(vq_emb, tuple) or vq_emb.hidden_states is None:
+            raise RuntimeError("semantic_model did not return hidden states; ensure output_hidden_states=True is set")
         feat = vq_emb.hidden_states[17]  # (B, T, C)
         return (feat - self.semantic_mean) / self.semantic_std
 
@@ -432,7 +477,7 @@ class IndexTTS2:
 
     @lru_cache  # noqa: B019
     def _extract_audio_features(self, prompt: Path) -> tuple[Tensor, Tensor, Tensor, Tensor]:
-        print(">> extracting audio features from prompt:", prompt)
+        logger.info(">> extracting audio features from prompt: %s", prompt)
         audio, sr = _load_and_cut_audio(prompt)
         audio_16k = torchaudio.functional.resample(audio, sr, WIDEBAND_SR)
         audio_22k = torchaudio.functional.resample(audio, sr, SAMPLING_RATE)

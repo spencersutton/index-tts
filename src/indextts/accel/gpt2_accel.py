@@ -2,6 +2,8 @@ from typing import cast, override
 
 import torch
 import transformers
+from beartype import beartype
+from jaxtyping import Float
 from torch import Tensor, nn
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 from transformers.models.gpt2.modeling_gpt2 import GPT2Block, GPT2Model
@@ -59,19 +61,20 @@ class _GPT2AccelAttention(nn.Module):
         self.accel_attn = Attention(self.num_heads, self.head_dim, scale, self.num_heads)
 
     @override
+    @beartype
     def forward(
         self,
-        hidden_states: Tensor,
+        hidden_states: Float[Tensor, "batch seq embed_dim"],
         layer_past: tuple[Tensor, Tensor] | None = None,
-        attention_mask: Tensor | None = None,
-        head_mask: Tensor | None = None,
-        encoder_hidden_states: Tensor | None = None,
-        encoder_attention_mask: Tensor | None = None,
+        attention_mask: Float[Tensor, "batch 1 1 seq"] | None = None,
+        head_mask: Float[Tensor, num_heads] | None = None,
+        encoder_hidden_states: Float[Tensor, "batch enc_seq embed_dim"] | None = None,
+        encoder_attention_mask: Float[Tensor, "batch 1 1 enc_seq"] | None = None,
         use_cache: bool = False,
         output_attentions: bool = False,
         past_key_value: tuple[Tensor, Tensor] | None = None,
         **kwargs: object,
-    ) -> tuple[Tensor, None, None] | tuple[Tensor, None]:
+    ) -> tuple[Float[Tensor, "batch seq embed_dim"], None, None] | tuple[Float[Tensor, "batch seq embed_dim"], None]:
         if encoder_hidden_states is not None:
             raise NotImplementedError("Cross attention not supported in accel mode")
 
@@ -112,12 +115,18 @@ class _GPT2AccelAttention(nn.Module):
             return (attn_output, None, None)
         return (attn_output, None)
 
-    def _split_heads(self, tensor: Tensor, num_heads: int, head_dim: int) -> Tensor:
+    @beartype
+    def _split_heads(
+        self, tensor: Float[Tensor, "batch seq embed_dim"], num_heads: int, head_dim: int
+    ) -> Float[Tensor, "batch heads seq head_dim"]:
         new_shape = (*tensor.size()[:-1], num_heads, head_dim)
         tensor = tensor.view(new_shape)
         return tensor.permute(0, 2, 1, 3)  # (batch, head, seq_length, head_features)
 
-    def _merge_heads(self, tensor: Tensor, num_heads: int, head_dim: int) -> Tensor:
+    @beartype
+    def _merge_heads(
+        self, tensor: Float[Tensor, "batch heads seq head_dim"], num_heads: int, head_dim: int
+    ) -> Float[Tensor, "batch seq embed_dim"]:
         tensor = tensor.permute(0, 2, 1, 3).contiguous()
         new_shape = (*tensor.size()[:-2], num_heads * head_dim)
         return tensor.view(new_shape)

@@ -18,6 +18,8 @@
 
 from typing import override
 
+from beartype import beartype
+from jaxtyping import Bool, Float
 from torch import Tensor, nn
 
 from indextts.gpt.conformer.embedding import RelPositionalEncoding
@@ -39,7 +41,10 @@ class Conv2dSubsampling2(nn.Module):
         self.pos_enc = RelPositionalEncoding(dim)
 
     @override
-    def forward(self, x: Tensor, x_mask: Tensor) -> tuple[Tensor, Tensor, Tensor]:
+    @beartype
+    def forward(
+        self, x: Float[Tensor, "batch time idim"], x_mask: Bool[Tensor, "batch 1 time"]
+    ) -> tuple[Float[Tensor, "batch time_out dim"], Float[Tensor, "1 time_out dim"], Bool[Tensor, "batch 1 time_out"]]:
         """Subsample x.
 
         Args:

@@ -1,3 +1,4 @@
+import logging
 import sys
 from pathlib import Path
 from typing import cast
@@ -5,6 +6,8 @@ from typing import cast
 import pyinstrument
 
 from indextts.profiling import generate_profile_report
+
+logger = logging.getLogger(__name__)
 
 
 def main() -> None:
@@ -43,17 +46,17 @@ def main() -> None:
     args.use_accel = cast(bool, args.use_accel)
 
     if len(args.text.strip()) == 0:
-        print("ERROR: Text is empty.")
+        logger.error("Text is empty.")
         parser.print_help()
         sys.exit(1)
     if not voice_file.exists():
-        print(f"Audio prompt file {voice_file} does not exist.")
+        logger.error("Audio prompt file %s does not exist.", voice_file)
         parser.print_help()
         sys.exit(1)
 
     if output_path.exists():
         if not args.force:
-            print(f"ERROR: Output file {output_path} already exists. Use --force to overwrite.")
+            logger.error("Output file %s already exists. Use --force to overwrite.", output_path)
             parser.print_help()
             sys.exit(1)
         else:
@@ -62,7 +65,7 @@ def main() -> None:
     try:
         import torch
     except ImportError:
-        print("ERROR: PyTorch is not installed. Please install it first.")
+        logger.error("PyTorch is not installed. Please install it first.")
         sys.exit(1)
 
     if args.device is None:
@@ -74,18 +77,18 @@ def main() -> None:
             args.device = "mps"
         else:
             args.device = "cpu"
-            print("WARNING: Running on CPU may be slow.")
+            logger.warning("Running on CPU may be slow.")
 
-    print("Importing IndexTTS2...")
+    logger.info("Importing IndexTTS2...")
     from indextts.infer_v2 import IndexTTS2
 
     profiler = pyinstrument.Profiler()
     if args.profile:
         profiler.start()
 
-    print("Initializing IndexTTS2...")
+    logger.info("Initializing IndexTTS2...")
     tts = IndexTTS2(device=args.device, use_accel=args.use_accel)
-    print("Start inference...")
+    logger.info("Start inference...")
     tts.infer(output_path=output_path, spk_audio_prompt=voice_file, text=args.text.strip())
 
     if args.profile:

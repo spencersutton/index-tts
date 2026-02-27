@@ -1,6 +1,6 @@
+import logging
 import re
 import sys
-import traceback
 import warnings
 from collections.abc import Mapping, Sequence
 from functools import lru_cache
@@ -12,6 +12,8 @@ from sentencepiece import SentencePieceProcessor
 
 if TYPE_CHECKING:
     from wetext import Normalizer
+
+logger = logging.getLogger(__name__)
 
 _PUNCTUATION_MARKS_TOKENS: Final[Sequence[str]] = [
     ".",
@@ -117,6 +119,21 @@ def _tokenize_by_CJK_char(line: str, do_upper_case: bool = True) -> str:
 
 
 class TextNormalizer:
+    """Language-aware text normalizer for Chinese and English input.
+
+    Detects whether the input text is primarily Chinese or English and applies the
+    appropriate normalization pipeline (number expansion, abbreviation unfolding, etc.).
+    Additionally supports an optional *glossary* of domain-specific terms with custom
+    pronunciation mappings for use with TTS systems.
+
+    On Linux, uses the ``tn`` library (``tn.chinese.normalizer``, ``tn.english.normalizer``).
+    On macOS/Windows, uses ``wetext.Normalizer``.
+
+    Example::
+        norm = TextNormalizer(enable_glossary=False)
+        text = norm.normalize("GPT-4 has 1.8 trillion parameters")
+    """
+
     _zh_normalizer: Normalizer | None = None
     _en_normalizer: Normalizer | None = None
     enable_glossary: bool
@@ -181,7 +198,7 @@ class TextNormalizer:
 
     def normalize(self, text: str) -> str:
         if not self._zh_normalizer or not self._en_normalizer:
-            print("Error, text normalizer is not initialized !!!")
+            logger.error("Text normalizer is not initialized; call load() first.")
             return ""
         if self._use_chinese(text):
             text = re.sub(_ENGLISH_CONTRACTION_PATTERN, r"\1 is", text, flags=re.IGNORECASE)
@@ -197,7 +214,7 @@ class TextNormalizer:
                 result = self._zh_normalizer.normalize(replaced_text)
             except Exception:
                 result = ""
-                print(traceback.format_exc())
+                logger.exception("Chinese normalizer raised an exception for text: %r", replaced_text)
             # Restore names
             result = TextNormalizer._restore_names(result, original_name_list)
             # Restore pinyin tones
@@ -219,7 +236,7 @@ class TextNormalizer:
                 result = TextNormalizer._restore_tech_terms(result, tech_list)
             except Exception:
                 result = text
-                print(traceback.format_exc())
+                logger.exception("English normalizer raised an exception for text: %r", text)
             pattern = re.compile("|".join(re.escape(p) for p in _CHAR_REP_MAP))
             result = pattern.sub(lambda x: _CHAR_REP_MAP[x.group()], result)
         return result
@@ -423,6 +440,18 @@ class TextNormalizer:
 
 
 class TextTokenizer:
+    """SentencePiece-based tokenizer with integrated text normalization.
+
+    Wraps a :class:`TextNormalizer` and a ``SentencePieceProcessor`` to convert
+    raw text into a sequence of BPE token strings (as produced by IndexTTS's
+    custom vocabulary).  Also provides a ``split_segments`` utility that partitions
+    a long tokenized sequence into shorter chunks suitable for autoregressive generation.
+
+    Args:
+        vocab_file: Path to the ``*.model`` SentencePiece model file.
+        normalizer: A pre-initialized :class:`TextNormalizer` instance.
+    """
+
     _vocab_file: Path
     _normalizer: TextNormalizer
     _sp_model: SentencePieceProcessor

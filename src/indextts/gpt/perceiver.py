@@ -4,7 +4,9 @@ from typing import override
 
 import torch
 import torch.nn.functional as F
+from beartype import beartype
 from einops import rearrange, repeat
+from jaxtyping import Bool, Float
 from torch import Tensor, nn
 
 from indextts.util import patch_call
@@ -29,7 +31,13 @@ class _Attention(nn.Module):
         self.to_out = nn.Linear(dim_inner, dim, bias=False)
 
     @override
-    def forward(self, x: Tensor, context: Tensor | None = None, mask: Tensor | None = None) -> Tensor:
+    @beartype
+    def forward(
+        self,
+        x: Float[Tensor, "batch seq dim"],
+        context: Float[Tensor, "batch ctx_seq dim"] | None = None,
+        mask: Bool[Tensor, "batch ctx_seq"] | None = None,
+    ) -> Float[Tensor, "batch seq dim"]:
         h = self.heads
 
         context = context if context is not None else x
@@ -49,7 +57,14 @@ class _Attention(nn.Module):
 
 class _Attend(nn.Module):
     @override
-    def forward(self, q: Tensor, k: Tensor, v: Tensor, mask: Tensor | None = None) -> Tensor:
+    @beartype
+    def forward(
+        self,
+        q: Float[Tensor, "batch heads seq_q d_k"],
+        k: Float[Tensor, "batch heads seq_k d_k"],
+        v: Float[Tensor, "batch heads seq_k d_k"],
+        mask: Bool[Tensor, "batch seq_k"] | None = None,
+    ) -> Float[Tensor, "batch heads seq_q d_k"]:
         """
         einstein notation
         b - batch
@@ -91,7 +106,8 @@ class _RMSNorm(nn.Module):
         self.gamma = nn.Parameter(torch.ones(dim))
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    @beartype
+    def forward(self, x: Float[Tensor, "batch seq dim"]) -> Float[Tensor, "batch seq dim"]:
         return F.normalize(x, dim=-1) * self.scale * self.gamma
 
     @patch_call(forward)
@@ -100,7 +116,8 @@ class _RMSNorm(nn.Module):
 
 class _GEGLU(nn.Module):
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    @beartype
+    def forward(self, x: Float[Tensor, "batch seq dim_2x"]) -> Float[Tensor, "batch seq dim"]:
         x, gate = x.chunk(2, dim=-1)
         return F.gelu(gate) * x
 
@@ -134,7 +151,10 @@ class PerceiverResampler(nn.Module):
         self.norm = _RMSNorm(dim)
 
     @override
-    def forward(self, x: Tensor, mask: Tensor | None = None) -> Tensor:
+    @beartype
+    def forward(
+        self, x: Float[Tensor, "batch ctx_seq dim_context"], mask: Bool[Tensor, "batch ctx_seq"] | None = None
+    ) -> Float[Tensor, "batch num_latents dim"]:
         x = self.proj_context(x)
 
         latents = repeat(self.latents, "n d -> b n d", b=x.shape[0])

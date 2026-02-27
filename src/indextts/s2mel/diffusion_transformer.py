@@ -2,6 +2,8 @@ import math
 from typing import override
 
 import torch
+from beartype import beartype
+from jaxtyping import Float
 from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
@@ -22,11 +24,12 @@ class _TimestepEmbedder(nn.Module):
         super().__init__()
         self.mlp = nn.Sequential(nn.Linear(dim // 2, dim), nn.SiLU(), nn.Linear(dim, dim))
 
-        half = dim // 4
-        self.freqs = nn.Buffer((-math.log(10000) * torch.arange(half) / half).exp())
+        quarter = dim // 4
+        self.freqs = nn.Buffer((-math.log(10000) * torch.arange(quarter) / quarter).exp())
 
     @override
-    def forward(self, t: Tensor) -> Tensor:
+    @beartype
+    def forward(self, t: Float[Tensor, "batch"]) -> Float[Tensor, "batch dim"]:
         args = 1000 * t[:, None] * self.freqs[None]
         return self.mlp(torch.cat([args.cos(), args.sin()], dim=-1))
 
@@ -51,7 +54,10 @@ class _FinalLayer(nn.Module):
         self.adaLN_modulation = nn.Sequential(nn.SiLU(), nn.Linear(dim, 2 * dim))
 
     @override
-    def forward(self, x: Tensor, c: Tensor) -> Tensor:
+    @beartype
+    def forward(
+        self, x: Float[Tensor, "batch time dim"], c: Float[Tensor, "batch dim"]
+    ) -> Float[Tensor, "batch time dim"]:
         shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
         return self.linear(self.norm_final(x) * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1))
 
@@ -62,7 +68,7 @@ class _FinalLayer(nn.Module):
 class DiT(nn.Module):
     cond_projection: nn.Linear
     cond_x_merge_linear: nn.Linear
-    conv1: nn.Linear
+    pre_wavenet_proj: nn.Linear
     conv2: nn.Conv1d
     final_layer: _FinalLayer
     input_pos: Tensor
@@ -75,10 +81,11 @@ class DiT(nn.Module):
 
     def __init__(self, dim: int, channels: int = 80, style_dim: int = 192, block_size: int = 2**14) -> None:
         super().__init__()
+        self.register_load_state_dict_pre_hook(self._remap_weights)
 
         self.cond_projection = nn.Linear(dim, dim)  # continuous content
         self.cond_x_merge_linear = nn.Linear(dim + channels * 2 + style_dim, dim)
-        self.conv1 = nn.Linear(dim, dim)
+        self.pre_wavenet_proj = nn.Linear(dim, dim)
         self.conv2 = nn.Conv1d(dim, channels, kernel_size=1)
         self.final_layer = _FinalLayer(dim)
         self.input_pos = nn.Buffer(torch.arange(block_size))
@@ -90,7 +97,15 @@ class DiT(nn.Module):
         self.wavenet = WaveNet(dim)
 
     @override
-    def forward(self, x: Tensor, prompt_x: Tensor, t: Tensor, style: Tensor, cond: Tensor) -> Tensor:
+    @beartype
+    def forward(
+        self,
+        x: Float[Tensor, "batch mel_bins time"],
+        prompt_x: Float[Tensor, "batch mel_bins prompt_time"],
+        t: Float[Tensor, "batch"],
+        style: Float[Tensor, "batch style_dim"],
+        cond: Float[Tensor, "batch total_time cond_dim"],
+    ) -> Float[Tensor, "batch mel_bins time"]:
         T = x.size(2)
 
         t1 = self.t_embedder.__call__(t)
@@ -108,10 +123,18 @@ class DiT(nn.Module):
         x_res = self.skip_linear(torch.cat([x_res, x], dim=-1))
 
         t2 = self.t_embedder2.__call__(t).unsqueeze(2)
-        x = self.conv1.__call__(x_res).mT
+        x = self.pre_wavenet_proj.__call__(x_res).mT
         x = self.wavenet.__call__(x, g=t2).mT + self.res_projection(x_res)
         x = self.final_layer.__call__(x, t1).mT
         return self.conv2(x)
 
     @patch_call(forward)
     def __call__(self) -> None: ...
+
+    @staticmethod
+    def _remap_weights(_module: object, state_dict: dict[str, object], prefix: str, *_args: object) -> None:
+        """Remap legacy checkpoint key 'conv1' to 'pre_wavenet_proj'."""
+        for k in list(state_dict.keys()):
+            if k.startswith(prefix + "conv1."):
+                new_k = k.replace(prefix + "conv1.", prefix + "pre_wavenet_proj.", 1)
+                state_dict[new_k] = state_dict.pop(k)

@@ -1,6 +1,8 @@
 from typing import override
 
 import torch
+from beartype import beartype
+from jaxtyping import Float
 from torch import Tensor, nn
 
 from indextts.util import patch_call
@@ -16,10 +18,12 @@ class LearnedPositionEmbeddings(nn.Module):
         self.emb.weight.data.normal_(std=0.02)
 
     @override
-    def forward(self, x: int) -> Tensor:
+    @beartype
+    def forward(self, x: int) -> Float[Tensor, "seq dim"]:
         return self.emb(torch.arange(x, device=self.emb.weight.device))
 
-    def get_fixed_embedding(self, index: int) -> Tensor:
+    @beartype
+    def get_fixed_embedding(self, index: int) -> Float[Tensor, "1 1 dim"]:
         return self.emb(torch.tensor([index], device=self.emb.weight.device)).unsqueeze(0)
 
     @patch_call(forward)

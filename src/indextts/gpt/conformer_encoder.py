@@ -2,6 +2,8 @@ from typing import override
 
 import torch
 import torch.nn.functional as F
+from beartype import beartype
+from jaxtyping import Bool, Float, Int
 from torch import Tensor, nn
 
 from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
@@ -9,7 +11,8 @@ from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
 from indextts.util import patch_call
 
 
-def make_pad_mask(lengths: Tensor, max_len: int = 0) -> Tensor:
+@beartype
+def make_pad_mask(lengths: Int[Tensor, "batch"], max_len: int = 0) -> Bool[Tensor, "batch max_len"]:
     """Make mask tensor containing indices of padded part.
 
     See description of make_non_pad_mask.
@@ -37,11 +40,11 @@ def make_pad_mask(lengths: Tensor, max_len: int = 0) -> Tensor:
 class _PositionwiseFeedForward(nn.Module):
     """Positionwise feed forward layer.
 
-    FeedForward are appied on each position of the sequence.
+    FeedForward is applied on each position of the sequence.
     The output dim is same with the input dim.
 
     Args:
-        idim (int): Input dimenstion.
+        idim (int): Input dimension.
         hidden_units (int): The number of hidden units.
         activation (nn.Module): Activation function
     """
@@ -59,7 +62,8 @@ class _PositionwiseFeedForward(nn.Module):
         self.w_2 = nn.Linear(hidden_units, dim)
 
     @override
-    def forward(self, xs: Tensor) -> Tensor:
+    @beartype
+    def forward(self, xs: Float[Tensor, "batch time dim"]) -> Float[Tensor, "batch time dim"]:
         """Forward function.
 
         Args:
@@ -102,7 +106,10 @@ class _ConvolutionModule(nn.Module):
         self.activation = activation
 
     @override
-    def forward(self, x: Tensor, mask_pad: Tensor) -> Tensor:
+    @beartype
+    def forward(
+        self, x: Float[Tensor, "batch time dim"], mask_pad: Bool[Tensor, "batch 1 time"]
+    ) -> Float[Tensor, "batch time dim"]:
         """Compute convolution module.
         Args:
             x (Tensor): Input tensor (#batch, time, channels).
@@ -150,7 +157,6 @@ class _ConformerEncoderLayer(nn.Module):
             `ConvlutionModule` instance can be used as the argument.
     """
 
-    concat_linear: nn.Identity
     conv_module: _ConvolutionModule
     feed_forward: _PositionwiseFeedForward
     norm_conv: nn.LayerNorm
@@ -169,7 +175,6 @@ class _ConformerEncoderLayer(nn.Module):
         """Construct an EncoderLayer object."""
         super().__init__()
 
-        self.concat_linear = nn.Identity()
         self.conv_module = conv_module
         self.feed_forward = feed_forward
         self.norm_conv = nn.LayerNorm(dim)  # for the CNN module
@@ -179,7 +184,14 @@ class _ConformerEncoderLayer(nn.Module):
         self.self_attn = self_attn
 
     @override
-    def forward(self, x: Tensor, mask: Tensor, pos_emb: Tensor, mask_pad: Tensor) -> tuple[Tensor, Tensor]:
+    @beartype
+    def forward(
+        self,
+        x: Float[Tensor, "batch time dim"],
+        mask: Bool[Tensor, "batch time_or_1 time"],
+        pos_emb: Float[Tensor, "1 time dim"],
+        mask_pad: Bool[Tensor, "batch 1 time"],
+    ) -> tuple[Float[Tensor, "batch time dim"], Bool[Tensor, "batch time_or_1 time"]]:
         """Compute encoded features.
 
         Args:
@@ -242,7 +254,10 @@ class ConformerEncoder(nn.Module):
         ])
 
     @override
-    def forward(self, xs: Tensor) -> tuple[Tensor, Tensor]:
+    @beartype
+    def forward(
+        self, xs: Float[Tensor, "batch time idim"]
+    ) -> tuple[Float[Tensor, "batch time_out dim"], Bool[Tensor, "batch 1 time_out"]]:
         """Embed positions in tensor.
 
         Args:

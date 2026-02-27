@@ -3,6 +3,8 @@ from typing import Any, cast, override
 import torch
 import transformers
 import transformers.modeling_outputs
+from beartype import beartype
+from jaxtyping import Float, Int
 from torch import Tensor, nn
 
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
@@ -12,7 +14,6 @@ from indextts.util import patch_call
 class GPT2InferenceModel(transformers.GPT2PreTrainedModel, transformers.GenerationMixin):
     cached_mel_emb: Tensor | None = None
     embeddings: nn.Embedding
-    final_norm: nn.Module
     lm_head: nn.Sequential
     text_pos_embedding: LearnedPositionEmbeddings
     transformer: transformers.GPT2Model
@@ -29,7 +30,6 @@ class GPT2InferenceModel(transformers.GPT2PreTrainedModel, transformers.Generati
         super().__init__(config)
 
         self.embeddings = embeddings
-        self.final_norm = norm
         self.lm_head = nn.Sequential(norm, linear)
         self.text_pos_embedding = text_pos_emb
         self.transformer = gpt
@@ -73,17 +73,18 @@ class GPT2InferenceModel(transformers.GPT2PreTrainedModel, transformers.Generati
         }
 
     @override
+    @beartype
     def forward(
         self,
-        input_ids: Tensor,
+        input_ids: Int[Tensor, "batch seq"],
         past_key_values: transformers.Cache | None = None,
-        attention_mask: Tensor | None = None,
-        token_type_ids: Tensor | None = None,
-        position_ids: Tensor | None = None,
-        head_mask: Tensor | None = None,
-        inputs_embeds: Tensor | None = None,
-        encoder_hidden_states: Tensor | None = None,
-        encoder_attention_mask: Tensor | None = None,
+        attention_mask: Int[Tensor, "batch seq"] | None = None,
+        token_type_ids: Int[Tensor, "batch seq"] | None = None,
+        position_ids: Int[Tensor, "batch seq"] | None = None,
+        head_mask: Float[Tensor, "num_heads"] | None = None,
+        inputs_embeds: Float[Tensor, "batch seq dim"] | None = None,
+        encoder_hidden_states: Float[Tensor, "batch enc_seq dim"] | None = None,
+        encoder_attention_mask: Int[Tensor, "batch enc_seq"] | None = None,
         labels: None = None,
         use_cache: bool | None = None,
         output_attentions: bool | None = None,

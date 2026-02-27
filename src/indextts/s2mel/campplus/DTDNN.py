@@ -4,6 +4,8 @@ from collections import OrderedDict
 from typing import override
 
 import torch.nn.functional as F
+from beartype import beartype
+from jaxtyping import Float
 from torch import Tensor, nn
 
 from indextts.s2mel.campplus import layers
@@ -33,7 +35,8 @@ class _FCM(nn.Module):
         self.out_channels = m_channels * 10
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    @beartype
+    def forward(self, x: Float[Tensor, "batch time freq"]) -> Float[Tensor, "batch channels time"]:
         x = x.unsqueeze(1)
         out = self.conv1(x)
         out = self.bn1(out)
@@ -83,9 +86,10 @@ class CAMPPlus(nn.Module):
                     nn.init.zeros_(m.bias)
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    @beartype
+    def forward(self, x: Float[Tensor, "batch time freq"]) -> Float[Tensor, "batch style_dim"]:
         x = x.permute(0, 2, 1)  # (B,T,F) => (B,F,T)
-        x = self.head(x)
+        x = self.head.__call__(x)
         return self.xvector(x)
 
     @patch_call(forward)

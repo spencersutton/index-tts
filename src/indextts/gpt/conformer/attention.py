@@ -20,6 +20,8 @@ import math
 from typing import override
 
 import torch
+from beartype import beartype
+from jaxtyping import Bool, Float
 from torch import Tensor, nn
 
 from indextts.util import patch_call
@@ -64,7 +66,15 @@ class RelPositionMultiHeadedAttention(nn.Module):
         nn.init.xavier_uniform_(self.pos_bias_v)
 
     @override
-    def forward(self, query: Tensor, key: Tensor, value: Tensor, mask: Tensor, pos_emb: Tensor) -> Tensor:
+    @beartype
+    def forward(
+        self,
+        query: Float[Tensor, "batch time1 dim"],
+        key: Float[Tensor, "batch time2 dim"],
+        value: Float[Tensor, "batch time2 dim"],
+        mask: Bool[Tensor, "batch time1_or_1 time2"],
+        pos_emb: Float[Tensor, "batch_pos time2 dim"],
+    ) -> Float[Tensor, "batch time1 dim"]:
         """Compute 'Scaled Dot Product Attention' with rel. positional encoding.
         Args:
             query (Tensor): Query tensor (#batch, time1, size).
@@ -91,7 +101,17 @@ class RelPositionMultiHeadedAttention(nn.Module):
 
         return self.forward_attention(v, scores, mask)
 
-    def forward_qkv(self, query: Tensor, key: Tensor, value: Tensor) -> tuple[Tensor, Tensor, Tensor]:
+    @beartype
+    def forward_qkv(
+        self,
+        query: Float[Tensor, "batch time1 dim"],
+        key: Float[Tensor, "batch time2 dim"],
+        value: Float[Tensor, "batch time2 dim"],
+    ) -> tuple[
+        Float[Tensor, "batch heads time1 d_k"],
+        Float[Tensor, "batch heads time2 d_k"],
+        Float[Tensor, "batch heads time2 d_k"],
+    ]:
         """Transform query, key and value.
 
         Args:
@@ -118,7 +138,13 @@ class RelPositionMultiHeadedAttention(nn.Module):
 
         return q, k, v
 
-    def forward_attention(self, value: Tensor, scores: Tensor, mask: Tensor) -> Tensor:
+    @beartype
+    def forward_attention(
+        self,
+        value: Float[Tensor, "batch heads time2 d_k"],
+        scores: Float[Tensor, "batch heads time1 time2"],
+        mask: Bool[Tensor, "batch time1_or_1 time2"],
+    ) -> Float[Tensor, "batch time1 dim"]:
         """Compute attention context vector.
 
         Args:

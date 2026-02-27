@@ -1,6 +1,8 @@
 from typing import override
 
 import torch
+from beartype import beartype
+from jaxtyping import Float
 from torch import Tensor, nn
 
 from indextts.s2mel.encodec import SConv1d
@@ -27,7 +29,10 @@ class WaveNet(nn.Module):
         self.res_skip_layers = nn.ModuleList(layers)
 
     @override
-    def forward(self, x: Tensor, g: Tensor) -> Tensor:
+    @beartype
+    def forward(
+        self, x: Float[Tensor, "batch channels time"], g: Float[Tensor, "batch cond_dim 1"]
+    ) -> Float[Tensor, "batch channels time"]:
         output = torch.zeros_like(x)
 
         g = self.cond_layer(g)

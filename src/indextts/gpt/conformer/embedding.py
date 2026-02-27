@@ -19,6 +19,8 @@ import math
 from typing import override
 
 import torch
+from beartype import beartype
+from jaxtyping import Float
 from torch import Tensor, nn
 
 from indextts.util import patch_call
@@ -56,7 +58,10 @@ class RelPositionalEncoding(nn.Module):
         self.pe = nn.Buffer(pe)
 
     @override
-    def forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
+    @beartype
+    def forward(
+        self, x: Float[Tensor, "batch time dim"]
+    ) -> tuple[Float[Tensor, "batch time dim"], Float[Tensor, "1 time dim"]]:
         """Compute positional encoding.
         Args:
             x (Tensor): Input tensor (batch, time, `*`).

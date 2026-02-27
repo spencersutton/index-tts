@@ -1,8 +1,11 @@
+import logging
 from typing import TYPE_CHECKING, ClassVar, Final, cast, override
 
 import torch
 import torch.nn.functional as F
 import transformers
+from beartype import beartype
+from jaxtyping import Float, Int
 from torch import Tensor, nn
 
 from indextts.gpt.conformer_encoder import ConformerEncoder
@@ -13,6 +16,8 @@ from indextts.util import patch_call, unwrap
 
 if TYPE_CHECKING:
     from indextts.accel import AccelInferenceEngine
+
+logger = logging.getLogger(__name__)
 
 MAX_MEL_TOKENS: Final = 1815
 START_MEL_TOKEN: Final = 8192
@@ -140,14 +145,17 @@ class UnifiedVoice(nn.Module):
         self.accel_engine = None  # Will be initialized in post_init_gpt2_config
 
     @override
+    @beartype
     def forward(
-        self, speech_conditioning_latent: Tensor, text_inputs: Tensor, mel_codes: Tensor, emo_vec: Tensor
-    ) -> Tensor:
+        self,
+        speech_conditioning_latent: Float[Tensor, "batch num_latents dim"],
+        text_inputs: Int[Tensor, "batch text_len"],
+        mel_codes: Int[Tensor, "batch mel_len"],
+        emo_vec: Float[Tensor, "batch dim"],
+    ) -> Float[Tensor, "batch mel_len_out dim"]:
         """
-        Forward pass that uses both text and voice in either text conditioning mode or voice conditioning mode
-
-        If return_attentions is specified, only logits are returned.
-        If return_latent is specified, loss & logits are not computed or returned. Only the predicted latents are returned.
+        Forward pass consuming speech conditioning latent, text tokens, mel codes, and an emotion vector.
+        Returns the final hidden states for the mel segment (shape: batch x mel_len x dim).
         """
 
         text_inputs = F.pad(text_inputs, (1, 0), value=START_TEXT_TOKEN)
@@ -163,7 +171,7 @@ class UnifiedVoice(nn.Module):
         output = self.gpt(
             inputs_embeds=torch.cat([conds, text_emb, mel_emb], dim=1), return_dict=True, output_attentions=False
         )
-        assert not isinstance(output, tuple)
+        assert not isinstance(output, tuple), "GPT output should be a ModelOutput with attributes, not a tuple"
 
         offset = conds.shape[1]
         enc = unwrap(output.last_hidden_state)[:, offset:]
@@ -172,7 +180,10 @@ class UnifiedVoice(nn.Module):
         # Despite the name, these are not logits. Strip off the two tokens added by this forward pass.
         return enc[:, -mel_emb.shape[1] : -2]
 
-    def prepare_gpt_inputs(self, latent: Tensor, inputs: Tensor) -> tuple[Tensor, Tensor, Tensor]:
+    @beartype
+    def prepare_gpt_inputs(
+        self, latent: Float[Tensor, "batch_or_1 num_latents_plus dim"], inputs: Int[Tensor, "batch text_len"]
+    ) -> tuple[Int[Tensor, "batch seq_plus_1"], Float[Tensor, "batch seq dim"], Int[Tensor, "batch seq_plus_1"]]:
         """
         Prepare the inputs for the GPT2InferenceModel to generate.
         Args:
@@ -185,7 +196,7 @@ class UnifiedVoice(nn.Module):
         """
         is_single_condition = latent.ndim == 3 and latent.shape[0] == 1
         assert is_single_condition or latent.shape[0] == inputs.shape[0], (
-            f"batch size mismatch: {latent.shape[0]} vs {inputs.shape[0]}"
+            f"batch size mismatch between conditioning latent ({latent.shape[0]}) and text inputs ({inputs.shape[0]})"
         )
         batched_mel_emb: list[Tensor] = []
         attention_masks: list[Tensor] = []
@@ -222,7 +233,13 @@ class UnifiedVoice(nn.Module):
         fake_inputs[:, -1] = START_MEL_TOKEN
         return fake_inputs, mel_embedding_batch, attention_mask
 
-    def combine_latents(self, speech_conditioning_latent: Tensor, emo_vec: Tensor, text_inputs: Tensor) -> Tensor:
+    @beartype
+    def combine_latents(
+        self,
+        speech_conditioning_latent: Float[Tensor, "batch num_latents dim"],
+        emo_vec: Float[Tensor, "batch dim"],
+        text_inputs: Int[Tensor, "batch text_len"],
+    ) -> Float[Tensor, "batch conds_len dim"]:
         template = text_inputs.new_zeros(text_inputs.shape[0])
         return torch.cat(
             (
@@ -233,15 +250,16 @@ class UnifiedVoice(nn.Module):
             dim=1,
         )
 
+    @beartype
     def inference_speech(
         self,
-        speech_conditioning_latent: Tensor,
-        text_inputs: Tensor,
+        speech_conditioning_latent: Float[Tensor, "batch num_latents dim"],
+        text_inputs: Int[Tensor, "batch text_len"],
         *,
-        emo_vec: Tensor,
+        emo_vec: Float[Tensor, "batch dim"],
         max_generate_length: int,
         **hf_generate_kwargs: object,
-    ) -> Tensor:
+    ) -> Int[Tensor, "batch generated_len"]:
         """
         Args:
             speech_condition: (B, D, frames) or (D, frames)
@@ -280,7 +298,10 @@ class UnifiedVoice(nn.Module):
             )
         return output[:, trunc_index:]  # pyright: ignore[reportUnknownVariableType]
 
-    def process_speech_condition(self, condition: Tensor) -> Tensor:
+    @beartype
+    def process_speech_condition(
+        self, condition: Float[Tensor, "batch_or_1 time idim"]
+    ) -> Float[Tensor, "batch num_latents dim"]:
         if condition.ndim == 2:
             condition = condition.unsqueeze(0)
 
@@ -288,7 +309,8 @@ class UnifiedVoice(nn.Module):
         mask = self.cond_mask_pad(mask.squeeze(1))
         return self.perceiver_encoder(input, mask)
 
-    def get_emo_vec(self, latent: Tensor) -> Tensor:
+    @beartype
+    def get_emo_vec(self, latent: Float[Tensor, "batch time idim"]) -> Float[Tensor, "batch dim"]:
         input, mask = self.emo_conditioning_encoder.__call__(latent)
         mask = self.emo_cond_mask_pad(mask.squeeze(1))
         conds = self.emo_perceiver_encoder(input, mask)
@@ -334,7 +356,7 @@ def post_init_gpt2_config(model: UnifiedVoice) -> None:
             block_size=256,
             num_blocks=16,  # Reduce to save memory (16*256 = 4096 tokens capacity)
         )
-        print("acceleration engine initialized")
+        logger.info("acceleration engine initialized")
     model.inference_model = GPT2InferenceModel(
         gpt_config, model.gpt, model.mel_pos_embedding, model.mel_embedding, model.final_norm, model.mel_head
     )

@@ -8,6 +8,8 @@
 
 from typing import override
 
+from beartype import beartype
+from jaxtyping import Float
 from torch import Tensor, nn
 from torch.nn import functional as F
 from torch.nn.utils.parametrizations import weight_norm
@@ -37,7 +39,8 @@ class SConv1d(nn.Module):
         self.conv = weight_norm(nn.Conv1d(in_channels, out_channels, kernel_size))
 
     @override
-    def forward(self, x: Tensor) -> Tensor:
+    @beartype
+    def forward(self, x: Float[Tensor, "batch in_channels time"]) -> Float[Tensor, "batch out_channels time"]:
         if self.kernel_size > 1:
             x = F.pad(x, (2, 2), "reflect")
         return self.conv(x)

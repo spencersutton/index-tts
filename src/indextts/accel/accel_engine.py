@@ -1,8 +1,10 @@
-import sys
+import logging
 from collections.abc import Sequence
 from typing import Final, cast
 
 import torch
+from beartype import beartype
+from jaxtyping import Float, Int
 from torch import Tensor, nn
 
 from indextts.accel.attention import ForwardContext, get_forward_context, reset_forward_context, set_forward_context
@@ -10,6 +12,8 @@ from indextts.accel.gpt2_accel import GPT2AccelModel
 from indextts.accel.kv_manager import KVCacheManager, Seq
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
 from indextts.util import patch_call, unwrap
+
+logger = logging.getLogger(__name__)
 
 GRAPH_BS: Final[Sequence[int]] = (1, 2, 4, 8)
 
@@ -67,7 +71,8 @@ class AccelInferenceEngine:
         self.current_sequences = []
         self.graphs = {}
 
-    def _prepare_prefill(self, requests: Sequence[Seq]) -> tuple[Tensor, Tensor]:
+    @beartype
+    def _prepare_prefill(self, requests: Sequence[Seq]) -> tuple[Int[Tensor, "tokens"], Int[Tensor, "tokens"]]:
         input_ids_list: list[int] = []
         positions_list: list[int] = []
         cu_seqlens_q_list = [0]
@@ -119,7 +124,8 @@ class AccelInferenceEngine:
 
         return input_ids, positions
 
-    def _prepare_decode(self, requests: Sequence[Seq]) -> tuple[Tensor, Tensor]:
+    @beartype
+    def _prepare_decode(self, requests: Sequence[Seq]) -> tuple[Int[Tensor, "batch"], Int[Tensor, "batch"]]:
         if not requests:
             raise RuntimeError("FATAL: No requests provided to _prepare_decode!")
 
@@ -158,15 +164,16 @@ class AccelInferenceEngine:
 
         return input_ids, positions
 
-    def _prepare_sample(self, requests: list[Seq], temperature: float) -> Tensor:
+    @beartype
+    def _prepare_sample(self, requests: list[Seq], temperature: float) -> Float[Tensor, "batch"]:
         temperatures = [temperature] * len(requests)
         return torch.tensor(temperatures, dtype=torch.float32, pin_memory=True).cuda(non_blocking=True)
 
     def _capture_cuda_graphs(
         self, tts_mel_embedding: nn.Embedding, tts_text_pos_embedding: LearnedPositionEmbeddings
     ) -> None:
-        print("Capturing CUDA graphs for decode optimization...")
-        max_bs = 8  # Support up to batch size 8
+        logger.info("Capturing CUDA graphs for decode optimization...")
+        max_bs = max(GRAPH_BS)
         max_num_blocks = (2048 + self.block_size - 1) // self.block_size
         model_dtype = next(self.model.parameters()).dtype
         input_ids = torch.ones(max_bs, dtype=torch.int64, device="cuda")
@@ -228,16 +235,17 @@ class AccelInferenceEngine:
             "outputs": outputs,
             "inputs_embeds": inputs_embeds_buffer,
         }
-        print(f"CUDA graphs captured for batch sizes: {GRAPH_BS}")
+        logger.info("CUDA graphs captured for batch sizes: %s", GRAPH_BS)
 
+    @beartype
     def _run_decode_with_graph(
         self,
-        input_ids: Tensor,
-        positions: Tensor,
+        input_ids: Int[Tensor, "batch"],
+        positions: Int[Tensor, "batch"],
         context: ForwardContext,
         tts_mel_embedding: nn.Embedding | None = None,
         tts_text_pos_embedding: LearnedPositionEmbeddings | None = None,
-    ) -> Tensor:
+    ) -> Float[Tensor, "batch hidden_size"]:
         bs = input_ids.size(0)
 
         if not self.graphs:
@@ -286,17 +294,18 @@ class AccelInferenceEngine:
 
         return graph_vars["outputs"][:bs]
 
+    @beartype
     def generate(
         self,
-        input_ids: Tensor,
+        input_ids: Int[Tensor, "batch seq"],
         stop_tokens: list[int],
-        attention_mask: Tensor,
-        tts_embeddings: Tensor,  # TTS: [pad][cond][text] embeddings (87 tokens, NO start_mel)
-        tts_mel_embedding: nn.Embedding,  # TTS: mel_embedding layer
-        tts_text_pos_embedding: LearnedPositionEmbeddings,  # TTS: text_pos_embedding layer
+        attention_mask: Int[Tensor, "batch seq"],
+        tts_embeddings: Float[Tensor, "batch prompt_len hidden_size"],
+        tts_mel_embedding: nn.Embedding,
+        tts_text_pos_embedding: LearnedPositionEmbeddings,
         max_new_tokens: int = 100,
         temperature: float = 1.0,
-    ) -> Tensor:
+    ) -> Int[Tensor, "batch total_len"]:
         """
         Generate tokens.
 
@@ -304,8 +313,6 @@ class AccelInferenceEngine:
             input_ids: Input token IDs [batch_size, seq_len]
             max_new_tokens: Maximum number of tokens to generate
             temperature: Sampling temperature
-            top_k: Top-k sampling
-            top_p: Nucleus sampling threshold
             stop_tokens: List of token IDs that stop generation
 
         Returns:
@@ -317,12 +324,12 @@ class AccelInferenceEngine:
         self._tts_prompt_len = input_ids.size(1)
 
         if not self.graph_captured:
-            print(f"[CAPTURE] graph_captured={self.graph_captured}", file=sys.stderr, flush=True)
+            logger.debug("[CAPTURE] graph_captured=%s", self.graph_captured)
             self._capture_cuda_graphs(
                 tts_mel_embedding=tts_mel_embedding, tts_text_pos_embedding=tts_text_pos_embedding
             )
             self.graph_captured = True
-            print(f"[CAPTURE] Completed! graphs={list(self.graphs.keys())}", file=sys.stderr, flush=True)
+            logger.debug("[CAPTURE] Completed! graphs=%s", list(self.graphs.keys()))
 
         actual_seq_len = tts_embeddings.size(1) + 1  # embeddings + start_mel_token
 
@@ -515,7 +522,9 @@ class _Sampler(nn.Module):
         super().__init__()
 
     @torch.compile
-    def forward(self, logits: Tensor, temperatures: Tensor) -> Tensor:
+    def forward(
+        self, logits: Float[Tensor, "batch vocab"], temperatures: Float[Tensor, "batch"]
+    ) -> Int[Tensor, "batch"]:
         logits = logits.float().div_(temperatures.unsqueeze(dim=1))
         probs = logits.softmax(dim=-1)
         return probs.div_(torch.empty_like(probs).exponential_(1).clamp_min_(1e-10)).argmax(dim=-1)

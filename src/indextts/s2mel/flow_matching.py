@@ -1,29 +1,45 @@
 from typing import Final, cast, override
 
 import torch
+from beartype import beartype
+from jaxtyping import Float
 from torch import Tensor, nn
 from tqdm import tqdm
 
+from indextts.s2mel.audio import N_MELS
 from indextts.s2mel.diffusion_transformer import DiT
 from indextts.util import patch_call
 
+# Default number of ODE solver steps for the reverse-diffusion process.
+# More steps improve quality at the cost of additional forward passes.
+DEFAULT_DIFFUSION_STEPS: Final = 25
+
+# Default classifier-free guidance (CFG) interpolation rate.
+# Controls how strongly the model conditions on the input vs. an unconditional null baseline.
+# Higher values increase adherence to the conditioning signal.
+DEFAULT_CFG_RATE: Final = 0.7
+
 
 class CFM(nn.Module):
-    criterion: nn.L1Loss
     estimator: DiT
 
     def __init__(self, dim: int = 512) -> None:
         super().__init__()
 
-        self.criterion = nn.L1Loss()
         self.estimator = DiT(dim)
 
     @torch.inference_mode()
     @override
+    @beartype
     def forward(
-        self, mu: Tensor, prompt: Tensor, style: Tensor, diffusion_steps: int = 25, cfg_rate: float = 0.7
-    ) -> Tensor:
-        """Forward diffusion
+        self,
+        mu: Float[Tensor, "batch total_time cond_dim"],
+        prompt: Float[Tensor, "batch mel_bins prompt_time"],
+        style: Float[Tensor, "batch style_dim"],
+        diffusion_steps: int = DEFAULT_DIFFUSION_STEPS,
+        cfg_rate: float = DEFAULT_CFG_RATE,
+    ) -> Float[Tensor, "batch mel_bins time"]:
+        """Run reverse diffusion (flow matching ODE) to generate a mel-spectrogram.
 
         Args:
             mu (Tensor): semantic info of reference audio and altered audio
@@ -38,7 +54,7 @@ class CFM(nn.Module):
                 shape: (batch_size, 80, mel_timesteps)
         """
         B, T, _ = mu.shape
-        assert prompt.size(1) == 80
+        assert prompt.size(1) == N_MELS, f"Expected prompt to have {N_MELS} mel bins, got {prompt.size(1)}"
         x = torch.randn([B, prompt.size(1), T], device=mu.device)
         t_span: Final = torch.linspace(0, 1, diffusion_steps + 1, device=mu.device)
 
@@ -46,7 +62,7 @@ class CFM(nn.Module):
 
         # Stack original and CFG (null) inputs for batched processing
         prompt_x = torch.zeros_like(x)
-        prompt_x[..., :prompt_len] = prompt[..., :prompt_len]
+        prompt_x[..., :prompt_len] = prompt
         prompt_x = torch.cat([prompt_x, torch.zeros_like(prompt_x)])
         style = torch.cat([style, torch.zeros_like(style)])
         mu = torch.cat([mu, torch.zeros_like(mu)])
@@ -66,8 +82,6 @@ class CFM(nn.Module):
             dt = t_span[step] - t_span[step - 1]
             x += dt * dphi_dt
             t += dt
-            if step < len(t_span) - 1:
-                dt = t_span[step + 1] - t
             x[:, :, :prompt_len] = 0
 
         return x

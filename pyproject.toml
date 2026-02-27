@@ -118,6 +118,7 @@ ignore = [
   "RUF002",
   "RUF003",
   "SIM108",
+  "UP037",
 ]
 isort.split-on-trailing-comma = false
 

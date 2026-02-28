@@ -3,38 +3,12 @@ from typing import override
 import torch
 import torch.nn.functional as F
 from beartype import beartype
-from jaxtyping import Bool, Float, Int
+from jaxtyping import Bool, Float
 from torch import Tensor, nn
 
 from indextts.gpt.conformer.attention import RelPositionMultiHeadedAttention
 from indextts.gpt.conformer.subsampling import Conv2dSubsampling2
 from indextts.util import patch_call
-
-
-@beartype
-def make_pad_mask(lengths: Int[Tensor, "batch"], max_len: int = 0) -> Bool[Tensor, "batch max_len"]:
-    """Make mask tensor containing indices of padded part.
-
-    See description of make_non_pad_mask.
-
-    Args:
-        lengths (Tensor): Batch of lengths (B,).
-    Returns:
-        Tensor: Mask tensor containing indices of padded part.
-
-    Examples:
-        >>> lengths = [5, 3, 2]
-        >>> make_pad_mask(lengths)
-        masks = [[0, 0, 0, 0 ,0],
-                 [0, 0, 0, 1, 1],
-                 [0, 0, 1, 1, 1]]
-    """
-    batch_size = lengths.size(0)
-    max_len = max_len if max_len > 0 else int(lengths.max().item())
-    seq_range = torch.arange(max_len, dtype=torch.int64, device=lengths.device)
-    seq_range_expand = seq_range.unsqueeze(0).expand(batch_size, max_len)
-    seq_length_expand = lengths.unsqueeze(-1)
-    return seq_range_expand >= seq_length_expand
 
 
 class _PositionwiseFeedForward(nn.Module):
@@ -267,9 +241,8 @@ class ConformerEncoder(nn.Module):
             masks: Tensor batch padding mask after subsample
                 (B, 1, T' ~= T/subsample_rate)
         """
-        xs_lens = torch.tensor([xs.shape[-1]], device=xs.device)
         T = xs.size(1)
-        masks = ~make_pad_mask(xs_lens, T).unsqueeze(1)  # (B, 1, T)
+        masks = torch.ones(xs.size(0), 1, T, dtype=torch.bool, device=xs.device)  # (B, 1, T) – no padding
         xs, pos_emb, masks = self.embed.__call__(xs, masks)
         chunk_masks = masks
         mask_pad = masks  # (B, 1, T/subsample_rate)

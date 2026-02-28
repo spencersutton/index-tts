@@ -26,7 +26,7 @@ class InterpolateRegulator(nn.Module):
     @override
     @beartype
     def forward(self, x: Float[Tensor, "batch time_in in_dim"], ylens: int) -> Float[Tensor, "batch time_out dim"]:
-        """Project to channels, resample in time, then refine and mask."""
+        """Project to channels, interpolate in time, then refine."""
         x = self.content_in_proj(x)  # (B, T, C)
 
         x = x.mT.contiguous()  # (B, C, T)

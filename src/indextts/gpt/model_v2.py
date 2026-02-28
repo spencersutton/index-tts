@@ -151,10 +151,8 @@ class UnifiedVoice(nn.Module):
         emo_vec: Float[Tensor, "batch dim"],
     ) -> Float[Tensor, "batch mel_len_out dim"]:
         """
-        Forward pass that uses both text and voice in either text conditioning mode or voice conditioning mode
-
-        If return_attentions is specified, only logits are returned.
-        If return_latent is specified, loss & logits are not computed or returned. Only the predicted latents are returned.
+        Forward pass consuming speech conditioning latent, text tokens, mel codes, and an emotion vector.
+        Returns the final hidden states for the mel segment (shape: batch x mel_len x dim).
         """
 
         text_inputs = F.pad(text_inputs, (1, 0), value=START_TEXT_TOKEN)

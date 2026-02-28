@@ -31,7 +31,7 @@ class CFM(nn.Module):
         diffusion_steps: int = 25,
         cfg_rate: float = 0.7,
     ) -> Float[Tensor, "batch mel_bins time"]:
-        """Forward diffusion
+        """Run reverse diffusion (flow matching ODE) to generate a mel-spectrogram.
 
         Args:
             mu (Tensor): semantic info of reference audio and altered audio

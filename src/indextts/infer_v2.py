@@ -91,8 +91,6 @@ class IndexTTS2:
     gr_progress: Callable[..., None] | None = None
     model_version: float = 2.0
 
-    has_warned: bool = False
-
     bigvgan: BigVGANInference
     campplus_model: CAMPPlus
     cfm: CFM
@@ -181,7 +179,7 @@ class IndexTTS2:
         emo_vector: Sequence[float] | None = None,
         interval_silence: int = 200,
         max_text_tokens_per_segment: int = 120,
-        more_segment_before: int = 0,
+        quick_streaming_tokens: int = 0,
         stream_return: bool = False,
         use_emo_text: bool = False,
         use_random: bool = False,
@@ -228,20 +226,20 @@ class IndexTTS2:
             text,
             output_path,
             emo_audio_prompt,
-            emo_alpha,
-            emo_vector,
-            use_random,
-            interval_silence,
-            max_text_tokens_per_segment,
-            stream_return,
-            more_segment_before,
-            do_sample,
-            length_penalty,
-            num_beams,
-            repetition_penalty,
-            temperature,
-            top_k,
-            top_p,
+            emo_alpha=emo_alpha,
+            emo_vector=emo_vector,
+            use_random=use_random,
+            interval_silence=interval_silence,
+            max_text_tokens_per_segment=max_text_tokens_per_segment,
+            stream_return=stream_return,
+            quick_streaming_tokens=quick_streaming_tokens,
+            do_sample=do_sample,
+            length_penalty=length_penalty,
+            num_beams=num_beams,
+            repetition_penalty=repetition_penalty,
+            temperature=temperature,
+            top_k=top_k,
+            top_p=top_p,
         )
         if stream_return:
             return gen
@@ -346,12 +344,10 @@ class IndexTTS2:
                 codes = codes[:, : max(code_lens)]
 
                 with s2mel_time:
-                    voice_conversion_target = self._generate_voice_conversion(
-                        code_lens, prompt_condition, style, ref_mel, codes
-                    )
+                    generated_mel = self._generate_mel_from_codes(code_lens, prompt_condition, style, ref_mel, codes)
 
                 with bigvgan_time:
-                    wav = self.bigvgan(voice_conversion_target.float()).squeeze().unsqueeze(0).squeeze(1)
+                    wav = self.bigvgan(generated_mel.float()).squeeze().unsqueeze(0).squeeze(1)
 
                 wavs.append(wav.cpu())  # to cpu before saving
                 if stream_return:
@@ -386,7 +382,7 @@ class IndexTTS2:
             yield (SAMPLING_RATE, wav_data)
 
     @beartype
-    def _generate_voice_conversion(
+    def _generate_mel_from_codes(
         self,
         code_lens: list[int],
         prompt_condition: Float[Tensor, "batch prompt_time cond_dim"],
@@ -418,11 +414,11 @@ class IndexTTS2:
         use_random: bool = False,
     ) -> Float[Tensor, "batch style_dim"]:
         if use_random:
-            index = [random.randint(0, x - 1) for x in EMO_NUM]
+            indices = [random.randint(0, x - 1) for x in EMO_NUM]
         else:
-            index = [int(F.cosine_similarity(style, x).argmax()) for x in self.spk_matrix]
+            indices = [int(F.cosine_similarity(style, x).argmax()) for x in self.spk_matrix]
 
-        matrix = [x[index].unsqueeze(0) for index, x in zip(index, self.emo_matrix)]
+        matrix = [x[i].unsqueeze(0) for i, x in zip(indices, self.emo_matrix)]
         matrix = torch.cat(matrix)
         matrix = weight_vector.unsqueeze(1) * matrix
         matrix = matrix.sum(dim=0)

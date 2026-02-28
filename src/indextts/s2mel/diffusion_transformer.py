@@ -24,8 +24,8 @@ class _TimestepEmbedder(nn.Module):
         super().__init__()
         self.mlp = nn.Sequential(nn.Linear(dim // 2, dim), nn.SiLU(), nn.Linear(dim, dim))
 
-        half = dim // 4
-        self.freqs = nn.Buffer((-math.log(10000) * torch.arange(half) / half).exp())
+        quarter = dim // 4
+        self.freqs = nn.Buffer((-math.log(10000) * torch.arange(quarter) / quarter).exp())
 
     @override
     @beartype
@@ -68,7 +68,7 @@ class _FinalLayer(nn.Module):
 class DiT(nn.Module):
     cond_projection: nn.Linear
     cond_x_merge_linear: nn.Linear
-    conv1: nn.Linear
+    pre_wavenet_proj: nn.Linear
     conv2: nn.Conv1d
     final_layer: _FinalLayer
     input_pos: Tensor
@@ -81,10 +81,11 @@ class DiT(nn.Module):
 
     def __init__(self, dim: int, channels: int = 80, style_dim: int = 192, block_size: int = 2**14) -> None:
         super().__init__()
+        self.register_load_state_dict_pre_hook(self._remap_weights)
 
         self.cond_projection = nn.Linear(dim, dim)  # continuous content
         self.cond_x_merge_linear = nn.Linear(dim + channels * 2 + style_dim, dim)
-        self.conv1 = nn.Linear(dim, dim)
+        self.pre_wavenet_proj = nn.Linear(dim, dim)
         self.conv2 = nn.Conv1d(dim, channels, kernel_size=1)
         self.final_layer = _FinalLayer(dim)
         self.input_pos = nn.Buffer(torch.arange(block_size))
@@ -122,10 +123,18 @@ class DiT(nn.Module):
         x_res = self.skip_linear(torch.cat([x_res, x], dim=-1))
 
         t2 = self.t_embedder2.__call__(t).unsqueeze(2)
-        x = self.conv1.__call__(x_res).mT
+        x = self.pre_wavenet_proj.__call__(x_res).mT
         x = self.wavenet.__call__(x, g=t2).mT + self.res_projection(x_res)
         x = self.final_layer.__call__(x, t1).mT
         return self.conv2(x)
 
     @patch_call(forward)
     def __call__(self) -> None: ...
+
+    @staticmethod
+    def _remap_weights(_module: object, state_dict: dict[str, object], prefix: str, *_args: object) -> None:
+        """Remap legacy checkpoint key 'conv1' to 'pre_wavenet_proj'."""
+        for k in list(state_dict.keys()):
+            if k.startswith(prefix + "conv1."):
+                new_k = k.replace(prefix + "conv1.", prefix + "pre_wavenet_proj.", 1)
+                state_dict[new_k] = state_dict.pop(k)

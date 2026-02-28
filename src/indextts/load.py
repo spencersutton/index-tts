@@ -80,7 +80,7 @@ def load_semantic_stats(device: torch.device) -> tuple[Float[Tensor, "dim"], Flo
         mean = data["mean"].to(device)
         std = data["var"].sqrt().to(device)
 
-    print(f">> semantic_mean and semantic_var weights restored in {t:.2f} seconds from: {path}")
+    print(f">> semantic_mean and semantic_std weights restored in {t:.2f} seconds from: {path}")
     return mean, std
 
 

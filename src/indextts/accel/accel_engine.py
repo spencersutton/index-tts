@@ -171,7 +171,7 @@ class AccelInferenceEngine:
         self, tts_mel_embedding: nn.Embedding, tts_text_pos_embedding: LearnedPositionEmbeddings
     ) -> None:
         print("Capturing CUDA graphs for decode optimization...")
-        max_bs = 8  # Support up to batch size 8
+        max_bs = max(GRAPH_BS)
         max_num_blocks = (2048 + self.block_size - 1) // self.block_size
         model_dtype = next(self.model.parameters()).dtype
         input_ids = torch.ones(max_bs, dtype=torch.int64, device="cuda")
@@ -311,8 +311,6 @@ class AccelInferenceEngine:
             input_ids: Input token IDs [batch_size, seq_len]
             max_new_tokens: Maximum number of tokens to generate
             temperature: Sampling temperature
-            top_k: Top-k sampling
-            top_p: Nucleus sampling threshold
             stop_tokens: List of token IDs that stop generation
 
         Returns:

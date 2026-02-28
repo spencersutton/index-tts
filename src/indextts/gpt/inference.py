@@ -14,7 +14,6 @@ from indextts.util import patch_call
 class GPT2InferenceModel(transformers.GPT2PreTrainedModel, transformers.GenerationMixin):
     cached_mel_emb: Tensor | None = None
     embeddings: nn.Embedding
-    final_norm: nn.Module
     lm_head: nn.Sequential
     text_pos_embedding: LearnedPositionEmbeddings
     transformer: transformers.GPT2Model
@@ -31,7 +30,6 @@ class GPT2InferenceModel(transformers.GPT2PreTrainedModel, transformers.Generati
         super().__init__(config)
 
         self.embeddings = embeddings
-        self.final_norm = norm
         self.lm_head = nn.Sequential(norm, linear)
         self.text_pos_embedding = text_pos_emb
         self.transformer = gpt

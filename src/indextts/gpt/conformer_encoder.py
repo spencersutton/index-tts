@@ -40,11 +40,11 @@ def make_pad_mask(lengths: Int[Tensor, "batch"], max_len: int = 0) -> Bool[Tenso
 class _PositionwiseFeedForward(nn.Module):
     """Positionwise feed forward layer.
 
-    FeedForward are appied on each position of the sequence.
+    FeedForward is applied on each position of the sequence.
     The output dim is same with the input dim.
 
     Args:
-        idim (int): Input dimenstion.
+        idim (int): Input dimension.
         hidden_units (int): The number of hidden units.
         activation (nn.Module): Activation function
     """
@@ -157,7 +157,6 @@ class _ConformerEncoderLayer(nn.Module):
             `ConvlutionModule` instance can be used as the argument.
     """
 
-    concat_linear: nn.Identity
     conv_module: _ConvolutionModule
     feed_forward: _PositionwiseFeedForward
     norm_conv: nn.LayerNorm
@@ -176,7 +175,6 @@ class _ConformerEncoderLayer(nn.Module):
         """Construct an EncoderLayer object."""
         super().__init__()
 
-        self.concat_linear = nn.Identity()
         self.conv_module = conv_module
         self.feed_forward = feed_forward
         self.norm_conv = nn.LayerNorm(dim)  # for the CNN module

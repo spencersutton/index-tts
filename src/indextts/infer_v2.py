@@ -205,7 +205,7 @@ class IndexTTS2:
             emo_vector = list(emo_dict.values())
 
         if emo_vector is not None:
-            # we have emotion vectors; they can'T be blended via alpha mixing
+            # we have emotion vectors; they can't be blended via alpha mixing
             # in the main inference process later, so we must pre-calculate
             # their new strengths here based on the alpha instead!
             emo_vector_scale = max(0.0, min(1.0, emo_alpha))
@@ -218,7 +218,7 @@ class IndexTTS2:
             # we are not using any external "emotion reference voice"; use
             # speaker's voice as the main emotion reference audio.
             emo_audio_prompt = spk_audio_prompt
-            # must always use alpha=1.0 when we don'T have an external reference voice
+            # must always use alpha=1.0 when we don't have an external reference voice
             emo_alpha = 1.0
 
         gen = self._infer_generator(
@@ -244,7 +244,7 @@ class IndexTTS2:
         if stream_return:
             return gen
         try:
-            return next(iter(gen))  # pyright: ignore[reportReturnType]
+            return next(gen)  # pyright: ignore[reportReturnType]
         except IndexError:
             return None
 

@@ -28,9 +28,9 @@ CFM_FILE = "cfm.safetensors"
 LENGTH_REGULATOR_FILE = "length_regulator.safetensors"
 
 
-def _restore_model_weights[T: nn.Module](module: type[T], device: torch.device, name: str) -> T:
-    path = CHECKPOINT_DIR / name
-    print(f">> Restoring {name} weights from: {path} to {device}...")
+def _restore_model_weights[T: nn.Module](module: type[T], device: torch.device, filename: str) -> T:
+    path = CHECKPOINT_DIR / filename
+    print(f">> Restoring {filename} weights from: {path} to {device}...")
     data = safetensors.torch.load_file(path, device=str(device))
     with torch.device("meta"):
         model = module()

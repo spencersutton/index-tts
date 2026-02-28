@@ -6,18 +6,17 @@ from jaxtyping import Float
 from torch import Tensor, nn
 from tqdm import tqdm
 
+from indextts.s2mel.audio import N_MELS
 from indextts.s2mel.diffusion_transformer import DiT
 from indextts.util import patch_call
 
 
 class CFM(nn.Module):
-    criterion: nn.L1Loss
     estimator: DiT
 
     def __init__(self, dim: int = 512) -> None:
         super().__init__()
 
-        self.criterion = nn.L1Loss()
         self.estimator = DiT(dim)
 
     @torch.inference_mode()
@@ -46,7 +45,7 @@ class CFM(nn.Module):
                 shape: (batch_size, 80, mel_timesteps)
         """
         B, T, _ = mu.shape
-        assert prompt.size(1) == 80
+        assert prompt.size(1) == N_MELS
         x = torch.randn([B, prompt.size(1), T], device=mu.device)
         t_span: Final = torch.linspace(0, 1, diffusion_steps + 1, device=mu.device)
 
@@ -54,7 +53,7 @@ class CFM(nn.Module):
 
         # Stack original and CFG (null) inputs for batched processing
         prompt_x = torch.zeros_like(x)
-        prompt_x[..., :prompt_len] = prompt[..., :prompt_len]
+        prompt_x[..., :prompt_len] = prompt
         prompt_x = torch.cat([prompt_x, torch.zeros_like(prompt_x)])
         style = torch.cat([style, torch.zeros_like(style)])
         mu = torch.cat([mu, torch.zeros_like(mu)])
@@ -74,8 +73,6 @@ class CFM(nn.Module):
             dt = t_span[step] - t_span[step - 1]
             x += dt * dphi_dt
             t += dt
-            if step < len(t_span) - 1:
-                dt = t_span[step + 1] - t
             x[:, :, :prompt_len] = 0
 
         return x

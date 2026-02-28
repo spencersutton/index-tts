@@ -12,6 +12,11 @@ from torch import Tensor, nn
 
 from indextts.util import patch_call
 
+# Number of time-steps used by _CAMLayer's segment-pooling branch.
+# Each segment is avg-pooled with this kernel/stride, then repeated to
+# match the original time dimension before being used as a context signal.
+_CAM_SEG_POOL_LEN: Final = 100
+
 
 def get_nonlinear(channels: int) -> nn.Sequential:
     modules: OrderedDict[str, nn.Module] = OrderedDict({
@@ -22,6 +27,13 @@ def get_nonlinear(channels: int) -> nn.Sequential:
 
 
 class StatsPool(nn.Module):
+    """Temporal statistics pooling: concatenates mean and standard deviation over the time axis.
+
+    Reduces a ``(batch, channels, time)`` feature map to ``(batch, channels*2)`` by
+    computing per-channel mean and unbiased std and concatenating them.  Used as the
+    final temporal aggregation step before speaker-embedding projection.
+    """
+
     @override
     @beartype
     def forward(self, x: Float[Tensor, "batch channels time"]) -> Float[Tensor, "batch channels_2x"]:
@@ -34,6 +46,13 @@ class StatsPool(nn.Module):
 
 
 class TDNNLayer(nn.Module):
+    """Single TDNN (Time-Delay Neural Network) layer with stride-2 downsampling.
+
+    Applies a 1-D convolution with kernel size 5 and stride 2 followed by
+    batch-norm + ReLU.  Acts as the first feature-extraction stage that halves
+    the time resolution of the input sequence.
+    """
+
     linear: nn.Conv1d
     nonlinear: nn.Sequential
 
@@ -54,6 +73,14 @@ class TDNNLayer(nn.Module):
 
 
 class _CAMLayer(nn.Module):
+    """Context-Aware Module (CAM) layer with dilated convolution and global context gating.
+
+    Combines a local dilated convolution branch with a global context branch (segment
+    pooling + channel-wise attention) to produce a context-gated output.  The gating
+    signal is a sigmoid-activated combination of the channel mean and segment-pooled
+    context, modulating the local convolution output element-wise.
+    """
+
     linear_local: nn.Conv1d
     linear1: nn.Conv1d
     linear2: nn.Conv1d
@@ -81,10 +108,15 @@ class _CAMLayer(nn.Module):
 
     @beartype
     def seg_pooling(self, x: Float[Tensor, "batch channels time"]) -> Float[Tensor, "batch channels time"]:
-        seg_len: Final = 100
-        seg = F.avg_pool1d(x, kernel_size=seg_len, stride=seg_len, ceil_mode=True)
-        shape = seg.shape
-        seg = seg.unsqueeze(-1).expand(*shape, seg_len).reshape(*shape[:-1], -1)
+        """Segment-level average pooling repeated to the original time length.
+
+        Divides the time axis into non-overlapping segments of length
+        ``_CAM_SEG_POOL_LEN``, average-pools each segment to a single value,
+        then repeats (tiles) the result back to match the input time dimension.
+        This provides a coarse, segment-level context signal used by the gating branch.
+        """
+        seg = F.avg_pool1d(x, kernel_size=_CAM_SEG_POOL_LEN, ceil_mode=True)
+        seg = seg.unsqueeze(-1).expand(*seg.shape, _CAM_SEG_POOL_LEN).reshape(*seg.shape[:-1], -1)
         return seg[..., : x.shape[-1]]
 
     @patch_call(forward)
@@ -92,6 +124,14 @@ class _CAMLayer(nn.Module):
 
 
 class _CAMDenseTDNNLayer(nn.Module):
+    """A single densely-connected CAM-TDNN layer used inside :class:`CAMDenseTDNNBlock`.
+
+    Applies a bottleneck projection (``bn_function``) followed by batch-norm and a
+    CAM layer.  The output is intended to be *concatenated* with the input by the
+    enclosing block (dense connectivity pattern), growing the channel dimension by
+    ``_CAMLayer``'s ``out_channels`` at each layer.
+    """
+
     cam_layer: _CAMLayer
     linear1: nn.Conv1d
     nonlinear1: nn.Sequential
@@ -120,6 +160,14 @@ class _CAMDenseTDNNLayer(nn.Module):
 
 
 class CAMDenseTDNNBlock(nn.ModuleList):
+    """Densely-connected block of :class:`_CAMDenseTDNNLayer` layers (DenseNet-style).
+
+    Each layer receives the concatenation of all previous feature maps (dense
+    connectivity).  The fixed ``growth_rate`` of 32 means every additional layer
+    contributes 32 output channels, so the channel count after *k* layers is
+    ``in_channels + k * growth_rate``.
+    """
+
     growth_rate: ClassVar[int] = 32
 
     def __init__(self, num_layers: int, in_channels: int, dilation: int) -> None:
@@ -141,6 +189,12 @@ class CAMDenseTDNNBlock(nn.ModuleList):
 
 
 class TransitLayer(nn.Module):
+    """Transition layer: batch-norm + ReLU followed by a 1×1 point-wise convolution.
+
+    Used between dense blocks to project the accumulated channel dimension down to
+    a fixed ``out_channels`` size before the next block.
+    """
+
     linear: nn.Conv1d
     nonlinear: nn.Sequential
 
@@ -160,6 +214,13 @@ class TransitLayer(nn.Module):
 
 
 class DenseLayer(nn.Module):
+    """Final dense projection layer (affine-free batch-norm + 1×1 conv).
+
+    Applies a learnable 1×1 convolution without bias followed by a
+    non-affine ``BatchNorm1d``.  Accepts either a 2-D ``(batch, channels)``
+    or a 3-D ``(batch, channels, 1)`` input tensor.
+    """
+
     linear: nn.Conv1d
     nonlinear: nn.Sequential
 
@@ -184,6 +245,14 @@ class DenseLayer(nn.Module):
 
 
 class BasicResBlock(nn.Module):
+    """2-D basic residual block for frequency-time feature extraction.
+
+    Standard two-layer residual block operating on ``(batch, planes, freq, time)``
+    feature maps.  Applies strided convolution along the frequency axis only
+    (``stride=(stride, 1)``) while keeping the time dimension unchanged.  A
+    1×1 shortcut projection is added when ``stride != 1`` to match spatial dims.
+    """
+
     bn1: nn.BatchNorm2d
     bn2: nn.BatchNorm2d
     conv1: nn.Conv2d

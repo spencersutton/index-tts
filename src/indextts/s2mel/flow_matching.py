@@ -10,6 +10,15 @@ from indextts.s2mel.audio import N_MELS
 from indextts.s2mel.diffusion_transformer import DiT
 from indextts.util import patch_call
 
+# Default number of ODE solver steps for the reverse-diffusion process.
+# More steps improve quality at the cost of additional forward passes.
+DEFAULT_DIFFUSION_STEPS: Final = 25
+
+# Default classifier-free guidance (CFG) interpolation rate.
+# Controls how strongly the model conditions on the input vs. an unconditional null baseline.
+# Higher values increase adherence to the conditioning signal.
+DEFAULT_CFG_RATE: Final = 0.7
+
 
 class CFM(nn.Module):
     estimator: DiT
@@ -27,8 +36,8 @@ class CFM(nn.Module):
         mu: Float[Tensor, "batch total_time cond_dim"],
         prompt: Float[Tensor, "batch mel_bins prompt_time"],
         style: Float[Tensor, "batch style_dim"],
-        diffusion_steps: int = 25,
-        cfg_rate: float = 0.7,
+        diffusion_steps: int = DEFAULT_DIFFUSION_STEPS,
+        cfg_rate: float = DEFAULT_CFG_RATE,
     ) -> Float[Tensor, "batch mel_bins time"]:
         """Run reverse diffusion (flow matching ODE) to generate a mel-spectrogram.
 
@@ -45,7 +54,7 @@ class CFM(nn.Module):
                 shape: (batch_size, 80, mel_timesteps)
         """
         B, T, _ = mu.shape
-        assert prompt.size(1) == N_MELS
+        assert prompt.size(1) == N_MELS, f"Expected prompt to have {N_MELS} mel bins, got {prompt.size(1)}"
         x = torch.randn([B, prompt.size(1), T], device=mu.device)
         t_span: Final = torch.linspace(0, 1, diffusion_steps + 1, device=mu.device)
 

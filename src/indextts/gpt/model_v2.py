@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING, ClassVar, Final, cast, override
 
 import torch
@@ -15,6 +16,8 @@ from indextts.util import patch_call, unwrap
 
 if TYPE_CHECKING:
     from indextts.accel import AccelInferenceEngine
+
+logger = logging.getLogger(__name__)
 
 MAX_MEL_TOKENS: Final = 1815
 START_MEL_TOKEN: Final = 8192
@@ -168,7 +171,7 @@ class UnifiedVoice(nn.Module):
         output = self.gpt(
             inputs_embeds=torch.cat([conds, text_emb, mel_emb], dim=1), return_dict=True, output_attentions=False
         )
-        assert not isinstance(output, tuple)
+        assert not isinstance(output, tuple), "GPT output should be a ModelOutput with attributes, not a tuple"
 
         offset = conds.shape[1]
         enc = unwrap(output.last_hidden_state)[:, offset:]
@@ -193,7 +196,7 @@ class UnifiedVoice(nn.Module):
         """
         is_single_condition = latent.ndim == 3 and latent.shape[0] == 1
         assert is_single_condition or latent.shape[0] == inputs.shape[0], (
-            f"batch size mismatch: {latent.shape[0]} vs {inputs.shape[0]}"
+            f"batch size mismatch between conditioning latent ({latent.shape[0]}) and text inputs ({inputs.shape[0]})"
         )
         batched_mel_emb: list[Tensor] = []
         attention_masks: list[Tensor] = []
@@ -353,7 +356,7 @@ def post_init_gpt2_config(model: UnifiedVoice) -> None:
             block_size=256,
             num_blocks=16,  # Reduce to save memory (16*256 = 4096 tokens capacity)
         )
-        print("acceleration engine initialized")
+        logger.info("acceleration engine initialized")
     model.inference_model = GPT2InferenceModel(
         gpt_config, model.gpt, model.mel_pos_embedding, model.mel_embedding, model.final_norm, model.mel_head
     )

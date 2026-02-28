@@ -3,6 +3,7 @@ import pickle
 from collections import deque
 from collections.abc import Sequence
 from copy import copy
+from typing import override
 
 import torch
 from torch import Tensor, nn
@@ -30,6 +31,13 @@ class _KVCacheBlock:
         self.ref_cnt = 1
         self._block_hash = None
         self.token_ids = []
+
+    @override
+    def __repr__(self) -> str:
+        return (
+            f"_KVCacheBlock(id={self.block_id}, ref_cnt={self.ref_cnt}, "
+            f"hash={'<set>' if self._block_hash else None}, tokens={len(self.token_ids)})"
+        )
 
 
 class Seq:
@@ -68,7 +76,9 @@ class Seq:
         return self.num_tokens - (self.num_blocks - 1) * self.block_size
 
     def get_block_tokens(self, block_idx: int) -> list[int]:
-        assert 0 <= block_idx < self.num_blocks
+        assert 0 <= block_idx < self.num_blocks, (
+            f"block_idx {block_idx} out of range [0, {self.num_blocks}) for sequence with {self.num_tokens} tokens"
+        )
         start = block_idx * self.block_size
         end = start + self.block_size
         return self.token_ids[start:end]
@@ -77,6 +87,13 @@ class Seq:
         self.token_ids.append(token_id)
         self.last_token = token_id
         self.num_tokens += 1
+
+    @override
+    def __repr__(self) -> str:
+        return (
+            f"Seq(num_tokens={self.num_tokens}, num_prompt={self.num_prompt_tokens}, "
+            f"num_cached={self.num_cached_tokens}, blocks={len(self.block_table)})"
+        )
 
 
 class KVCacheManager:
@@ -124,14 +141,16 @@ class KVCacheManager:
 
     def _allocate_block(self, block_id: int) -> _KVCacheBlock:
         block = self.blocks[block_id]
-        assert block.ref_cnt == 0
+        assert block.ref_cnt == 0, f"Cannot allocate block {block_id}: expected ref_cnt=0, got ref_cnt={block.ref_cnt}"
         block.reset()
         self.free_block_ids.remove(block_id)
         self.used_block_ids.add(block_id)
         return block
 
     def _deallocate_block(self, block_id: int) -> None:
-        assert self.blocks[block_id].ref_cnt == 0
+        assert self.blocks[block_id].ref_cnt == 0, (
+            f"Cannot deallocate block {block_id}: expected ref_cnt=0, got ref_cnt={self.blocks[block_id].ref_cnt}"
+        )
         self.used_block_ids.remove(block_id)
         self.free_block_ids.append(block_id)
 

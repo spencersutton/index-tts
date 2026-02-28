@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from collections.abc import Collection, Mapping, Sequence
 from typing import Final, cast
@@ -6,6 +7,8 @@ from typing import Final, cast
 import torch
 import transformers
 from torch import Tensor
+
+logger = logging.getLogger(__name__)
 
 
 def _clamp(value: float, min_val: float, max_val: float) -> float:
@@ -19,10 +22,11 @@ CN_KEY_TO_EN: Final[Mapping[str, str]] = {
     "悲伤": "sad",
     "恐惧": "afraid",
     "反感": "disgusted",
-    # TODO: the "低落" (melancholic) emotion will always be mapped to
-    # "悲伤" (sad) by QwenEmotion's text analysis. it doesn't know the
-    # difference between those emotions even if user writes exact words.
-    # SEE: `self.melancholic_words` for current workaround.
+    # NOTE: QwenEmotion's text analysis cannot reliably distinguish "低落" (melancholic)
+    # from "悲伤" (sad) — the model maps both to "sad" even when the exact word "低落" is
+    # present.  The ``MELANCHOLIC_WORDS`` set below implements a post-hoc workaround:
+    # whenever one of those words appears in the input, the "悲伤" and "低落" scores are
+    # swapped so the melancholic emotion slot is activated instead of the sad one.
     "低落": "melancholic",
     "惊讶": "surprised",
     "自然": "calm",
@@ -43,6 +47,20 @@ MIN_SCORE: Final = 0.0
 
 
 class QwenEmotion:
+    """Qwen-based emotion classifier that converts a text input into emotion score vectors.
+
+    Sends the user's text to a fine-tuned Qwen3 model which returns a JSON object mapping
+    Chinese emotion labels to float scores.  The scores are then re-ordered, normalised,
+    and clamped into the eight emotion slots expected by IndexTTS2.
+
+    The eight output emotions (in order) are:
+    ``happy``, ``angry``, ``sad``, ``afraid``, ``disgusted``,
+    ``melancholic``, ``surprised``, ``calm``.
+
+    Args:
+        model_path: HuggingFace model ID or local path to the Qwen emotion model.
+    """
+
     model: transformers.Qwen3ForCausalLM
     tokenizer: transformers.Qwen2Tokenizer
 
@@ -55,6 +73,16 @@ class QwenEmotion:
         )
 
     def convert(self, content: dict[str, float]) -> dict[str, float]:
+        """Convert a raw Chinese-keyed score dict into the ordered English emotion vector dict.
+
+        Args:
+            content: Mapping of Chinese emotion labels to raw float scores,
+                as produced by parsing the model's JSON output.
+
+        Returns:
+            Ordered dict with English emotion keys in the canonical IndexTTS2 order,
+            values clamped to ``[MIN_SCORE, MAX_SCORE]``.
+        """
         # generate emotion vector dictionary:
         # - insert values in desired order (Python 3.7+ `dict` remembers insertion order)
         # - convert Chinese keys to English
@@ -67,12 +95,21 @@ class QwenEmotion:
 
         # default to a calm/neutral voice if all emotion vectors were empty
         if all(val <= 0.0 for val in emotion_dict.values()):
-            print(">> no emotions detected; using default calm/neutral voice")
+            logger.info("No emotions detected; using default calm/neutral voice.")
             emotion_dict["calm"] = 1.0
 
         return emotion_dict
 
     def inference(self, text_input: str) -> dict[str, float]:
+        """Run the Qwen emotion classifier on *text_input* and return an emotion score dict.
+
+        Args:
+            text_input: The text whose emotional content should be classified.
+
+        Returns:
+            Ordered dict mapping English emotion names to float scores in
+            ``[MIN_SCORE, MAX_SCORE]``, in the canonical IndexTTS2 order.
+        """
         messages = [{"role": "system", "content": f"{PROMPT}"}, {"role": "user", "content": f"{text_input}"}]
         text = self.tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True, enable_thinking=False

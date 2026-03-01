@@ -205,11 +205,11 @@ class ConformerEncoder(nn.Module):
     def __init__(self, dim: int, attention_heads: int, linear_units: int, num_blocks: int) -> None:
         """
         Args:
+            dim (int): the dimension of the model
             attention_heads (int): the number of heads of multi head attention
             linear_units (int): the hidden units number of position-wise feed
                 forward
             num_blocks (int): the number of decoder blocks
-            dim (int): the dimension of the model
         """
         super().__init__()
 

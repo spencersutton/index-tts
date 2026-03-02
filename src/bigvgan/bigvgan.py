@@ -8,6 +8,7 @@
 
 
 import json
+import logging
 from collections.abc import MutableSequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -22,6 +23,8 @@ from torch.nn.utils import remove_weight_norm, weight_norm
 from bigvgan import activations
 from bigvgan.alias_free_activation.torch.act import Activation1d as TorchActivation1d
 from indextts.util import patch_call
+
+logger = logging.getLogger(__name__)
 
 
 def init_weights(m: nn.Module, mean: float = 0.0, std: float = 0.01) -> None:
@@ -390,7 +393,7 @@ class BigVGAN(
 
     def remove_weight_norm(self) -> None:
         try:
-            print("Removing weight norm...")
+            logger.info("Removing weight norm...")
             for l in self.ups:
                 for l_i in l:
                     remove_weight_norm(l_i)
@@ -399,7 +402,7 @@ class BigVGAN(
             remove_weight_norm(self.conv_pre)
             remove_weight_norm(self.conv_post)
         except ValueError:
-            print("[INFO] Model already removed weight norm. Skipping!")
+            logger.info("Model already removed weight norm. Skipping!")
 
     # Additional methods for huggingface_hub support
     def _save_pretrained(self, save_directory: Path) -> None:
@@ -430,7 +433,7 @@ class BigVGAN(
 
         # Download and load hyperparameters (h) used by BigVGAN
         if model_id_path.is_dir():
-            print("Loading config.json from local directory")
+            logger.info("Loading config.json from local directory")
             config_file = model_id_path / "config.json"
         else:
             config_file = Path(
@@ -448,25 +451,25 @@ class BigVGAN(
 
         # instantiate BigVGAN using h
         if use_cuda_kernel:
-            print(
-                "[WARNING] You have specified use_cuda_kernel=True during BigVGAN.from_pretrained(). Only inference is supported (training is not implemented)!"
+            logger.warning(
+                "You have specified use_cuda_kernel=True during BigVGAN.from_pretrained(). Only inference is supported (training is not implemented)!"
             )
-            print(
-                "[WARNING] You need nvcc and ninja installed in your system that matches your PyTorch build is using to build the kernel. "
+            logger.warning(
+                "You need nvcc and ninja installed in your system that matches your PyTorch build is using to build the kernel. "
                 + "If not, the model will fail to initialize or generate incorrect waveform!"
             )
-            print(
-                "[WARNING] For detail, see the official GitHub repository: "
+            logger.warning(
+                "For detail, see the official GitHub repository: "
                 + "https://github.com/NVIDIA/BigVGAN?tab=readme-ov-file#using-custom-cuda-kernel-for-synthesis"
             )
         model = cls(h, use_cuda_kernel=use_cuda_kernel)
 
         # Download and load pretrained generator weight
         if model_id_path.is_dir():
-            print("Loading weights from local directory")
+            logger.info("Loading weights from local directory")
             model_file = model_id_path / "bigvgan_generator.pt"
         else:
-            print(f"Loading weights from {model_id}")
+            logger.info("Loading weights from %s", model_id)
             model_file = Path(
                 hf_hub_download(
                     repo_id=model_id,
@@ -486,8 +489,8 @@ class BigVGAN(
         try:
             model.load_state_dict(checkpoint_dict["generator"])
         except RuntimeError:
-            print(
-                "[INFO] the pretrained checkpoint does not contain weight norm. Loading the checkpoint after removing weight norm!"
+            logger.info(
+                "The pretrained checkpoint does not contain weight norm. Loading the checkpoint after removing weight norm!"
             )
             model.remove_weight_norm()
             model.load_state_dict(checkpoint_dict["generator"])

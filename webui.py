@@ -2,6 +2,7 @@
 import argparse
 import html
 import json
+import logging
 import threading
 import time
 from pathlib import Path
@@ -12,6 +13,8 @@ import gradio as gr
 from indextts.infer_v2 import IndexTTS2, normalize_emo_vec
 from indextts.util import unwrap
 from tools.i18n.i18n import I18nAuto
+
+logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description="IndexTTS WebUI", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--port", type=int, default=7860, help="Port to run the web UI on")
@@ -140,7 +143,7 @@ def gen_single(
         # erase empty emotion descriptions; `infer()` will then automatically use the main prompt
         emo_text = None
 
-    print(f"Emo control mode:{emo_control_method},weight:{emo_weight},vec:{vec}")
+    logger.debug("Emo control mode:%s,weight:%s,vec:%s", emo_control_method, emo_weight, vec)
     output = tts.infer(
         do_sample=bool(do_sample),
         emo_alpha=emo_weight,
@@ -362,7 +365,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
         )
 
     def on_example_click(example: list[Any]) -> tuple[dict[str, Any], ...]:
-        print(f"Example clicked: ({len(example)} values) = {example!r}")
+        logger.debug("Example clicked: (%d values) = %r", len(example), example)
         return (
             gr.update(value=example[0]),
             gr.update(value=example[1]),
@@ -451,7 +454,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
             gr.Info(i18n("词汇表已更新"), duration=1)
         except Exception as e:
             gr.Error(i18n("保存词汇表时出错"))
-            print(f"Error details: {e}")
+            logger.exception("Error details: %s", e)
             return gr.update()
 
         # 更新Markdown表格
@@ -544,7 +547,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
             tts.normalizer.load_glossary_from_yaml(tts.glossary_path)
         except Exception as e:
             gr.Error(i18n("加载词汇表时出错"))
-            print(f"Failed to reload glossary on page load: {e}")
+            logger.exception("Failed to reload glossary on page load: %s", e)
         return gr.update(value=format_glossary_markdown())
 
     # 术语词汇表事件绑定

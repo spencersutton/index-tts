@@ -93,7 +93,6 @@ class IndexTTS2:
     device: torch.device
     dtype: torch.dtype
     use_accel: bool
-    use_cuda_kernel: bool
 
     emo_matrix: tuple[Tensor, ...]
     spk_matrix: tuple[Tensor, ...]
@@ -139,7 +138,6 @@ class IndexTTS2:
         self.device = (
             torch.device(device) if device else torch.accelerator.current_accelerator() or torch.get_default_device()
         )
-        self.use_cuda_kernel = use_cuda_kernel and str(self.device).startswith("cuda")
         self.dtype = torch.get_default_dtype()
         self.use_accel = use_accel
 
@@ -147,23 +145,13 @@ class IndexTTS2:
         self.semantic_model = load.load_semantic_model(self.device)
         self.semantic_mean, self.semantic_std = load.load_semantic_stats(self.device)
         self.semantic_codec = load.load_semantic_codec(self.device)
-        self.bigvgan = load.load_bigvgan(self.device, self.use_cuda_kernel)
+        self.bigvgan = load.load_bigvgan(self.device, use_cuda_kernel)
         self.campplus_model = load.load_campplus(self.device)
         self.tokenizer = load.load_tokenizer(self.normalizer)
         self.cfm = load.load_cfm(self.device)
         self.length_regulator = load.load_length_regulator(self.device)
 
         post_init_gpt2_config(self.gpt)
-
-        if self.use_cuda_kernel:
-            # preload the CUDA kernel for BigVGAN
-            try:
-                from bigvgan.alias_free_activation.cuda import activation1d
-
-                logger.info(">> Preload custom CUDA kernel for BigVGAN: %s", activation1d.anti_alias_activation_cuda)
-            except Exception as e:
-                logger.warning(">> Failed to load custom CUDA kernel for BigVGAN. Falling back to torch. %r", e)
-                self.use_cuda_kernel = False
 
         # Enable torch.compile optimization if requested
         if use_torch_compile:

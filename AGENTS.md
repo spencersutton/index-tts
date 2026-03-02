@@ -96,6 +96,61 @@ Files affected by auto-fix:
 
 ---
 
+## Pass 3 — Never-Imported / Dead Files (full file deletion)
+
+### Method
+- Traced import graph from all entry points (`webui.py`, `infer.py`, `infer_v2.py`, `cli.py`, tests, tools)
+- Identified files that are never imported by any project file AND are not themselves entry points
+- Verified by checking all cross-references before deleting
+
+### Files / directories deleted (88 files total)
+
+| Path | Reason |
+|------|--------|
+| `indextts/BigVGAN/bigvgan.py` | `infer.py` uses `BigVGAN/models.py`; `infer_v2.py` uses `s2mel/modules/bigvgan/bigvgan.py` — this copy unused |
+| `indextts/gpt/transformers_beam_search.py` | Vendored HF file; zero project imports |
+| `indextts/utils/text_utils.py` | Zero project imports |
+| `indextts/utils/webui_utils.py` | Zero project imports |
+| `indextts/utils/utils.py` | Zero project imports |
+| `indextts/vqvae/` (entire dir) | Import in `infer.py` is commented out; package unused |
+| `indextts/s2mel/hf_utils.py` | Zero project imports |
+| `indextts/s2mel/optimizers.py` | Zero project imports |
+| `indextts/s2mel/wav2vecbert_extract.py` | Standalone script; zero project imports |
+| `indextts/s2mel/dac/__main__.py` | `python -m` entry only; not imported |
+| `indextts/s2mel/dac/utils/decode.py` | Not re-exported by `dac/utils/__init__.py` |
+| `indextts/s2mel/dac/utils/encode.py` | Not re-exported by `dac/utils/__init__.py` |
+| `indextts/s2mel/modules/alias_free_torch/` (entire dir) | Zero project imports |
+| `indextts/s2mel/modules/rmvpe.py` | Zero project imports |
+| `indextts/s2mel/modules/layers.py` | Zero project imports |
+| `indextts/s2mel/modules/quantize.py` | Only in dead `build_model()` bare-path import |
+| `indextts/s2mel/modules/campplus/classifier.py` | Only `DTDNN.py` is imported; classifier unused |
+| `indextts/s2mel/modules/hifigan/f0_predictor.py` | Zero project imports |
+| `indextts/s2mel/modules/hifigan/generator.py` | Zero project imports |
+| `indextts/s2mel/modules/gpt_fast/generate.py` | Zero project imports |
+| `indextts/s2mel/modules/gpt_fast/quantize.py` | Zero project imports |
+| `indextts/s2mel/modules/gpt_fast/.ipynb_checkpoints/` | Jupyter autosave artifact |
+| `indextts/s2mel/modules/vocos/` (entire dir) | Only `build_model()` bare-path import; never called |
+| `indextts/s2mel/modules/openvoice/` (entire dir) | Entire subtree unreferenced |
+| `indextts/utils/maskgct/models/codec/codec_dataset.py` | Zero project imports |
+| `indextts/utils/maskgct/models/codec/codec_inference.py` | Zero project imports; also broken (non-existent `utils.io`) |
+| `indextts/utils/maskgct/models/codec/codec_sampler.py` | Zero project imports |
+| `indextts/utils/maskgct/models/codec/codec_trainer.py` | Zero project imports |
+| `indextts/utils/maskgct/models/codec/facodec/` (entire dir) | Not imported by `maskgct_utils.py` |
+| `indextts/utils/maskgct/models/codec/melvqgan/` (entire dir) | Not imported by `maskgct_utils.py` |
+| `indextts/utils/maskgct/models/codec/ns3_codec/` (entire dir) | Not imported by `maskgct_utils.py` |
+| `indextts/utils/maskgct/models/codec/speechtokenizer/` (entire dir) | Not imported by `maskgct_utils.py` |
+| `indextts/utils/maskgct/models/codec/vevo/` (entire dir) | Not imported by `maskgct_utils.py` |
+
+### Key discovery during verification
+`infer_v2.py` instantiates `MyModel` from `s2mel/modules/commons.py`, whose `__init__` lazily imports `flow_matching.py` and `length_regulator.py` using full package paths. This transitively makes the following reachable and KEPT:
+- `s2mel/modules/flow_matching.py`, `length_regulator.py`, `diffusion_transformer.py`
+- `s2mel/modules/gpt_fast/model.py`, `s2mel/modules/wavenet.py`, `s2mel/modules/encodec.py`
+- `s2mel/dac/` package (minus `__main__`, `utils/decode`, `utils/encode`)
+
+The `build_model()` function also in `commons.py` uses bare-path imports (`from modules.X import …`) that require `sys.path` manipulation — it is never called from any entry point and those imports are therefore dead.
+
+---
+
 ## Notes for future passes:
 - The `indextts/utils/maskgct/` subtree is large and contains many vendored/copied modules — be careful removing from it
 - `indextts/s2mel/` is used in `infer_v2.py` (the v2 inference path)

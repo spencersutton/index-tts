@@ -116,13 +116,15 @@ def gen_single(
     emo_text: str | None,
     emo_random: bool,
     max_text_tokens_per_segment: int = 120,
-    *args: Any,
-    progress: gr.Progress = gr.Progress(),
+    *args: object,
+    progress: gr.Progress | None = None,
 ) -> dict[str, Any]:
     output_path = None
     if not output_path:
         output_path = Path("outputs") / f"spk_{int(time.time())}.wav"
     # set gradio progress
+    if progress is None:
+        progress = gr.Progress()
     tts.gr_progress = progress
     do_sample, top_p, top_k, temperature, length_penalty, num_beams, repetition_penalty, max_mel_tokens = args
 
@@ -452,9 +454,9 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
         try:
             tts.normalizer.save_glossary_to_yaml(tts.glossary_path)
             gr.Info(i18n("词汇表已更新"), duration=1)
-        except Exception as e:
+        except Exception:
             gr.Error(i18n("保存词汇表时出错"))
-            logger.exception("Error details: %s", e)
+            logger.exception("Error details")
             return gr.update()
 
         # 更新Markdown表格
@@ -545,9 +547,9 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
         """页面加载时重新加载glossary数据"""
         try:
             tts.normalizer.load_glossary_from_yaml(tts.glossary_path)
-        except Exception as e:
+        except Exception:
             gr.Error(i18n("加载词汇表时出错"))
-            logger.exception("Failed to reload glossary on page load: %s", e)
+            logger.exception("Failed to reload glossary on page load")
         return gr.update(value=format_glossary_markdown())
 
     # 术语词汇表事件绑定

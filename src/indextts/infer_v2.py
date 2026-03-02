@@ -353,6 +353,7 @@ class IndexTTS2:
                         f"WARN: generation stopped due to exceeding `MAX_MEL_TOKENS` ({MAX_MEL_TOKENS}). "
                         + f"Input text tokens: {text_tokens.shape[1]}. "
                         + f"Consider reducing `max_text_tokens_per_segment`({max_text_tokens_per_segment}) or increasing `MAX_MEL_TOKENS`.",
+                        stacklevel=2,
                         category=RuntimeWarning,
                     )
                     has_warned = True

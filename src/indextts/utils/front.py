@@ -552,6 +552,7 @@ class TextTokenizer:
                     + f"Tokens in segment: {current_segment}."
                     + "Maybe unexpected behavior",
                     RuntimeWarning,
+                    stacklevel=2,
                 )
             segments.extend(sub_segments)
             current_segment = []

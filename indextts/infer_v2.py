@@ -94,7 +94,7 @@ class IndexTTS2:
 
         if use_deepspeed:
             try:
-                import deepspeed
+                import deepspeed  # noqa: F401
             except (ImportError, OSError, CalledProcessError) as e:
                 use_deepspeed = False
                 print(f">> Failed to load DeepSpeed. Falling back to normal inference. Error: {e}")

@@ -488,7 +488,7 @@ class Attention(nn.Module):
             collab_heads=False,
             collab_compression=.3,
             sparse_topk=None,
-            use_entmax15=False,
+            _use_entmax15=False,
             num_mem_kv=0,
             dropout=0.,
             on_attn=False,

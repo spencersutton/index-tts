@@ -4,9 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import transformers
 from transformers import GPT2Config, LogitsProcessorList
-from indextts.gpt.transformers_gpt2 import GPT2PreTrainedModel, GPT2Model
+from indextts.gpt.transformers_gpt2 import GPT2PreTrainedModel
 
 # from transformers import GPT2Config, GPT2PreTrainedModel, LogitsProcessorList
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
@@ -428,7 +427,7 @@ class UnifiedVoice(nn.Module):
         if self.use_accel and torch.cuda.is_available():
             # Check if flash attention is available
             try:
-                import flash_attn
+                import flash_attn  # noqa: F401
             except ImportError:
                 raise ImportError("flash_attn is required for acceleration but not installed. Please install from https://github.com/Dao-AILab/flash-attention/releases/")
 

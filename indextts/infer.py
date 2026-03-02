@@ -88,7 +88,7 @@ class IndexTTS:
         print(">> GPT weights restored from:", self.gpt_path)
         if self.use_fp16:
             try:
-                import deepspeed
+                import deepspeed  # noqa: F401
 
                 use_deepspeed = True
             except (ImportError, OSError, CalledProcessError) as e:

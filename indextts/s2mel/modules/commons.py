@@ -4,9 +4,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from munch import Munch
-import json
 import argparse
-from torch.nn.parallel import DistributedDataParallel as DDP
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -388,7 +386,7 @@ def normalize_f0(f0_sequence):
 
 
 class MyModel(nn.Module):
-    def __init__(self,args, use_emovec=False, use_gpt_latent=False):
+    def __init__(self, args, _use_emovec=False, use_gpt_latent=False):
         super(MyModel, self).__init__()
         from indextts.s2mel.modules.flow_matching import CFM
         from indextts.s2mel.modules.length_regulator import InterpolateRegulator

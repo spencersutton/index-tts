@@ -4,18 +4,12 @@
 # LICENSE file in the root directory of this source tree.
 
 import math
-import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from einops import rearrange
 from torch.nn.utils import weight_norm
 
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize import (
     ResidualVQ,
-    VectorQuantize,
-    FactorizedVectorQuantize,
-    LookupFreeQuantize,
 )
 
 from indextts.utils.maskgct.models.codec.amphion_codec.vocos import Vocos

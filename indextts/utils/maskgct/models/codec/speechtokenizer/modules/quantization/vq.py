@@ -13,7 +13,6 @@
 """Residual vector quantizer implementation."""
 
 from dataclasses import dataclass, field
-import math
 import typing as tp
 
 import torch

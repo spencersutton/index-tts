@@ -4,8 +4,6 @@ import re
 import soundfile
 from . import utils
 from . import commons
-import os
-import librosa
 # from openvoice.text import text_to_sequence
 from .mel_processing import spectrogram_torch
 from .models import SynthesizerTrn
@@ -144,27 +142,6 @@ class ToneColorConverter(OpenVoiceBaseClass):
         return audio
     
     def add_watermark(self, audio, message):
-        # if self.watermark_model is None:
-        return audio
-        device = self.device
-        bits = utils.string_to_bits(message).reshape(-1)
-        n_repeat = len(bits) // 32
-
-        K = 16000
-        coeff = 2
-        for n in range(n_repeat):
-            trunck = audio[(coeff * n) * K: (coeff * n + 1) * K]
-            if len(trunck) != K:
-                print('Audio too short, fail to add watermark')
-                break
-            message_npy = bits[n * 32: (n + 1) * 32]
-            
-            with torch.no_grad():
-                signal = torch.FloatTensor(trunck).to(device)[None]
-                message_tensor = torch.FloatTensor(message_npy).to(device)[None]
-                signal_wmd_tensor = self.watermark_model.encode(signal, message_tensor)
-                signal_wmd_npy = signal_wmd_tensor.detach().cpu().squeeze()
-            audio[(coeff * n) * K: (coeff * n + 1) * K] = signal_wmd_npy
         return audio
 
     def detect_watermark(self, audio, n_repeat):

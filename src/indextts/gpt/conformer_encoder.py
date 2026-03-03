@@ -242,7 +242,7 @@ class ConformerEncoder(nn.Module):
                 (B, 1, T' ~= T/subsample_rate)
         """
         T = xs.size(1)
-        masks = torch.ones(xs.size(0), 1, T, dtype=torch.bool, device=xs.device)  # (B, 1, T) – no padding
+        masks = torch.ones(xs.size(0), 1, T, dtype=torch.bool, device=xs.device)  # (B, 1, T) - no padding
         xs, pos_emb, masks = self.embed.__call__(xs, masks)
         chunk_masks = masks
         mask_pad = masks  # (B, 1, T/subsample_rate)

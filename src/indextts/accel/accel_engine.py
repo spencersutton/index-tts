@@ -295,7 +295,7 @@ class AccelInferenceEngine:
         return graph_vars["outputs"][:bs]
 
     @beartype
-    def generate(
+    def generate(  # noqa: C901
         self,
         input_ids: Int[Tensor, "batch seq"],
         stop_tokens: list[int],

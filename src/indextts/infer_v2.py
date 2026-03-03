@@ -122,7 +122,7 @@ class IndexTTS2:
 
     def __init__(
         self,
-        device: str | None = None,
+        device: torch.device | str | None = None,
         use_cuda_kernel: bool = False,
         use_accel: bool = False,
         use_torch_compile: bool = False,

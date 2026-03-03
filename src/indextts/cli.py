@@ -1,9 +1,11 @@
+import argparse
 import logging
 import sys
 from pathlib import Path
 from typing import cast
 
 import pyinstrument
+import torch
 
 from indextts.profiling import generate_profile_report
 
@@ -11,8 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> None:
-    import argparse
-
     parser = argparse.ArgumentParser(description="IndexTTS Command Line")
     parser.add_argument("text", type=str, help="Text to be synthesized")
     parser.add_argument("-v", "--voice", type=str, required=True, help="Path to the audio prompt file (wav format)")
@@ -62,22 +62,8 @@ def main() -> None:
         else:
             output_path.unlink()
 
-    try:
-        import torch
-    except ImportError:
-        logger.error("PyTorch is not installed. Please install it first.")
-        sys.exit(1)
-
     if args.device is None:
-        if torch.cuda.is_available():
-            args.device = "cuda:0"
-        elif hasattr(torch, "xpu") and torch.xpu.is_available():
-            args.device = "xpu"
-        elif hasattr(torch, "mps") and torch.mps.is_available():
-            args.device = "mps"
-        else:
-            args.device = "cpu"
-            logger.warning("Running on CPU may be slow.")
+        args.device = torch.accelerator.current_accelerator() or torch.get_default_device()
 
     logger.info("Importing IndexTTS2...")
     from indextts.infer_v2 import IndexTTS2

@@ -165,7 +165,8 @@ class TextNormalizer:
         pattern = r"^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z]+$"
         return re.match(pattern, email) is not None
 
-    def _use_chinese(self, s: str) -> bool:
+    @staticmethod
+    def _use_chinese(s: str) -> bool:
         has_chinese = bool(re.search(r"[\u4e00-\u9fff]", s))
         has_alpha = bool(re.search(r"[a-zA-Z]", s))
         is_email = TextNormalizer._match_email(s)
@@ -200,7 +201,7 @@ class TextNormalizer:
         if not self._zh_normalizer or not self._en_normalizer:
             logger.error("Text normalizer is not initialized; call load() first.")
             return ""
-        if self._use_chinese(text):
+        if TextNormalizer._use_chinese(text):
             text = re.sub(_ENGLISH_CONTRACTION_PATTERN, r"\1 is", text, flags=re.IGNORECASE)
             # Apply glossary terms (highest priority, before all protections)
             if self.enable_glossary:
@@ -456,8 +457,8 @@ class TextTokenizer:
     _normalizer: TextNormalizer
     _sp_model: SentencePieceProcessor
 
-    def __init__(self, vocab_file: Path, normalizer: TextNormalizer) -> None:
-        self._vocab_file = vocab_file
+    def __init__(self, vocab_file: str | Path, normalizer: TextNormalizer) -> None:
+        self._vocab_file = Path(vocab_file)
         self._normalizer = normalizer
 
         if not self._vocab_file.exists():

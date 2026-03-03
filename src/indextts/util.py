@@ -28,17 +28,6 @@ def patch_call[**P, R](_src_func: Callable[P, R]) -> Callable[..., Callable[P, R
     return _returns_nn_module_call
 
 
-def unwrap[T](value: T | None) -> T:
-    """Assert that *value* is not ``None`` and return it.
-
-    Raises:
-        ValueError: If *value* is ``None``.
-    """
-    if value is None:
-        raise ValueError("Expected value to be not None")
-    return value
-
-
 class Timer:
     """A simple cumulative wall-clock timer that supports the context-manager protocol.
 

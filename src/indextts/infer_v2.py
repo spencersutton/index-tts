@@ -3,7 +3,7 @@ import os
 import random
 import warnings
 from collections.abc import Callable, Generator, Mapping, Sequence
-from functools import cached_property, lru_cache
+from functools import cache, lru_cache
 from pathlib import Path
 from typing import Final, cast
 
@@ -89,8 +89,77 @@ def _load_and_cut_audio(path: Path, sample_rate: int | None = None) -> tuple[Flo
     return audio, sample_rate
 
 
+@cache
+def qwen_emo() -> QwenEmotion:
+    return QwenEmotion("dsinghvi/qwen0.6bemo4-merge")
+
+
+def _get_matrix(filename: str) -> tuple[Tensor, ...]:
+    path = hf.hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=filename)
+    data = cast(Tensor, torch.load(path, map_location=torch.get_default_device()))
+    return data.split(EMO_NUM)
+
+
+def _validate_infer_args(
+    emo_alpha: float, interval_silence: int, num_beams: int, temperature: float, top_k: int, top_p: float, text: str
+) -> None:
+    """Raise ValueError for any out-of-range inference argument."""
+    if not (0.0 <= emo_alpha <= 1.0):
+        raise ValueError(f"emo_alpha must be in [0.0, 1.0], got {emo_alpha}")
+    if interval_silence < 0:
+        raise ValueError(f"interval_silence must be >= 0 ms, got {interval_silence}")
+    if num_beams < 1:
+        raise ValueError(f"num_beams must be >= 1, got {num_beams}")
+    if temperature <= 0.0:
+        raise ValueError(f"temperature must be > 0.0, got {temperature}")
+    if top_k < 0:
+        raise ValueError(f"top_k must be >= 0, got {top_k}")
+    if not (0.0 < top_p <= 1.0):
+        raise ValueError(f"top_p must be in (0.0, 1.0], got {top_p}")
+    if not text or not text.strip():
+        raise ValueError("text must be a non-empty string")
+
+
+def _resolve_emotion_inputs(
+    *,
+    use_emo_text: bool,
+    emo_text: str | None,
+    text: str,
+    emo_vector: Sequence[float] | None,
+    emo_alpha: float,
+    emo_audio_prompt: Path | None,
+    spk_audio_prompt: Path,
+) -> tuple[Path, float, Sequence[float] | None]:
+    """Resolve and normalise emotion-related inputs, returning (emo_audio_prompt, emo_alpha, emo_vector)."""
+    if use_emo_text or emo_vector is not None:
+        # Using text/vector guidance: drop external emotion reference voice
+        # so that only the computed vector drives emotion mixing.
+        emo_audio_prompt = None
+
+    if use_emo_text:
+        # Auto-generate emotion vectors from the text prompt.
+        emo_text = emo_text or text
+        emo_dict = qwen_emo().inference(emo_text)
+        logger.info("detected emotion vectors from text: %s", emo_dict)
+        # Order of values is critical; must match EMO_NUM.
+        emo_vector = list(emo_dict.values())
+
+    if emo_vector is not None:
+        # Pre-apply alpha scaling to the vector instead of using alpha mixing later.
+        emo_vector_scale = max(0.0, min(1.0, emo_alpha))
+        if emo_vector_scale != 1.0:  # noqa: RUF069
+            emo_vector = [int(x * emo_vector_scale * 10_000) / 10_000 for x in emo_vector]
+            logger.info("scaled emotion vectors to %sx: %s", emo_vector_scale, emo_vector)
+
+    if emo_audio_prompt is None:
+        # No external emotion reference: fall back to speaker audio, alpha forced to 1.
+        emo_audio_prompt = spk_audio_prompt
+        emo_alpha = 1.0
+
+    return emo_audio_prompt, emo_alpha, emo_vector
+
+
 class IndexTTS2:
-    device: torch.device
     dtype: torch.dtype
     use_accel: bool
 
@@ -116,13 +185,9 @@ class IndexTTS2:
     semantic_std: Tensor
     tokenizer: TextTokenizer
 
-    @cached_property[QwenEmotion]
-    def qwen_emo(self) -> QwenEmotion:
-        return QwenEmotion("dsinghvi/qwen0.6bemo4-merge")
-
     def __init__(
         self,
-        device: str | None = None,
+        device: torch.device | str | None = None,
         use_cuda_kernel: bool = False,
         use_accel: bool = False,
         use_torch_compile: bool = False,
@@ -135,21 +200,18 @@ class IndexTTS2:
             use_torch_compile (bool): whether to use torch.compile for optimization or not.
         """
 
-        self.device = (
-            torch.device(device) if device else torch.accelerator.current_accelerator() or torch.get_default_device()
-        )
         self.dtype = torch.get_default_dtype()
         self.use_accel = use_accel
 
-        self.gpt = load.load_unified_voice(self.device)
-        self.semantic_model = load.load_semantic_model(self.device)
-        self.semantic_mean, self.semantic_std = load.load_semantic_stats(self.device)
-        self.semantic_codec = load.load_semantic_codec(self.device)
-        self.bigvgan = load.load_bigvgan(self.device, use_cuda_kernel)
-        self.campplus_model = load.load_campplus(self.device)
+        self.gpt = load.load_unified_voice()
+        self.semantic_model = load.load_semantic_model()
+        self.semantic_mean, self.semantic_std = load.load_semantic_stats()
+        self.semantic_codec = load.load_semantic_codec()
+        self.bigvgan = load.load_bigvgan(use_cuda_kernel)
+        self.campplus_model = load.load_campplus()
         self.tokenizer = load.load_tokenizer(self.normalizer)
-        self.cfm = load.load_cfm(self.device)
-        self.length_regulator = load.load_length_regulator(self.device)
+        self.cfm = load.load_cfm()
+        self.length_regulator = load.load_length_regulator()
 
         post_init_gpt2_config(self.gpt)
 
@@ -159,83 +221,14 @@ class IndexTTS2:
             self.cfm.enable_torch_compile()
             logger.info(">> torch.compile optimization enabled successfully")
 
-        self.spk_matrix = self._get_matrix("feat1.pt")
-        self.emo_matrix = self._get_matrix("feat2.pt")
+        self.spk_matrix = _get_matrix("feat1.pt")
+        self.emo_matrix = _get_matrix("feat2.pt")
 
         # 加载术语词汇表（如果存在）
         self.glossary_path = Path("checkpoints") / "glossary.yaml"
         if self.glossary_path.exists():
             self.normalizer.load_glossary_from_yaml(self.glossary_path)
             logger.info(">> Glossary loaded from: %s", self.glossary_path)
-
-    # ------------------------------------------------------------------
-    # Private helpers for infer()
-    # ------------------------------------------------------------------
-
-    def _validate_infer_args(
-        self,
-        emo_alpha: float,
-        interval_silence: int,
-        num_beams: int,
-        temperature: float,
-        top_k: int,
-        top_p: float,
-        text: str,
-    ) -> None:
-        """Raise ValueError for any out-of-range inference argument."""
-        if not (0.0 <= emo_alpha <= 1.0):
-            raise ValueError(f"emo_alpha must be in [0.0, 1.0], got {emo_alpha}")
-        if interval_silence < 0:
-            raise ValueError(f"interval_silence must be >= 0 ms, got {interval_silence}")
-        if num_beams < 1:
-            raise ValueError(f"num_beams must be >= 1, got {num_beams}")
-        if temperature <= 0.0:
-            raise ValueError(f"temperature must be > 0.0, got {temperature}")
-        if top_k < 0:
-            raise ValueError(f"top_k must be >= 0, got {top_k}")
-        if not (0.0 < top_p <= 1.0):
-            raise ValueError(f"top_p must be in (0.0, 1.0], got {top_p}")
-        if not text or not text.strip():
-            raise ValueError("text must be a non-empty string")
-
-    def _resolve_emotion_inputs(
-        self,
-        *,
-        use_emo_text: bool,
-        emo_text: str | None,
-        text: str,
-        emo_vector: Sequence[float] | None,
-        emo_alpha: float,
-        emo_audio_prompt: Path | None,
-        spk_audio_prompt: Path,
-    ) -> tuple[Path, float, Sequence[float] | None]:
-        """Resolve and normalise emotion-related inputs, returning (emo_audio_prompt, emo_alpha, emo_vector)."""
-        if use_emo_text or emo_vector is not None:
-            # Using text/vector guidance: drop external emotion reference voice
-            # so that only the computed vector drives emotion mixing.
-            emo_audio_prompt = None
-
-        if use_emo_text:
-            # Auto-generate emotion vectors from the text prompt.
-            emo_text = emo_text or text
-            emo_dict = self.qwen_emo.inference(emo_text)
-            logger.info("detected emotion vectors from text: %s", emo_dict)
-            # Order of values is critical; must match EMO_NUM.
-            emo_vector = list(emo_dict.values())
-
-        if emo_vector is not None:
-            # Pre-apply alpha scaling to the vector instead of using alpha mixing later.
-            emo_vector_scale = max(0.0, min(1.0, emo_alpha))
-            if emo_vector_scale != 1.0:  # noqa: RUF069
-                emo_vector = [int(x * emo_vector_scale * 10_000) / 10_000 for x in emo_vector]
-                logger.info("scaled emotion vectors to %sx: %s", emo_vector_scale, emo_vector)
-
-        if emo_audio_prompt is None:
-            # No external emotion reference: fall back to speaker audio, alpha forced to 1.
-            emo_audio_prompt = spk_audio_prompt
-            emo_alpha = 1.0
-
-        return emo_audio_prompt, emo_alpha, emo_vector
 
     # ------------------------------------------------------------------
 
@@ -262,8 +255,8 @@ class IndexTTS2:
         top_k: int = 30,
         top_p: float = 0.8,
     ) -> Path | Generator[Tensor] | None:
-        self._validate_infer_args(emo_alpha, interval_silence, num_beams, temperature, top_k, top_p, text)
-        emo_audio_prompt, emo_alpha, emo_vector = self._resolve_emotion_inputs(
+        _validate_infer_args(emo_alpha, interval_silence, num_beams, temperature, top_k, top_p, text)
+        emo_audio_prompt, emo_alpha, emo_vector = _resolve_emotion_inputs(
             use_emo_text=use_emo_text,
             emo_text=emo_text,
             text=text,
@@ -333,7 +326,7 @@ class IndexTTS2:
         weight_vector = None
         emotion_matrix = None
         if emo_vector is not None:
-            weight_vector = torch.tensor(emo_vector, device=self.device)
+            weight_vector = torch.tensor(emo_vector)
             emotion_matrix = self._generate_emotion_matrix(weight_vector, style, use_random=use_random)
 
         emotion_conditioning_embedding = self._extract_emotion_features(emo_audio_prompt)
@@ -364,10 +357,10 @@ class IndexTTS2:
             )
 
             text_tokens = self.tokenizer.convert_tokens_to_ids(sent)
-            text_tokens = torch.tensor(text_tokens, dtype=torch.int32, device=self.device).unsqueeze(0)
+            text_tokens = torch.tensor(text_tokens, dtype=torch.int32).unsqueeze(0)
 
             with torch.inference_mode():
-                with torch.autocast(self.device.type, dtype=self.dtype), gpt_gen_time:
+                with torch.autocast(torch.get_default_device().type, dtype=self.dtype), gpt_gen_time:
                     speech_conditioning_latent = self.gpt.process_speech_condition(speaker_conditioning_embedding)
                     codes = self.gpt.inference_speech(
                         speech_conditioning_latent,
@@ -444,7 +437,7 @@ class IndexTTS2:
         codes: Int[Tensor, "batch time"],
     ) -> Float[Tensor, "batch mel_bins time"]:
         semantic_inference = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1)).mT
-        target_lengths = (torch.tensor(code_lens, device=self.device) * 1.72).long().max().item()
+        target_lengths = (torch.tensor(code_lens) * 1.72).long().max().item()
 
         cond = self.length_regulator.__call__(semantic_inference, ylens=int(target_lengths))
         cond = torch.cat([prompt_condition, cond], dim=1)
@@ -456,7 +449,7 @@ class IndexTTS2:
         logger.info(">> extracting emotion features from prompt: %s", prompt)
         audio, _ = _load_and_cut_audio(prompt, sample_rate=WIDEBAND_SR)
         inputs = self.extract_features(audio.numpy(), sampling_rate=WIDEBAND_SR, return_tensors="pt")
-        inputs = cast(Mapping[str, Tensor], inputs.to(self.device))
+        inputs = cast(Mapping[str, Tensor], inputs.to(torch.get_default_device()))
         return self._get_emb(inputs["input_features"], inputs["attention_mask"])
 
     @beartype
@@ -476,11 +469,6 @@ class IndexTTS2:
         matrix = weight_vector.unsqueeze(1) * matrix
         matrix = matrix.sum(dim=0)
         return matrix.unsqueeze(0)
-
-    def _get_matrix(self, filename: str) -> tuple[Tensor, ...]:
-        path = hf.hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=filename)
-        data = cast(Tensor, torch.load(path, map_location=self.device))
-        return data.split(EMO_NUM)
 
     @torch.inference_mode()
     @beartype
@@ -507,13 +495,15 @@ class IndexTTS2:
         audio_22k = torchaudio.functional.resample(audio, sr, SAMPLING_RATE)
 
         mel = mel_spectrogram(audio_22k)
-        feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(self.device), num_mel_bins=N_MELS)
+        feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(torch.get_default_device()), num_mel_bins=N_MELS)
         feat -= feat.mean(dim=0, keepdim=True)  # feat2: Another filter energy group feature [922, 80]
         style = self.campplus_model(feat.unsqueeze(0))  # Global style of the reference audio [1, STYLE_DIM]
 
         inputs = cast(
             Mapping[str, Tensor],
-            self.extract_features(audio_16k, sampling_rate=WIDEBAND_SR, return_tensors="pt").to(self.device),
+            self.extract_features(audio_16k, sampling_rate=WIDEBAND_SR, return_tensors="pt").to(
+                torch.get_default_device()
+            ),
         )
 
         embedding = self._get_emb(inputs["input_features"], inputs["attention_mask"])

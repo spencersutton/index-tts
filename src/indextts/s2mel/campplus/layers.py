@@ -100,23 +100,13 @@ class _CAMLayer(nn.Module):
     @override
     @beartype
     def forward(self, x: Float[Tensor, "batch channels time"]) -> Float[Tensor, "batch out_channels time"]:
-        y = self.linear_local(x)
-        context = x.mean(-1, keepdim=True) + self.seg_pooling(x)
+        seg_pooled = F.avg_pool1d(x, kernel_size=_CAM_SEG_POOL_LEN, ceil_mode=True)
+        seg_pooled = seg_pooled.repeat_interleave(_CAM_SEG_POOL_LEN, dim=-1)[..., : x.shape[-1]]
+        context = x.mean(-1, keepdim=True) + seg_pooled
         context = self.relu(self.linear1(context))
+        y = self.linear_local(x)
         m = self.sigmoid(self.linear2(context))
         return y * m
-
-    @beartype
-    def seg_pooling(self, x: Float[Tensor, "batch channels time"]) -> Float[Tensor, "batch channels time"]:
-        """Segment-level average pooling repeated to the original time length.
-
-        Divides the time axis into non-overlapping segments of length
-        ``_CAM_SEG_POOL_LEN``, average-pools each segment to a single value,
-        then repeats (tiles) the result back to match the input time dimension.
-        This provides a coarse, segment-level context signal used by the gating branch.
-        """
-        seg_pooled = F.avg_pool1d(x, kernel_size=_CAM_SEG_POOL_LEN, ceil_mode=True)
-        return seg_pooled.repeat_interleave(_CAM_SEG_POOL_LEN, dim=-1)[..., : x.shape[-1]]
 
     @patch_call(forward)
     def __call__(self) -> None: ...

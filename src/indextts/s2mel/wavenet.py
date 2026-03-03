@@ -48,7 +48,7 @@ class WaveNet(nn.Module):
             res_skip_acts = self.res_skip_layers[i].__call__(acts)
             if i < len(self.in_layers) - 1:
                 res_acts = res_skip_acts[:, : self.dim, :]
-                x = x + res_acts
+                x += res_acts
                 output += res_skip_acts[:, self.dim :, :]
             else:
                 output += res_skip_acts

@@ -15,13 +15,10 @@ from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.s2mel.campplus.DTDNN import CAMPPlus
 from indextts.s2mel.flow_matching import CFM
 from indextts.s2mel.length_regulator import InterpolateRegulator
-from indextts.util import Timer
 from indextts.utils.front import TextNormalizer, TextTokenizer
 from indextts.utils.repcodec_model import RepCodec
 
 logger = logging.getLogger(__name__)
-
-type TensorDict = dict[str, Tensor]
 
 CHECKPOINT_DIR = Path("./checkpoints")
 CAMPPLUS_FILE = "campplus_cn_common.safetensors"
@@ -75,12 +72,7 @@ def load_tokenizer(normalizer: TextNormalizer) -> TextTokenizer:
     Args:
         normalizer: Pre-initialized :class:`TextNormalizer` to attach to the tokenizer.
     """
-    with Timer() as t:
-        path = Path(hf.hf_hub_download("IndexTeam/IndexTTS-2", "bpe.model"))
-        tokenizer = TextTokenizer(path, normalizer)
-
-    logger.info(">> bpe model restored in %.2f seconds from: %s", t.elapsed, path)
-    return tokenizer
+    return TextTokenizer(hf.hf_hub_download("IndexTeam/IndexTTS-2", "bpe.model"), normalizer)
 
 
 def load_semantic_codec() -> RepCodec:
@@ -90,11 +82,7 @@ def load_semantic_codec() -> RepCodec:
 
 def load_semantic_model() -> transformers.Wav2Vec2BertModel:
     """Download (or use cached) the Wav2Vec2Bert semantic model and move it to *device*."""
-    with Timer() as t:
-        model = transformers.Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0")
-        model = model.eval().to(torch.get_default_device())
-    logger.info(">> semantic_model weights restored in %.2f seconds", t.elapsed)
-    return model
+    return transformers.Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0").eval().to(torch.get_default_device())
 
 
 @beartype
@@ -104,16 +92,16 @@ def load_semantic_stats() -> tuple[Float[Tensor, "dim"], Float[Tensor, "dim"]]:
     These are used to normalise the semantic model's hidden-state features
     before feeding them into the downstream IndexTTS2 components.
     """
-    with Timer() as t:
-        path = hf.hf_hub_download("amphion/dualcodec", "w2vbert2_mean_var_stats_emilia.pt")
-        raw = torch.load(path, map_location=torch.get_default_device())
-        assert isinstance(raw, dict), f"Expected dict from {path}, got {type(raw).__name__}"
-        data = cast(TensorDict, raw)
-        mean = data["mean"]
-        std = data["var"].sqrt()
 
-    logger.info(">> semantic_mean and semantic_std weights restored in %.2f seconds from: %s", t.elapsed, path)
-    return mean, std
+    data = cast(
+        dict[str, Tensor],
+        torch.load(
+            hf.hf_hub_download("amphion/dualcodec", "w2vbert2_mean_var_stats_emilia.pt"),
+            map_location=torch.get_default_device(),
+        ),
+    )
+
+    return data["mean"], data["var"].sqrt()
 
 
 def load_cfm() -> CFM:
@@ -132,21 +120,19 @@ def load_bigvgan(use_cuda_kernel: bool) -> BigVGAN:
     Args:
         use_cuda_kernel: Whether to enable the fused CUDA activation kernel.
     """
-    with Timer() as t:
-        model = BigVGAN.from_pretrained("nvidia/bigvgan_v2_22khz_80band_256x", use_cuda_kernel=use_cuda_kernel)
-        model.remove_weight_norm()
-        model = model.eval().to(torch.get_default_device())
-
-    logger.info(">> bigvgan weights restored in %.2f seconds", t.elapsed)
-    return model
+    return (
+        BigVGAN
+        .from_pretrained("nvidia/bigvgan_v2_22khz_80band_256x", use_cuda_kernel=use_cuda_kernel)
+        .eval()
+        .to(torch.get_default_device())
+    )
 
 
 if __name__ == "__main__":
     path = CHECKPOINT_DIR / GPT_FILE
     if not path.exists():
         pt_path = hf.hf_hub_download("IndexTeam/IndexTTS-2", filename="gpt.pth")
-        data = torch.load(pt_path, map_location="cpu")
-        data = cast(TensorDict, data)
+        data = cast(dict[str, Tensor], torch.load(pt_path, map_location="cpu"))
         safetensors.torch.save_file(data, path)
 
     path = CHECKPOINT_DIR / SEMANTIC_CODEC_FILE
@@ -163,7 +149,7 @@ if __name__ == "__main__":
     if not lr_path.exists() or not cfm_path.exists():
         path = hf.hf_hub_download("IndexTeam/IndexTTS-2", "s2mel.pth")
         s2mel_data = torch.load(path, map_location="cpu", weights_only=False)
-        s2mel_data = cast(dict[str, dict[str, TensorDict]], s2mel_data)
+        s2mel_data = cast(dict[str, dict[str, dict[str, Tensor]]], s2mel_data)
         if not lr_path.exists():
             data = s2mel_data["net"]["length_regulator"]
             del data["embedding.weight"]
@@ -182,6 +168,5 @@ if __name__ == "__main__":
     path = CHECKPOINT_DIR / CAMPPLUS_FILE
     if not path.exists():
         pt_path = hf.hf_hub_download("funasr/campplus", filename="campplus_cn_common.bin", local_dir=CHECKPOINT_DIR)
-        data = torch.load(pt_path, map_location="cpu")
-        data = cast(TensorDict, data)
+        data = cast(dict[str, Tensor], torch.load(pt_path, map_location="cpu"))
         safetensors.torch.save_file(data, path)

@@ -457,8 +457,8 @@ class TextTokenizer:
     _normalizer: TextNormalizer
     _sp_model: SentencePieceProcessor
 
-    def __init__(self, vocab_file: Path, normalizer: TextNormalizer) -> None:
-        self._vocab_file = vocab_file
+    def __init__(self, vocab_file: str | Path, normalizer: TextNormalizer) -> None:
+        self._vocab_file = Path(vocab_file)
         self._normalizer = normalizer
 
         if not self._vocab_file.exists():

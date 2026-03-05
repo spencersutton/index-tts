@@ -129,11 +129,9 @@ class GPT2InferenceModel(transformers.GPT2PreTrainedModel, transformers.Generati
 
         lm_logits = self.lm_head(hidden_states)
 
-        if not return_dict:
-            assert isinstance(transformer_outputs, tuple)
+        if isinstance(transformer_outputs, tuple):
             return (lm_logits, *transformer_outputs[1:])
 
-        assert not isinstance(transformer_outputs, tuple)
         return transformers.modeling_outputs.CausalLMOutputWithCrossAttentions(
             loss=None,
             logits=lm_logits,

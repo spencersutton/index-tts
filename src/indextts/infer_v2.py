@@ -3,7 +3,7 @@ import os
 import random
 import warnings
 from collections.abc import Callable, Generator, Mapping, Sequence
-from functools import cached_property, lru_cache
+from functools import cache, lru_cache
 from pathlib import Path
 from typing import Final, cast
 
@@ -89,6 +89,76 @@ def _load_and_cut_audio(path: Path, sample_rate: int | None = None) -> tuple[Flo
     return audio, sample_rate
 
 
+@cache
+def qwen_emo() -> QwenEmotion:
+    return QwenEmotion("dsinghvi/qwen0.6bemo4-merge")
+
+
+def _get_matrix(filename: str) -> tuple[Tensor, ...]:
+    path = hf.hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=filename)
+    data = cast(Tensor, torch.load(path, map_location=torch.get_default_device()))
+    return data.split(EMO_NUM)
+
+
+def _validate_infer_args(
+    emo_alpha: float, interval_silence: int, num_beams: int, temperature: float, top_k: int, top_p: float, text: str
+) -> None:
+    """Raise ValueError for any out-of-range inference argument."""
+    if not (0.0 <= emo_alpha <= 1.0):
+        raise ValueError(f"emo_alpha must be in [0.0, 1.0], got {emo_alpha}")
+    if interval_silence < 0:
+        raise ValueError(f"interval_silence must be >= 0 ms, got {interval_silence}")
+    if num_beams < 1:
+        raise ValueError(f"num_beams must be >= 1, got {num_beams}")
+    if temperature <= 0.0:
+        raise ValueError(f"temperature must be > 0.0, got {temperature}")
+    if top_k < 0:
+        raise ValueError(f"top_k must be >= 0, got {top_k}")
+    if not (0.0 < top_p <= 1.0):
+        raise ValueError(f"top_p must be in (0.0, 1.0], got {top_p}")
+    if not text or not text.strip():
+        raise ValueError("text must be a non-empty string")
+
+
+def _resolve_emotion_inputs(
+    *,
+    use_emo_text: bool,
+    emo_text: str | None,
+    text: str,
+    emo_vector: Sequence[float] | None,
+    emo_alpha: float,
+    emo_audio_prompt: Path | None,
+    spk_audio_prompt: Path,
+) -> tuple[Path, float, Sequence[float] | None]:
+    """Resolve and normalise emotion-related inputs, returning (emo_audio_prompt, emo_alpha, emo_vector)."""
+    if use_emo_text or emo_vector is not None:
+        # Using text/vector guidance: drop external emotion reference voice
+        # so that only the computed vector drives emotion mixing.
+        emo_audio_prompt = None
+
+    if use_emo_text:
+        # Auto-generate emotion vectors from the text prompt.
+        emo_text = emo_text or text
+        emo_dict = qwen_emo().inference(emo_text)
+        logger.info("detected emotion vectors from text: %s", emo_dict)
+        # Order of values is critical; must match EMO_NUM.
+        emo_vector = list(emo_dict.values())
+
+    if emo_vector is not None:
+        # Pre-apply alpha scaling to the vector instead of using alpha mixing later.
+        emo_vector_scale = max(0.0, min(1.0, emo_alpha))
+        if emo_vector_scale != 1.0:  # noqa: RUF069
+            emo_vector = [int(x * emo_vector_scale * 10_000) / 10_000 for x in emo_vector]
+            logger.info("scaled emotion vectors to %sx: %s", emo_vector_scale, emo_vector)
+
+    if emo_audio_prompt is None:
+        # No external emotion reference: fall back to speaker audio, alpha forced to 1.
+        emo_audio_prompt = spk_audio_prompt
+        emo_alpha = 1.0
+
+    return emo_audio_prompt, emo_alpha, emo_vector
+
+
 class IndexTTS2:
     dtype: torch.dtype
     use_accel: bool
@@ -114,10 +184,6 @@ class IndexTTS2:
     semantic_model: transformers.Wav2Vec2BertModel
     semantic_std: Tensor
     tokenizer: TextTokenizer
-
-    @cached_property[QwenEmotion]
-    def qwen_emo(self) -> QwenEmotion:
-        return QwenEmotion("dsinghvi/qwen0.6bemo4-merge")
 
     def __init__(
         self,
@@ -155,83 +221,14 @@ class IndexTTS2:
             self.cfm.enable_torch_compile()
             logger.info(">> torch.compile optimization enabled successfully")
 
-        self.spk_matrix = self._get_matrix("feat1.pt")
-        self.emo_matrix = self._get_matrix("feat2.pt")
+        self.spk_matrix = _get_matrix("feat1.pt")
+        self.emo_matrix = _get_matrix("feat2.pt")
 
         # 加载术语词汇表（如果存在）
         self.glossary_path = Path("checkpoints") / "glossary.yaml"
         if self.glossary_path.exists():
             self.normalizer.load_glossary_from_yaml(self.glossary_path)
             logger.info(">> Glossary loaded from: %s", self.glossary_path)
-
-    # ------------------------------------------------------------------
-    # Private helpers for infer()
-    # ------------------------------------------------------------------
-
-    def _validate_infer_args(
-        self,
-        emo_alpha: float,
-        interval_silence: int,
-        num_beams: int,
-        temperature: float,
-        top_k: int,
-        top_p: float,
-        text: str,
-    ) -> None:
-        """Raise ValueError for any out-of-range inference argument."""
-        if not (0.0 <= emo_alpha <= 1.0):
-            raise ValueError(f"emo_alpha must be in [0.0, 1.0], got {emo_alpha}")
-        if interval_silence < 0:
-            raise ValueError(f"interval_silence must be >= 0 ms, got {interval_silence}")
-        if num_beams < 1:
-            raise ValueError(f"num_beams must be >= 1, got {num_beams}")
-        if temperature <= 0.0:
-            raise ValueError(f"temperature must be > 0.0, got {temperature}")
-        if top_k < 0:
-            raise ValueError(f"top_k must be >= 0, got {top_k}")
-        if not (0.0 < top_p <= 1.0):
-            raise ValueError(f"top_p must be in (0.0, 1.0], got {top_p}")
-        if not text or not text.strip():
-            raise ValueError("text must be a non-empty string")
-
-    def _resolve_emotion_inputs(
-        self,
-        *,
-        use_emo_text: bool,
-        emo_text: str | None,
-        text: str,
-        emo_vector: Sequence[float] | None,
-        emo_alpha: float,
-        emo_audio_prompt: Path | None,
-        spk_audio_prompt: Path,
-    ) -> tuple[Path, float, Sequence[float] | None]:
-        """Resolve and normalise emotion-related inputs, returning (emo_audio_prompt, emo_alpha, emo_vector)."""
-        if use_emo_text or emo_vector is not None:
-            # Using text/vector guidance: drop external emotion reference voice
-            # so that only the computed vector drives emotion mixing.
-            emo_audio_prompt = None
-
-        if use_emo_text:
-            # Auto-generate emotion vectors from the text prompt.
-            emo_text = emo_text or text
-            emo_dict = self.qwen_emo.inference(emo_text)
-            logger.info("detected emotion vectors from text: %s", emo_dict)
-            # Order of values is critical; must match EMO_NUM.
-            emo_vector = list(emo_dict.values())
-
-        if emo_vector is not None:
-            # Pre-apply alpha scaling to the vector instead of using alpha mixing later.
-            emo_vector_scale = max(0.0, min(1.0, emo_alpha))
-            if emo_vector_scale != 1.0:  # noqa: RUF069
-                emo_vector = [int(x * emo_vector_scale * 10_000) / 10_000 for x in emo_vector]
-                logger.info("scaled emotion vectors to %sx: %s", emo_vector_scale, emo_vector)
-
-        if emo_audio_prompt is None:
-            # No external emotion reference: fall back to speaker audio, alpha forced to 1.
-            emo_audio_prompt = spk_audio_prompt
-            emo_alpha = 1.0
-
-        return emo_audio_prompt, emo_alpha, emo_vector
 
     # ------------------------------------------------------------------
 
@@ -258,8 +255,8 @@ class IndexTTS2:
         top_k: int = 30,
         top_p: float = 0.8,
     ) -> Path | Generator[Tensor] | None:
-        self._validate_infer_args(emo_alpha, interval_silence, num_beams, temperature, top_k, top_p, text)
-        emo_audio_prompt, emo_alpha, emo_vector = self._resolve_emotion_inputs(
+        _validate_infer_args(emo_alpha, interval_silence, num_beams, temperature, top_k, top_p, text)
+        emo_audio_prompt, emo_alpha, emo_vector = _resolve_emotion_inputs(
             use_emo_text=use_emo_text,
             emo_text=emo_text,
             text=text,
@@ -472,11 +469,6 @@ class IndexTTS2:
         matrix = weight_vector.unsqueeze(1) * matrix
         matrix = matrix.sum(dim=0)
         return matrix.unsqueeze(0)
-
-    def _get_matrix(self, filename: str) -> tuple[Tensor, ...]:
-        path = hf.hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=filename)
-        data = cast(Tensor, torch.load(path, map_location=torch.get_default_device()))
-        return data.split(EMO_NUM)
 
     @torch.inference_mode()
     @beartype

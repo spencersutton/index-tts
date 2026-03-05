@@ -68,6 +68,8 @@ def main() -> None:
     logger.info("Importing IndexTTS2...")
     from indextts.infer_v2 import IndexTTS2
 
+    torch.set_default_device(args.device)
+
     profiler = pyinstrument.Profiler()
     if args.profile:
         profiler.start()

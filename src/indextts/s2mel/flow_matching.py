@@ -55,8 +55,8 @@ class CFM(nn.Module):
         """
         B, T, _ = mu.shape
         assert prompt.size(1) == N_MELS, f"Expected prompt to have {N_MELS} mel bins, got {prompt.size(1)}"
-        x = torch.randn([B, prompt.size(1), T], device=mu.device)
-        t_span: Final = torch.linspace(0, 1, diffusion_steps + 1, device=mu.device)
+        x = torch.randn([B, prompt.size(1), T])
+        t_span: Final = torch.linspace(0, 1, diffusion_steps + 1)
 
         prompt_len: Final = prompt.size(-1)
 

@@ -122,7 +122,7 @@ class UnifiedVoice(nn.Module):
         del self.gpt.wpe
 
         def wpe_override(x: Tensor) -> Tensor:
-            return torch.zeros((x.shape[0], x.shape[1], self.voice_dim), device=x.device)
+            return torch.zeros((x.shape[0], x.shape[1], self.voice_dim))
 
         self.gpt.wpe = cast(nn.Embedding, wpe_override)
         # Built-in token embeddings are unused.
@@ -208,7 +208,7 @@ class UnifiedVoice(nn.Module):
             text_input = row[valid_mask]
             text_input = F.pad(text_input, (1, 0), value=START_TEXT_TOKEN)
             text_input = F.pad(text_input, (0, 1), value=STOP_TEXT_TOKEN)
-            text_input_pos = torch.arange(text_input.size(-1), device=inputs.device)
+            text_input_pos = torch.arange(text_input.size(-1))
 
             text_emb = self.text_embedding(text_input) + self.text_pos_embedding.emb(text_input_pos)
 

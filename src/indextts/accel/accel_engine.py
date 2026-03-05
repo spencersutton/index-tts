@@ -176,18 +176,18 @@ class AccelInferenceEngine:
         max_bs = max(GRAPH_BS)
         max_num_blocks = (2048 + self.block_size - 1) // self.block_size
         model_dtype = next(self.model.parameters()).dtype
-        input_ids = torch.ones(max_bs, dtype=torch.int64, device="cuda")
-        positions = torch.ones(max_bs, dtype=torch.int64, device="cuda")
-        slot_mapping = torch.zeros(max_bs, dtype=torch.int32, device="cuda")
-        context_lens = torch.zeros(max_bs, dtype=torch.int32, device="cuda")
-        block_tables = torch.zeros(max_bs, max_num_blocks, dtype=torch.int32, device="cuda")
-        outputs = torch.zeros(max_bs, self.hidden_size, dtype=model_dtype, device="cuda")
-        inputs_embeds_buffer = torch.zeros(max_bs, self.hidden_size, dtype=model_dtype, device="cuda")
+        input_ids = torch.ones(max_bs, dtype=torch.int64)
+        positions = torch.ones(max_bs, dtype=torch.int64)
+        slot_mapping = torch.zeros(max_bs, dtype=torch.int32)
+        context_lens = torch.zeros(max_bs, dtype=torch.int32)
+        block_tables = torch.zeros(max_bs, max_num_blocks, dtype=torch.int32)
+        outputs = torch.zeros(max_bs, self.hidden_size, dtype=model_dtype)
+        inputs_embeds_buffer = torch.zeros(max_bs, self.hidden_size, dtype=model_dtype)
 
         for bs in reversed(GRAPH_BS):
             graph = torch.cuda.CUDAGraph()
 
-            slot_mapping[:bs] = torch.arange(bs, dtype=torch.int32, device="cuda")
+            slot_mapping[:bs] = torch.arange(bs, dtype=torch.int32)
             context_lens[:bs] = bs + 1
             block_tables[:bs, :] = 0
 
@@ -363,9 +363,9 @@ class AccelInferenceEngine:
 
         start_token_id = input_ids[0, -1] if input_ids.size(1) > 0 else 8192
 
-        start_emb = tts_mel_embedding(torch.tensor([[start_token_id]], device="cuda"))  # [1, 1, hidden_dim]
+        start_emb = tts_mel_embedding(torch.tensor([[start_token_id]]))  # [1, 1, hidden_dim]
 
-        start_pos = torch.tensor([[tts_embeddings.size(1)]], device="cuda", dtype=torch.long)
+        start_pos = torch.tensor([[tts_embeddings.size(1)]], dtype=torch.long)
         pos_emb = tts_text_pos_embedding.emb(start_pos)
         start_emb += pos_emb
         start_emb = start_emb.repeat(batch_size, 1, 1)
@@ -441,7 +441,7 @@ class AccelInferenceEngine:
                 full_sequence = prompt_tokens + generated_tokens[i]
                 output_ids.append(full_sequence)
 
-            return torch.tensor(output_ids, dtype=torch.long, device=device)
+            return torch.tensor(output_ids, dtype=torch.long)
 
         remaining_tokens = max_new_tokens - 1
 
@@ -515,7 +515,7 @@ class AccelInferenceEngine:
         max_length = max(len(seq) for seq in output_ids)
         padded_output_ids = [seq + [pad_token] * (max_length - len(seq)) for seq in output_ids]
 
-        output = torch.tensor(padded_output_ids, dtype=torch.long, device=device)
+        output = torch.tensor(padded_output_ids, dtype=torch.long)
 
         assert output.size(0) == batch_size, f"Output batch size mismatch: {output.size(0)} != {batch_size}"
 

@@ -20,11 +20,11 @@ class LearnedPositionEmbeddings(nn.Module):
     @override
     @beartype
     def forward(self, x: int) -> Float[Tensor, "seq dim"]:
-        return self.emb(torch.arange(x, device=self.emb.weight.device))
+        return self.emb(torch.arange(x))
 
     @beartype
     def get_fixed_embedding(self, index: int) -> Float[Tensor, "1 1 dim"]:
-        return self.emb(torch.tensor([index], device=self.emb.weight.device)).unsqueeze(0)
+        return self.emb(torch.tensor([index]).unsqueeze(0))
 
     @patch_call(forward)
     def __call__(self) -> None: ...

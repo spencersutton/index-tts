@@ -333,7 +333,7 @@ class IndexTTS2:
         weight_vector = None
         emotion_matrix = None
         if emo_vector is not None:
-            weight_vector = torch.tensor(emo_vector, device=self.device)
+            weight_vector = torch.tensor(emo_vector)
             emotion_matrix = self._generate_emotion_matrix(weight_vector, style, use_random=use_random)
 
         emotion_conditioning_embedding = self._extract_emotion_features(emo_audio_prompt)
@@ -364,7 +364,7 @@ class IndexTTS2:
             )
 
             text_tokens = self.tokenizer.convert_tokens_to_ids(sent)
-            text_tokens = torch.tensor(text_tokens, dtype=torch.int32, device=self.device).unsqueeze(0)
+            text_tokens = torch.tensor(text_tokens, dtype=torch.int32).unsqueeze(0)
 
             with torch.inference_mode():
                 with torch.autocast(self.device.type, dtype=self.dtype), gpt_gen_time:
@@ -444,7 +444,7 @@ class IndexTTS2:
         codes: Int[Tensor, "batch time"],
     ) -> Float[Tensor, "batch mel_bins time"]:
         semantic_inference = self.semantic_codec.quantizer.vq2emb(codes.unsqueeze(1)).mT
-        target_lengths = (torch.tensor(code_lens, device=self.device) * 1.72).long().max().item()
+        target_lengths = (torch.tensor(code_lens) * 1.72).long().max().item()
 
         cond = self.length_regulator.__call__(semantic_inference, ylens=int(target_lengths))
         cond = torch.cat([prompt_condition, cond], dim=1)

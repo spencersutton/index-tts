@@ -12,13 +12,14 @@ from jaxtyping import Float, Int
 from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
 
-from indextts.util import patch_call, unwrap
+from indextts.util import patch_call
 
 
 def _init_weights(m: nn.Module) -> None:
     if isinstance(m, (nn.Conv1d, nn.Linear)):
+        assert m.bias is not None
         nn.init.trunc_normal_(m.weight, std=0.02)
-        nn.init.constant_(unwrap(m.bias), 0)
+        nn.init.constant_(m.bias, 0)
 
 
 class _ConvNeXtBlock(nn.Module):

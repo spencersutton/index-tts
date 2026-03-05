@@ -11,7 +11,7 @@ from indextts.accel.attention import ForwardContext, get_forward_context, reset_
 from indextts.accel.gpt2_accel import GPT2AccelModel
 from indextts.accel.kv_manager import KVCacheManager, Seq
 from indextts.gpt.learned_pos_emb import LearnedPositionEmbeddings
-from indextts.util import patch_call, unwrap
+from indextts.util import patch_call
 
 logger = logging.getLogger(__name__)
 
@@ -204,7 +204,8 @@ class AccelInferenceEngine:
             inputs_embeds_buffer[:bs] = emb + pos_emb
             model_output = self.model(inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True)
             assert not isinstance(model_output, tuple)
-            hidden_state = unwrap(model_output.last_hidden_state)
+            hidden_state = model_output.last_hidden_state
+            assert hidden_state is not None
             outputs[:bs] = hidden_state.squeeze(1) if hidden_state.dim() == 3 else hidden_state
 
             with torch.cuda.graph(graph, self.graph_pool):
@@ -216,7 +217,8 @@ class AccelInferenceEngine:
                 inputs_embeds_buffer[:bs] = emb + pos_emb
                 model_output = self.model(inputs_embeds=inputs_embeds_buffer[:bs].unsqueeze(1), return_dict=True)
                 assert not isinstance(model_output, tuple)
-                hidden_state = unwrap(model_output.last_hidden_state)
+                hidden_state = model_output.last_hidden_state
+                assert hidden_state is not None
                 outputs[:bs] = hidden_state.squeeze(1) if hidden_state.dim() == 3 else hidden_state
 
             if self.graph_pool is None:
@@ -257,8 +259,9 @@ class AccelInferenceEngine:
             inputs_embeds += pos_emb
             model_output = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True)
             assert not isinstance(model_output, tuple)
-            out = unwrap(model_output.last_hidden_state)
-            return out.squeeze(1) if out.dim() == 3 else out
+            hidden_state = model_output.last_hidden_state
+            assert hidden_state is not None
+            return hidden_state.squeeze(1) if hidden_state.dim() == 3 else hidden_state
 
         graph_bs = next((x for x in GRAPH_BS if x >= bs), None)
         if graph_bs is None:
@@ -270,8 +273,9 @@ class AccelInferenceEngine:
             inputs_embeds += pos_emb
             model_output = self.model(inputs_embeds=inputs_embeds.unsqueeze(1), return_dict=True)
             assert not isinstance(model_output, tuple)
-            out = unwrap(model_output.last_hidden_state)
-            return out.squeeze(1) if out.dim() == 3 else out
+            hidden_state = model_output.last_hidden_state
+            assert hidden_state is not None
+            return hidden_state.squeeze(1) if hidden_state.dim() == 3 else hidden_state
 
         graph = self.graphs[graph_bs]
         graph_vars = self.graph_vars
@@ -383,7 +387,8 @@ class AccelInferenceEngine:
 
         model_output = self.model(inputs_embeds=full_embeddings, return_dict=True)
         assert not isinstance(model_output, tuple)
-        hidden_states = unwrap(model_output.last_hidden_state)
+        hidden_states = model_output.last_hidden_state
+        assert hidden_states is not None
 
         if is_varlen_batch:
             context = get_forward_context()

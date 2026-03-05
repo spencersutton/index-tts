@@ -11,7 +11,6 @@ from typing import Any
 import gradio as gr
 
 from indextts.infer_v2 import IndexTTS2, normalize_emo_vec
-from indextts.util import unwrap
 from tools.i18n.i18n import I18nAuto
 
 logger = logging.getLogger(__name__)
@@ -101,7 +100,7 @@ def format_glossary_markdown() -> str:
 
 def gen_single(
     emo_control_method: int | gr.Radio,
-    prompt: Path | None,
+    prompt: Path,
     text: str,
     emo_ref_path: Path | None,
     emo_weight: float,
@@ -158,7 +157,7 @@ def gen_single(
         num_beams=num_beams,
         output_path=output_path,
         repetition_penalty=float(repetition_penalty),
-        spk_audio_prompt=unwrap(prompt),
+        spk_audio_prompt=prompt,
         temperature=float(temperature),
         text=text,
         top_k=int(top_k) if int(top_k) > 0 else None,

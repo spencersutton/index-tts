@@ -31,20 +31,19 @@ CFM_FILE = "cfm.safetensors"
 LENGTH_REGULATOR_FILE = "length_regulator.safetensors"
 
 
-def _restore_model_weights[T: nn.Module](module: type[T], device: torch.device, filename: str) -> T:
+def _restore_model_weights[T: nn.Module](module: type[T], filename: str) -> T:
     """Instantiate *module* on the meta device, load safetensors weights from *filename*, and return an eval model.
 
     Args:
         module: The ``nn.Module`` subclass to instantiate (called with no arguments).
-        device: Target device to which the loaded tensors are assigned.
         filename: Checkpoint filename relative to :data:`CHECKPOINT_DIR`.
 
     Returns:
         The module in eval mode with weights assigned from the safetensors file.
     """
     path = CHECKPOINT_DIR / filename
-    logger.info(">> Restoring %s weights from: %s to %s...", filename, path, device)
-    data = safetensors.torch.load_file(path, device=str(device))
+    logger.info(">> Restoring %s weights from: %s...", filename, path)
+    data = safetensors.torch.load_file(path, device=str(torch.get_default_device()))
     with torch.device("meta"):
         model = module()
     model.load_state_dict(data, assign=True)
@@ -60,14 +59,14 @@ def load_feature_extractor() -> transformers.SeamlessM4TFeatureExtractor:
     return transformers.SeamlessM4TFeatureExtractor.from_pretrained("facebook/w2v-bert-2.0")
 
 
-def load_unified_voice(device: torch.device) -> UnifiedVoice:
+def load_unified_voice() -> UnifiedVoice:
     """Load the UnifiedVoice GPT model from the local safetensors checkpoint."""
-    return _restore_model_weights(UnifiedVoice, device, GPT_FILE)
+    return _restore_model_weights(UnifiedVoice, GPT_FILE)
 
 
-def load_campplus(device: torch.device) -> CAMPPlus:
+def load_campplus() -> CAMPPlus:
     """Load the CAMPPlus speaker-embedding model from the local safetensors checkpoint."""
-    return _restore_model_weights(CAMPPlus, device, CAMPPLUS_FILE)
+    return _restore_model_weights(CAMPPlus, CAMPPLUS_FILE)
 
 
 def load_tokenizer(normalizer: TextNormalizer) -> TextTokenizer:
@@ -84,22 +83,22 @@ def load_tokenizer(normalizer: TextNormalizer) -> TextTokenizer:
     return tokenizer
 
 
-def load_semantic_codec(device: torch.device) -> RepCodec:
+def load_semantic_codec() -> RepCodec:
     """Load the semantic codec (RepCodec) from the local safetensors checkpoint."""
-    return _restore_model_weights(RepCodec, device, SEMANTIC_CODEC_FILE)
+    return _restore_model_weights(RepCodec, SEMANTIC_CODEC_FILE)
 
 
-def load_semantic_model(device: torch.device) -> transformers.Wav2Vec2BertModel:
+def load_semantic_model() -> transformers.Wav2Vec2BertModel:
     """Download (or use cached) the Wav2Vec2Bert semantic model and move it to *device*."""
     with Timer() as t:
         model = transformers.Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0")
-        model = model.eval().to(device)
+        model = model.eval().to(torch.get_default_device())
     logger.info(">> semantic_model weights restored in %.2f seconds", t.elapsed)
     return model
 
 
 @beartype
-def load_semantic_stats(device: torch.device) -> tuple[Float[Tensor, "dim"], Float[Tensor, "dim"]]:
+def load_semantic_stats() -> tuple[Float[Tensor, "dim"], Float[Tensor, "dim"]]:
     """Download the w2v-bert2 mean/variance statistics and return ``(mean, std)`` tensors.
 
     These are used to normalise the semantic model's hidden-state features
@@ -107,37 +106,36 @@ def load_semantic_stats(device: torch.device) -> tuple[Float[Tensor, "dim"], Flo
     """
     with Timer() as t:
         path = hf.hf_hub_download("amphion/dualcodec", "w2vbert2_mean_var_stats_emilia.pt")
-        raw = torch.load(path)
+        raw = torch.load(path, map_location=torch.get_default_device())
         assert isinstance(raw, dict), f"Expected dict from {path}, got {type(raw).__name__}"
         data = cast(TensorDict, raw)
-        mean = data["mean"].to(device)
-        std = data["var"].sqrt().to(device)
+        mean = data["mean"]
+        std = data["var"].sqrt()
 
     logger.info(">> semantic_mean and semantic_std weights restored in %.2f seconds from: %s", t.elapsed, path)
     return mean, std
 
 
-def load_cfm(device: torch.device) -> CFM:
+def load_cfm() -> CFM:
     """Load the Conditional Flow Matching (CFM) mel-spectrogram decoder from the local safetensors checkpoint."""
-    return _restore_model_weights(CFM, device, CFM_FILE)
+    return _restore_model_weights(CFM, CFM_FILE)
 
 
-def load_length_regulator(device: torch.device) -> InterpolateRegulator:
+def load_length_regulator() -> InterpolateRegulator:
     """Load the InterpolateRegulator from the local safetensors checkpoint."""
-    return _restore_model_weights(InterpolateRegulator, device, LENGTH_REGULATOR_FILE)
+    return _restore_model_weights(InterpolateRegulator, LENGTH_REGULATOR_FILE)
 
 
-def load_bigvgan(device: torch.device, use_cuda_kernel: bool) -> BigVGAN:
+def load_bigvgan(use_cuda_kernel: bool) -> BigVGAN:
     """Download (or use cached) the BigVGAN vocoder and move it to *device*.
 
     Args:
-        device: Target device for the returned model.
         use_cuda_kernel: Whether to enable the fused CUDA activation kernel.
     """
     with Timer() as t:
         model = BigVGAN.from_pretrained("nvidia/bigvgan_v2_22khz_80band_256x", use_cuda_kernel=use_cuda_kernel)
         model.remove_weight_norm()
-        model = model.eval().to(device)
+        model = model.eval().to(torch.get_default_device())
 
     logger.info(">> bigvgan weights restored in %.2f seconds", t.elapsed)
     return model

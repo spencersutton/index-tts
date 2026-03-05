@@ -90,7 +90,6 @@ def _load_and_cut_audio(path: Path, sample_rate: int | None = None) -> tuple[Flo
 
 
 class IndexTTS2:
-    device: torch.device
     dtype: torch.dtype
     use_accel: bool
 
@@ -135,21 +134,18 @@ class IndexTTS2:
             use_torch_compile (bool): whether to use torch.compile for optimization or not.
         """
 
-        self.device = (
-            torch.device(device) if device else torch.accelerator.current_accelerator() or torch.get_default_device()
-        )
         self.dtype = torch.get_default_dtype()
         self.use_accel = use_accel
 
-        self.gpt = load.load_unified_voice(self.device)
-        self.semantic_model = load.load_semantic_model(self.device)
-        self.semantic_mean, self.semantic_std = load.load_semantic_stats(self.device)
-        self.semantic_codec = load.load_semantic_codec(self.device)
-        self.bigvgan = load.load_bigvgan(self.device, use_cuda_kernel)
-        self.campplus_model = load.load_campplus(self.device)
+        self.gpt = load.load_unified_voice()
+        self.semantic_model = load.load_semantic_model()
+        self.semantic_mean, self.semantic_std = load.load_semantic_stats()
+        self.semantic_codec = load.load_semantic_codec()
+        self.bigvgan = load.load_bigvgan(use_cuda_kernel)
+        self.campplus_model = load.load_campplus()
         self.tokenizer = load.load_tokenizer(self.normalizer)
-        self.cfm = load.load_cfm(self.device)
-        self.length_regulator = load.load_length_regulator(self.device)
+        self.cfm = load.load_cfm()
+        self.length_regulator = load.load_length_regulator()
 
         post_init_gpt2_config(self.gpt)
 
@@ -367,7 +363,7 @@ class IndexTTS2:
             text_tokens = torch.tensor(text_tokens, dtype=torch.int32).unsqueeze(0)
 
             with torch.inference_mode():
-                with torch.autocast(self.device.type, dtype=self.dtype), gpt_gen_time:
+                with torch.autocast(torch.get_default_device().type, dtype=self.dtype), gpt_gen_time:
                     speech_conditioning_latent = self.gpt.process_speech_condition(speaker_conditioning_embedding)
                     codes = self.gpt.inference_speech(
                         speech_conditioning_latent,
@@ -456,7 +452,7 @@ class IndexTTS2:
         logger.info(">> extracting emotion features from prompt: %s", prompt)
         audio, _ = _load_and_cut_audio(prompt, sample_rate=WIDEBAND_SR)
         inputs = self.extract_features(audio.numpy(), sampling_rate=WIDEBAND_SR, return_tensors="pt")
-        inputs = cast(Mapping[str, Tensor], inputs.to(self.device))
+        inputs = cast(Mapping[str, Tensor], inputs.to(torch.get_default_device()))
         return self._get_emb(inputs["input_features"], inputs["attention_mask"])
 
     @beartype
@@ -479,7 +475,7 @@ class IndexTTS2:
 
     def _get_matrix(self, filename: str) -> tuple[Tensor, ...]:
         path = hf.hf_hub_download(repo_id="IndexTeam/IndexTTS-2", filename=filename)
-        data = cast(Tensor, torch.load(path, map_location=self.device))
+        data = cast(Tensor, torch.load(path, map_location=torch.get_default_device()))
         return data.split(EMO_NUM)
 
     @torch.inference_mode()
@@ -507,13 +503,15 @@ class IndexTTS2:
         audio_22k = torchaudio.functional.resample(audio, sr, SAMPLING_RATE)
 
         mel = mel_spectrogram(audio_22k)
-        feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(self.device), num_mel_bins=N_MELS)
+        feat = torchaudio.compliance.kaldi.fbank(audio_16k.to(torch.get_default_device()), num_mel_bins=N_MELS)
         feat -= feat.mean(dim=0, keepdim=True)  # feat2: Another filter energy group feature [922, 80]
         style = self.campplus_model(feat.unsqueeze(0))  # Global style of the reference audio [1, STYLE_DIM]
 
         inputs = cast(
             Mapping[str, Tensor],
-            self.extract_features(audio_16k, sampling_rate=WIDEBAND_SR, return_tensors="pt").to(self.device),
+            self.extract_features(audio_16k, sampling_rate=WIDEBAND_SR, return_tensors="pt").to(
+                torch.get_default_device()
+            ),
         )
 
         embedding = self._get_emb(inputs["input_features"], inputs["attention_mask"])

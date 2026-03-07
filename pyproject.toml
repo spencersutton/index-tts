@@ -29,10 +29,12 @@ dependencies = [
   # WARNING: Ensure that you don't have a local `uv.toml` which overrides PyPI
   # while generating the lockfile: https://github.com/astral-sh/uv/issues/15741
   "accelerate==1.8.1",
+  "alias-free-torch>=0.0.6",
   "cn2an==0.5.22",
   "cython==3.0.7",
   "descript-audiotools==0.7.2",
   "einops>=0.8.1",
+  "encodec>=0.1.1",
   "ffmpeg-python==0.2.0",
   "g2p-en==2.1.0",
   "jieba==0.42.1",
@@ -56,10 +58,11 @@ dependencies = [
   "torchaudio==2.8.*",
   "tqdm>=4.67.1",
   "transformers==4.52.1",
-
   # Use "wetext" on Windows/Mac, otherwise "WeTextProcessing" on Linux.
+  "vocos>=0.1.0",
   "wetext>=0.0.9; sys_platform != 'linux'",
   "WeTextProcessing; sys_platform == 'linux'",
+  "x-transformers>=2.16.2",
 ]
 
 [project.optional-dependencies]

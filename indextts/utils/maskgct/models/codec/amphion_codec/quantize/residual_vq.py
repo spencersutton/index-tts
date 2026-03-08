@@ -10,8 +10,12 @@ import torch.nn as nn
 from indextts.utils.maskgct.models.codec.amphion_codec.quantize.factorized_vector_quantize import (
     FactorizedVectorQuantize,
 )
-from indextts.utils.maskgct.models.codec.amphion_codec.quantize.vector_quantize import VectorQuantize
-from indextts.utils.maskgct.models.codec.amphion_codec.quantize.lookup_free_quantize import LookupFreeQuantize
+from indextts.utils.maskgct.models.codec.amphion_codec.quantize.vector_quantize import (
+    VectorQuantize,
+)
+from indextts.utils.maskgct.models.codec.amphion_codec.quantize.lookup_free_quantize import (
+    LookupFreeQuantize,
+)
 
 
 class ResidualVQ(nn.Module):
@@ -48,17 +52,15 @@ class ResidualVQ(nn.Module):
         else:
             raise ValueError(f"Unknown quantizer type {quantizer_type}")
 
-        self.quantizers = nn.ModuleList(
-            [
-                VQ(
-                    input_dim=input_dim,
-                    codebook_size=codebook_size,
-                    codebook_dim=codebook_dim,
-                    **kwargs,
-                )
-                for _ in range(num_quantizers)
-            ]
-        )
+        self.quantizers = nn.ModuleList([
+            VQ(
+                input_dim=input_dim,
+                codebook_size=codebook_size,
+                codebook_dim=codebook_dim,
+                **kwargs,
+            )
+            for _ in range(num_quantizers)
+        ])
 
     def forward(self, z, n_quantizers: int = None):
         """

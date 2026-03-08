@@ -27,15 +27,13 @@ class MPD(nn.Module):
     def __init__(self, period):
         super().__init__()
         self.period = period
-        self.convs = nn.ModuleList(
-            [
-                WNConv2d(1, 32, (5, 1), (3, 1), padding=(2, 0)),
-                WNConv2d(32, 128, (5, 1), (3, 1), padding=(2, 0)),
-                WNConv2d(128, 512, (5, 1), (3, 1), padding=(2, 0)),
-                WNConv2d(512, 1024, (5, 1), (3, 1), padding=(2, 0)),
-                WNConv2d(1024, 1024, (5, 1), 1, padding=(2, 0)),
-            ]
-        )
+        self.convs = nn.ModuleList([
+            WNConv2d(1, 32, (5, 1), (3, 1), padding=(2, 0)),
+            WNConv2d(32, 128, (5, 1), (3, 1), padding=(2, 0)),
+            WNConv2d(128, 512, (5, 1), (3, 1), padding=(2, 0)),
+            WNConv2d(512, 1024, (5, 1), (3, 1), padding=(2, 0)),
+            WNConv2d(1024, 1024, (5, 1), 1, padding=(2, 0)),
+        ])
         self.conv_post = WNConv2d(
             1024, 1, kernel_size=(3, 1), padding=(1, 0), act=False
         )
@@ -64,16 +62,14 @@ class MPD(nn.Module):
 class MSD(nn.Module):
     def __init__(self, rate: int = 1, sample_rate: int = 44100):
         super().__init__()
-        self.convs = nn.ModuleList(
-            [
-                WNConv1d(1, 16, 15, 1, padding=7),
-                WNConv1d(16, 64, 41, 4, groups=4, padding=20),
-                WNConv1d(64, 256, 41, 4, groups=16, padding=20),
-                WNConv1d(256, 1024, 41, 4, groups=64, padding=20),
-                WNConv1d(1024, 1024, 41, 4, groups=256, padding=20),
-                WNConv1d(1024, 1024, 5, 1, padding=2),
-            ]
-        )
+        self.convs = nn.ModuleList([
+            WNConv1d(1, 16, 15, 1, padding=7),
+            WNConv1d(16, 64, 41, 4, groups=4, padding=20),
+            WNConv1d(64, 256, 41, 4, groups=16, padding=20),
+            WNConv1d(256, 1024, 41, 4, groups=64, padding=20),
+            WNConv1d(1024, 1024, 41, 4, groups=256, padding=20),
+            WNConv1d(1024, 1024, 5, 1, padding=2),
+        ])
         self.conv_post = WNConv1d(1024, 1, 3, 1, padding=1, act=False)
         self.sample_rate = sample_rate
         self.rate = rate
@@ -133,15 +129,13 @@ class MRD(nn.Module):
         self.bands = bands
 
         ch = 32
-        convs = lambda: nn.ModuleList(
-            [
-                WNConv2d(2, ch, (3, 9), (1, 1), padding=(1, 4)),
-                WNConv2d(ch, ch, (3, 9), (1, 2), padding=(1, 4)),
-                WNConv2d(ch, ch, (3, 9), (1, 2), padding=(1, 4)),
-                WNConv2d(ch, ch, (3, 9), (1, 2), padding=(1, 4)),
-                WNConv2d(ch, ch, (3, 3), (1, 1), padding=(1, 1)),
-            ]
-        )
+        convs = lambda: nn.ModuleList([
+            WNConv2d(2, ch, (3, 9), (1, 1), padding=(1, 4)),
+            WNConv2d(ch, ch, (3, 9), (1, 2), padding=(1, 4)),
+            WNConv2d(ch, ch, (3, 9), (1, 2), padding=(1, 4)),
+            WNConv2d(ch, ch, (3, 9), (1, 2), padding=(1, 4)),
+            WNConv2d(ch, ch, (3, 3), (1, 1), padding=(1, 1)),
+        ])
         self.band_convs = nn.ModuleList([convs() for _ in range(len(self.bands))])
         self.conv_post = WNConv2d(ch, 1, (3, 3), (1, 1), padding=(1, 1), act=False)
 

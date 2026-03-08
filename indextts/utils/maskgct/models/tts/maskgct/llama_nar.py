@@ -206,20 +206,18 @@ class DiffLlama(LlamaModel):
     ):
         super().__init__(config)
 
-        self.layers = nn.ModuleList(
-            [
-                LlamaNARDecoderLayer(
-                    LlamaConfig(
-                        hidden_size=hidden_size,
-                        num_attention_heads=num_heads,
-                        max_position_embeddings=4096,
-                        intermediate_size=hidden_size * 4,
-                    ),
-                    layer_idx=i,
-                )
-                for i in range(num_layers)
-            ]
-        )
+        self.layers = nn.ModuleList([
+            LlamaNARDecoderLayer(
+                LlamaConfig(
+                    hidden_size=hidden_size,
+                    num_attention_heads=num_heads,
+                    max_position_embeddings=4096,
+                    intermediate_size=hidden_size * 4,
+                ),
+                layer_idx=i,
+            )
+            for i in range(num_layers)
+        ])
 
         self.norm = LlamaAdaptiveRMSNorm(hidden_size, dim_cond=hidden_size)
 
@@ -431,20 +429,18 @@ class DiffLlamaPrefix(LlamaModel):
     ):
         super().__init__(config)
 
-        self.layers = nn.ModuleList(
-            [
-                LlamaNARDecoderLayer(
-                    LlamaConfig(
-                        hidden_size=hidden_size,
-                        num_attention_heads=num_heads,
-                        max_position_embeddings=4096,
-                        intermediate_size=hidden_size * 4,
-                    ),
-                    layer_idx=i,
-                )
-                for i in range(num_layers)
-            ]
-        )
+        self.layers = nn.ModuleList([
+            LlamaNARDecoderLayer(
+                LlamaConfig(
+                    hidden_size=hidden_size,
+                    num_attention_heads=num_heads,
+                    max_position_embeddings=4096,
+                    intermediate_size=hidden_size * 4,
+                ),
+                layer_idx=i,
+            )
+            for i in range(num_layers)
+        ])
 
         self.norm = LlamaAdaptiveRMSNorm(hidden_size, dim_cond=hidden_size)
 

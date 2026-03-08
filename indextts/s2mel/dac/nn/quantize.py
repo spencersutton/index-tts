@@ -8,6 +8,7 @@ from einops import rearrange
 
 from indextts.s2mel.dac.nn.layers import WNConv1d
 
+
 class VectorQuantizeLegacy(nn.Module):
     """
     Implementation of VQ similar to Karpathy's repo:
@@ -47,8 +48,12 @@ class VectorQuantizeLegacy(nn.Module):
         z_q, indices = self.decode_latents(z)
 
         if z_mask is not None:
-            commitment_loss = (F.mse_loss(z_e, z_q.detach(), reduction="none").mean(1) * z_mask).sum() / z_mask.sum()
-            codebook_loss = (F.mse_loss(z_q, z_e.detach(), reduction="none").mean(1) * z_mask).sum() / z_mask.sum()
+            commitment_loss = (
+                F.mse_loss(z_e, z_q.detach(), reduction="none").mean(1) * z_mask
+            ).sum() / z_mask.sum()
+            codebook_loss = (
+                F.mse_loss(z_q, z_e.detach(), reduction="none").mean(1) * z_mask
+            ).sum() / z_mask.sum()
         else:
             commitment_loss = F.mse_loss(z_e, z_q.detach())
             codebook_loss = F.mse_loss(z_q, z_e.detach())
@@ -81,6 +86,7 @@ class VectorQuantizeLegacy(nn.Module):
         indices = rearrange((-dist).max(1)[1], "(b t) -> b t", b=latents.size(0))
         z_q = self.decode_code(indices)
         return z_q, indices
+
 
 class VectorQuantize(nn.Module):
     """
@@ -131,8 +137,12 @@ class VectorQuantize(nn.Module):
         z_q, indices = self.decode_latents(z_e)
 
         if z_mask is not None:
-            commitment_loss = (F.mse_loss(z_e, z_q.detach(), reduction="none").mean(1) * z_mask).sum() / z_mask.sum()
-            codebook_loss = (F.mse_loss(z_q, z_e.detach(), reduction="none").mean(1) * z_mask).sum() / z_mask.sum()
+            commitment_loss = (
+                F.mse_loss(z_e, z_q.detach(), reduction="none").mean(1) * z_mask
+            ).sum() / z_mask.sum()
+            codebook_loss = (
+                F.mse_loss(z_q, z_e.detach(), reduction="none").mean(1) * z_mask
+            ).sum() / z_mask.sum()
         else:
             commitment_loss = F.mse_loss(z_e, z_q.detach())
             codebook_loss = F.mse_loss(z_q, z_e.detach())
@@ -192,12 +202,10 @@ class ResidualVectorQuantize(nn.Module):
         self.codebook_dim = codebook_dim
         self.codebook_size = codebook_size
 
-        self.quantizers = nn.ModuleList(
-            [
-                VectorQuantize(input_dim, codebook_size, codebook_dim[i])
-                for i in range(n_codebooks)
-            ]
-        )
+        self.quantizers = nn.ModuleList([
+            VectorQuantize(input_dim, codebook_size, codebook_dim[i])
+            for i in range(n_codebooks)
+        ])
         self.quantizer_dropout = quantizer_dropout
 
     def forward(self, z, n_quantizers: int = None):

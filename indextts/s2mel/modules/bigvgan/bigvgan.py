@@ -42,49 +42,45 @@ class AMPBlock1(torch.nn.Module):
     """
 
     def __init__(
-            self,
-            h: AttrDict,
-            channels: int,
-            kernel_size: int = 3,
-            dilation: tuple = (1, 3, 5),
-            activation: str = None,
+        self,
+        h: AttrDict,
+        channels: int,
+        kernel_size: int = 3,
+        dilation: tuple = (1, 3, 5),
+        activation: str = None,
     ):
         super().__init__()
 
         self.h = h
 
-        self.convs1 = nn.ModuleList(
-            [
-                weight_norm(
-                    Conv1d(
-                        channels,
-                        channels,
-                        kernel_size,
-                        stride=1,
-                        dilation=d,
-                        padding=get_padding(kernel_size, d),
-                    )
+        self.convs1 = nn.ModuleList([
+            weight_norm(
+                Conv1d(
+                    channels,
+                    channels,
+                    kernel_size,
+                    stride=1,
+                    dilation=d,
+                    padding=get_padding(kernel_size, d),
                 )
-                for d in dilation
-            ]
-        )
+            )
+            for d in dilation
+        ])
         self.convs1.apply(init_weights)
 
-        self.convs2 = nn.ModuleList(
-            [
-                weight_norm(
-                    Conv1d(
-                        channels,
-                        channels,
-                        kernel_size,
-                        stride=1,
-                        dilation=1,
-                        padding=get_padding(kernel_size, 1),
-                    )
+        self.convs2 = nn.ModuleList([
+            weight_norm(
+                Conv1d(
+                    channels,
+                    channels,
+                    kernel_size,
+                    stride=1,
+                    dilation=1,
+                    padding=get_padding(kernel_size, 1),
                 )
-                for _ in range(len(dilation))
-            ]
-        )
+            )
+            for _ in range(len(dilation))
+        ])
         self.convs2.apply(init_weights)
 
         self.num_layers = len(self.convs1) + len(
@@ -103,27 +99,23 @@ class AMPBlock1(torch.nn.Module):
 
         # Activation functions
         if activation == "snake":
-            self.activations = nn.ModuleList(
-                [
-                    Activation1d(
-                        activation=activations.Snake(
-                            channels, alpha_logscale=h.snake_logscale
-                        )
+            self.activations = nn.ModuleList([
+                Activation1d(
+                    activation=activations.Snake(
+                        channels, alpha_logscale=h.snake_logscale
                     )
-                    for _ in range(self.num_layers)
-                ]
-            )
+                )
+                for _ in range(self.num_layers)
+            ])
         elif activation == "snakebeta":
-            self.activations = nn.ModuleList(
-                [
-                    Activation1d(
-                        activation=activations.SnakeBeta(
-                            channels, alpha_logscale=h.snake_logscale
-                        )
+            self.activations = nn.ModuleList([
+                Activation1d(
+                    activation=activations.SnakeBeta(
+                        channels, alpha_logscale=h.snake_logscale
                     )
-                    for _ in range(self.num_layers)
-                ]
-            )
+                )
+                for _ in range(self.num_layers)
+            ])
         else:
             raise NotImplementedError(
                 "activation incorrectly specified. check the config file and look for 'activation'."
@@ -161,32 +153,30 @@ class AMPBlock2(torch.nn.Module):
     """
 
     def __init__(
-            self,
-            h: AttrDict,
-            channels: int,
-            kernel_size: int = 3,
-            dilation: tuple = (1, 3, 5),
-            activation: str = None,
+        self,
+        h: AttrDict,
+        channels: int,
+        kernel_size: int = 3,
+        dilation: tuple = (1, 3, 5),
+        activation: str = None,
     ):
         super().__init__()
 
         self.h = h
 
-        self.convs = nn.ModuleList(
-            [
-                weight_norm(
-                    Conv1d(
-                        channels,
-                        channels,
-                        kernel_size,
-                        stride=1,
-                        dilation=d,
-                        padding=get_padding(kernel_size, d),
-                    )
+        self.convs = nn.ModuleList([
+            weight_norm(
+                Conv1d(
+                    channels,
+                    channels,
+                    kernel_size,
+                    stride=1,
+                    dilation=d,
+                    padding=get_padding(kernel_size, d),
                 )
-                for d in dilation
-            ]
-        )
+            )
+            for d in dilation
+        ])
         self.convs.apply(init_weights)
 
         self.num_layers = len(self.convs)  # Total number of conv layers
@@ -203,27 +193,23 @@ class AMPBlock2(torch.nn.Module):
 
         # Activation functions
         if activation == "snake":
-            self.activations = nn.ModuleList(
-                [
-                    Activation1d(
-                        activation=activations.Snake(
-                            channels, alpha_logscale=h.snake_logscale
-                        )
+            self.activations = nn.ModuleList([
+                Activation1d(
+                    activation=activations.Snake(
+                        channels, alpha_logscale=h.snake_logscale
                     )
-                    for _ in range(self.num_layers)
-                ]
-            )
+                )
+                for _ in range(self.num_layers)
+            ])
         elif activation == "snakebeta":
-            self.activations = nn.ModuleList(
-                [
-                    Activation1d(
-                        activation=activations.SnakeBeta(
-                            channels, alpha_logscale=h.snake_logscale
-                        )
+            self.activations = nn.ModuleList([
+                Activation1d(
+                    activation=activations.SnakeBeta(
+                        channels, alpha_logscale=h.snake_logscale
                     )
-                    for _ in range(self.num_layers)
-                ]
-            )
+                )
+                for _ in range(self.num_layers)
+            ])
         else:
             raise NotImplementedError(
                 "activation incorrectly specified. check the config file and look for 'activation'."
@@ -300,19 +286,17 @@ class BigVGAN(
         self.ups = nn.ModuleList()
         for i, (u, k) in enumerate(zip(h.upsample_rates, h.upsample_kernel_sizes)):
             self.ups.append(
-                nn.ModuleList(
-                    [
-                        weight_norm(
-                            ConvTranspose1d(
-                                h.upsample_initial_channel // (2 ** i),
-                                h.upsample_initial_channel // (2 ** (i + 1)),
-                                k,
-                                u,
-                                padding=(k - u) // 2,
-                            )
+                nn.ModuleList([
+                    weight_norm(
+                        ConvTranspose1d(
+                            h.upsample_initial_channel // (2**i),
+                            h.upsample_initial_channel // (2 ** (i + 1)),
+                            k,
+                            u,
+                            padding=(k - u) // 2,
                         )
-                    ]
-                )
+                    )
+                ])
             )
 
         # Residual blocks using anti-aliased multi-periodicity composition modules (AMP)
@@ -320,7 +304,7 @@ class BigVGAN(
         for i in range(len(self.ups)):
             ch = h.upsample_initial_channel // (2 ** (i + 1))
             for j, (k, d) in enumerate(
-                    zip(h.resblock_kernel_sizes, h.resblock_dilation_sizes)
+                zip(h.resblock_kernel_sizes, h.resblock_dilation_sizes)
             ):
                 self.resblocks.append(
                     resblock_class(h, ch, k, d, activation=h.activation)
@@ -412,20 +396,20 @@ class BigVGAN(
 
     @classmethod
     def _from_pretrained(
-            cls,
-            *,
-            model_id: str,
-            revision: str,
-            cache_dir: str,
-            force_download: bool,
-            proxies: Optional[Dict],
-            resume_download: bool,
-            local_files_only: bool,
-            token: Union[str, bool, None],
-            map_location: str = "cpu",  # Additional argument
-            strict: bool = False,  # Additional argument
-            use_cuda_kernel: bool = False,
-            **model_kwargs,
+        cls,
+        *,
+        model_id: str,
+        revision: str,
+        cache_dir: str,
+        force_download: bool,
+        proxies: Optional[Dict],
+        resume_download: bool,
+        local_files_only: bool,
+        token: Union[str, bool, None],
+        map_location: str = "cpu",  # Additional argument
+        strict: bool = False,  # Additional argument
+        use_cuda_kernel: bool = False,
+        **model_kwargs,
     ):
         """Load Pytorch pretrained weights and return the loaded model."""
 

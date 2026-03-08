@@ -47,9 +47,9 @@ def length_to_mask(length, max_len=None, dtype=None, device=None):
 
     if max_len is None:
         max_len = length.max().long().item()  # using arange to generate mask
-    mask = torch.arange(
-        max_len, device=length.device, dtype=length.dtype
-    ).expand(len(length), max_len) < length.unsqueeze(1)
+    mask = torch.arange(max_len, device=length.device, dtype=length.dtype).expand(
+        len(length), max_len
+    ) < length.unsqueeze(1)
 
     if dtype is None:
         dtype = length.dtype
@@ -153,9 +153,7 @@ class Res2NetBlock(torch.nn.Module):
     torch.Size([8, 120, 64])
     """
 
-    def __init__(
-        self, in_channels, out_channels, scale=8, kernel_size=3, dilation=1
-    ):
+    def __init__(self, in_channels, out_channels, scale=8, kernel_size=3, dilation=1):
         super().__init__()
         assert in_channels % scale == 0
         assert out_channels % scale == 0
@@ -163,17 +161,15 @@ class Res2NetBlock(torch.nn.Module):
         in_channel = in_channels // scale
         hidden_channel = out_channels // scale
 
-        self.blocks = nn.ModuleList(
-            [
-                TDNNBlock(
-                    in_channel,
-                    hidden_channel,
-                    kernel_size=kernel_size,
-                    dilation=dilation,
-                )
-                for i in range(scale - 1)
-            ]
-        )
+        self.blocks = nn.ModuleList([
+            TDNNBlock(
+                in_channel,
+                hidden_channel,
+                kernel_size=kernel_size,
+                dilation=dilation,
+            )
+            for i in range(scale - 1)
+        ])
         self.scale = scale
 
     def forward(self, x):
@@ -298,9 +294,7 @@ class AttentiveStatisticsPooling(nn.Module):
 
         def _compute_statistics(x, m, dim=2, eps=self.eps):
             mean = (m * x).sum(dim)
-            std = torch.sqrt(
-                (m * (x - mean.unsqueeze(dim)).pow(2)).sum(dim).clamp(eps)
-            )
+            std = torch.sqrt((m * (x - mean.unsqueeze(dim)).pow(2)).sum(dim).clamp(eps))
             return mean, std
 
         if lengths is None:
@@ -621,12 +615,10 @@ class Classifier(torch.nn.Module):
         self.blocks = nn.ModuleList()
 
         for block_index in range(lin_blocks):
-            self.blocks.extend(
-                [
-                    _BatchNorm1d(input_size=input_size),
-                    Linear(input_size=input_size, n_neurons=lin_neurons),
-                ]
-            )
+            self.blocks.extend([
+                _BatchNorm1d(input_size=input_size),
+                Linear(input_size=input_size, n_neurons=lin_neurons),
+            ])
             input_size = lin_neurons
 
         # Final Layer

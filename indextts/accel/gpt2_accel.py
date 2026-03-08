@@ -124,12 +124,9 @@ class GPT2AccelBlock(GPT2Block):
 class GPT2AccelModel(GPT2Model):
     def __init__(self, config):
         super().__init__(config)
-        self.h = nn.ModuleList(
-            [
-                GPT2AccelBlock(config, layer_idx=i)
-                for i in range(config.num_hidden_layers)
-            ]
-        )
+        self.h = nn.ModuleList([
+            GPT2AccelBlock(config, layer_idx=i) for i in range(config.num_hidden_layers)
+        ])
 
     def forward(
         self,

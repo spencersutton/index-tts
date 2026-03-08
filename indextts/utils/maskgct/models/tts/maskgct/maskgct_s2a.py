@@ -133,19 +133,15 @@ class MaskGCT_S2A(nn.Module):
         self.layer_emb = nn.Embedding(self.num_quantizer, self.hidden_size)
         self.mask_emb = nn.Embedding(1, self.hidden_size)
 
-        self.token_emb = torch.nn.ModuleList(
-            [
-                nn.Embedding(self.codebook_size, self.hidden_size)
-                for _ in range(self.num_quantizer)
-            ]
-        )
+        self.token_emb = torch.nn.ModuleList([
+            nn.Embedding(self.codebook_size, self.hidden_size)
+            for _ in range(self.num_quantizer)
+        ])
 
-        self.to_logits = torch.nn.ModuleList(
-            [
-                nn.Linear(self.hidden_size, self.codebook_size)
-                for _ in range(self.num_quantizer)
-            ]
-        )
+        self.to_logits = torch.nn.ModuleList([
+            nn.Linear(self.hidden_size, self.codebook_size)
+            for _ in range(self.num_quantizer)
+        ])
 
         self.cond_emb = nn.Embedding(cond_codebook_size, self.hidden_size)
 
@@ -169,12 +165,10 @@ class MaskGCT_S2A(nn.Module):
                 mask_layer = torch.randint(1, self.num_quantizer, (1,)).to(t.device)
         elif self.mask_layer_schedule == "cosine":
             if self.predict_layer_1:
-                weights = torch.tensor(
-                    [
-                        np.cos(i / self.num_quantizer * np.pi / 2)
-                        for i in range(self.num_quantizer)
-                    ]
-                )
+                weights = torch.tensor([
+                    np.cos(i / self.num_quantizer * np.pi / 2)
+                    for i in range(self.num_quantizer)
+                ])
             else:
                 weights = torch.tensor(
                     [0]
@@ -186,9 +180,9 @@ class MaskGCT_S2A(nn.Module):
             mask_layer = torch.multinomial(weights, 1).to(t.device)
         elif self.mask_layer_schedule == "linear":
             if self.predict_layer_1:
-                weights = torch.tensor(
-                    [self.num_quantizer - i for i in range(self.num_quantizer)]
-                )
+                weights = torch.tensor([
+                    self.num_quantizer - i for i in range(self.num_quantizer)
+                ])
             else:
                 weights = torch.tensor(
                     [0]
@@ -218,16 +212,15 @@ class MaskGCT_S2A(nn.Module):
         if torch.rand(1) > cfg_scale:
             prompt_len = torch.randint(
                 min(x0.shape[1] // 4, 5), x0.shape[1] // 2, (x0.shape[0],)
-            ).to(
-                x0.device
-            )  # (B,)
+            ).to(x0.device)  # (B,)
         else:
             prompt_len = torch.zeros(x0.shape[0]).to(x0)  # (B,)
 
         # get is prompt
         is_prompt = torch.zeros_like(x0[:, :, 0])  # (B, T)
         col_indices = (
-            torch.arange(is_prompt.shape[1])
+            torch
+            .arange(is_prompt.shape[1])
             .repeat(is_prompt.shape[0], 1)
             .to(prompt_len)
         )  # (B, T)

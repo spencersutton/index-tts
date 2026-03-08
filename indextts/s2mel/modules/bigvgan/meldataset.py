@@ -239,9 +239,9 @@ class MelDataset(torch.utils.data.Dataset):
 
         print("[INFO] checking dataset integrity...")
         for i in tqdm(range(len(self.audio_files))):
-            assert os.path.exists(
-                self.audio_files[i]
-            ), f"{self.audio_files[i]} not found"
+            assert os.path.exists(self.audio_files[i]), (
+                f"{self.audio_files[i]} not found"
+            )
 
     def __getitem__(self, index):
         filename = self.audio_files[index]
@@ -300,9 +300,9 @@ class MelDataset(torch.utils.data.Dataset):
                     self.fmax,
                     center=False,
                 )
-                assert (
-                    audio.shape[1] == mel.shape[2] * self.hop_size
-                ), f"audio shape {audio.shape} mel shape {mel.shape}"
+                assert audio.shape[1] == mel.shape[2] * self.hop_size, (
+                    f"audio shape {audio.shape} mel shape {mel.shape}"
+                )
 
         else:
             mel = np.load(
@@ -324,8 +324,7 @@ class MelDataset(torch.utils.data.Dataset):
                     mel = mel[:, :, mel_start : mel_start + frames_per_seg]
                     audio = audio[
                         :,
-                        mel_start
-                        * self.hop_size : (mel_start + frames_per_seg)
+                        mel_start * self.hop_size : (mel_start + frames_per_seg)
                         * self.hop_size,
                     ]
                 else:

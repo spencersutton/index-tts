@@ -54,7 +54,8 @@ class LookupFreeQuantize(nn.Module):
 
         bits = (
             2
-            ** torch.arange(self.codebook_dim, device=z.device)
+            ** torch
+            .arange(self.codebook_dim, device=z.device)
             .unsqueeze(0)
             .unsqueeze(-1)
             .long()

@@ -647,7 +647,9 @@ class IndexTTS2:
                     if id == self.tokenizer.unk_token_id
                 ],
             )
-            print("     Consider updating the BPE model or modifying the text to avoid unknown tokens.")
+            print(
+                "     Consider updating the BPE model or modifying the text to avoid unknown tokens."
+            )
 
         if verbose:
             print("text_tokens_list:", text_tokens_list)

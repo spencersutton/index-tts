@@ -6,6 +6,7 @@ from torch.nn import functional as F
 from munch import Munch
 import argparse
 
+
 def str2bool(v):
     if isinstance(v, bool):
         return v

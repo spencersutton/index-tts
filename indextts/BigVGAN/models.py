@@ -98,7 +98,7 @@ class AMPBlock1(torch.nn.Module):
                 Activation1d,
             )
         else:
-            from indextts.BigVGAN.alias_free_torch import Activation1d
+            from alias_free_torch import Activation1d
         if (
             activation == "snake"
         ):  # periodic nonlinearity with snake function and anti-aliasing
@@ -179,7 +179,7 @@ class AMPBlock2(torch.nn.Module):
                 Activation1d,
             )
         else:
-            from indextts.BigVGAN.alias_free_torch import Activation1d
+            from alias_free_torch import Activation1d
 
         if (
             activation == "snake"
@@ -279,7 +279,7 @@ class BigVGAN(torch.nn.Module):
                 Activation1d,
             )
         else:
-            from indextts.BigVGAN.alias_free_torch import Activation1d
+            from alias_free_torch import Activation1d
 
         # post conv
         if (

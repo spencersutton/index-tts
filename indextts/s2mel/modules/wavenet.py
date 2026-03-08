@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from indextts.s2mel.modules.encodec import SConv1d
+from encodec.modules import SConv1d
 
 from . import commons
 

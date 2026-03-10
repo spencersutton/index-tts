@@ -1,8 +1,8 @@
 import functools
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
+from torch import nn
 from transformers import GPT2Config, LogitsProcessorList
 
 # from transformers import GPT2Config, GPT2PreTrainedModel, LogitsProcessorList

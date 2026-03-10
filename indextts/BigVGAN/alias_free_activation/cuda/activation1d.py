@@ -2,7 +2,7 @@
 #   Licensed under the MIT license.
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 # load fused CUDA kernel: this enables importing anti_alias_activation_cuda
 from indextts.BigVGAN.alias_free_activation.cuda import load

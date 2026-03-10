@@ -7,8 +7,8 @@ import math
 
 import numpy as np
 import torch
-import torch.nn as nn
 from einops import rearrange
+from torch import nn
 
 from indextts.utils.maskgct.models.tts.maskgct.llama_nar import DiffLlama
 

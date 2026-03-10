@@ -100,12 +100,12 @@ def load_tf_weights_in_gpt2(model, config, gpt2_checkpoint_path):
             else:
                 scope_names = [m_name]
             if scope_names[0] == "w" or scope_names[0] == "g":
-                pointer = getattr(pointer, "weight")
+                pointer = pointer.weight
             elif scope_names[0] == "b":
-                pointer = getattr(pointer, "bias")
+                pointer = pointer.bias
             elif scope_names[0] == "wpe" or scope_names[0] == "wte":
                 pointer = getattr(pointer, scope_names[0])
-                pointer = getattr(pointer, "weight")
+                pointer = pointer.weight
             else:
                 pointer = getattr(pointer, scope_names[0])
             if len(scope_names) >= 2:

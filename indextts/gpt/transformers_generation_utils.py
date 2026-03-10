@@ -2336,11 +2336,11 @@ class GenerationMixin:
             should_convert_cache = generation_config.return_legacy_cache
             is_user_defined_cache = user_defined_cache is not None
             is_default_cache_type = (
-                type(result.past_key_values) == DynamicCache  # noqa E721
+                type(result.past_key_values) == DynamicCache
                 or (
                     isinstance(result.past_key_values, EncoderDecoderCache)
-                    and type(result.past_key_values.self_attention_cache) == DynamicCache  # noqa E721
-                    and type(result.past_key_values.cross_attention_cache) == DynamicCache  # noqa E721
+                    and type(result.past_key_values.self_attention_cache) == DynamicCache
+                    and type(result.past_key_values.cross_attention_cache) == DynamicCache
                 )
             )
             if not is_user_defined_cache and is_default_cache_type:

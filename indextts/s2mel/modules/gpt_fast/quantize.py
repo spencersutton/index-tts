@@ -7,9 +7,9 @@ import time
 from pathlib import Path
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from tokenizer import get_tokenizer
+from torch import nn
 
 try:
     from eval import evaluate, get_task_dict, lm_eval
@@ -59,8 +59,7 @@ def dynamically_quantize_per_channel(x, quant_min, quant_max, target_dtype):
 
 def get_group_qparams(w, n_bit=4, groupsize=128):
     # needed for GPTQ with padding
-    if groupsize > w.shape[-1]:
-        groupsize = w.shape[-1]
+    groupsize = min(groupsize, w.shape[-1])
     assert groupsize > 1
     assert w.shape[-1] % groupsize == 0
     assert w.dim() == 2

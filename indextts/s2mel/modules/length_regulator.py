@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.nn import functional as F
 
 from indextts.s2mel.dac.nn.quantize import VectorQuantize

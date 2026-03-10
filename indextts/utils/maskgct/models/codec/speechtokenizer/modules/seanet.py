@@ -16,7 +16,7 @@ import typing as tp
 
 import numpy as np
 import torch
-import torch.nn as nn
+from torch import nn
 
 from . import SLSTM, SConv1d, SConvTranspose1d
 

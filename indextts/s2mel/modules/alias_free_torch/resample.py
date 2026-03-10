@@ -1,6 +1,6 @@
 # Adapted from https://github.com/junjun3518/alias-free-torch under the Apache License 2.0
 
-import torch.nn as nn
+from torch import nn
 from torch.nn import functional as F
 
 from .filter import LowPassFilter1d, kaiser_sinc_filter1d

@@ -5,8 +5,8 @@ Authors
 """
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
+from torch import nn
 
 from indextts.BigVGAN.nnet.CNN import Conv1d as _Conv1d
 from indextts.BigVGAN.nnet.linear import Linear

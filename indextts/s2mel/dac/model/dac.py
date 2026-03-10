@@ -334,7 +334,7 @@ if __name__ == "__main__":
         o = m.extra_repr()
         p = sum([np.prod(p.size()) for p in m.parameters()])
         fn = lambda o, p: o + f" {p / 1e6:<.3f}M params."
-        setattr(m, "extra_repr", partial(fn, o=o, p=p))
+        m.extra_repr = partial(fn, o=o, p=p)
     print(model)
     print("Total # of params: ", sum([np.prod(p.size()) for p in model.parameters()]))
 

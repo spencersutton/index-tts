@@ -2,11 +2,10 @@ import functools
 from math import sqrt
 
 import torch
-import torch.distributed as distributed
-import torch.nn as nn
 import torch.nn.functional as F
 import torchaudio
 from einops import rearrange
+from torch import distributed, nn
 
 
 def default(val, d):

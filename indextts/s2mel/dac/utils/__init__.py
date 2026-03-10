@@ -3,7 +3,7 @@ from pathlib import Path
 import argbind
 from audiotools import ml
 
-import indextts.s2mel.dac as dac
+from indextts.s2mel import dac
 
 DAC = dac.model.DAC
 Accelerator = ml.Accelerator

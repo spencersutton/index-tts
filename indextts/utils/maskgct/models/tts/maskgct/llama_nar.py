@@ -6,7 +6,7 @@
 import math
 
 import torch
-import torch.nn as nn
+from torch import nn
 from transformers import LlamaConfig, LlamaModel
 from transformers.models.llama.modeling_llama import BaseModelOutputWithPast, LlamaDecoderLayer
 

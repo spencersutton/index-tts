@@ -491,92 +491,116 @@ class TextTokenizer:
         return self._sp_model.Encode(text, out_type=str)
 
     @staticmethod
+    def _try_recursive_split(
+        segment: list[str], split_token_set: set[str], max_text_tokens_per_segment: int, quick_streaming_tokens: int
+    ) -> list[list[str]] | None:
+        """Return sub-segments via recursive delimiter splitting, or ``None`` if not needed.
+
+        Checks (in order): comma sub-split, dash sub-split, hard size-limit chunking.
+        Returns ``None`` when the segment should continue growing normally.
+        """
+        has_comma_split = bool(split_token_set & {",", "▁,"})
+        has_dash_split = "-" in split_token_set
+        if not has_comma_split and ("," in segment or "▁," in segment):
+            return TextTokenizer.split_segments_by_token(
+                segment, [",", "▁,"], max_text_tokens_per_segment, quick_streaming_tokens
+            )
+        if not has_dash_split and "-" in segment:
+            return TextTokenizer.split_segments_by_token(
+                segment, ["-"], max_text_tokens_per_segment, quick_streaming_tokens
+            )
+        if len(segment) > max_text_tokens_per_segment:
+            warnings.warn(
+                f"The tokens length of segment exceeds limit: {max_text_tokens_per_segment}, "
+                + f"Tokens in segment: {segment}. Maybe unexpected behavior",
+                RuntimeWarning,
+                stacklevel=3,
+            )
+            return [
+                segment[j : j + max_text_tokens_per_segment]
+                for j in range(0, len(segment), max_text_tokens_per_segment)
+            ]
+        return None
+
+    @staticmethod
+    def _merge_adjacent_segments(
+        segments: list[list[str]], max_text_tokens_per_segment: int, quick_streaming_tokens: int
+    ) -> list[list[str]]:
+        """Merge adjacent short segments that fit within *max_text_tokens_per_segment*.
+
+        A pair is merged when the combined length fits the maximum AND either
+        enough tokens have already been accumulated (past *quick_streaming_tokens*)
+        or the combined length is at most half the maximum.
+        """
+        merged: list[list[str]] = []
+        total_token = 0
+        for segment in segments:
+            total_token += len(segment)
+            if not segment:
+                continue
+            if not merged:
+                merged.append(segment)
+                continue
+            combined_len = len(merged[-1]) + len(segment)
+            fits = combined_len <= max_text_tokens_per_segment
+            if fits and (total_token > quick_streaming_tokens or combined_len <= max_text_tokens_per_segment / 2):
+                merged[-1] += segment
+            else:
+                merged.append(segment)
+        return merged
+
+    @staticmethod
     def split_segments_by_token(
         tokenized_str: Sequence[str],
         split_tokens: Sequence[str],
         max_text_tokens_per_segment: int,
         quick_streaming_tokens: int = 0,
     ) -> list[list[str]]:
+        """Partition a tokenized sequence into segments by splitting at the given
+        *split_tokens* and respecting *max_text_tokens_per_segment*.
+
+        If no split token is encountered before the size limit, the segment is
+        split into fixed-size chunks (with a ``RuntimeWarning``).  Comma and dash
+        delimiters are handled via recursive sub-splitting when they appear inside
+        a growing segment but are not themselves in *split_tokens*.
+
+        Adjacent short segments are merged after splitting when their combined
+        length fits within *max_text_tokens_per_segment* and the cumulative token
+        count has surpassed *quick_streaming_tokens* (or the combined length is at
+        most half the maximum).
         """
-        Further split the tokenized result by specific tokens.
-        """
-        # Handle special cases
-        if len(tokenized_str) == 0:
+        if not tokenized_str:
             return []
+
+        tokens = list(tokenized_str)
+        split_token_set = set(split_tokens)
         segments: list[list[str]] = []
         current_segment: list[str] = []
-        current_segment_tokens_len = 0
-        for i in range(len(tokenized_str)):
-            token = tokenized_str[i]
+        i = 0
+        while i < len(tokens):
+            token = tokens[i]
             current_segment.append(token)
-            current_segment_tokens_len += 1
-            if not ("," in split_tokens or "▁," in split_tokens) and (
-                "," in current_segment or "▁," in current_segment
-            ):
-                # If the current tokens contain ',', split by ','
-                sub_segments = TextTokenizer.split_segments_by_token(
-                    current_segment,
-                    [",", "▁,"],
-                    max_text_tokens_per_segment=max_text_tokens_per_segment,
-                    quick_streaming_tokens=quick_streaming_tokens,
-                )
-            elif "-" not in split_tokens and "-" in current_segment:
-                # If there is no ',', split by '-'
-                sub_segments = TextTokenizer.split_segments_by_token(
-                    current_segment,
-                    ["-"],
-                    max_text_tokens_per_segment=max_text_tokens_per_segment,
-                    quick_streaming_tokens=quick_streaming_tokens,
-                )
-            elif current_segment_tokens_len <= max_text_tokens_per_segment:
-                if token in split_tokens and current_segment_tokens_len > 2:
-                    if i < len(tokenized_str) - 1 and tokenized_str[i + 1] in {"'", "▁'"}:
-                        # If the next token is ''', do not split
-                        current_segment.append(tokenized_str[i + 1])
-                        i += 1
-                    segments.append(current_segment)
-                    current_segment = []
-                    current_segment_tokens_len = 0
-                continue
-            # If the current tokens length exceeds the maximum limit
-            else:
-                # Split by length
-                sub_segments: list[list[str]] = []
-                for j in range(0, len(current_segment), max_text_tokens_per_segment):
-                    if j + max_text_tokens_per_segment < len(current_segment):
-                        sub_segments.append(current_segment[j : j + max_text_tokens_per_segment])
-                    else:
-                        sub_segments.append(current_segment[j:])
-                warnings.warn(
-                    f"The tokens length of segment exceeds limit: {max_text_tokens_per_segment}, "
-                    + f"Tokens in segment: {current_segment}."
-                    + "Maybe unexpected behavior",
-                    RuntimeWarning,
-                )
-            segments.extend(sub_segments)
-            current_segment = []
-            current_segment_tokens_len = 0
-        if current_segment_tokens_len > 0:
-            assert current_segment_tokens_len <= max_text_tokens_per_segment
+            sub_segments = TextTokenizer._try_recursive_split(
+                current_segment, split_token_set, max_text_tokens_per_segment, quick_streaming_tokens
+            )
+            if sub_segments is not None:
+                segments.extend(sub_segments)
+                current_segment = []
+            elif token in split_token_set and len(current_segment) > 2:
+                if i + 1 < len(tokens) and tokens[i + 1] in {"'", "▁'"}:
+                    # Append the quote to this segment before flushing.
+                    # The quote is *not* skipped; it will be re-processed as
+                    # the first token of the next segment.
+                    current_segment.append(tokens[i + 1])
+                segments.append(current_segment)
+                current_segment = []
+            i += 1
+
+        if current_segment:
+            assert len(current_segment) <= max_text_tokens_per_segment
             segments.append(current_segment)
-        # If adjacent segments together are shorter than the max limit,
-        # and total tokens so far exceed quick_streaming_tokens, merge them.
-        merged_segments: list[list[str]] = []
-        total_token = 0
-        for segment in segments:
-            total_token += len(segment)
-            if len(segment) == 0:
-                continue
-            if len(merged_segments) == 0:
-                merged_segments.append(segment)
-            elif (
-                len(merged_segments[-1]) + len(segment) <= max_text_tokens_per_segment
-                and total_token > quick_streaming_tokens
-            ) or len(merged_segments[-1]) + len(segment) <= max_text_tokens_per_segment / 2:
-                merged_segments[-1] += segment
-            else:
-                merged_segments.append(segment)
-        return merged_segments
+
+        return TextTokenizer._merge_adjacent_segments(segments, max_text_tokens_per_segment, quick_streaming_tokens)
 
     @staticmethod
     def split_segments(

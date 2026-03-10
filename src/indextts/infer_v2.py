@@ -93,7 +93,6 @@ class IndexTTS2:
     device: torch.device
     dtype: torch.dtype
     use_accel: bool
-    use_cuda_kernel: bool
 
     emo_matrix: tuple[Tensor, ...]
     spk_matrix: tuple[Tensor, ...]
@@ -139,7 +138,6 @@ class IndexTTS2:
         self.device = (
             torch.device(device) if device else torch.accelerator.current_accelerator() or torch.get_default_device()
         )
-        self.use_cuda_kernel = use_cuda_kernel and str(self.device).startswith("cuda")
         self.dtype = torch.get_default_dtype()
         self.use_accel = use_accel
 
@@ -147,23 +145,13 @@ class IndexTTS2:
         self.semantic_model = load.load_semantic_model(self.device)
         self.semantic_mean, self.semantic_std = load.load_semantic_stats(self.device)
         self.semantic_codec = load.load_semantic_codec(self.device)
-        self.bigvgan = load.load_bigvgan(self.device, self.use_cuda_kernel)
+        self.bigvgan = load.load_bigvgan(self.device, use_cuda_kernel)
         self.campplus_model = load.load_campplus(self.device)
         self.tokenizer = load.load_tokenizer(self.normalizer)
         self.cfm = load.load_cfm(self.device)
         self.length_regulator = load.load_length_regulator(self.device)
 
         post_init_gpt2_config(self.gpt)
-
-        if self.use_cuda_kernel:
-            # preload the CUDA kernel for BigVGAN
-            try:
-                from bigvgan.alias_free_activation.cuda import activation1d
-
-                logger.info(">> Preload custom CUDA kernel for BigVGAN: %s", activation1d.anti_alias_activation_cuda)
-            except Exception as e:
-                logger.warning(">> Failed to load custom CUDA kernel for BigVGAN. Falling back to torch. %r", e)
-                self.use_cuda_kernel = False
 
         # Enable torch.compile optimization if requested
         if use_torch_compile:
@@ -179,6 +167,77 @@ class IndexTTS2:
         if self.glossary_path.exists():
             self.normalizer.load_glossary_from_yaml(self.glossary_path)
             logger.info(">> Glossary loaded from: %s", self.glossary_path)
+
+    # ------------------------------------------------------------------
+    # Private helpers for infer()
+    # ------------------------------------------------------------------
+
+    def _validate_infer_args(
+        self,
+        emo_alpha: float,
+        interval_silence: int,
+        num_beams: int,
+        temperature: float,
+        top_k: int,
+        top_p: float,
+        text: str,
+    ) -> None:
+        """Raise ValueError for any out-of-range inference argument."""
+        if not (0.0 <= emo_alpha <= 1.0):
+            raise ValueError(f"emo_alpha must be in [0.0, 1.0], got {emo_alpha}")
+        if interval_silence < 0:
+            raise ValueError(f"interval_silence must be >= 0 ms, got {interval_silence}")
+        if num_beams < 1:
+            raise ValueError(f"num_beams must be >= 1, got {num_beams}")
+        if temperature <= 0.0:
+            raise ValueError(f"temperature must be > 0.0, got {temperature}")
+        if top_k < 0:
+            raise ValueError(f"top_k must be >= 0, got {top_k}")
+        if not (0.0 < top_p <= 1.0):
+            raise ValueError(f"top_p must be in (0.0, 1.0], got {top_p}")
+        if not text or not text.strip():
+            raise ValueError("text must be a non-empty string")
+
+    def _resolve_emotion_inputs(
+        self,
+        *,
+        use_emo_text: bool,
+        emo_text: str | None,
+        text: str,
+        emo_vector: Sequence[float] | None,
+        emo_alpha: float,
+        emo_audio_prompt: Path | None,
+        spk_audio_prompt: Path,
+    ) -> tuple[Path, float, Sequence[float] | None]:
+        """Resolve and normalise emotion-related inputs, returning (emo_audio_prompt, emo_alpha, emo_vector)."""
+        if use_emo_text or emo_vector is not None:
+            # Using text/vector guidance: drop external emotion reference voice
+            # so that only the computed vector drives emotion mixing.
+            emo_audio_prompt = None
+
+        if use_emo_text:
+            # Auto-generate emotion vectors from the text prompt.
+            emo_text = emo_text or text
+            emo_dict = self.qwen_emo.inference(emo_text)
+            logger.info("detected emotion vectors from text: %s", emo_dict)
+            # Order of values is critical; must match EMO_NUM.
+            emo_vector = list(emo_dict.values())
+
+        if emo_vector is not None:
+            # Pre-apply alpha scaling to the vector instead of using alpha mixing later.
+            emo_vector_scale = max(0.0, min(1.0, emo_alpha))
+            if emo_vector_scale != 1.0:  # noqa: RUF069
+                emo_vector = [int(x * emo_vector_scale * 10_000) / 10_000 for x in emo_vector]
+                logger.info("scaled emotion vectors to %sx: %s", emo_vector_scale, emo_vector)
+
+        if emo_audio_prompt is None:
+            # No external emotion reference: fall back to speaker audio, alpha forced to 1.
+            emo_audio_prompt = spk_audio_prompt
+            emo_alpha = 1.0
+
+        return emo_audio_prompt, emo_alpha, emo_vector
+
+    # ------------------------------------------------------------------
 
     def infer(
         self,
@@ -203,52 +262,16 @@ class IndexTTS2:
         top_k: int = 30,
         top_p: float = 0.8,
     ) -> Path | Generator[Tensor] | None:
-        # --- input validation ---
-        if not (0.0 <= emo_alpha <= 1.0):
-            raise ValueError(f"emo_alpha must be in [0.0, 1.0], got {emo_alpha}")
-        if interval_silence < 0:
-            raise ValueError(f"interval_silence must be >= 0 ms, got {interval_silence}")
-        if num_beams < 1:
-            raise ValueError(f"num_beams must be >= 1, got {num_beams}")
-        if temperature <= 0.0:
-            raise ValueError(f"temperature must be > 0.0, got {temperature}")
-        if top_k < 0:
-            raise ValueError(f"top_k must be >= 0, got {top_k}")
-        if not (0.0 < top_p <= 1.0):
-            raise ValueError(f"top_p must be in (0.0, 1.0], got {top_p}")
-        if not text or not text.strip():
-            raise ValueError("text must be a non-empty string")
-
-        if use_emo_text or emo_vector is not None:
-            # we're using a text or emotion vector guidance; so we must remove
-            # "emotion reference voice", to ensure we use correct emotion mixing!
-            emo_audio_prompt = None
-
-        if use_emo_text:
-            # automatically generate emotion vectors from text prompt
-            emo_text = emo_text or text  # use main text prompt
-            emo_dict = self.qwen_emo.inference(emo_text)
-            logger.info("detected emotion vectors from text: %s", emo_dict)
-            # convert ordered dict to list of vectors; the order is VERY important!
-            emo_vector = list(emo_dict.values())
-
-        if emo_vector is not None:
-            # we have emotion vectors; they can't be blended via alpha mixing
-            # in the main inference process later, so we must pre-calculate
-            # their new strengths here based on the alpha instead!
-            emo_vector_scale = max(0.0, min(1.0, emo_alpha))
-            if emo_vector_scale != 1.0:  # noqa: RUF069
-                # scale each vector and truncate to 4 decimals (for nicer printing)
-                emo_vector = [int(x * emo_vector_scale * 10_000) / 10_000 for x in emo_vector]
-                logger.info("scaled emotion vectors to %sx: %s", emo_vector_scale, emo_vector)
-
-        if emo_audio_prompt is None:
-            # we are not using any external "emotion reference voice"; use
-            # speaker's voice as the main emotion reference audio.
-            emo_audio_prompt = spk_audio_prompt
-            # must always use alpha=1.0 when we don't have an external reference voice
-            emo_alpha = 1.0
-
+        self._validate_infer_args(emo_alpha, interval_silence, num_beams, temperature, top_k, top_p, text)
+        emo_audio_prompt, emo_alpha, emo_vector = self._resolve_emotion_inputs(
+            use_emo_text=use_emo_text,
+            emo_text=emo_text,
+            text=text,
+            emo_vector=emo_vector,
+            emo_alpha=emo_alpha,
+            emo_audio_prompt=emo_audio_prompt,
+            spk_audio_prompt=spk_audio_prompt,
+        )
         gen = self._infer_generator(
             spk_audio_prompt,
             text,
@@ -365,6 +388,7 @@ class IndexTTS2:
                         f"WARN: generation stopped due to exceeding `MAX_MEL_TOKENS` ({MAX_MEL_TOKENS}). "
                         + f"Input text tokens: {text_tokens.shape[1]}. "
                         + f"Consider reducing `max_text_tokens_per_segment`({max_text_tokens_per_segment}) or increasing `MAX_MEL_TOKENS`.",
+                        stacklevel=2,
                         category=RuntimeWarning,
                     )
                     has_warned = True

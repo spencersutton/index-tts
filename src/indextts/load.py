@@ -94,7 +94,7 @@ def load_semantic_model(device: torch.device) -> transformers.Wav2Vec2BertModel:
     with Timer() as t:
         model = transformers.Wav2Vec2BertModel.from_pretrained("facebook/w2v-bert-2.0")
         model = model.eval().to(device)
-    print(f">> semantic_model weights restored in {t:.2f} seconds")
+    logger.info(">> semantic_model weights restored in %.2f seconds", t.elapsed)
     return model
 
 

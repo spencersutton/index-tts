@@ -115,9 +115,8 @@ class _CAMLayer(nn.Module):
         then repeats (tiles) the result back to match the input time dimension.
         This provides a coarse, segment-level context signal used by the gating branch.
         """
-        seg = F.avg_pool1d(x, kernel_size=_CAM_SEG_POOL_LEN, ceil_mode=True)
-        seg = seg.unsqueeze(-1).expand(*seg.shape, _CAM_SEG_POOL_LEN).reshape(*seg.shape[:-1], -1)
-        return seg[..., : x.shape[-1]]
+        seg_pooled = F.avg_pool1d(x, kernel_size=_CAM_SEG_POOL_LEN, ceil_mode=True)
+        return seg_pooled.repeat_interleave(_CAM_SEG_POOL_LEN, dim=-1)[..., : x.shape[-1]]
 
     @patch_call(forward)
     def __call__(self) -> None: ...

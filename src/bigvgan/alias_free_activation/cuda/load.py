@@ -1,6 +1,7 @@
 # Copyright (c) 2024 NVIDIA CORPORATION.
 #   Licensed under the MIT license.
 
+import logging
 import os
 import subprocess
 from abc import ABC, abstractmethod
@@ -10,6 +11,8 @@ from typing import TYPE_CHECKING, cast, type_check_only
 
 from torch import Tensor
 from torch.utils import cpp_extension
+
+logger = logging.getLogger(__name__)
 
 """
 Setting this param to a list has a problem of generating different compilation commands
@@ -92,4 +95,4 @@ def _create_build_dir(buildpath: Path) -> None:
         buildpath.mkdir()
     except OSError:
         if not buildpath.is_dir():
-            print(f"Creation of the build directory {buildpath} failed")
+            logger.error("Creation of the build directory %s failed", buildpath)

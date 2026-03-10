@@ -2,7 +2,6 @@ import html
 import json
 import os
 import sys
-import threading
 import time
 
 import warnings
@@ -81,7 +80,6 @@ from indextts.infer_v2 import IndexTTS2
 from tools.i18n.i18n import I18nAuto
 
 i18n = I18nAuto(language="Auto")
-MODE = "local"
 tts = IndexTTS2(
     model_dir=cmd_args.model_dir,
     cfg_path=os.path.join(cmd_args.model_dir, "config.yaml"),
@@ -89,8 +87,6 @@ tts = IndexTTS2(
     use_deepspeed=cmd_args.deepspeed,
     use_cuda_kernel=cmd_args.cuda_kernel,
 )
-# 支持的语言列表
-LANGUAGES = {"中文": "zh_CN", "English": "en_US"}
 EMO_CHOICES_ALL = [
     i18n("与音色参考音频相同"),
     i18n("使用情感参考音频"),
@@ -102,7 +98,6 @@ EMO_CHOICES_OFFICIAL = EMO_CHOICES_ALL[:-1]  # skip experimental features
 os.makedirs("outputs/tasks", exist_ok=True)
 os.makedirs("prompts", exist_ok=True)
 
-MAX_LENGTH_TO_USE_SPEED = 70
 example_cases = []
 with open("examples/cases.jsonl", "r", encoding="utf-8") as f:
     for line in f:
@@ -257,7 +252,6 @@ def create_experimental_warning_message():
 
 
 with gr.Blocks(title="IndexTTS Demo") as demo:
-    mutex = threading.Lock()
     gr.HTML("""
     <h2><center>IndexTTS2: A Breakthrough in Emotionally Expressive and Duration-Controlled Auto-Regressive Zero-Shot Text-to-Speech</h2>
 <p align="center">
@@ -413,9 +407,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                 with gr.Column(scale=2):
                     glossary_table = gr.Markdown(value=format_glossary_markdown())
 
-        with gr.Accordion(
-            i18n("高级生成参数设置"), open=False, visible=True
-        ) as advanced_settings_group:
+        with gr.Accordion(i18n("高级生成参数设置"), open=False, visible=True):
             with gr.Row():
                 with gr.Column(scale=1):
                     gr.Markdown(
@@ -495,9 +487,7 @@ with gr.Blocks(title="IndexTTS Demo") as demo:
                                 "建议80~200之间，值越大，分句越长；值越小，分句越碎；过小过大都可能导致音频质量不高"
                             ),
                         )
-                    with gr.Accordion(
-                        i18n("预览分句结果"), open=True
-                    ) as segments_settings:
+                    with gr.Accordion(i18n("预览分句结果"), open=True):
                         segments_preview = gr.Dataframe(
                             headers=[i18n("序号"), i18n("分句内容"), i18n("Token数")],
                             key="segments_preview",

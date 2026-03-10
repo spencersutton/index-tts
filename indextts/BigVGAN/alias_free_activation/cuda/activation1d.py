@@ -22,7 +22,7 @@ class FusedAntiAliasActivation(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, inputs, up_ftr, down_ftr, alpha, beta):
+    def forward(_ctx, inputs, up_ftr, down_ftr, alpha, beta):
         activation_results = anti_alias_activation_cuda.forward(
             inputs, up_ftr, down_ftr, alpha, beta
         )
@@ -30,7 +30,7 @@ class FusedAntiAliasActivation(torch.autograd.Function):
         return activation_results
 
     @staticmethod
-    def backward(ctx, _output_grads):
+    def backward(_ctx, _output_grads):
         raise NotImplementedError
 
 

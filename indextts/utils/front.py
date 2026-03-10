@@ -332,22 +332,6 @@ class TextNormalizer:
 
         return transformed_text
 
-    def load_glossary(self, glossary_dict):
-        """
-        加载外部术语词汇表
-
-        Args:
-            glossary_dict: 术语词典，格式为 {"术语": {"en": "英文读法", "zh": "中文读法"}}
-
-        Example:
-            normalizer.load_glossary({
-                "M.2": {"en": "M dot two", "zh": "M 二"},
-                "PCIe": {"en": "PCIE", "zh": "PCIE"}
-            })
-        """
-        if glossary_dict and isinstance(glossary_dict, dict):
-            self.term_glossary.update(glossary_dict)
-
     def load_glossary_from_yaml(self, glossary_path):
         """
         从 YAML 文件加载术语词汇表
@@ -470,10 +454,6 @@ class TextTokenizer:
         return "</s>"
 
     @property
-    def pad_token_id(self):
-        return -1
-
-    @property
     def bos_token_id(self):
         return 0
 
@@ -484,19 +464,6 @@ class TextTokenizer:
     @property
     def unk_token_id(self):
         return self.sp_model.unk_id()
-
-    @property
-    def special_tokens_map(self):
-        return {
-            "unk_token": self.unk_token,
-            "pad_token": self.pad_token,
-            "bos_token": self.bos_token,
-            "eos_token": self.eos_token,
-        }
-
-    def get_vocab(self):
-        vocab = {self.convert_ids_to_tokens(i): i for i in range(self.vocab_size)}
-        return vocab
 
     @overload
     def convert_ids_to_tokens(self, ids: int) -> str: ...

@@ -89,14 +89,14 @@ docstring-code-format = true
 skip-magic-trailing-comma = true
 
 [tool.ruff.lint]
-exclude = ["overrides/**", "tests/**"]
+exclude = ["tools/**", "tests/**"]
 extend-select = [
   "ANN",
   "B",
   "C",
   "FURB",
   "I",
-  "PLR1711",
+  "PLR",
   "PTH",
   "PYI",
   "RET",
@@ -104,23 +104,22 @@ extend-select = [
   "SIM",
   "UP",
 ]
-ignore = [
-  "ANN401",
-  "B008",
-  "B028",
-  "B901",
-  "B905",
-  "C901",
-  "F722",
-  "F821",
-  "PYI041",
-  "RUF001",
-  "RUF002",
-  "RUF003",
-  "SIM108",
-  "UP037",
-]
+ignore = ["B905", "F821", "SIM108", "UP037"]
 isort.split-on-trailing-comma = false
+allowed-confusables = [
+  "；",
+  "：",
+  "，",
+  "‘",
+  "’",
+  "（",
+  "）",
+  "？",
+  "～",
+  "！",
+  "×",
+  '∶',
+]
 
 [dependency-groups]
 dev = ["mypy>=1.19.1", "pytest>=9.0.2", "pytest-cov>=7.0.0", "rich>=14.1.0"]
@@ -131,7 +130,7 @@ ignore = ["tools/", "sitecustomize.py"]
 reportIgnoreCommentWithoutRule = false
 reportUnusedCallResult = false
 stubPath = "../typings"
-typeshedPath = '../typeshed'
+typeshedPath = "../typeshed"
 
 [[tool.basedpyright.executionEnvironments]]
 root = "../typings"
